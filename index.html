@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oliver Tracker</title>
+
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="manifest" href="manifest.json">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Oliver">
+
+<style>
+body{
+font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto;
+background:#f6f8fb;
+padding:30px;
+text-align:center;
+}
+
+h1{font-size:28px}
+
+button{
+padding:14px 20px;
+margin:10px;
+border-radius:12px;
+border:none;
+background:#2d6cdf;
+color:white;
+font-size:16px;
+}
+
+#log{
+margin-top:20px;
+text-align:left;
+max-width:600px;
+margin-left:auto;
+margin-right:auto;
+background:white;
+padding:20px;
+border-radius:14px;
+box-shadow:0 6px 18px rgba(0,0,0,0.08);
+}
+</style>
+</head>
+
+<body>
+
+<h1>Oliver Tracker 👑</h1>
+
+<button onclick="startNap()">Start Nap</button>
+<button onclick="logFeed()">Log Feed</button>
+<button onclick="startVoice()">🎙 Voice Log</button>
+<button onclick="runAnalysis()">🤖 AI Analysis</button>
+
+<div id="log"></div>
+
+<script>
+
+let logs=[]
+
+function render(){
+document.getElementById("log").innerHTML =
+logs.map(l=>"<div>"+l+"</div>").join("")
+}
+
+function startNap(){
+let t=new Date().toLocaleTimeString()
+logs.push("Nap started "+t)
+render()
+}
+
+function logFeed(){
+let t=new Date().toLocaleTimeString()
+logs.push("Feed "+t)
+render()
+}
+
+function startVoice(){
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+
+if(!SpeechRecognition){
+alert("Speech recognition not supported")
+return
+}
+
+const rec=new SpeechRecognition()
+rec.lang="en-GB"
+
+rec.onresult = e =>{
+let text=e.results[0][0].transcript
+logs.push("Voice: "+text)
+render()
+}
+
+rec.start()
+
+}
+
+async function runAnalysis(){
+
+let res = await fetch("/.netlify/functions/ai",{
+method:"POST",
+body:JSON.stringify({logs})
+})
+
+let data = await res.json()
+
+logs.push("AI Insight: "+data.text)
+render()
+
+}
+
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('sw.js')
+}
+
+</script>
+
+</body>
+</html>
