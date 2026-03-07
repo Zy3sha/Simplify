@@ -311,6 +311,8 @@ function App(){
   const[feedType,setFeedType]=useState("milk"); // "milk" | "solids"
   const[dragId,setDragId]=useState(null); // id of entry being dragged
   const[dragOver,setDragOver]=useState(null); // id of entry being hovered over
+  const[tutStep,setTutStep]=useState(()=>{try{return localStorage.getItem("tut_v1")?-1:0;}catch{return 0;}});
+  // tutStep: 0..N = active tutorial, -1 = dismissed
 
   const possessive = (n) => {
     if (!n) return "";
@@ -604,6 +606,190 @@ function App(){
   }
 
   // ── END SLEEP ANALYTICS ──
+
+  // ── FEATURE 1: "Is This Normal?" sleep comparison ──
+  function napNormalRange() {
+    const age = calcAge(babyDob);
+    if (!age) return null;
+    const w = age.totalWeeks;
+    // [min, max] in minutes, label
+    if (w < 4)  return { min:480, max:960, label:"8–16 hrs (inc. night)" };
+    if (w < 8)  return { min:240, max:480, label:"4–8 hrs" };
+    if (w < 13) return { min:180, max:360, label:"3–6 hrs" };
+    if (w < 26) return { min:120, max:300, label:"2–5 hrs" };
+    if (w < 39) return { min:120, max:240, label:"2–4 hrs" };
+    if (w < 52) return { min:90,  max:180, label:"1.5–3 hrs" };
+    if (w < 78) return { min:60,  max:120, label:"1–2 hrs" };
+    return { min:60, max:90, label:"1–1.5 hrs" };
+  }
+
+  function sleepNormalCard() {
+    const today = days[selDay] || [];
+    const naps = today.filter(e => e.type === "nap" && !e.night);
+    if (!naps.length) return null;
+    const totalMins = naps.reduce((s,n) => s + minDiff(n.start, n.end), 0);
+    const range = napNormalRange();
+    if (!range) return null;
+    let status, color, bg, icon, message;
+    if (totalMins < range.min) {
+      status = "below"; color = C.ter; bg = "#fff3f0";
+      icon = "⚠️";
+      const gap = range.min - totalMins;
+      message = gap > 60
+        ? "Naps are quite low today. Consider an earlier bedtime to prevent overtiredness."
+        : "Naps are a little low today. An earlier bedtime tonight may help.";
+    } else if (totalMins > range.max) {
+      status = "above"; color = "#b88a20"; bg = "#fffbf0";
+      icon = "💤";
+      message = "Nap time is higher than typical today. A slightly later bedtime can help build sleep pressure for the night.";
+    } else {
+      status = "normal"; color = C.mint; bg = "#f0faf6";
+      icon = "✓";
+      message = "Nap time is within a healthy range for this age. Well done!";
+    }
+    return { totalMins, range, status, color, bg, icon, message };
+  }
+
+  // ── FEATURE 2: Sleep regression / pattern change detection ──
+  function regressionCheck() {
+    const dk = Object.keys(days).sort();
+    if (dk.length < 5) return null;
+    const recent3 = dk.slice(-3);
+    const prev4 = dk.slice(-7, -3);
+    if (!prev4.length) return null;
+
+    const avgNightWakes = arr => arr.reduce((s,d) => s + (days[d]||[]).filter(e=>e.night).length, 0) / arr.length;
+    const avgNapMins = arr => arr.reduce((s,d) => {
+      const ns = (days[d]||[]).filter(e=>e.type==="nap"&&!e.night);
+      return s + ns.reduce((ss,n) => ss + minDiff(n.start,n.end), 0);
+    }, 0) / arr.length;
+
+    const recentWakes = avgNightWakes(recent3);
+    const prevWakes   = avgNightWakes(prev4);
+    const recentNaps  = avgNapMins(recent3);
+    const prevNaps    = avgNapMins(prev4);
+
+    const alerts = [];
+
+    if (recentWakes > prevWakes + 1.2) {
+      alerts.push({
+        title: "More night wakes recently",
+        body: "Night wakes have increased over the last 3 days. This can happen during developmental leaps or sleep regressions — most phases pass within 1–2 weeks. Keeping bedtime consistent really helps.",
+        icon: "🌙"
+      });
+    }
+    if (prevNaps > 30 && recentNaps < prevNaps * 0.65) {
+      alerts.push({
+        title: "Shorter naps this week",
+        body: "Naps have been shorter than usual. Baby may be going through a developmental phase or nap transition. Consistent wake windows and a calming pre-nap routine can help.",
+        icon: "😴"
+      });
+    }
+    if (prevNaps > 0 && recentNaps > prevNaps * 1.5 && recentNaps - prevNaps > 40) {
+      alerts.push({
+        title: "Naps have lengthened",
+        body: "Baby is sleeping more than usual during the day. This is often a growth spurt or recovery from overtiredness. Watch that long naps don't push bedtime too late.",
+        icon: "📈"
+      });
+    }
+    return alerts.length ? alerts : null;
+  }
+
+  // ── FEATURE 3: Suggested tomorrow schedule ──
+  function tomorrowSchedule() {
+    const age = calcAge(babyDob);
+    if (!age) return null;
+    const w = age.totalWeeks;
+    const ww = getWakeWindow(w);
+
+    // Figure out expected wake time from recent data
+    const dk = Object.keys(days).sort().slice(-7);
+    const wakeMins = dk.map(d => {
+      const e = (days[d]||[]).find(x => x.type==="wake" && !x.night);
+      if (!e) return null;
+      const [h,m] = e.time.split(":").map(Number);
+      return h*60+m;
+    }).filter(v => v !== null);
+    const baseWake = wakeMins.length ? Math.round(avgArr(wakeMins)) : 7*60;
+
+    // Nap count by age
+    let napCount;
+    if (w < 13) napCount = 4;
+    else if (w < 26) napCount = 3;
+    else if (w < 39) napCount = 2;
+    else if (w < 65) napCount = 2;
+    else napCount = 1;
+
+    // Use personalised nap length from recent data if available
+    const recentNapMins = dk.map(d => {
+      const ns = (days[d]||[]).filter(e => e.type==="nap"&&!e.night);
+      return ns.length ? ns.reduce((s,n) => s+minDiff(n.start,n.end),0)/ns.length : null;
+    }).filter(v => v !== null);
+    const avgNapLen = recentNapMins.length ? Math.round(avgArr(recentNapMins)) : 60;
+
+    // Learn average bedtime
+    const bedMins = dk.map(d => {
+      const e = (days[d]||[]).find(x => x.type==="sleep"&&!x.night);
+      if (!e) return null;
+      const [h,m] = e.time.split(":").map(Number); return h*60+m;
+    }).filter(v => v !== null);
+    const avgBedtime = bedMins.length ? Math.round(avgArr(bedMins)) : 19*60;
+
+    const mtp = m => {
+      const h = Math.floor(m/60)%24, mm = m%60;
+      return `${String(h).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
+    };
+
+    const schedule = [];
+    schedule.push({ label: "Wake up", time: mtp(baseWake), icon: "☀️" });
+
+    let cursor = baseWake + ww.min + Math.round((ww.max-ww.min)/2);
+    for (let i = 0; i < napCount; i++) {
+      const napEnd = cursor + Math.min(avgNapLen, i===0?120:90);
+      schedule.push({ label: `Nap ${i+1}`, time: `${mtp(cursor)} – ${mtp(napEnd)}`, icon: "😴" });
+      cursor = napEnd + ww.min + Math.round((ww.max-ww.min)/2);
+      if (cursor >= avgBedtime - 30) break;
+    }
+    schedule.push({ label: "Bedtime", time: mtp(avgBedtime), icon: "🌙" });
+    return schedule;
+  }
+
+  // ── FEATURE 4: Feeding intake reassurance ──
+  function feedIntakeCard() {
+    const age = calcAge(babyDob);
+    if (!age) return null;
+    const w = age.totalWeeks;
+    const today = days[selDay] || [];
+    const milkFeeds = today.filter(e => e.type==="feed" && e.feedType!=="solids" && !e.night);
+    const totalMl = milkFeeds.reduce((s,f) => s+(f.amount||0), 0);
+    if (!totalMl) return null;
+
+    // Age-based typical intake ranges (ml/day)
+    let min, max, label;
+    if (w < 4)       { min=400;  max=700;  label="Newborn — small, frequent feeds"; }
+    else if (w < 8)  { min=500;  max=800;  label="Typically 500–800ml/day"; }
+    else if (w < 13) { min=600;  max=900;  label="Typically 600–900ml/day"; }
+    else if (w < 26) { min=700;  max=1000; label="Typically 700–1000ml/day"; }
+    else if (w < 39) { min=600;  max=900;  label="Typically 600–900ml/day (+ solids)"; }
+    else if (w < 52) { min=500;  max=800;  label="Typically 500–800ml/day (+ solids)"; }
+    else             { min=300;  max=500;  label="Typically 300–500ml/day (milk as drink)"; }
+
+    let status, color, bg, icon, message;
+    if (totalMl < min) {
+      status = "low"; color = C.ter; bg = "#fff3f0"; icon = "⚠️";
+      const diff = min - totalMl;
+      message = diff > 200
+        ? "Intake is quite low today. If this continues for more than 2 days, mention it to your health visitor."
+        : "Intake is a little low today. One day is usually not concerning — offer feeds more frequently if baby seems hungry.";
+    } else if (totalMl > max) {
+      status = "high"; color = "#b88a20"; bg = "#fffbf0"; icon = "📈";
+      message = "Intake is higher than average today. This is very common during growth spurts and is nothing to worry about.";
+    } else {
+      status = "normal"; color = C.mint; bg = "#f0faf6"; icon = "✓";
+      message = "Milk intake is within a healthy range for this age.";
+    }
+    return { totalMl, min, max, label, status, color, bg, icon, message };
+  }
 
   function analyseTrends() {
     const dk = Object.keys(days).sort();
@@ -932,23 +1118,21 @@ function App(){
     setModal(null);
   }
 
-  // Auto-create tomorrow whenever a day exists but tomorrow doesn't yet
+  // Auto-create the day after selDay — but only once selDay has at least one entry
   useEffect(()=>{
-    const keys = Object.keys(days).sort();
-    if (keys.length === 0) return;
-    const lastKey = keys[keys.length - 1];
-    const lastDate = new Date(lastKey + "T00:00:00");
-    const tomorrow = new Date(lastDate);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split("T")[0];
-    // Only add if tomorrow doesn't already exist and it's not in the future beyond tomorrow
-    const todayDate = new Date(todayStr() + "T00:00:00");
-    const dayAfterTomorrow = new Date(todayDate);
-    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
-    if (!days[tomorrowStr] && tomorrow <= dayAfterTomorrow) {
-      setDays(d => ({...d, [tomorrowStr]: []}));
+    if (!selDay) return;
+    const entries = days[selDay] || [];
+    if (entries.length === 0) return; // don't generate until data is actually entered
+
+    const base = new Date(selDay + "T00:00:00");
+    const next = new Date(base);
+    next.setDate(next.getDate() + 1);
+    const nextStr = next.toISOString().split("T")[0];
+
+    if (!days[nextStr]) {
+      setDays(d => ({...d, [nextStr]: []}));
     }
-  },[Object.keys(days).join(",")]);
+  },[selDay, (days[selDay]||[]).length]);
   function saveEditDay(){
     if(!editDate||editDate===menuDay){setModal(null);return;}
     if(days[editDate]){alert("A day with that date already exists.");return;}
@@ -1088,7 +1272,190 @@ function App(){
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes tutPop{from{opacity:0;transform:scale(0.93) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+        @keyframes tutPulse{0%,100%{box-shadow:0 0 0 0 rgba(201,112,90,0.5)}70%{box-shadow:0 0 0 14px rgba(201,112,90,0)}}
       `}</style>
+
+      {/* ── TUTORIAL OVERLAY ── */}
+      {tutStep >= 0 && (()=>{
+        const TUT_STEPS = [
+          {
+            icon:"📅",
+            title:"Your Daily Log",
+            body:"The Day tab is your home base. Every feed, nap, wake and nappy gets logged here — all in one beautiful timeline.",
+            spot:"bottom-nav-day",
+            arrow:"bottom",
+          },
+          {
+            icon:"➕",
+            title:"Add an Entry",
+            body:"Tap the big + button to log a feed, nap, wake up, bedtime, or nappy change. You can also tap + add next to Daytime for a shortcut.",
+            spot:"fab-add",
+            arrow:"bottom-right",
+          },
+          {
+            icon:"🍼",
+            title:"Bottle, Breast & Solids",
+            body:"Under Feed you can log bottle ml, breastfeed minutes per side (L/R), or solid food meals. The app tracks them separately.",
+            spot:"center",
+            arrow:null,
+          },
+          {
+            icon:"😴",
+            title:"Nap Timer",
+            body:"Tap Start Nap when baby goes down. The timer runs live and saves the nap automatically when you tap End & Save.",
+            spot:"center",
+            arrow:null,
+          },
+          {
+            icon:"🧠",
+            title:"Sleep Analytics",
+            body:"Once naps are logged, the app gives you a sleep score, 'Is This Normal?' check, feeding reassurance, and a suggested schedule for tomorrow.",
+            spot:"center",
+            arrow:null,
+          },
+          {
+            icon:"⏱️",
+            title:"Next Nap Countdown",
+            body:"A live countdown in the top corner shows when the next nap window opens based on wake windows for your baby's age.",
+            spot:"nap-countdown",
+            arrow:"top-right",
+          },
+          {
+            icon:"📊",
+            title:"Week & Trends",
+            body:"The Week and Trends tabs give you averages, charts, and insights across the past 7 days. Great for spotting patterns.",
+            spot:"bottom-nav-week",
+            arrow:"bottom",
+          },
+          {
+            icon:"📏",
+            title:"Growth & Milestones",
+            body:"Log weight checks in Growth to see WHO percentile charts. Track developmental milestones in the Milestones tab.",
+            spot:"bottom-nav-growth",
+            arrow:"bottom",
+          },
+          {
+            icon:"🎉",
+            title:"You're all set!",
+            body:"That's everything you need to know. You can revisit this tour anytime from the header menu. Happy tracking!",
+            spot:"center",
+            arrow:null,
+          },
+        ];
+
+        const dismissTutorial = () => {
+          try{localStorage.setItem("tut_v1","1");}catch{}
+          setTutStep(-1);
+        };
+        const nextStep = () => {
+          if (tutStep >= TUT_STEPS.length - 1) { dismissTutorial(); return; }
+          setTutStep(s => s+1);
+        };
+        const prevStep = () => { if (tutStep > 0) setTutStep(s => s-1); };
+
+        const step = TUT_STEPS[tutStep];
+        const isLast = tutStep === TUT_STEPS.length - 1;
+
+        // Spotlight positions
+        const spotPos = {
+          "bottom-nav-day":   { bottom:55, left:"10%",  width:"18%", height:56 },
+          "bottom-nav-week":  { bottom:55, left:"28%",  width:"18%", height:56 },
+          "bottom-nav-growth":{ bottom:55, left:"64%",  width:"18%", height:56 },
+          "fab-add":          { bottom:72, right:16,    width:58,    height:58 },
+          "nap-countdown":    { top:8,     right:12,    width:110,   height:50 },
+          "center": null,
+        };
+        const pos = spotPos[step.spot];
+
+        return (
+          <div style={{position:"fixed",inset:0,zIndex:999,pointerEvents:"auto"}}>
+            {/* Dim backdrop */}
+            <div style={{position:"absolute",inset:0,background:"rgba(20,12,8,0.72)",backdropFilter:"blur(2px)"}}
+              onClick={nextStep}/>
+
+            {/* Spotlight cutout (if position known) */}
+            {pos && (
+              <div style={{
+                position:"absolute",
+                ...pos,
+                borderRadius:16,
+                boxShadow:"0 0 0 9999px rgba(20,12,8,0.0)",
+                background:"transparent",
+                border:"2.5px solid rgba(255,255,255,0.6)",
+                animation:"tutPulse 1.8s ease infinite",
+                pointerEvents:"none",
+                zIndex:1001,
+              }}/>
+            )}
+
+            {/* Tooltip card */}
+            <div style={{
+              position:"absolute",
+              bottom: step.arrow==="bottom"||step.arrow==="bottom-right" ? 130 : step.arrow==="top-right" ? "auto" : "50%",
+              top: step.arrow==="top-right" ? 68 : step.arrow==="bottom"||step.arrow==="bottom-right" ? "auto" : "auto",
+              left: step.arrow==="bottom-right"||step.arrow==="top-right" ? "auto" : "50%",
+              right: step.arrow==="bottom-right"||step.arrow==="top-right" ? 16 : "auto",
+              transform: step.arrow==="bottom"||step.arrow==="bottom-right"||step.arrow==="top-right" ? "none" : "translate(-50%, -50%)",
+              width: step.arrow ? "min(320px, calc(100vw - 40px))" : "min(340px, calc(100vw - 40px))",
+              background:"white",
+              borderRadius:22,
+              padding:"22px 20px 18px",
+              boxShadow:"0 20px 60px rgba(0,0,0,0.35)",
+              animation:"tutPop 0.3s ease",
+              zIndex:1002,
+              pointerEvents:"auto",
+            }}>
+              {/* Arrow pointer */}
+              {step.arrow==="bottom" && (
+                <div style={{position:"absolute",bottom:-10,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderTop:"10px solid white"}}/>
+              )}
+              {step.arrow==="bottom-right" && (
+                <div style={{position:"absolute",bottom:-10,right:24,width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderTop:"10px solid white"}}/>
+              )}
+              {step.arrow==="top-right" && (
+                <div style={{position:"absolute",top:-10,right:24,width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderBottom:"10px solid white"}}/>
+              )}
+
+              {/* Header row */}
+              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:12}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:40,height:40,borderRadius:12,background:"#fdf0eb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{step.icon}</div>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,fontWeight:700,color:C.deep,lineHeight:1.2}}>{step.title}</div>
+                </div>
+                <button onClick={dismissTutorial} style={{background:"none",border:"none",color:C.lt,fontSize:18,cursor:"pointer",padding:"0 0 0 8px",lineHeight:1,flexShrink:0}}>&#x2715;</button>
+              </div>
+
+              <div style={{fontSize:14,color:C.mid,lineHeight:1.65,marginBottom:18}}>{step.body}</div>
+
+              {/* Progress dots */}
+              <div style={{display:"flex",gap:5,justifyContent:"center",marginBottom:14}}>
+                {TUT_STEPS.map((_,i)=>(
+                  <div key={i} onClick={()=>setTutStep(i)} style={{width:i===tutStep?20:6,height:6,borderRadius:99,background:i===tutStep?C.ter:C.blush,transition:"all 0.3s",cursor:"pointer"}}/>
+                ))}
+              </div>
+
+              {/* Buttons */}
+              <div style={{display:"flex",gap:8}}>
+                {tutStep > 0 && (
+                  <button onClick={prevStep} style={{flex:1,padding:"10px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"white",color:C.mid,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                    ← Back
+                  </button>
+                )}
+                <button onClick={nextStep} style={{flex:2,padding:"11px",borderRadius:12,border:"none",background:`linear-gradient(135deg,#c9705a,#a85a44)`,color:"white",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 14px rgba(201,112,90,0.35)"}}>
+                  {isLast ? "Start Tracking!" : "Next →"}
+                </button>
+              </div>
+
+              {tutStep === 0 && (
+                <button onClick={dismissTutorial} style={{width:"100%",marginTop:10,background:"none",border:"none",color:C.lt,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
+                  Skip tutorial
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* HERO HEADER */}
       <div style={{background:theme.primary,padding:"52px 20px 24px",position:"relative",overflow:"hidden"}}>
@@ -1152,7 +1519,10 @@ function App(){
                   </div>
                 );
               })()}
-              <div style={{fontSize:10,color:C.lt,marginTop:5,fontFamily:"monospace"}}>tap to edit name</div>
+              <div style={{fontSize:10,color:C.lt,marginTop:5,fontFamily:"monospace",display:"flex",alignItems:"center",gap:10}}>
+                <span>tap to edit name</span>
+                <button onClick={e=>{e.stopPropagation();setTutStep(0);try{localStorage.removeItem("tut_v1");}catch{}}} style={{background:"rgba(255,255,255,0.35)",border:"none",borderRadius:99,padding:"2px 9px",fontSize:10,color:C.mid,cursor:"pointer",fontFamily:"monospace",fontWeight:600}}>? Tour</button>
+              </div>
             </div>
           ):(
             <div>
@@ -1345,7 +1715,106 @@ function App(){
                 );
               })()}
 
-              {/* Quick add */}
+              {/* ── FEATURE 1: Is This Normal? Sleep Comparison ── */}
+              {(()=>{
+                const sc = sleepNormalCard();
+                if (!sc) return null;
+                return (
+                  <div style={{background:sc.bg,border:`1px solid ${sc.color}30`,borderLeft:`4px solid ${sc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:14}}>
+                    <div style={{fontSize:10,fontFamily:"monospace",color:sc.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Is This Normal? · Today's Sleep</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                      <div>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:sc.color}}>{hm(sc.totalMins)}</div>
+                        <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,marginTop:2}}>today's naps</div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontSize:11,fontFamily:"monospace",color:C.mid}}>Typical for this age</div>
+                        <div style={{fontSize:13,fontWeight:600,color:C.mid}}>{sc.range.label}</div>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"white",borderRadius:10,padding:"9px 12px"}}>
+                      <span style={{fontSize:16,flexShrink:0}}>{sc.icon}</span>
+                      <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{sc.message}</div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── FEATURE 4: Feeding Intake Reassurance ── */}
+              {(()=>{
+                const fc = feedIntakeCard();
+                if (!fc) return null;
+                return (
+                  <div style={{background:fc.bg,border:`1px solid ${fc.color}30`,borderLeft:`4px solid ${fc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:14}}>
+                    <div style={{fontSize:10,fontFamily:"monospace",color:fc.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Today's Milk Intake</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                      <div>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:fc.color}}>{fc.totalMl}ml</div>
+                        <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,marginTop:2}}>total today</div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontSize:11,fontFamily:"monospace",color:C.mid}}>Typical for this age</div>
+                        <div style={{fontSize:12,fontWeight:600,color:C.mid}}>{fc.label}</div>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"white",borderRadius:10,padding:"9px 12px"}}>
+                      <span style={{fontSize:16,flexShrink:0}}>{fc.icon}</span>
+                      <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{fc.message}</div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── FEATURE 2: Sleep Regression Detection ── */}
+              {(()=>{
+                const alerts = regressionCheck();
+                if (!alerts) return null;
+                return (
+                  <div style={{marginBottom:14}}>
+                    {alerts.map((a,i)=>(
+                      <div key={i} style={{background:"#fff8f0",border:"1px solid #f0d8b0",borderLeft:"4px solid #d4a855",borderRadius:16,padding:"14px 16px",marginBottom:8}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                          <span style={{fontSize:18}}>{a.icon}</span>
+                          <div style={{fontSize:12,fontWeight:700,color:"#8a6020"}}>Sleep Pattern Change Detected</div>
+                        </div>
+                        <div style={{fontSize:13,fontWeight:600,color:C.mid,marginBottom:5}}>{a.title}</div>
+                        <div style={{fontSize:12,color:C.mid,lineHeight:1.6}}>{a.body}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* ── FEATURE 3: Suggested Tomorrow Schedule ── */}
+              {(()=>{
+                const sched = tomorrowSchedule();
+                if (!sched) return null;
+                return (
+                  <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
+                    <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>Suggested Tomorrow Schedule</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                      {sched.map((item,i)=>(
+                        <div key={i} style={{display:"flex",alignItems:"center",gap:0}}>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:28,flexShrink:0}}>
+                            <div style={{width:9,height:9,borderRadius:"50%",background:item.label==="Bedtime"?C.sky:item.label.startsWith("Nap")?C.mint:C.gold,flexShrink:0}}/>
+                            {i<sched.length-1&&<div style={{width:2,height:22,background:C.blush}}/>}
+                          </div>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flex:1,padding:"4px 0 4px 6px"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:6}}>
+                              <span style={{fontSize:14}}>{item.icon}</span>
+                              <span style={{fontSize:13,color:C.mid,fontWeight:500}}>{item.label}</span>
+                            </div>
+                            <span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:C.deep}}>{fmt12(item.time.includes("–")?item.time.split("–")[0].trim():item.time)}{item.time.includes("–")?" – "+fmt12(item.time.split("–")[1].trim()):""}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,marginTop:10,borderTop:`1px solid ${C.blush}`,paddingTop:8}}>
+                      Based on recent sleep patterns and age-appropriate wake windows
+                    </div>
+                  </div>
+                );
+              })()}
               <div style={{...card}}>
                 <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:9}}>Quick Add</div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
