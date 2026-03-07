@@ -811,7 +811,6 @@ function App(){
       <div style={{fontSize:12,fontFamily:"monospace",color:"#7a5c52"}}>Sleep score</div>
       <div style={{fontSize:28,fontWeight:700}}>{score}/100</div>
       {bed && <div style={{marginTop:6}}>Suggested bedtime: {fmt12(bed)}</div>}
-      {napCountdown() && <div style={{marginTop:6,color:"#c9705a"}}>⏱ {napCountdown()}</div>}
       <div style={{marginTop:6}}>{advice}</div>
       <div style={{fontSize:12,color:"#b89890",marginTop:4}}>{tired}</div>
     </div>
@@ -846,38 +845,14 @@ function bedtimePrediction(){
   return addMinutes(lastNap.end, ww.max);
 }
 
-
-function napCountdown(){
-  const prediction = predictNextNap();
-  if(!prediction) return null;
-  const mins = minutesUntil(prediction.napStart_min);
-  if(mins===null) return null;
-  if(mins<=0) return "Nap window open now";
-  const h=Math.floor(mins/60);
-  const m=mins%60;
-  return `Next nap in ${h>0?`${h}h `:""}${m}m`;
-}
-
 function sleepAdvice(){
-  const age = calcAge(babyDob);
-  const ageWeeks = age ? age.totalWeeks : null;
-
   const today = days[selDay]||[];
   const naps = today.filter(e=>e.type==="nap"&&!e.night);
   const napMinutes = naps.reduce((s,n)=>s+minDiff(n.start,n.end),0);
   const hrs = (napMinutes/60).toFixed(1);
   if(napMinutes < 120) return `Baby napped ${hrs} hours today. Consider an earlier bedtime.`;
   if(napMinutes > 210) return `Baby napped ${hrs} hours today. A slightly later bedtime may help build sleep pressure.`;
-  let msg=`Baby napped ${hrs} hours today. Sleep pressure looks balanced.`;
-if(ageWeeks){
- if(ageWeeks>14 && ageWeeks<22 && naps.length>=4){
-   msg+=" Baby may be approaching the 4→3 nap transition.";
- }
- if(ageWeeks>26 && ageWeeks<40 && naps.length>=3){
-   msg+=" Baby may soon transition from 3→2 naps.";
- }
-}
-return msg;
+  return `Baby napped ${hrs} hours today. Sleep pressure looks balanced.`;
 }
 
 function tiredDetection(){
@@ -1077,6 +1052,25 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
             </div>
           ):(
             <div>
+
+              {/* Sleep analytics card */}
+              {(() => {
+                const score = sleepScore();
+                const bed = bedtimePrediction();
+                const advice = sleepAdvice();
+                const tired = tiredDetection();
+                return (
+                  <div style={{background:"white",border:"1px solid #f2d9cc",borderRadius:20,padding:16,marginBottom:14}}>
+                    <div style={{fontSize:12,fontFamily:"monospace",color:"#7a5c52"}}>Sleep score</div>
+                    <div style={{fontSize:28,fontWeight:700}}>{score}/100</div>
+                    {bed && <div style={{marginTop:6}}>Suggested bedtime: {fmt12(bed)}</div>}
+                    {napCountdown() && <div style={{marginTop:6,color:"#c9705a"}}>⏱ {napCountdown()}</div>}
+                    <div style={{marginTop:6}}>{advice}</div>
+                    <div style={{fontSize:12,color:"#b89890",marginTop:4}}>{tired}</div>
+                  </div>
+                );
+              })()}
+
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
                 {[{big:totalMl,unit:"ml",label:"Total Feed",color:C.ter,bg:"#fdf0eb"},{big:naps.length,unit:"naps",label:"Day Sleep",color:C.mint,bg:"#eaf6f3"},{big:hm(napMins),unit:"",label:"Nap Time",color:C.sky,bg:"#eaf3f8"}].map((s,i)=>(
                   <div key={i} style={{background:s.bg,borderRadius:18,padding:"14px 6px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
