@@ -252,7 +252,7 @@ function App(){
 
   const[days,setDays]=useState(()=>{try{const r=localStorage.getItem(STORAGE_KEY);if(r)return JSON.parse(r);}catch{}return SEED_DAYS;});
   const[weights,setWeights]=useState(()=>{try{return JSON.parse(localStorage.getItem("bw_v2")||"[]");}catch{return[];}});
-  const[babyName,setBabyName]=useState(()=>localStorage.getItem("bn_v2")||"");
+  const[babyName,setBabyName]=useState(()=>{try{return localStorage.getItem("bn_v2")||"";}catch{return"";}});
   const[selDay,setSelDay]=useState(()=>{try{const s=localStorage.getItem("selDay_v1");if(s)return s;}catch{}const k=Object.keys(SEED_DAYS).sort();return k[k.length-1];});
   const[tab,setTab]=useState("day");
   const[modal,setModal]=useState(null);
@@ -270,8 +270,8 @@ function App(){
   const[nameIn,setNameIn]=useState("");
   const[wForm,setWForm]=useState({date:todayStr(),kg:""});
   const[milestones,setMilestones]=useState(()=>{try{return JSON.parse(localStorage.getItem("ms_v1")||"{}");}catch{return{};}});
-  const[babyDob,setBabyDob]=useState(()=>localStorage.getItem("dob_v1")||"");
-  const[babySex,setBabySex]=useState(()=>localStorage.getItem("sex_v1")||"");
+  const[babyDob,setBabyDob]=useState(()=>{try{return localStorage.getItem("dob_v1")||"";}catch{return"";}});
+  const[babySex,setBabySex]=useState(()=>{try{return localStorage.getItem("sex_v1")||"";}catch{return"";}});
   const theme = babySex==="girl"
     ? {primary:"#fde7e4",secondary:"#f5ccc7"}
     : babySex==="boy"
@@ -279,17 +279,19 @@ function App(){
     : {primary:"#c9705a",secondary:"#7a5c52"};
   const[growthForm,setGrowthForm]=useState({date:todayStr(),kg:""});
   const[onboarded,setOnboarded]=useState(()=>{
-    const done = localStorage.getItem("onboarded_v2");
-    const hasName = localStorage.getItem("bn_v2");
-    const hasDob = localStorage.getItem("dob_v1");
-    return !!(done || (hasName && hasDob));
+    try{
+      const done = localStorage.getItem("onboarded_v2");
+      const hasName = localStorage.getItem("bn_v2");
+      const hasDob = localStorage.getItem("dob_v1");
+      return !!(done || (hasName && hasDob));
+    }catch{return false;}
   });
   const[obStep,setObStep]=useState(0);
   const[obName,setObName]=useState("");
   const[obDob,setObDob]=useState("");
   const[obSex,setObSex]=useState("");
   const[editEntry,setEditEntry]=useState(null);
-  const[insightDismissed,setInsightDismissed]=useState(()=>!!localStorage.getItem("ins_v1"));
+  const[insightDismissed,setInsightDismissed]=useState(()=>{try{return!!localStorage.getItem("ins_v1");}catch{return false;}});
   const[showInsights,setShowInsights]=useState(false);
   const[pasteText,setPasteText]=useState("");
   const[parsedEntries,setParsedEntries]=useState(null);
@@ -794,7 +796,30 @@ function App(){
     ln.push("");ln.push(`Total feeds: ${totalMl}ml · Naps: ${naps.length} (${hm(napMins)})`);
     navigator.clipboard.writeText(ln.join("\n")).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});
   }
-  function addDay(){if(!newDate)return;if(!days[newDate])setDays(d=>({...d,[newDate]:[]}));setSelDay(newDate);setModal(null);}
+  function addDay(){
+    if(!newDate)return;
+    if(!days[newDate])setDays(d=>({...d,[newDate]:[]}));
+    setSelDay(newDate);
+    setModal(null);
+  }
+
+  // Auto-create tomorrow whenever a day exists but tomorrow doesn't yet
+  useEffect(()=>{
+    const keys = Object.keys(days).sort();
+    if (keys.length === 0) return;
+    const lastKey = keys[keys.length - 1];
+    const lastDate = new Date(lastKey + "T00:00:00");
+    const tomorrow = new Date(lastDate);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split("T")[0];
+    // Only add if tomorrow doesn't already exist and it's not in the future beyond tomorrow
+    const todayDate = new Date(todayStr() + "T00:00:00");
+    const dayAfterTomorrow = new Date(todayDate);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+    if (!days[tomorrowStr] && tomorrow <= dayAfterTomorrow) {
+      setDays(d => ({...d, [tomorrowStr]: []}));
+    }
+  },[Object.keys(days).join(",")]);
   function saveEditDay(){
     if(!editDate||editDate===menuDay){setModal(null);return;}
     if(days[editDate]){alert("A day with that date already exists.");return;}
@@ -812,6 +837,14 @@ function App(){
     const updated=[...weights.filter(x=>x.date!==wForm.date),{date:wForm.date,kg:parseFloat(wForm.kg)}].sort((a,b)=>a.date.localeCompare(b.date));
     setWeights(updated);setWForm({date:todayStr(),kg:""});
   }
+
+  // Auto-select most recent day if nothing is selected
+  useEffect(()=>{
+    const keys = Object.keys(days).sort();
+    if (keys.length > 0 && (!selDay || !days[selDay])) {
+      setSelDay(keys[keys.length - 1]);
+    }
+  },[Object.keys(days).join(",")]);
 
   const tabSt=t=>({flex:1,padding:"10px 2px",border:"none",background:"none",fontSize:10,fontWeight:700,cursor:"pointer",color:tab===t?C.ter:C.lt,borderTop:tab===t?`2px solid ${C.ter}`:"2px solid transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.04em",textTransform:"uppercase"});
   const card={background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"};
@@ -1019,12 +1052,14 @@ function App(){
                 const scoreLabel = sleepScoreLabel(score);
                 const advice = sleepAdvice();
                 const tired = tiredDetection();
-                const bed = bedtimePrediction();
-                const hasData = (days[selDay]||[]).some(e=>e.type==="nap");
+                const suggestedBed = bedtimePrediction();
+                const hasNap = (days[selDay]||[]).some(e=>e.type==="nap");
+                const actualBedEntry = dayE.find(e=>e.type==="sleep");
+                const pred = predictNextNap();
+                const minsAway = pred ? minutesUntil(pred.napStart_min) : null;
 
-                if (!hasData) return null;
+                if (!hasNap) return null;
 
-                // Score ring as a simple arc
                 const radius = 22;
                 const circumference = 2 * Math.PI * radius;
                 const strokeDash = (score / 100) * circumference;
@@ -1058,20 +1093,58 @@ function App(){
                     </div>
                     {/* Tired detection pill */}
                     {tired && (
-                      <div style={{display:"inline-block",fontSize:11,fontFamily:"monospace",padding:"4px 12px",borderRadius:99,background:tired.startsWith("⚠️")||tired.startsWith("💤")?`${C.ter}18`:`${C.mint}18`,color:tired.startsWith("✓")?C.mint:C.ter,marginBottom:bed?10:0}}>
+                      <div style={{display:"inline-block",fontSize:11,fontFamily:"monospace",padding:"4px 12px",borderRadius:99,background:tired.startsWith("⚠️")||tired.startsWith("💤")?`${C.ter}18`:`${C.mint}18`,color:tired.startsWith("✓")?C.mint:C.ter,marginBottom:8}}>
                         {tired}
                       </div>
                     )}
-                    {/* Bedtime suggestion */}
-                    {bed && (
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg,#d5e7f2,#e8f3fa)",borderRadius:14,padding:"10px 14px",marginTop:8}}>
+                    {/* ── Bedtime logged: show confirmed tile ── */}
+                    {actualBedEntry ? (
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg,#1a1228,#231832)",borderRadius:14,padding:"10px 14px",marginTop:4}}>
+                        <div>
+                          <div style={{fontSize:10,fontFamily:"monospace",color:"#8878a8",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>Bedtime Logged 🌙</div>
+                          <div style={{fontSize:11,color:"#a898c8"}}>Sleep tight!</div>
+                        </div>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:"#d8cce8"}}>{fmt12(actualBedEntry.time)}</div>
+                      </div>
+                    ) : pred ? (
+                      /* ── No bedtime yet: show next nap OR suggested bedtime ── */
+                      <div style={{borderRadius:14,overflow:"hidden",marginTop:4}}>
+                        {/* Next nap window */}
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg,#f0faf6,#e8f5f0)",padding:"10px 14px",borderBottom:"1px solid #b8e8d4"}}>
+                          <div>
+                            <div style={{fontSize:10,fontFamily:"monospace",color:C.mint,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>😴 Next Nap Window</div>
+                            <div style={{fontSize:11,color:C.mid}}>
+                              {minsAway != null && minsAway > 0
+                                ? `In about ${minsAway} min · `
+                                : "Now · "}
+                              <span style={{color:C.lt}}>{pred.sourceLabel}</span>
+                            </div>
+                          </div>
+                          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:C.mint,textAlign:"right"}}>
+                            {fmt12(pred.napStart_min)}<span style={{fontSize:13,fontWeight:400,color:C.lt}}>–{fmt12(pred.napStart_max)}</span>
+                          </div>
+                        </div>
+                        {/* Suggested bedtime */}
+                        {suggestedBed && (
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg,#d5e7f2,#e8f3fa)",padding:"10px 14px"}}>
+                            <div>
+                              <div style={{fontSize:10,fontFamily:"monospace",color:C.sky,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>Suggested Bedtime</div>
+                              <div style={{fontSize:11,color:C.mid}}>Based on last nap + wake window</div>
+                            </div>
+                            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.sky}}>{fmt12(suggestedBed)}</div>
+                          </div>
+                        )}
+                      </div>
+                    ) : suggestedBed ? (
+                      /* ── Has naps but no more nap prediction (last nap done): show bedtime ── */
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg,#d5e7f2,#e8f3fa)",borderRadius:14,padding:"10px 14px",marginTop:4}}>
                         <div>
                           <div style={{fontSize:10,fontFamily:"monospace",color:C.sky,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>Suggested Bedtime</div>
-                          <div style={{fontSize:11,color:C.mid}}>Based on last nap end + wake window</div>
+                          <div style={{fontSize:11,color:C.mid}}>Based on last nap + wake window</div>
                         </div>
-                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.sky}}>{fmt12(bed)}</div>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.sky}}>{fmt12(suggestedBed)}</div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 );
               })()}
@@ -1187,24 +1260,7 @@ function App(){
                 })()}
               </div>
 
-              {/* Nap prediction */}
-              {(()=>{
-                const pred = predictNextNap();
-                const minsAway = pred ? minutesUntil(pred.napStart_min) : null;
-                if (!pred) return null;
-                return (
-                  <div style={{background:"linear-gradient(135deg,#f0faf6,#e8f5f0)",border:`1px solid #b8e8d4`,borderRadius:18,padding:"13px 15px",marginBottom:12}}>
-                    <div style={{fontSize:11,fontFamily:"monospace",color:C.mint,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>😴 Next Nap Prediction</div>
-                    <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.mint,fontWeight:700}}>
-                      {fmt12(pred.napStart_min)} – {fmt12(pred.napStart_max)}
-                    </div>
-                    {minsAway!=null && <div style={{fontSize:12,color:C.ter,marginTop:6,fontWeight:700}}>Next nap in about {minsAway} minutes</div>}
-                    <div style={{fontSize:12,color:C.mid,marginTop:4,lineHeight:1.5}}>
-                      Based on last awake since <strong>{fmt12(pred.lastAwakeStart)}</strong> · <strong>{pred.sourceLabel}</strong>
-                    </div>
-                  </div>
-                );
-              })()}
+
 
               {/* Insights prompt */}
               {Object.keys(days).length >= 7 && !insightDismissed && !showInsights && (
@@ -1213,7 +1269,7 @@ function App(){
                   <div style={{fontSize:12,color:C.mid,marginBottom:10,lineHeight:1.5}}>Want to see personalised sleep & feeding insights based on {possessive(babyName||"your baby")} patterns?</div>
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>setShowInsights(true)} style={{flex:1,background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:"none",borderRadius:99,padding:"9px",color:"white",fontSize:12,fontWeight:700,cursor:"pointer"}}>Yes, show me →</button>
-                    <button onClick={()=>{setInsightDismissed(true);localStorage.setItem("ins_v1","1");}} style={{background:"none",border:`1px solid ${C.blush}`,borderRadius:99,padding:"9px 14px",color:C.lt,fontSize:12,cursor:"pointer"}}>Maybe later</button>
+                    <button onClick={()=>{setInsightDismissed(true);try{localStorage.setItem("ins_v1","1");}catch{}}} style={{background:"none",border:`1px solid ${C.blush}`,borderRadius:99,padding:"9px 14px",color:C.lt,fontSize:12,cursor:"pointer"}}>Maybe later</button>
                   </div>
                 </div>
               )}
@@ -1871,11 +1927,7 @@ function App(){
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 
-<script>
-window.onerror = function(msg, src, line, col, err) {
-  document.getElementById('root').innerHTML = '<div style="padding:30px;font-family:monospace;background:#fff0f0;color:#c00;border-radius:12px;margin:20px"><b>JS Error:</b><br><br>' + msg + '<br><br>Line: ' + line + ', Col: ' + col + '<br><br>' + (err ? err.stack : '') + '</div>';
-};
-</script>
+<style>
 body.boy header,body.boy .gender-accent{background:#eaf3fb!important;}
 body.girl header,body.girl .gender-accent{background:#fde7e4!important;}
 </style>
