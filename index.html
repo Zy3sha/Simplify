@@ -1349,7 +1349,6 @@ function App(){
                   );
                 })}
               </div>
-              </div>
 
               {/* Night wakes */}
               <div style={{background:"#1a1228",borderRadius:20,padding:"14px 17px",marginBottom:14}}>
@@ -2101,6 +2100,12 @@ function App(){
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+<script>
+window.addEventListener('error', function(e) {
+  document.getElementById('root').innerHTML = '<div style="padding:20px;font-family:monospace;font-size:12px;background:#fff0f0;color:#c00;white-space:pre-wrap;border-radius:8px;margin:10px">' + (e.message||'') + '\n\nLine: ' + e.lineno + '\n\n' + (e.error&&e.error.stack ? e.error.stack : '') + '</div>';
+});
 </script>
 
 
