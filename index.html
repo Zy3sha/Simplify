@@ -293,10 +293,12 @@ function App(){
   const[wForm,setWForm]=useState({date:todayStr(),kg:""});
   const[milestones,setMilestones]=useState(()=>{try{return JSON.parse(localStorage.getItem("ms_v1")||"{}");}catch{return{};}});
   const[babyDob,setBabyDob]=useState(()=>localStorage.getItem("dob_v1")||"");
-  const[babySex,setBabySex]=useState(()=>localStorage.getItem("sex_v1")||"boy");
+  const[babySex,setBabySex]=useState(()=>localStorage.getItem("sex_v1")||"");
   const theme = babySex==="girl"
     ? {primary:"#ff9ecf",secondary:"#e66aa8"}
-    : {primary:"#7aa7ff",secondary:"#4c79d8"};
+    : babySex==="boy"
+    ? {primary:"#7aa7ff",secondary:"#4c79d8"}
+    : {primary:"#c9705a",secondary:"#7a5c52"};
   const[growthForm,setGrowthForm]=useState({date:todayStr(),kg:""});
   const[onboarded,setOnboarded]=useState(()=>{
     // Show onboarding if never completed OR if name+dob both missing
@@ -308,7 +310,7 @@ function App(){
   const[obStep,setObStep]=useState(0);
   const[obName,setObName]=useState("");
   const[obDob,setObDob]=useState("");
-  const[obSex,setObSex]=useState("boy");
+  const[obSex,setObSex]=useState("");
   const[editEntry,setEditEntry]=useState(null); // entry being edited
   const[insightDismissed,setInsightDismissed]=useState(()=>!!localStorage.getItem("ins_v1"));
   const[showInsights,setShowInsights]=useState(false);
@@ -920,16 +922,20 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
       },
       {
         icon:"✨", title:`One last thing —\nis ${obName.trim()||"your baby"} a…`,
-        sub:"This helps us use the right WHO growth charts.",
+        sub:"This helps us use the right WHO growth charts. You can skip this if you prefer.",
         action: (
           <div style={{width:"100%",marginTop:20}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
-              {[["boy","👦 Boy"],["girl","👧 Girl"]].map(([v,l])=>(
-                <div key={v} onClick={()=>setObSex(v)} style={{padding:"20px 10px",borderRadius:18,border:`2px solid ${obSex===v?C.ter:C.blush}`,background:obSex===v?"#fdf0eb":"white",textAlign:"center",cursor:"pointer",fontSize:20,fontWeight:700,color:obSex===v?C.ter:C.mid}}>
-                  {l}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+              {[["boy","👦","Boy","#7aa7ff"],["girl","👧","Girl","#ff9ecf"]].map(([v,emoji,l,accent])=>(
+                <div key={v} onClick={()=>setObSex(v)} style={{padding:"20px 10px",borderRadius:18,border:`2px solid ${obSex===v?accent:C.blush}`,background:obSex===v?`${accent}22`:"white",textAlign:"center",cursor:"pointer",transition:"all 0.2s"}}>
+                  <div style={{fontSize:28,marginBottom:4}}>{emoji}</div>
+                  <div style={{fontSize:15,fontWeight:700,color:obSex===v?accent:C.mid}}>{l}</div>
                 </div>
               ))}
             </div>
+            <button onClick={()=>setObSex("")} style={{width:"100%",padding:"12px",borderRadius:14,border:`2px solid ${obSex===""?C.ter:C.blush}`,background:obSex===""?"#fdf0eb":"white",color:obSex===""?C.ter:C.mid,fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:14,fontFamily:"inherit",transition:"all 0.2s"}}>
+              Prefer not to say / skip
+            </button>
             <button onClick={completeOnboarding} style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:"none",borderRadius:99,padding:"14px",color:"white",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 20px rgba(201,112,90,0.4)"}}>
               Start Tracking 🌙
             </button>
@@ -947,7 +953,11 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
           ))}
         </div>
         <div key={obStep} style={{animation:"fadeUp 0.4s ease",textAlign:"center",width:"100%",maxWidth:360}}>
-          <div style={{fontSize:64,marginBottom:20,lineHeight:1}}>{step.icon}</div>
+          <div style={{marginBottom:20,lineHeight:1,display:"flex",justifyContent:"center"}}>
+            {typeof step.icon === "string"
+              ? <span style={{fontSize:64}}>{step.icon}</span>
+              : step.icon}
+          </div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:700,color:C.deep,lineHeight:1.25,whiteSpace:"pre-line",marginBottom:12}}>{step.title}</div>
           <div style={{fontSize:14,color:C.lt,lineHeight:1.7,marginBottom:4}}>{step.sub}</div>
           {step.action}
