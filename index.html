@@ -87,7 +87,7 @@ function Sheet({onClose,title,children}){
 function Inp({label,...p}){
   return(
     <div style={{marginBottom:12}}>
-      {label&&<label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>{label}</label>}
+      {label&&<label style={{fontSize:13,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>{label}</label>}
       <input {...p} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box",...(p.style||{})}}/>
     </div>
   );
@@ -101,7 +101,7 @@ function PBtn({children,onClick,v="pri",style={}}){
 function Badge({type,children}){
   const bg={feed:"#f5e0d8",nap:"#d4ede6",sleep:"#d5e7f2",wake:"#f5eccb",poop:"#e8e0d4"};
   const fg={feed:C.ter,nap:C.mint,sleep:C.sky,wake:"#b88a20",poop:"#8a7060"};
-  return <span style={{display:"inline-block",padding:"3px 9px",borderRadius:99,fontSize:11,fontFamily:"monospace",background:bg[type]||bg.feed,color:fg[type]||fg.feed}}>{children}</span>;
+  return <span style={{display:"inline-block",padding:"3px 9px",borderRadius:99,fontSize:13,fontFamily:"monospace",background:bg[type]||bg.feed,color:fg[type]||fg.feed}}>{children}</span>;
 }
 
 function TrendLine({vals,keys,color,unit=""}){
@@ -263,10 +263,13 @@ function calcAge(dob) {
 function App(){
   const timerRef = React.useRef(null);
 
-  const[days,setDays]=useState(()=>{try{const r=localStorage.getItem(STORAGE_KEY);if(r)return JSON.parse(r);}catch{}return SEED_DAYS;});
+  const[days,setDays]=useState(()=>{
+    try{const r=localStorage.getItem(STORAGE_KEY);if(r){const d=JSON.parse(r);if(!d[todayStr()])d[todayStr()]=[];return d;}}catch{}
+    const d={};d[todayStr()]=[];return d;
+  });
   const[weights,setWeights]=useState(()=>{try{return JSON.parse(localStorage.getItem("bw_v2")||"[]");}catch{return[];}});
   const[babyName,setBabyName]=useState(()=>{try{return localStorage.getItem("bn_v2")||"";}catch{return"";}});
-  const[selDay,setSelDay]=useState(()=>{try{const s=localStorage.getItem("selDay_v1");if(s)return s;}catch{}const k=Object.keys(SEED_DAYS).sort();return k[k.length-1];});
+  const[selDay,setSelDay]=useState(todayStr);
   const[tab,setTab]=useState("day");
   const[modal,setModal]=useState(null);
   const[eType,setEType]=useState("feed");
@@ -286,6 +289,7 @@ function App(){
   const[wForm,setWForm]=useState({date:todayStr(),kg:""});
   const[milestones,setMilestones]=useState(()=>{try{return JSON.parse(localStorage.getItem("ms_v1")||"{}");}catch{return{};}});
   const[babyDob,setBabyDob]=useState(()=>{try{return localStorage.getItem("dob_v1")||"";}catch{return"";}});
+  const[babyUnborn,setBabyUnborn]=useState(()=>{try{return localStorage.getItem("unborn_v1")==="1";}catch{return false;}});
   const[babySex,setBabySex]=useState(()=>{try{return localStorage.getItem("sex_v1")||"";}catch{return"";}});
   const theme = babySex==="girl"
     ? {primary:"#fde7e4",secondary:"#f5ccc7"}
@@ -327,6 +331,7 @@ function App(){
   useEffect(()=>{try{localStorage.setItem("bn_v2",babyName);}catch{}},[babyName]);
   useEffect(()=>{try{localStorage.setItem("ms_v1",JSON.stringify(milestones));}catch{}},[milestones]);
   useEffect(()=>{try{localStorage.setItem("dob_v1",babyDob);}catch{}},[babyDob]);
+  useEffect(()=>{try{localStorage.setItem("unborn_v1",babyUnborn?"1":"0");}catch{}},[babyUnborn]);
   useEffect(()=>{try{localStorage.setItem("sex_v1",babySex);}catch{}},[babySex]);
   useEffect(()=>{if(onboarded)try{localStorage.setItem("onboarded_v2","1");}catch{}},[onboarded]);
   useEffect(()=>{
@@ -474,23 +479,37 @@ function App(){
 
     let wakeWindowMin, wakeWindowMax, sourceLabel;
     const loggedDays = Object.keys(days).filter(d => (days[d]||[]).some(e=>!e.night)).sort();
+    // Only use personalised windows from days that actually have nap data
+    const napDays = loggedDays.filter(d => (days[d]||[]).some(e => e.type==="nap" && !e.night && e.start && e.end));
 
-    if (loggedDays.length < 7) {
+    if (napDays.length < 7) {
       const ww = getWakeWindow(ageWeeks);
       wakeWindowMin = ww.min;
       wakeWindowMax = ww.max;
       sourceLabel = `age-appropriate wake windows for ${age.months}mo`;
     } else {
-      const recent = loggedDays.slice(-7);
+      const recent = napDays.slice(-7);
       let windows = [];
       recent.forEach(d => {
         const ws = getAwakeWindows(days[d]||[]);
-        ws.forEach(w => { if (w.mins) windows.push(w.mins); });
+        ws.forEach(w => { if (w.mins && w.mins >= 20) windows.push(w.mins); }); // filter out junk <20min windows
       });
-      const avgWindow = windows.length ? Math.round(windows.reduce((a,b)=>a+b,0)/windows.length) : getWakeWindow(ageWeeks).min;
-      wakeWindowMin = Math.max(30, Math.round(avgWindow * 0.9));
-      wakeWindowMax = Math.max(wakeWindowMin + 10, Math.round(avgWindow * 1.1));
-      sourceLabel = `personalised sleep windows from the last ${recent.length} days`;
+      if (windows.length < 3) {
+        // Not enough real wake window data, fall back to age defaults
+        const ww = getWakeWindow(ageWeeks);
+        wakeWindowMin = ww.min;
+        wakeWindowMax = ww.max;
+        sourceLabel = `age-appropriate wake windows for ${age.months}mo`;
+      } else {
+        // Trim outliers (top & bottom 10%) for a clean average
+        const sorted2 = [...windows].sort((a,b)=>a-b);
+        const trim = Math.max(1, Math.floor(sorted2.length * 0.1));
+        const trimmed = sorted2.slice(trim, sorted2.length - trim);
+        const avgWindow = Math.round(trimmed.reduce((a,b)=>a+b,0) / trimmed.length);
+        wakeWindowMin = Math.max(30, Math.round(avgWindow * 0.88));
+        wakeWindowMax = Math.max(wakeWindowMin + 15, Math.round(avgWindow * 1.12));
+        sourceLabel = `your avg wake window (${avgWindow}min) · last 7 days`;
+      }
     }
 
     const sorted = [...(days[selDay]||[])].filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
@@ -513,14 +532,14 @@ function App(){
     const napMaxMins = maxH*60 + maxM;
     if (nowMins > napMaxMins) return null;
 
-    // If predicted bedtime is within 60 min of nap window start, suppress nap
+    // Suppress nap if it's too close to bedtime — gap must be at least one full wake window max
     const bed = bedtimePrediction();
     if (bed) {
       const [bh, bm] = bed.time.split(":").map(Number);
       const bedMins = bh*60 + bm;
       const [minH, minM] = napStart_min.split(":").map(Number);
       const napMinMins = minH*60 + minM;
-      if (bedMins - napMinMins < 60) return null;
+      if (bedMins - napMinMins < wakeWindowMax) return null;
     }
 
     return { napStart_min, napStart_max, wakeWindowMin, wakeWindowMax, sourceLabel, lastAwakeStart };
@@ -615,10 +634,13 @@ function App(){
       adjustReason = `Long last nap (${lastNapMins}min) — bedtime shifted slightly later`;
     }
 
-    // ── 3. Also check: last nap end + min wake window as a floor ──
+    // ── 3. Floor: no earlier than last nap end + min wake window
+    //    Cap:   no later than last nap end + max wake window (biology wins over history)
     const [lh2,lm2] = lastNap.end.split(":").map(Number);
-    const earliestBed = lh2*60+lm2 + ww.min;
-    const finalMins = Math.max(earliestBed, baseBedMins + adjustMins);
+    const lastNapEndMins = lh2*60+lm2;
+    const earliestBed = lastNapEndMins + ww.min;
+    const latestBed   = lastNapEndMins + ww.max;
+    const finalMins = Math.min(latestBed, Math.max(earliestBed, baseBedMins + adjustMins));
 
     const hh = Math.floor(finalMins/60)%24;
     const mm = finalMins%60;
@@ -834,6 +856,99 @@ function App(){
     return { totalMl, min, max, label, status, color, bg, icon, message };
   }
 
+  // ── FEATURE 5: Feed suggestions based on intake + timing ──
+  function feedSuggestions() {
+    const age = calcAge(babyDob);
+    if (!age) return null;
+    const w = age.totalWeeks;
+    const today = days[selDay] || [];
+    const milkFeeds = today.filter(e => e.type==="feed" && e.feedType!=="solids" && !e.night && e.time);
+    if (milkFeeds.length < 2) return null;
+
+    const totalMl = milkFeeds.reduce((s,f) => s+(f.amount||0), 0);
+    const range = napNormalRange ? napNormalRange() : null;
+
+    // Age-based targets
+    let targetMl, targetFeeds;
+    if (w < 8)       { targetMl=700;  targetFeeds=7; }
+    else if (w < 13) { targetMl=750;  targetFeeds=6; }
+    else if (w < 26) { targetMl=850;  targetFeeds=5; }
+    else if (w < 39) { targetMl=750;  targetFeeds=4; }
+    else             { targetMl=600;  targetFeeds=4; }
+
+    const suggestions = [];
+    const shortfall = targetMl - totalMl;
+    const feedCount = milkFeeds.length;
+
+    // Sort feeds by time
+    const sorted = [...milkFeeds].sort((a,b) => timeVal(a) - timeVal(b));
+    const amounts = sorted.map(f => f.amount||0);
+    const avgFeed = totalMl / feedCount;
+
+    // 1. Low total intake
+    if (shortfall > 200) {
+      const topUp = Math.round(shortfall / feedCount);
+      suggestions.push({
+        icon:"📈",
+        title:"Intake is lower than usual",
+        body:`Baby is ${shortfall}ml below target today. Try adding ${topUp}ml to each feed, or offer an extra feed if baby shows hunger cues.`
+      });
+    } else if (shortfall > 80) {
+      // Find naps and suggest topping up after second nap
+      const naps = today.filter(e => e.type==="nap" && !e.night && e.end);
+      if (naps.length >= 2) {
+        suggestions.push({
+          icon:"🍼",
+          title:"Small top-up opportunity",
+          body:`Baby is ${shortfall}ml below target. Consider offering an extra ${shortfall}ml after the second nap when baby is typically alert and hungry.`
+        });
+      } else {
+        suggestions.push({
+          icon:"🍼",
+          title:"Small top-up opportunity",
+          body:`Baby is ${shortfall}ml below target. Offering a small top-up of ${shortfall}ml at the next feed could help reach the daily goal.`
+        });
+      }
+    }
+
+    // 2. Uneven distribution — one feed much larger than others
+    const maxFeed = Math.max(...amounts);
+    const minFeed = Math.min(...amounts);
+    if (feedCount >= 3 && maxFeed > avgFeed * 1.5 && minFeed < avgFeed * 0.6) {
+      const evenAmount = Math.round(totalMl / feedCount / 10) * 10;
+      suggestions.push({
+        icon:"⚖️",
+        title:"Uneven feed distribution",
+        body:`Feeds range from ${minFeed}ml to ${maxFeed}ml. More even feeds of around ${evenAmount}ml can help reduce wind, improve digestion, and keep hunger steadier throughout the day.`
+      });
+    }
+
+    // 3. Long gap between feeds
+    for (let i = 1; i < sorted.length; i++) {
+      const gap = timeVal(sorted[i]) - timeVal(sorted[i-1]);
+      if (gap > (w < 13 ? 210 : 270)) {
+        const gapH = Math.floor(gap/60), gapM = gap%60;
+        suggestions.push({
+          icon:"⏰",
+          title:"Long gap between feeds",
+          body:`There's a ${gapH}h ${gapM>0?gapM+"m ":""}gap between the ${fmt12(sorted[i-1].time)} and ${fmt12(sorted[i].time)} feeds. Shorter gaps can help keep intake steady and prevent hunger-driven overfeeding.`
+        });
+        break;
+      }
+    }
+
+    // 4. Good day — positive reinforcement
+    if (suggestions.length === 0 && totalMl >= targetMl * 0.95) {
+      suggestions.push({
+        icon:"✓",
+        title:"Feeds looking great today",
+        body:`Baby has had ${totalMl}ml across ${feedCount} feeds — well distributed and on target for this age. Keep it up!`
+      });
+    }
+
+    return suggestions.length ? suggestions : null;
+  }
+
   function analyseTrends() {
     const dk = Object.keys(days).sort();
     if (dk.length < 3) return null;
@@ -989,7 +1104,15 @@ function App(){
     const warnings = [];
     let lastMinutes = null;
 
+    // Seed lastMinutes from today's existing entries so "9 feed 120" knows 9 = 9am
+    const todayEntries = (days[selDay]||[]).filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
+    if (todayEntries.length > 0) {
+      const first = todayEntries[0];
+      lastMinutes = timeVal(first);
+    }
+
     let detectedDate = null;
+    // Check for explicit date first
     if (rawLines.length > 0) {
       const dateMatch = rawLines[0].match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
       if (dateMatch) {
@@ -998,30 +1121,39 @@ function App(){
         detectedDate = yr+"-"+mo.padStart(2,"0")+"-"+d.padStart(2,"0");
       }
     }
+    // If someone says "today" anywhere in the text, use today's date
+    if (!detectedDate && rawLines.some(l => /\btoday\b/i.test(l))) {
+      detectedDate = todayStr();
+    }
+    // Strip "today" from lines before parsing so it doesn't confuse time detection
+    const processedLines = rawLines.map(l => l.replace(/\btoday\b/gi, "").trim()).filter(Boolean);
 
-    rawLines.forEach(function(raw) {
-      const l = raw.toLowerCase();
+    processedLines.forEach(function(raw) {
+      const l = raw.toLowerCase().trim();
       if (/^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.](\d{2,4})/.test(l)) return;
       if (/^(day|date)\s*:/.test(l)) return;
 
+      // ── Dream feed ──
       if (/dream\s*feed/.test(l)) {
         const t = parseTime(raw.replace(/dream\s*feed/i,""), lastMinutes);
         const ml = parseAmount(raw);
-        if (t) { entries.push({type:"feed",time:t,amount:ml,night:true,note:"Dream feed",id:uid()}); lastMinutes = timeVal(t); }
+        if (t) { entries.push({type:"feed",time:t,amount:ml,night:true,note:"Dream feed",id:uid(),feedType:"milk"}); lastMinutes = timeVal(t); }
         else warnings.push('Couldn\'t parse dream feed: "'+raw+'"');
         return;
       }
 
+      // ── Night wakes ──
       if (/wake\s*\d|night\s*wake|woke\s*\d/.test(l)) {
         const t = parseTime(raw.replace(/wake\s*\d+|night\s*wake|woke\s*\d+/i,""), lastMinutes);
         const ml = parseAmount(raw);
         const hasNote = /self.settled|settled\s*without|no\s*milk|went\s*back|fussed|cried/i.test(raw);
         const note = hasNote ? raw.replace(/wake\s*\d+/i,"").replace(/^\s*[-–:\s]*/,"").trim() : "";
-        if (t) { entries.push({type:ml>0?"feed":"wake",time:t,amount:ml||0,night:true,note:note,id:uid()}); lastMinutes = timeVal(t); }
+        if (t) { entries.push({type:ml>0?"feed":"wake",time:t,amount:ml||0,night:true,note:note,id:uid(),feedType:"milk"}); lastMinutes = timeVal(t); }
         else warnings.push('Couldn\'t parse night wake: "'+raw+'"');
         return;
       }
 
+      // ── Morning wake up ──
       if (/woke?\s*up|wake\s*up|morning|got\s*up/.test(l)) {
         const t = parseTime(raw.replace(/woke?\s*up|wake\s*up|morning|got\s*up/i,""), lastMinutes);
         if (t) { entries.push({type:"wake",time:t,night:false,note:"",id:uid()}); lastMinutes = timeVal(t); }
@@ -1029,13 +1161,15 @@ function App(){
         return;
       }
 
-      if (/\b(asleep|bedtime|bed time|went to sleep|down for bed)\b/.test(l) && !/nap/.test(l)) {
-        const t = parseTime(raw.replace(/asleep|bedtime|bed time|went to sleep|down for bed/i,""), lastMinutes);
+      // ── Bedtime ──
+      if (/\b(asleep|bedtime|bed time|went to sleep|down for bed|bed)\b/.test(l) && !/nap/.test(l)) {
+        const t = parseTime(raw.replace(/asleep|bedtime|bed time|went to sleep|down for bed|bed/i,""), lastMinutes);
         if (t) { entries.push({type:"sleep",time:t,night:false,note:"",id:uid()}); lastMinutes = timeVal(t); }
         else warnings.push('Couldn\'t parse bedtime: "'+raw+'"');
         return;
       }
 
+      // ── Nap ──
       if (/\bnap\b/.test(l)) {
         const rangeStr = raw.replace(/nap\s*\d*/i,"").replace(/^[\s:\-–]+/,"").trim();
         const range = parseTimeRange(rangeStr, lastMinutes);
@@ -1049,15 +1183,43 @@ function App(){
         return;
       }
 
+      // ── Explicit feed keywords ──
       if (/feed|fed|bottle|milk|oz|\bml\b/.test(l) && !/sleep/.test(l)) {
         const ml = parseAmount(raw);
         const cleaned = raw.replace(/feed|fed|bottle|milk/i,"").replace(/\d+\s*ml/i,"").trim();
         const range = parseTimeRange(cleaned, lastMinutes);
         const t = range ? range.start : parseTime(cleaned, lastMinutes);
-        if (t) { entries.push({type:"feed",time:t,amount:ml,night:false,note:"",id:uid()}); lastMinutes = timeVal(t); }
+        if (t) { entries.push({type:"feed",time:t,amount:ml,night:false,note:"",id:uid(),feedType:"milk"}); lastMinutes = timeVal(t); }
         else warnings.push('Couldn\'t parse feed: "'+raw+'"');
         return;
       }
+
+      // ── Context-aware shorthand: "9 120" or "9 feed 120" or "9am 150ml" ──
+      // Pattern: hour + optional label + amount (number that looks like ml: 50–500)
+      const shorthand = l.match(/^(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:feed|bottle|fed|f)?\s*(\d{2,3})(?:\s*ml)?$/);
+      if (shorthand) {
+        const t = parseTime(shorthand[1], lastMinutes);
+        const ml = parseInt(shorthand[2]);
+        if (t && ml >= 10 && ml <= 500) {
+          entries.push({type:"feed",time:t,amount:ml,night:false,note:"",id:uid(),feedType:"milk"});
+          lastMinutes = timeVal(t);
+          return;
+        }
+      }
+
+      // ── Fallback: bare hour + number (e.g. "9 120") using context to decide am/pm ──
+      const bare = l.match(/^(\d{1,2}(?::\d{2})?)\s+(\d{2,3})$/);
+      if (bare) {
+        const t = parseTime(bare[1], lastMinutes);
+        const num = parseInt(bare[2]);
+        if (t && num >= 10 && num <= 500) {
+          entries.push({type:"feed",time:t,amount:num,night:false,note:"",id:uid(),feedType:"milk"});
+          lastMinutes = timeVal(t);
+          return;
+        }
+      }
+
+      warnings.push('Couldn\'t understand: "'+raw+'" — skipped');
     });
 
     return { entries: entries, warnings: warnings, detectedDate: detectedDate };
@@ -1070,6 +1232,11 @@ function App(){
 
   function runParse() {
     if (!pasteText.trim()) return;
+    // Must have a day selected or a date in the text to paste into
+    if (!selDay && !pasteText.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/)) {
+      setParseError("Please select or create a day first before pasting entries.");
+      return;
+    }
     const result = smartParse(pasteText);
     if (result.entries.length === 0) {
       setParseError("Couldn't find any entries. Try including times like '9am', '11:15-12:35' and keywords like Feed, Nap, Wake.");
@@ -1083,6 +1250,10 @@ function App(){
   function confirmPaste() {
     if (!parsedEntries) return;
     const date = parsedEntries.detectedDate || selDay;
+    if (!date) {
+      setParseError("No day selected. Please create or select a day first.");
+      return;
+    }
     setDays(d => {
       const existing = d[date] || [];
       return { ...d, [date]: [...existing, ...parsedEntries.entries] };
@@ -1162,20 +1333,23 @@ function App(){
   }
 
   // Auto-create the day after selDay — but only once selDay has at least one entry
+  // ── Ensure today always exists & create next day at midnight ──
   useEffect(()=>{
-    if (!selDay) return;
-    const entries = days[selDay] || [];
-    if (entries.length === 0) return; // don't generate until data is actually entered
-
-    const base = new Date(selDay + "T00:00:00");
-    const next = new Date(base);
-    next.setDate(next.getDate() + 1);
-    const nextStr = next.toISOString().split("T")[0];
-
-    if (!days[nextStr]) {
-      setDays(d => ({...d, [nextStr]: []}));
+    function ensureToday(){
+      const t = todayStr();
+      setDays(d => d[t] ? d : {...d, [t]: []});
+      setSelDay(s => s === t ? s : t); // jump to today at midnight
     }
-  },[selDay, (days[selDay]||[]).length]);
+    ensureToday();
+    // Schedule tick at next midnight
+    function scheduleMidnight(){
+      const now = new Date();
+      const msUntilMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0, 0, 1).getTime() - now.getTime();
+      return setTimeout(()=>{ ensureToday(); scheduleMidnight(); }, msUntilMidnight);
+    }
+    const t = scheduleMidnight();
+    return ()=>clearTimeout(t);
+  }, []);
   function saveEditDay(){
     if(!editDate||editDate===menuDay){setModal(null);return;}
     if(days[editDate]){alert("A day with that date already exists.");return;}
@@ -1202,7 +1376,7 @@ function App(){
     }
   },[Object.keys(days).join(",")]);
 
-  const tabSt=t=>({flex:1,padding:"10px 2px",border:"none",background:"none",fontSize:10,fontWeight:700,cursor:"pointer",color:tab===t?C.ter:C.lt,borderTop:tab===t?`2px solid ${C.ter}`:"2px solid transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.04em",textTransform:"uppercase"});
+  const tabSt=t=>({flex:1,padding:"10px 2px",border:"none",background:"none",fontSize:12,fontWeight:700,cursor:"pointer",color:tab===t?C.ter:C.lt,borderTop:tab===t?`2px solid ${C.ter}`:"2px solid transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.04em",textTransform:"uppercase"});
   const card={background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"};
 
   const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"⭐"};
@@ -1254,7 +1428,15 @@ function App(){
         sub:"We'll use this to show age, track growth percentiles, and highlight the right milestones.",
         action: (
           <div style={{width:"100%",marginTop:20}}>
-            <input type="date" value={obDob} onChange={e=>setObDob(e.target.value)} max={todayStr()} style={{width:"100%",fontSize:18,padding:"14px 18px",borderRadius:16,border:`2px solid ${C.blush}`,background:"white",outline:"none",fontFamily:"inherit",textAlign:"center",marginBottom:14,boxSizing:"border-box"}}/>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              {[["born","Already born 🎉"],["unborn","Not born yet 🤰"]].map(([v,l])=>(
+                <div key={v} onClick={()=>setBabyUnborn(v==="unborn")} style={{flex:1,padding:"10px",borderRadius:14,border:`2px solid ${(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.blush}`,background:(v==="unborn"?babyUnborn:!babyUnborn)?"#fdf0eb":"white",textAlign:"center",cursor:"pointer",fontSize:13,fontWeight:600,color:(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.mid,transition:"all 0.2s"}}>
+                  {l}
+                </div>
+              ))}
+            </div>
+            <input type="date" value={obDob} onChange={e=>setObDob(e.target.value)} style={{width:"100%",fontSize:18,padding:"14px 18px",borderRadius:16,border:`2px solid ${C.blush}`,background:"white",outline:"none",fontFamily:"inherit",textAlign:"center",marginBottom:6,boxSizing:"border-box"}}/>
+            <div style={{fontSize:12,color:C.lt,textAlign:"center",marginBottom:14}}>{babyUnborn ? "Enter your due date" : "Enter date of birth"}</div>
             <button onClick={()=>setObStep(3)} style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:"none",borderRadius:99,padding:"14px",color:"white",fontSize:16,fontWeight:700,cursor:"pointer"}}>
               {obDob ? "Continue →" : "Skip for now"}
             </button>
@@ -1592,44 +1774,46 @@ function App(){
         <div style={{position:"relative",zIndex:1}}>
           {!nameEdit?(
             <div onClick={()=>{setNameIn(babyName);setNameEdit(true);}}>
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:4}}>
-                {babyName ? possessive(babyName) : "Your baby's"}
-              </div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:C.deep,fontWeight:700,lineHeight:1.1,cursor:"pointer"}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:34,color:C.deep,fontWeight:700,lineHeight:1.1,cursor:"pointer"}}>
                 {babyName ? `${possessive(babyName)} Tracker` : "Baby Tracker"}
                 <span style={{fontSize:18,marginLeft:8,opacity:0.5}}>✦</span>
               </div>
               {(()=>{
                 const age = calcAge(babyDob);
-                if (!age) return (
-                  <div onClick={e=>{e.stopPropagation();setTab("growth");}} style={{fontSize:11,color:C.lt,marginTop:7,fontFamily:"monospace",cursor:"pointer"}}>
-                    tap to edit name · add DOB in Growth tab for age tracking
+                if (!age && !babyUnborn) return (
+                  <div onClick={e=>{e.stopPropagation();setTab("growth");}} style={{fontSize:13,color:C.lt,marginTop:8,fontFamily:"monospace",cursor:"pointer"}}>
+                    Add date of birth in Growth tab →
                   </div>
                 );
+                if (babyUnborn && babyDob) {
+                  const daysUntil = Math.ceil((new Date(babyDob) - new Date()) / (1000*60*60*24));
+                  return (
+                    <div style={{marginTop:10,display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{background:"rgba(255,255,255,0.5)",borderRadius:20,padding:"6px 16px",display:"inline-flex",alignItems:"center",gap:6}}>
+                        <span style={{fontSize:15}}>🤰</span>
+                        <span style={{fontSize:14,color:C.deep,fontWeight:600}}>{daysUntil > 0 ? `Due in ${daysUntil} days` : "Due any day!"}</span>
+                      </div>
+                      <button onClick={e=>{e.stopPropagation();setTutStep(0);try{localStorage.removeItem("tut_v1");}catch{}}} style={{background:"rgba(255,255,255,0.35)",border:"none",borderRadius:99,padding:"6px 14px",fontSize:12,color:C.mid,cursor:"pointer",fontFamily:"monospace",fontWeight:600}}>? Tour</button>
+                    </div>
+                  );
+                }
                 const parts = [];
                 if (age.months > 0) parts.push(`${age.months} month${age.months!==1?"s":""}`);
                 if (age.weeksAfterMonths > 0) parts.push(`${age.weeksAfterMonths} week${age.weeksAfterMonths!==1?"s":""}`);
-                if (age.remainingDays > 0 || parts.length===0) parts.push(`${age.remainingDays} day${age.remainingDays!==1?"s":""}`);
                 return (
                   <div style={{marginTop:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                    <div style={{background:"rgba(255,255,255,0.5)",borderRadius:20,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:6}}>
-                      <span style={{fontSize:14}}>🎂</span>
-                      <span style={{fontSize:13,color:C.deep,fontWeight:600}}>{parts.join(", ")} old</span>
+                    <div style={{background:"rgba(255,255,255,0.5)",borderRadius:20,padding:"6px 16px",display:"inline-flex",alignItems:"center",gap:6}}>
+                      <span style={{fontSize:15}}>🎂</span>
+                      <span style={{fontSize:14,color:C.deep,fontWeight:600}}>{parts.join(" & ")} · {age.totalWeeks} weeks</span>
                     </div>
-                    <div style={{background:"rgba(255,255,255,0.35)",borderRadius:20,padding:"5px 12px",display:"inline-flex",alignItems:"center"}}>
-                      <span style={{fontSize:11,color:C.mid,fontFamily:"monospace"}}>{age.totalDays} days · {age.totalWeeks} wks</span>
-                    </div>
+                    <button onClick={e=>{e.stopPropagation();setTutStep(0);try{localStorage.removeItem("tut_v1");}catch{}}} style={{background:"rgba(255,255,255,0.35)",border:"none",borderRadius:99,padding:"6px 14px",fontSize:12,color:C.mid,cursor:"pointer",fontFamily:"monospace",fontWeight:600}}>? Tour</button>
                   </div>
                 );
               })()}
-              <div style={{fontSize:10,color:C.lt,marginTop:5,fontFamily:"monospace",display:"flex",alignItems:"center",gap:10}}>
-                <span>tap to edit name</span>
-                <button onClick={e=>{e.stopPropagation();setTutStep(0);try{localStorage.removeItem("tut_v1");}catch{}}} style={{background:"rgba(255,255,255,0.35)",border:"none",borderRadius:99,padding:"2px 9px",fontSize:10,color:C.mid,cursor:"pointer",fontFamily:"monospace",fontWeight:600}}>? Tour</button>
-              </div>
             </div>
           ):(
             <div>
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:8}}>Enter baby's name</div>
+              <div style={{fontSize:13,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:8}}>Enter baby's name</div>
               <form onSubmit={e=>{e.preventDefault();setBabyName(nameIn.trim());setNameEdit(false);}} style={{display:"flex",gap:8,alignItems:"center"}}>
                 <input autoFocus value={nameIn} onChange={e=>setNameIn(e.target.value)} placeholder="e.g. Oliver" style={{flex:1,fontSize:18,padding:"10px 14px",borderRadius:12,border:"none",background:"rgba(255,255,255,0.6)",color:C.deep,outline:"none",fontFamily:"inherit"}}/>
                 <button type="submit" style={{background:C.ter,border:"none",borderRadius:10,color:"white",fontSize:14,padding:"10px 16px",cursor:"pointer",fontWeight:700}}>Save</button>
@@ -1641,7 +1825,9 @@ function App(){
 
         {/* Date strip */}
         <div style={{position:"relative",zIndex:1,marginTop:20,display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
-          <button onClick={()=>{setNewDate(todayStr());setModal("addDay");}} style={{flexShrink:0,background:"rgba(255,255,255,0.5)",border:`1px dashed ${C.lt}`,borderRadius:20,padding:"5px 12px",color:C.mid,fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>+ Day</button>
+          <div style={{flexShrink:0,display:"flex",alignItems:"center",gap:4}}>
+            <button onClick={()=>{setNewDate(todayStr());setModal("addDay");}} style={{background:"rgba(255,255,255,0.5)",border:`1px dashed ${C.lt}`,borderRadius:20,padding:"5px 12px",color:C.mid,fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>+ Past Date</button>
+          </div>
           {displayDayKeys.map(d=>(
             <div key={d} style={{flexShrink:0,display:"flex",alignItems:"center",gap:2,background:d===selDay?"white":"rgba(255,255,255,0.35)",borderRadius:20,padding:"4px 4px 4px 11px",border:d===selDay?"none":`1px solid rgba(255,255,255,0.5)`}}>
               <button onClick={()=>setSelDay(d)} style={{background:"none",border:"none",color:d===selDay?C.ter:C.mid,fontSize:12,fontFamily:"monospace",cursor:"pointer",padding:"1px 0",whiteSpace:"nowrap",fontWeight:d===selDay?700:400}}>{fmtDate(d)}</button>
@@ -1668,11 +1854,11 @@ function App(){
                 <div style={{background:`linear-gradient(135deg,${C.warm},#fff4ee)`,border:`1px solid ${C.blush}`,borderLeft:`4px solid ${C.ter}`,borderRadius:16,padding:"12px 14px",marginBottom:14}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:3}}>{ageStage.label}</div>
+                      <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:3}}>{ageStage.label}</div>
                       <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{ageStage.tip}</div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:7}}>
                         {[{icon:"😴",val:ageStage.napGoal,label:"naps"},{icon:"🍼",val:ageStage.feedGoal,label:"feeds"},{icon:"🌙",val:ageStage.nightNote,label:""}].map((x,i)=>(
-                          <span key={i} style={{fontSize:10,fontFamily:"monospace",background:"rgba(201,112,90,0.1)",color:C.ter,padding:"2px 8px",borderRadius:99}}>{x.icon} {x.val}</span>
+                          <span key={i} style={{fontSize:12,fontFamily:"monospace",background:"rgba(201,112,90,0.1)",color:C.ter,padding:"2px 8px",borderRadius:99}}>{x.icon} {x.val}</span>
                         ))}
                       </div>
                     </div>
@@ -1690,13 +1876,84 @@ function App(){
                 ].map((s,i)=>(
                   <div key={i} style={{background:s.bg,borderRadius:16,padding:"12px 4px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
                     <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:s.color,lineHeight:1}}>{s.big}</div>
-                    {s.unit&&<div style={{fontSize:10,fontFamily:"monospace",color:s.color,opacity:0.7,marginTop:1}}>{s.unit}</div>}
+                    {s.unit&&<div style={{fontSize:12,fontFamily:"monospace",color:s.color,opacity:0.7,marginTop:1}}>{s.unit}</div>}
                     <div style={{fontSize:8,color:C.mid,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"monospace"}}>{s.label}</div>
                   </div>
                 ))}
               </div>
 
-              {/* ── SLEEP ANALYTICS CARD ── */}
+              {/* ══ FEEDS ══════════════════════════════════════════ */}
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                <div style={{width:3,height:16,background:C.ter,borderRadius:99}}/>
+                <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700}}>Feeds</div>
+              </div>
+
+              {/* Feeding Intake Reassurance */}
+              {(()=>{
+                const fc = feedIntakeCard();
+                if (!fc) return null;
+                return (
+                  <div style={{background:fc.bg,border:`1px solid ${fc.color}30`,borderLeft:`4px solid ${fc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:10}}>
+                    <div style={{fontSize:12,fontFamily:"monospace",color:fc.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Today's Milk Intake</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                      <div>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:fc.color}}>{fc.totalMl}ml</div>
+                        <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,marginTop:2}}>total today</div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <div style={{fontSize:13,fontFamily:"monospace",color:C.mid}}>Typical for this age</div>
+                        <div style={{fontSize:12,fontWeight:600,color:C.mid}}>{fc.label}</div>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"white",borderRadius:10,padding:"9px 12px"}}>
+                      <span style={{fontSize:16,flexShrink:0}}>{fc.icon}</span>
+                      <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{fc.message}</div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Feed Suggestions */}
+              {(()=>{
+                const suggs = feedSuggestions();
+                if (!suggs) return null;
+                return (
+                  <div style={{marginBottom:10}}>
+                    {suggs.map((s,i)=>(
+                      <div key={i} style={{background:s.icon==="✓"?"#f0faf6":"#fff8f0",border:`1px solid ${s.icon==="✓"?"#a0d8c0":"#f0d8b0"}`,borderLeft:`4px solid ${s.icon==="✓"?C.mint:"#d4a855"}`,borderRadius:16,padding:"14px 16px",marginBottom:8}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                          <span style={{fontSize:18}}>{s.icon}</span>
+                          <div style={{fontSize:13,fontWeight:700,color:s.icon==="✓"?C.mint:"#8a6020"}}>{s.title}</div>
+                        </div>
+                        <div style={{fontSize:13,color:C.mid,lineHeight:1.6}}>{s.body}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* ══ SLEEP ══════════════════════════════════════════ */}
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,marginTop:6}}>
+                <div style={{width:3,height:16,background:C.mint,borderRadius:99}}/>
+                <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700}}>Sleep</div>
+              </div>
+
+              {/* Nap Timer */}
+              <div style={{...card,marginBottom:10}}>
+                <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:9}}>Nap Timer</div>
+                <div style={{display:"flex",alignItems:"center",gap:9}}>
+                  {!napOn?(
+                    <button onClick={startNap} style={{background:"#d4ede6",border:"none",borderRadius:99,padding:"9px 20px",fontSize:14,color:C.mint,cursor:"pointer",fontWeight:600}}>😴 Start Nap</button>
+                  ):(
+                    <>
+                      <div style={{background:"#d4ede6",borderRadius:99,padding:"9px 16px",fontSize:14,color:C.mint,fontFamily:"monospace",fontWeight:600}}>😴 {fmtSec(napSec)}</div>
+                      <button onClick={endNap} style={{background:C.mint,border:"none",borderRadius:99,padding:"9px 20px",fontSize:14,color:"white",cursor:"pointer",fontWeight:600}}>End & Save</button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Sleep Analytics */}
               {(()=>{
                 const score = sleepScore();
                 const scoreColor = sleepScoreColor(score);
@@ -1716,77 +1973,46 @@ function App(){
                 const strokeDash = (score / 100) * circumference;
 
                 return (
-                  <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
-                    <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>🧠 Sleep Analytics</div>
+                  <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:10,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
+                    <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>🧠 Sleep Analytics</div>
                     <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:12}}>
-                      {/* Score ring */}
                       <div style={{position:"relative",flexShrink:0}}>
                         <svg width={60} height={60} viewBox="0 0 60 60">
                           <circle cx={30} cy={30} r={radius} fill="none" stroke={C.blush} strokeWidth={5}/>
-                          <circle
-                            cx={30} cy={30} r={radius}
-                            fill="none"
-                            stroke={scoreColor}
-                            strokeWidth={5}
-                            strokeDasharray={`${strokeDash} ${circumference}`}
-                            strokeLinecap="round"
-                            transform="rotate(-90 30 30)"
-                            style={{transition:"stroke-dasharray 0.6s ease"}}
-                          />
-                          <text x={30} y={34} textAnchor="middle" fontSize={13} fontWeight="700" fill={scoreColor} fontFamily="'DM Sans',sans-serif">{score}</text>
+                          <circle cx={30} cy={30} r={radius} fill="none" stroke={scoreColor} strokeWidth={5} strokeDasharray={`${strokeDash} ${circumference}`} strokeLinecap="round" transform="rotate(-90 30 30)"/>
                         </svg>
+                        <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",fontFamily:"monospace",fontSize:13,fontWeight:700,color:scoreColor}}>{score}</div>
                       </div>
-                      {/* Label + advice */}
-                      <div style={{flex:1}}>
-                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:scoreColor,lineHeight:1,marginBottom:4}}>{scoreLabel}</div>
-                        <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{advice}</div>
+                      <div>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:scoreColor,marginBottom:4}}>{scoreLabel}</div>
+                        <div style={{fontSize:13,color:C.mid,lineHeight:1.5}}>{advice}</div>
                       </div>
                     </div>
-                    {/* Tired detection pill */}
-                    {tired && (
-                      <div style={{display:"inline-block",fontSize:11,fontFamily:"monospace",padding:"4px 12px",borderRadius:99,background:tired.startsWith("⚠️")||tired.startsWith("💤")?`${C.ter}18`:`${C.mint}18`,color:tired.startsWith("✓")?C.mint:C.ter,marginBottom:8}}>
-                        {tired}
-                      </div>
-                    )}
-                    {/* ── Bedtime logged: show confirmed tile ── */}
+                    {tired&&<div style={{display:"inline-block",fontSize:13,fontFamily:"monospace",padding:"4px 12px",borderRadius:99,background:tired.startsWith("⚠️")||tired.startsWith("💤")?`${C.ter}18`:`${C.mint}18`,color:tired.startsWith("✓")?C.mint:C.ter,marginBottom:12}}>{tired}</div>}
                     {actualBedEntry ? (
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg,#1a1228,#231832)",borderRadius:14,padding:"10px 14px",marginTop:4}}>
-                        <div>
-                          <div style={{fontSize:10,fontFamily:"monospace",color:"#8878a8",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>Bedtime Logged 🌙</div>
-                          <div style={{fontSize:11,color:"#a898c8"}}>Sleep tight!</div>
-                        </div>
-                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:"#d8cce8"}}>{fmt12(actualBedEntry.time)}</div>
+                      <div style={{background:"linear-gradient(135deg,#ede8f5,#f5f0fa)",borderRadius:14,padding:"12px 14px"}}>
+                        <div style={{fontSize:12,fontFamily:"monospace",color:"#8878a8",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>Bedtime Logged 🌙</div>
+                        <div style={{fontSize:13,color:"#a898c8"}}>Sleep tight!</div>
                       </div>
                     ) : pred ? (
-                      /* ── No bedtime yet: show next nap OR suggested bedtime ── */
-                      <div style={{borderRadius:14,overflow:"hidden",marginTop:4}}>
-                        {/* Next nap window */}
-                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg,#f0faf6,#e8f5f0)",padding:"10px 14px",borderBottom:"1px solid #b8e8d4"}}>
+                      <div style={{background:"linear-gradient(135deg,#e8f5ef,#f0faf6)",borderRadius:14,padding:"12px 14px"}}>
+                        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:suggestedBed?8:0}}>
                           <div>
-                            <div style={{fontSize:10,fontFamily:"monospace",color:C.mint,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>😴 Next Nap Window</div>
-                            <div style={{fontSize:13,fontFamily:"monospace",fontWeight:700,color:napCountdown===0?"#e05a3a":napCountdown!==null&&napCountdown<=300?C.ter:C.mint}}>
-                              {napCountdown !== null ? fmtCountdown(napCountdown) : "—"}
-                            </div>
-                            <div style={{fontSize:10,color:C.lt,marginTop:2}}>{pred.sourceLabel}</div>
+                            <div style={{fontSize:12,fontFamily:"monospace",color:C.mint,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>😴 Next Nap Window</div>
+                            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.mint}}>{minsAway!==null&&minsAway<=0?"Now!":fmtCountdown(napCountdown||0)}</div>
+                            <div style={{fontSize:12,color:C.lt,marginTop:2}}>{pred.sourceLabel}</div>
                           </div>
                           <div style={{textAlign:"right"}}>
-                            <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:C.mint}}>
-                              {fmt12(pred.napStart_min)}
-                            </div>
-                            <div style={{fontSize:11,color:C.lt}}>– {fmt12(pred.napStart_max)}</div>
+                            <div style={{fontFamily:"monospace",fontSize:15,fontWeight:700,color:C.mint}}>{fmt12(pred.napStart_min)}</div>
+                            <div style={{fontSize:13,color:C.lt}}>– {fmt12(pred.napStart_max)}</div>
                           </div>
                         </div>
-                        {/* Suggested bedtime */}
-                        {suggestedBed && (
-                          <div style={{background:"linear-gradient(135deg,#d5e7f2,#e8f3fa)",padding:"10px 14px"}}>
+                        {suggestedBed&&(
+                          <div style={{borderTop:`1px solid ${C.mint}22`,paddingTop:8,marginTop:4}}>
                             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                               <div>
-                                <div style={{fontSize:10,fontFamily:"monospace",color:C.sky,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>
-                                  {suggestedBed.bedSource==="avg" ? "Predicted Bedtime" : "Suggested Bedtime"}
-                                </div>
-                                <div style={{fontSize:10,color:C.mid,lineHeight:1.4,maxWidth:160}}>
-                                  {suggestedBed.adjustReason || (suggestedBed.bedSource==="avg" ? "Based on your recent routine" : "Based on last nap + wake window")}
-                                </div>
+                                <div style={{fontSize:12,fontFamily:"monospace",color:C.sky,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>{suggestedBed.bedSource==="avg"?"Predicted Bedtime":"Suggested Bedtime"}</div>
+                                <div style={{fontSize:12,color:C.mid,lineHeight:1.4,maxWidth:160}}>{suggestedBed.adjustReason||(suggestedBed.bedSource==="avg"?"Based on your recent routine":"Based on last nap + wake window")}</div>
                               </div>
                               <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.sky}}>{fmt12(suggestedBed.time)}</div>
                             </div>
@@ -1794,44 +2020,35 @@ function App(){
                         )}
                       </div>
                     ) : suggestedBed ? (
-                      /* ── Has naps but no more nap prediction: show smart bedtime ── */
                       <div style={{background:"linear-gradient(135deg,#d5e7f2,#e8f3fa)",borderRadius:14,padding:"12px 14px",marginTop:4}}>
-                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom: suggestedBed.adjustReason ? 6 : 0}}>
+                        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:suggestedBed.adjustReason?6:0}}>
                           <div>
-                            <div style={{fontSize:10,fontFamily:"monospace",color:C.sky,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>
-                              {suggestedBed.bedSource==="avg" ? "Predicted Bedtime" : "Suggested Bedtime"}
-                            </div>
-                            <div style={{fontSize:10,color:C.mid}}>
-                              {suggestedBed.bedSource==="avg" ? "Based on your recent routine" : "Based on last nap + wake window"}
-                            </div>
+                            <div style={{fontSize:12,fontFamily:"monospace",color:C.sky,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>{suggestedBed.bedSource==="avg"?"Predicted Bedtime":"Suggested Bedtime"}</div>
+                            <div style={{fontSize:12,color:C.mid}}>{suggestedBed.bedSource==="avg"?"Based on your recent routine":"Based on last nap + wake window"}</div>
                           </div>
                           <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.sky}}>{fmt12(suggestedBed.time)}</div>
                         </div>
-                        {suggestedBed.adjustReason && (
-                          <div style={{fontSize:11,color:C.sky,background:"rgba(122,171,196,0.15)",borderRadius:8,padding:"5px 9px",lineHeight:1.4}}>
-                            &#9888; {suggestedBed.adjustReason}
-                          </div>
-                        )}
+                        {suggestedBed.adjustReason&&<div style={{fontSize:13,color:C.sky,background:"rgba(122,171,196,0.15)",borderRadius:8,padding:"5px 9px",lineHeight:1.4}}>&#9888; {suggestedBed.adjustReason}</div>}
                       </div>
                     ) : null}
                   </div>
                 );
               })()}
 
-              {/* ── FEATURE 1: Is This Normal? Sleep Comparison ── */}
+              {/* Is This Normal — Sleep */}
               {(()=>{
                 const sc = sleepNormalCard();
                 if (!sc) return null;
                 return (
-                  <div style={{background:sc.bg,border:`1px solid ${sc.color}30`,borderLeft:`4px solid ${sc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:14}}>
-                    <div style={{fontSize:10,fontFamily:"monospace",color:sc.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Is This Normal? · Today's Sleep</div>
+                  <div style={{background:sc.bg,border:`1px solid ${sc.color}30`,borderLeft:`4px solid ${sc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:10}}>
+                    <div style={{fontSize:12,fontFamily:"monospace",color:sc.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Is This Normal? · Today's Sleep</div>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                       <div>
                         <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:sc.color}}>{hm(sc.totalMins)}</div>
-                        <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,marginTop:2}}>today's naps</div>
+                        <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,marginTop:2}}>today's naps</div>
                       </div>
                       <div style={{textAlign:"right"}}>
-                        <div style={{fontSize:11,fontFamily:"monospace",color:C.mid}}>Typical for this age</div>
+                        <div style={{fontSize:13,fontFamily:"monospace",color:C.mid}}>Typical for this age</div>
                         <div style={{fontSize:13,fontWeight:600,color:C.mid}}>{sc.range.label}</div>
                       </div>
                     </div>
@@ -1843,37 +2060,12 @@ function App(){
                 );
               })()}
 
-              {/* ── FEATURE 4: Feeding Intake Reassurance ── */}
-              {(()=>{
-                const fc = feedIntakeCard();
-                if (!fc) return null;
-                return (
-                  <div style={{background:fc.bg,border:`1px solid ${fc.color}30`,borderLeft:`4px solid ${fc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:14}}>
-                    <div style={{fontSize:10,fontFamily:"monospace",color:fc.color,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Today's Milk Intake</div>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                      <div>
-                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:fc.color}}>{fc.totalMl}ml</div>
-                        <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,marginTop:2}}>total today</div>
-                      </div>
-                      <div style={{textAlign:"right"}}>
-                        <div style={{fontSize:11,fontFamily:"monospace",color:C.mid}}>Typical for this age</div>
-                        <div style={{fontSize:12,fontWeight:600,color:C.mid}}>{fc.label}</div>
-                      </div>
-                    </div>
-                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"white",borderRadius:10,padding:"9px 12px"}}>
-                      <span style={{fontSize:16,flexShrink:0}}>{fc.icon}</span>
-                      <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{fc.message}</div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* ── FEATURE 2: Sleep Regression Detection ── */}
+              {/* Sleep Regression Detection */}
               {(()=>{
                 const alerts = regressionCheck();
                 if (!alerts) return null;
                 return (
-                  <div style={{marginBottom:14}}>
+                  <div style={{marginBottom:10}}>
                     {alerts.map((a,i)=>(
                       <div key={i} style={{background:"#fff8f0",border:"1px solid #f0d8b0",borderLeft:"4px solid #d4a855",borderRadius:16,padding:"14px 16px",marginBottom:8}}>
                         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
@@ -1888,59 +2080,10 @@ function App(){
                 );
               })()}
 
-              {/* ── FEATURE 3: Suggested Tomorrow Schedule ── */}
-              {(()=>{
-                const sched = tomorrowSchedule();
-                if (!sched) return null;
-                return (
-                  <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
-                    <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>Suggested Tomorrow Schedule</div>
-                    <div style={{display:"flex",flexDirection:"column",gap:0}}>
-                      {sched.map((item,i)=>(
-                        <div key={i} style={{display:"flex",alignItems:"center",gap:0}}>
-                          <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:28,flexShrink:0}}>
-                            <div style={{width:9,height:9,borderRadius:"50%",background:item.label==="Bedtime"?C.sky:item.label.startsWith("Nap")?C.mint:C.gold,flexShrink:0}}/>
-                            {i<sched.length-1&&<div style={{width:2,height:22,background:C.blush}}/>}
-                          </div>
-                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flex:1,padding:"4px 0 4px 6px"}}>
-                            <div style={{display:"flex",alignItems:"center",gap:6}}>
-                              <span style={{fontSize:14}}>{item.icon}</span>
-                              <span style={{fontSize:13,color:C.mid,fontWeight:500}}>{item.label}</span>
-                            </div>
-                            <span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:C.deep}}>{fmt12(item.time.includes("–")?item.time.split("–")[0].trim():item.time)}{item.time.includes("–")?" – "+fmt12(item.time.split("–")[1].trim()):""}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,marginTop:10,borderTop:`1px solid ${C.blush}`,paddingTop:8}}>
-                      Based on recent sleep patterns and age-appropriate wake windows
-                    </div>
-                  </div>
-                );
-              })()}
-              <div style={{...card}}>
-                <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:9}}>Quick Add</div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-                  {[120,150,180,210].map(ml=>(
-                    <button key={ml} onClick={()=>quickFeed(ml)} style={{background:"#fdf0eb",border:`1px solid ${C.rose}`,borderRadius:99,padding:"6px 13px",fontSize:13,color:C.ter,cursor:"pointer",fontWeight:500}}>🍼 {ml}ml</button>
-                  ))}
-                </div>
-                <div style={{display:"flex",alignItems:"center",gap:9}}>
-                  {!napOn?(
-                    <button onClick={startNap} style={{background:"#d4ede6",border:"none",borderRadius:99,padding:"7px 15px",fontSize:13,color:C.mint,cursor:"pointer",fontWeight:500}}>😴 Start Nap</button>
-                  ):(
-                    <>
-                      <div style={{background:"#d4ede6",borderRadius:99,padding:"7px 13px",fontSize:13,color:C.mint,fontFamily:"monospace",fontWeight:600}}>😴 {fmtSec(napSec)}</div>
-                      <button onClick={endNap} style={{background:C.mint,border:"none",borderRadius:99,padding:"7px 15px",fontSize:13,color:"white",cursor:"pointer",fontWeight:500}}>End & Save</button>
-                    </>
-                  )}
-                </div>
-              </div>
-
               {/* Awake windows */}
               {wins.length>0&&(
-                <div style={{...card}}>
-                  <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Awake Windows</div>
+                <div style={{...card,marginBottom:10}}>
+                  <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Awake Windows</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                     {wins.map((w,i)=>(
                       <div key={i} style={{background:w.bed?"#d5e7f2":"#f5eccb",borderRadius:10,padding:"5px 10px",fontSize:12,color:w.bed?C.sky:"#b88a20",fontFamily:"monospace"}}>
@@ -1951,11 +2094,14 @@ function App(){
                 </div>
               )}
 
-              {/* Daytime entries */}
+              {/* ══ TIMELINE ═══════════════════════════════════════ */}
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,marginTop:6}}>
+                <div style={{width:3,height:16,background:C.gold,borderRadius:99}}/>
+                <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700}}>Today's Log</div>
+              </div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,marginTop:4}}>
                 <div style={{display:"flex",alignItems:"center",gap:7}}>
-                  <div style={{width:3,height:18,background:C.gold,borderRadius:99}}/>
-                  <span style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",color:C.mid,fontSize:16}}>Daytime</span>
+                  <span style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",color:C.mid,fontSize:15}}>Daytime</span>
                 </div>
                 <button onClick={()=>openEntry(false)} style={{background:C.ter,border:"none",borderRadius:99,padding:"5px 13px",fontSize:12,color:"white",cursor:"pointer",fontWeight:600}}>+ add</button>
               </div>
@@ -1982,14 +2128,14 @@ function App(){
                               {e.type==="feed"?(e.feedType==="solids"?"Solids":e.feedType==="breast"?"Breast Feed":"Bottle Feed"):NAMES[e.type]}
                             </div>
                             {e.type==="feed"&&e.feedType==="breast"&&(
-                              <div style={{fontSize:11,color:C.lt,fontFamily:"monospace"}}>
+                              <div style={{fontSize:13,color:C.lt,fontFamily:"monospace"}}>
                                 {e.breastL>0?`L: ${e.breastL}m`:""}{e.breastL>0&&e.breastR>0?" · ":""}{e.breastR>0?`R: ${e.breastR}m`:""}
                               </div>
                             )}
-                            {e.type==="nap"&&<div style={{fontSize:11,color:C.lt,fontFamily:"monospace"}}>{minDiff(e.start,e.end)} min</div>}
-                            {e.type==="poop"&&e.poopType&&<div style={{fontSize:11,color:"#8a7060",fontFamily:"monospace"}}>{e.poopType}</div>}
-                            {e.note&&e.type!=="feed"&&<div style={{fontSize:11,color:C.mid,fontStyle:"italic",marginTop:1}}>{e.note}</div>}
-                            {e.note&&e.type==="feed"&&e.feedType==="solids"&&<div style={{fontSize:11,color:C.mid,fontStyle:"italic",marginTop:1}}>{e.note}</div>}
+                            {e.type==="nap"&&<div style={{fontSize:13,color:C.lt,fontFamily:"monospace"}}>{minDiff(e.start,e.end)} min</div>}
+                            {e.type==="poop"&&e.poopType&&<div style={{fontSize:13,color:"#8a7060",fontFamily:"monospace"}}>{e.poopType}</div>}
+                            {e.note&&e.type!=="feed"&&<div style={{fontSize:13,color:C.mid,fontStyle:"italic",marginTop:1}}>{e.note}</div>}
+                            {e.note&&e.type==="feed"&&e.feedType==="solids"&&<div style={{fontSize:13,color:C.mid,fontStyle:"italic",marginTop:1}}>{e.note}</div>}
                           </div>
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:7}}>
@@ -2004,8 +2150,8 @@ function App(){
                                 ? `${fmt12(e.start)}-${fmt12(e.end)}`
                                 : fmt12(e.time)}
                           </Badge>
-                          <button onClick={()=>openEdit(e)} style={{background:"#f0e8e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.mid,cursor:"pointer",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
-                          <button onClick={()=>delEntry(e.id)} style={{background:"#f0e5e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.lt,cursor:"pointer",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                          <button onClick={()=>openEdit(e)} style={{background:"#f0e8e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.mid,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
+                          <button onClick={()=>delEntry(e.id)} style={{background:"#f0e5e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.lt,cursor:"pointer",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                         </div>
                       </div>
                     </div>
@@ -2020,7 +2166,7 @@ function App(){
                     <div style={{width:3,height:18,background:"#8878a8",borderRadius:99}}/>
                     <span style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",color:"#a898c8",fontSize:16}}>Night Wakes</span>
                   </div>
-                  <button onClick={()=>openEntry(true)} style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:99,padding:"4px 11px",fontSize:11,color:"#a898c8",cursor:"pointer",fontWeight:600}}>+ add</button>
+                  <button onClick={()=>openEntry(true)} style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:99,padding:"4px 11px",fontSize:13,color:"#a898c8",cursor:"pointer",fontWeight:600}}>+ add</button>
                 </div>
                 {nightE.length===0&&<div style={{textAlign:"center",color:"#6a5880",fontSize:12,fontFamily:"monospace",padding:"6px 0"}}>No night wakes logged</div>}
                 {(()=>{
@@ -2037,20 +2183,20 @@ function App(){
                         {fromPt&&toPt&&strMins>0&&(
                           <div style={{display:"flex",alignItems:"center",gap:6,padding:"3px 4px 5px",opacity:0.7}}>
                             <div style={{flex:1,height:1,background:"#3a2e50"}}/>
-                            <span style={{fontSize:10,fontFamily:"monospace",color:strMins>=180?"#6fa898":strMins>=120?"#d4a855":"#8878a8"}}>{hm(strMins)}</span>
+                            <span style={{fontSize:12,fontFamily:"monospace",color:strMins>=180?"#6fa898":strMins>=120?"#d4a855":"#8878a8"}}>{hm(strMins)}</span>
                             <div style={{flex:1,height:1,background:"#3a2e50"}}/>
                           </div>
                         )}
                         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid #3a2e50",marginBottom:5}}>
                           <div>
                             <span style={{color:"#d8cce8",fontSize:13}}>🌟 Wake {i+1}</span>
-                            {e.note&&<div style={{fontSize:11,color:"#6a5880",fontStyle:"italic",marginTop:1}}>{e.note}</div>}
+                            {e.note&&<div style={{fontSize:13,color:"#6a5880",fontStyle:"italic",marginTop:1}}>{e.note}</div>}
                           </div>
                           <div style={{display:"flex",alignItems:"center",gap:7}}>
-                            {e.amount>0&&<span style={{background:"rgba(212,168,85,0.2)",color:C.gold,fontFamily:"monospace",fontSize:11,padding:"2px 7px",borderRadius:99}}>{e.amount} ml</span>}
-                            <span style={{color:"#8878a8",fontFamily:"monospace",fontSize:11}}>{fmt12(e.time)}</span>
-                            <button onClick={()=>openEdit(e)} style={{background:"rgba(255,255,255,0.07)",border:"none",borderRadius:"50%",width:21,height:21,color:"#a898c8",cursor:"pointer",fontSize:11}}>✎</button>
-                            <button onClick={()=>delEntry(e.id)} style={{background:"rgba(255,255,255,0.07)",border:"none",borderRadius:"50%",width:21,height:21,color:"#8878a8",cursor:"pointer",fontSize:10}}>✕</button>
+                            {e.amount>0&&<span style={{background:"rgba(212,168,85,0.2)",color:C.gold,fontFamily:"monospace",fontSize:13,padding:"2px 7px",borderRadius:99}}>{e.amount} ml</span>}
+                            <span style={{color:"#8878a8",fontFamily:"monospace",fontSize:13}}>{fmt12(e.time)}</span>
+                            <button onClick={()=>openEdit(e)} style={{background:"rgba(255,255,255,0.07)",border:"none",borderRadius:"50%",width:21,height:21,color:"#a898c8",cursor:"pointer",fontSize:13}}>✎</button>
+                            <button onClick={()=>delEntry(e.id)} style={{background:"rgba(255,255,255,0.07)",border:"none",borderRadius:"50%",width:21,height:21,color:"#8878a8",cursor:"pointer",fontSize:12}}>✕</button>
                           </div>
                         </div>
                       </div>
@@ -2059,7 +2205,39 @@ function App(){
                 })()}
               </div>
 
-
+              {/* ══ END OF DAY ══════════════════════════════════════ */}
+              {(()=>{
+                const sched = tomorrowSchedule();
+                if (!sched) return null;
+                return (
+                  <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                      <div style={{width:3,height:16,background:C.sky,borderRadius:99}}/>
+                      <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700}}>Tomorrow's Suggested Schedule</div>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                      {sched.map((item,i)=>(
+                        <div key={i} style={{display:"flex",alignItems:"center",gap:0}}>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:28,flexShrink:0}}>
+                            <div style={{width:9,height:9,borderRadius:"50%",background:item.label==="Bedtime"?C.sky:item.label.startsWith("Nap")?C.mint:C.gold,flexShrink:0}}/>
+                            {i<sched.length-1&&<div style={{width:2,height:24,background:C.blush}}/>}
+                          </div>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flex:1,padding:"5px 0 5px 6px"}}>
+                            <div style={{display:"flex",alignItems:"center",gap:6}}>
+                              <span style={{fontSize:15}}>{item.icon}</span>
+                              <span style={{fontSize:13,color:C.mid,fontWeight:500}}>{item.label}</span>
+                            </div>
+                            <span style={{fontFamily:"monospace",fontSize:13,fontWeight:700,color:C.deep}}>{fmt12(item.time.includes("–")?item.time.split("–")[0].trim():item.time)}{item.time.includes("–")?" – "+fmt12(item.time.split("–")[1].trim()):""}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,marginTop:12,borderTop:`1px solid ${C.blush}`,paddingTop:8}}>
+                      Based on recent sleep patterns and age-appropriate wake windows
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Insights prompt */}
               {Object.keys(days).length >= 7 && !insightDismissed && !showInsights && (
@@ -2083,7 +2261,7 @@ function App(){
                       <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:16,color:C.mid}}>✨ Sleep & Feed Insights</div>
                       <button onClick={()=>setShowInsights(false)} style={{background:"none",border:"none",color:C.lt,fontSize:18,cursor:"pointer"}}>✕</button>
                     </div>
-                    <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,marginBottom:12}}>Based on {t.days} days of data</div>
+                    <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,marginBottom:12}}>Based on {t.days} days of data</div>
                     {t.insights.map((ins,i)=>(
                       <div key={i} style={{marginBottom:12,padding:"11px 13px",borderRadius:14,background:ins.type==="warn"?"#fff8f5":ins.type==="good"?"#f0faf6":"#f5f8ff",border:`1px solid ${ins.type==="warn"?C.rose:ins.type==="good"?"#b8e8d4":"#c8d8f0"}`}}>
                         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:5}}>
@@ -2093,7 +2271,7 @@ function App(){
                         <div style={{fontSize:12,color:C.mid,lineHeight:1.6}}>{ins.body}</div>
                       </div>
                     ))}
-                    <div style={{fontSize:10,color:C.lt,fontFamily:"monospace",marginTop:4,lineHeight:1.5}}>⚠️ These are general observations based on logged data, not medical advice. Always consult your health visitor or GP if you have concerns.</div>
+                    <div style={{fontSize:12,color:C.lt,fontFamily:"monospace",marginTop:4,lineHeight:1.5}}>⚠️ These are general observations based on logged data, not medical advice. Always consult your health visitor or GP if you have concerns.</div>
                   </div>
                 );
               })()}
@@ -2115,11 +2293,11 @@ function App(){
         {tab==="week"&&(
           <div>
             <div style={card}>
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Avg Daily Feed (last 7 days)</div>
+              <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Avg Daily Feed (last 7 days)</div>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:700,color:C.ter}}>{avgMl}<span style={{fontSize:13,color:C.lt,fontWeight:400}}> ml</span></div>
             </div>
             <div style={card}>
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Feed Total by Day</div>
+              <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Feed Total by Day</div>
               <div style={{display:"flex",alignItems:"flex-end",gap:6,height:80}}>
                 {wStats.map((s,i)=>(
                   <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
@@ -2131,7 +2309,7 @@ function App(){
               </div>
             </div>
             <div style={card}>
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Nap Time by Day (mins)</div>
+              <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Nap Time by Day (mins)</div>
               <div style={{display:"flex",alignItems:"flex-end",gap:6,height:80}}>
                 {wStats.map((s,i)=>(
                   <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
@@ -2143,7 +2321,7 @@ function App(){
               </div>
             </div>
             <div style={card}>
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Day Summary</div>
+              <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Day Summary</div>
               {wStats.map((s,i)=>(
                 <div key={i} onClick={()=>{setSelDay(s.date);setTab("day");}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 0",borderBottom:i<wStats.length-1?`1px solid ${C.blush}`:"none",cursor:"pointer"}}>
                   <span style={{fontSize:13,color:s.date===selDay?C.ter:C.deep,fontWeight:s.date===selDay?600:400}}>{fmtLong(s.date)}</span>
@@ -2169,7 +2347,7 @@ function App(){
             <div>
               {tLast&&tPrev&&(
                 <div style={card}>
-                  <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>This Week vs Last Week</div>
+                  <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>This Week vs Last Week</div>
                   {[
                     {label:"Avg Daily Feed",curr:tLast.avgMl,prev:tPrev.avgMl,unit:"ml"},
                     {label:"Avg Nap Time",curr:tLast.avgNap,prev:tPrev.avgNap,unit:"min"},
@@ -2180,7 +2358,7 @@ function App(){
                       <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:i<2?`1px solid ${C.blush}`:"none"}}>
                         <div>
                           <div style={{fontSize:13,fontWeight:500}}>{row.label}</div>
-                          <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,marginTop:2}}>Last week: {row.prev}{row.unit}</div>
+                          <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,marginTop:2}}>Last week: {row.prev}{row.unit}</div>
                         </div>
                         <div style={{textAlign:"right"}}>
                           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.ter}}>{row.curr}<span style={{fontSize:12,color:C.lt}}>{row.unit}</span></div>
@@ -2192,23 +2370,23 @@ function App(){
                 </div>
               )}
               <div style={card}>
-                <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Daily Feed (ml)</div>
+                <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Daily Feed (ml)</div>
                 <TrendLine vals={mlVals} keys={dayKeys} color={C.ter}/>
               </div>
               <div style={card}>
-                <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Daily Nap Time</div>
+                <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Daily Nap Time</div>
                 <TrendLine vals={napVals} keys={dayKeys} color={C.mint} unit="m"/>
               </div>
               {weekAvgs.length>1&&(
                 <div style={card}>
-                  <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Weekly Averages</div>
+                  <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Weekly Averages</div>
                   {weekAvgs.map((wk,i)=>(
                     <div key={i} style={{padding:"9px 0",borderBottom:i<weekAvgs.length-1?`1px solid ${C.blush}`:"none"}}>
-                      <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,marginBottom:5}}>{wk.label} · {wk.days} days</div>
+                      <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,marginBottom:5}}>{wk.label} · {wk.days} days</div>
                       <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-                        <span style={{background:"#f5e0d8",color:C.ter,fontFamily:"monospace",fontSize:11,padding:"2px 8px",borderRadius:99}}>~{wk.avgMl}ml/day</span>
-                        <span style={{background:"#d4ede6",color:C.mint,fontFamily:"monospace",fontSize:11,padding:"2px 8px",borderRadius:99}}>~{hm(wk.avgNap)} naps</span>
-                        <span style={{background:"#f5eccb",color:"#b88a20",fontFamily:"monospace",fontSize:11,padding:"2px 8px",borderRadius:99}}>~{wk.avgNight} night wakes</span>
+                        <span style={{background:"#f5e0d8",color:C.ter,fontFamily:"monospace",fontSize:13,padding:"2px 8px",borderRadius:99}}>~{wk.avgMl}ml/day</span>
+                        <span style={{background:"#d4ede6",color:C.mint,fontFamily:"monospace",fontSize:13,padding:"2px 8px",borderRadius:99}}>~{hm(wk.avgNap)} naps</span>
+                        <span style={{background:"#f5eccb",color:"#b88a20",fontFamily:"monospace",fontSize:13,padding:"2px 8px",borderRadius:99}}>~{wk.avgNight} night wakes</span>
                       </div>
                     </div>
                   ))}
@@ -2243,14 +2421,21 @@ function App(){
           return(
             <div>
               <div style={{...card}}>
-                <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Baby Info</div>
+                <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Baby Info</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
                   <div>
-                    <label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>Date of Birth</label>
+                    <label style={{fontSize:13,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>{babyUnborn ? "Due Date" : "Date of Birth"}</label>
                     <input type="date" value={babyDob} onChange={e=>setBabyDob(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+                    <div style={{display:"flex",gap:6,marginTop:6}}>
+                      {[["born","Born 🎉"],["unborn","Due 🤰"]].map(([v,l])=>(
+                        <div key={v} onClick={()=>setBabyUnborn(v==="unborn")} style={{flex:1,padding:"5px 8px",borderRadius:10,border:`1.5px solid ${(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.blush}`,background:(v==="unborn"?babyUnborn:!babyUnborn)?"#fdf0eb":"white",textAlign:"center",cursor:"pointer",fontSize:12,fontWeight:600,color:(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.mid,transition:"all 0.2s"}}>
+                          {l}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div>
-                    <label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>Sex</label>
+                    <label style={{fontSize:13,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>Sex</label>
                     <select value={babySex} onChange={e=>setBabySex(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}>
                       <option value="boy">Boy</option>
                       <option value="girl">Girl</option>
@@ -2258,13 +2443,21 @@ function App(){
                   </div>
                 </div>
                 {ageMonths!==null&&<div style={{fontSize:12,color:C.mid,fontFamily:"monospace",textAlign:"center",marginTop:4}}>
-                  {babyName||"Baby"} is <strong style={{color:C.ter}}>{ageMonths} month{ageMonths!==1?"s":""}</strong> old
+                  {babyUnborn
+                    ? (()=>{
+                        const daysUntil = Math.ceil((new Date(babyDob) - new Date()) / (1000*60*60*24));
+                        return daysUntil > 0
+                          ? <span>{babyName||"Baby"} is due in <strong style={{color:C.ter}}>{daysUntil} day{daysUntil!==1?"s":""}</strong> 🤰</span>
+                          : <span>Due date has passed — update to date of birth!</span>;
+                      })()
+                    : <span>{babyName||"Baby"} is <strong style={{color:C.ter}}>{ageMonths} month{ageMonths!==1?"s":""}</strong> old</span>
+                  }
                 </div>}
               </div>
 
               {latest&&(
                 <div style={{...card,textAlign:"center",padding:"20px 16px"}}>
-                  <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Latest Weight Percentile</div>
+                  <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Latest Weight Percentile</div>
                   <div style={{fontFamily:"'Playfair Display',serif",fontSize:52,fontWeight:700,color:percentileColor(latest.pct),lineHeight:1}}>{ordinal(latest.pct)}</div>
                   <div style={{fontSize:13,color:C.mid,marginTop:6}}>{latest.kg}kg at {latest.ageMo} months · {babySex}</div>
                   <div style={{fontSize:12,marginTop:6,padding:"6px 12px",borderRadius:99,display:"inline-block",background:percentileColor(latest.pct)+"22",color:percentileColor(latest.pct),fontFamily:"monospace",fontWeight:600}}>
@@ -2274,7 +2467,7 @@ function App(){
               )}
 
               <div style={{...card}}>
-                <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Log Weight</div>
+                <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Log Weight</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
                   <Inp label="Date" type="date" value={growthForm.date} onChange={e=>setGrowthForm(f=>({...f,date:e.target.value}))} style={{marginBottom:0}}/>
                   <Inp label="Weight (kg)" type="number" step="0.01" placeholder="e.g. 5.2" value={growthForm.kg} onChange={e=>setGrowthForm(f=>({...f,kg:e.target.value}))} style={{marginBottom:0}}/>
@@ -2288,7 +2481,7 @@ function App(){
 
               {sortedW.length>=2&&(
                 <div style={{...card}}>
-                  <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Weight Over Time</div>
+                  <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Weight Over Time</div>
                   <svg width="100%" viewBox={`0 0 ${W} ${H+20}`} style={{overflow:"visible"}}>
                     <path d={path} fill="none" stroke={C.ter} strokeWidth={2} strokeLinejoin="round"/>
                     {pts.map((p,i)=>(
@@ -2304,12 +2497,12 @@ function App(){
 
               {wWithPct.filter(w=>w.pct!==null).length>0&&(
                 <div style={{...card}}>
-                  <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Percentile History</div>
+                  <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Percentile History</div>
                   {wWithPct.filter(w=>w.pct!==null).reverse().map((w,i)=>(
                     <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 0",borderBottom:i<wWithPct.filter(x=>x.pct!==null).length-1?`1px solid ${C.blush}`:"none"}}>
                       <div>
                         <div style={{fontSize:13,fontWeight:500}}>{fmtLong(w.date)}</div>
-                        <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,marginTop:2}}>{w.ageMo} months · {w.kg}kg</div>
+                        <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,marginTop:2}}>{w.ageMo} months · {w.kg}kg</div>
                       </div>
                       <span style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:percentileColor(w.pct)}}>{ordinal(w.pct)}</span>
                     </div>
@@ -2324,7 +2517,7 @@ function App(){
                       <span style={{fontSize:13,fontWeight:500}}>{fmtLong(w.date)}</span>
                       <div style={{display:"flex",gap:8,alignItems:"center"}}>
                         <span style={{background:"#f5e0d8",color:C.ter,fontFamily:"monospace",fontSize:13,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{w.kg} kg</span>
-                        <button onClick={()=>setWeights(ws=>ws.filter(x=>x.date!==w.date))} style={{background:"#f0e5e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.lt,cursor:"pointer",fontSize:10}}>✕</button>
+                        <button onClick={()=>setWeights(ws=>ws.filter(x=>x.date!==w.date))} style={{background:"#f0e5e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.lt,cursor:"pointer",fontSize:12}}>✕</button>
                       </div>
                     </div>
                   ))}
@@ -2339,7 +2532,7 @@ function App(){
         {tab==="milestones"&&(()=>{
           const age = calcAge(babyDob);
           const ageWeeks = age ? age.totalWeeks : null;
-          const currentMonth = age ? age.months : null;
+          const currentMonth = babyUnborn ? -1 : (age ? age.months : null);
           const doneCount = MILESTONES.filter(m=>milestones[m.id]&&milestones[m.id].date).length;
 
           if (!babyDob) return (
@@ -2350,6 +2543,47 @@ function App(){
               <button onClick={()=>setTab("growth")} style={{background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:"none",borderRadius:99,padding:"12px 28px",color:"white",fontSize:14,cursor:"pointer",fontWeight:700}}>Set Date of Birth →</button>
             </div>
           );
+
+          // Unborn baby — show all milestones greyed out with a banner
+          if (babyUnborn) {
+            const daysUntil = babyDob ? Math.ceil((new Date(babyDob) - new Date()) / (1000*60*60*24)) : null;
+            return (
+              <div>
+                <div style={{background:"linear-gradient(135deg,#fdeee8,#fad8d0)",border:`1px solid ${C.rose}`,borderRadius:16,padding:"16px 18px",marginBottom:16,textAlign:"center"}}>
+                  <div style={{fontSize:28,marginBottom:8}}>🤰</div>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:C.deep,fontWeight:700,marginBottom:4}}>
+                    {daysUntil > 0 ? `Due in ${daysUntil} day${daysUntil!==1?"s":""}` : "Almost here!"}
+                  </div>
+                  <div style={{fontSize:13,color:C.mid,lineHeight:1.6}}>Milestones are ready and waiting. They'll unlock once {babyName||"your baby"} arrives!</div>
+                </div>
+                {[0,1,2,3,4,5,6].map(mo => {
+                  const ms = MILESTONES.filter(m => {
+                    const startMo = Math.floor(m.earliest / 4.33);
+                    const endMo = Math.floor(m.latest / 4.33);
+                    return mo >= startMo && mo <= endMo;
+                  });
+                  if (!ms.length) return null;
+                  const monthLabel = mo === 0 ? "Newborn" : `Month ${mo}`;
+                  return (
+                    <div key={mo} style={{...card, padding:0, overflow:"hidden", marginBottom:12, opacity:0.45}}>
+                      <div style={{background:"#f0ece8", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+                        <div style={{fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:"#b0a8a4"}}>{monthLabel}</div>
+                        <span style={{fontSize:12,color:"#c0b8b4",fontFamily:"monospace"}}>🔒 {ms.length} milestones</span>
+                      </div>
+                      <div style={{padding:"4px 16px 6px"}}>
+                        {ms.map(m => (
+                          <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.blush}`}}>
+                            <div style={{width:22,height:22,borderRadius:"50%",border:"2px solid #ddd",background:"transparent",flexShrink:0}}/>
+                            <div style={{fontSize:13,color:"#c8bdb8"}}>{m.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }
 
           const msMonths = (m) => {
             const startMo = Math.floor(m.earliest / 4.33);
@@ -2384,14 +2618,14 @@ function App(){
                 }
               }} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:`1px solid ${C.blush}`,cursor:isFuture?"default":"pointer",opacity:isFuture?0.45:1}}>
                 <div style={{width:22,height:22,borderRadius:"50%",border:`2px solid ${checkBorder}`,background:checkBg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  {done&&<span style={{color:"white",fontSize:11,fontWeight:700}}>✓</span>}
+                  {done&&<span style={{color:"white",fontSize:13,fontWeight:700}}>✓</span>}
                 </div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,fontWeight:done?600:400,color:textColor}}>{m.label}</div>
-                  {done&&<div style={{fontSize:10,fontFamily:"monospace",color:C.lt,marginTop:1}}>✓ {fmtLong(milestones[m.id].date)}</div>}
+                  {done&&<div style={{fontSize:12,fontFamily:"monospace",color:C.lt,marginTop:1}}>✓ {fmtLong(milestones[m.id].date)}</div>}
                 </div>
-                {!done && isCurrent && <span style={{fontSize:10,background:"#fdeee8",color:C.ter,borderRadius:99,padding:"3px 8px",fontWeight:700,flexShrink:0}}>Now</span>}
-                {!done && isPast && !isFuture && <span style={{fontSize:10,background:"#fdf4f0",color:C.lt,borderRadius:99,padding:"3px 8px",flexShrink:0}}>Tap to log</span>}
+                {!done && isCurrent && <span style={{fontSize:12,background:"#fdeee8",color:C.ter,borderRadius:99,padding:"3px 8px",fontWeight:700,flexShrink:0}}>Now</span>}
+                {!done && isPast && !isFuture && <span style={{fontSize:12,background:"#fdf4f0",color:C.lt,borderRadius:99,padding:"3px 8px",flexShrink:0}}>Tap to log</span>}
               </div>
             );
           };
@@ -2418,13 +2652,13 @@ function App(){
                 <div style={{background:headerBg, padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
                   <div>
                     <div style={{fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:headerText, lineHeight:1}}>{monthLabel}</div>
-                    <div style={{fontSize:10, fontFamily:"monospace", color: (isCurrent||isNext) ? "rgba(255,255,255,0.7)" : C.lt, marginTop:3}}>{monthRange}</div>
+                    <div style={{fontSize:12, fontFamily:"monospace", color: (isCurrent||isNext) ? "rgba(255,255,255,0.7)" : C.lt, marginTop:3}}>{monthRange}</div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    {isCurrent && <span style={{fontSize:11,background:"rgba(255,255,255,0.25)",color:"white",borderRadius:99,padding:"3px 10px",fontWeight:700}}>👶 Right now</span>}
-                    {isNext && <span style={{fontSize:11,background:"rgba(255,255,255,0.25)",color:"white",borderRadius:99,padding:"3px 10px",fontWeight:700}}>🔜 Up next</span>}
-                    {isPast && <span style={{fontSize:11,color:C.lt,fontFamily:"monospace"}}>{doneMsInBlock.length}/{ms.length} done</span>}
-                    {isFuture && <span style={{fontSize:11,color:"#c0b8b4",fontFamily:"monospace"}}>{ms.length} milestones</span>}
+                    {isCurrent && <span style={{fontSize:13,background:"rgba(255,255,255,0.25)",color:"white",borderRadius:99,padding:"3px 10px",fontWeight:700}}>👶 Right now</span>}
+                    {isNext && <span style={{fontSize:13,background:"rgba(255,255,255,0.25)",color:"white",borderRadius:99,padding:"3px 10px",fontWeight:700}}>🔜 Up next</span>}
+                    {isPast && <span style={{fontSize:13,color:C.lt,fontFamily:"monospace"}}>{doneMsInBlock.length}/{ms.length} done</span>}
+                    {isFuture && <span style={{fontSize:13,color:"#c0b8b4",fontFamily:"monospace"}}>{ms.length} milestones</span>}
                   </div>
                 </div>
                 <div style={{padding:"4px 16px 6px"}}>
@@ -2444,19 +2678,19 @@ function App(){
               <div style={{...card, background:`linear-gradient(135deg,#fdf4f0,#fff8f4)`, marginBottom:16}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                   <div>
-                    <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:5}}>{possessive(babyName||"Baby")} age today</div>
+                    <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:5}}>{possessive(babyName||"Baby")} age today</div>
                     <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:C.ter,lineHeight:1.1}}>{ageParts.join(", ")}</div>
-                    <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,marginTop:4}}>{age.totalDays} days · week {age.totalWeeks}</div>
+                    <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,marginTop:4}}>{age.totalDays} days · week {age.totalWeeks}</div>
                   </div>
                   <div style={{textAlign:"right"}}>
                     <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.mint}}>{doneCount}</div>
-                    <div style={{fontSize:10,fontFamily:"monospace",color:C.lt}}>achieved</div>
+                    <div style={{fontSize:12,fontFamily:"monospace",color:C.lt}}>achieved</div>
                   </div>
                 </div>
                 <div style={{marginTop:12,background:C.blush,borderRadius:99,height:5,overflow:"hidden"}}>
                   <div style={{height:"100%",borderRadius:99,background:`linear-gradient(90deg,${C.ter},${C.mint})`,width:`${Math.round(doneCount/MILESTONES.length*100)}%`}}/>
                 </div>
-                <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,marginTop:3,textAlign:"right"}}>{doneCount} of {MILESTONES.length}</div>
+                <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,marginTop:3,textAlign:"right"}}>{doneCount} of {MILESTONES.length}</div>
               </div>
               {months.map(mo => <MonthBlock key={mo} mo={mo}/>)}
             </div>
@@ -2506,17 +2740,17 @@ function App(){
             {feedType==="milk"&&<Inp label="Amount (ml)" type="number" inputMode="numeric" placeholder="e.g. 180" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}/>}
             {feedType==="breast"&&(
               <div style={{marginBottom:12}}>
-                <label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6}}>Minutes each side</label>
+                <label style={{fontSize:13,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6}}>Minutes each side</label>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                   {[["breastL","Left (L)"],["breastR","Right (R)"]].map(([k,lbl])=>(
                     <div key={k}>
-                      <label style={{fontSize:10,fontFamily:"monospace",color:C.lt,display:"block",marginBottom:3}}>{lbl}</label>
+                      <label style={{fontSize:12,fontFamily:"monospace",color:C.lt,display:"block",marginBottom:3}}>{lbl}</label>
                       <input type="number" inputMode="numeric" min="0" max="60" placeholder="mins" value={form[k]||""} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}
                         style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box",textAlign:"center"}}/>
                     </div>
                   ))}
                 </div>
-                <div style={{fontSize:11,color:C.lt,fontFamily:"monospace",marginTop:6,textAlign:"center"}}>
+                <div style={{fontSize:13,color:C.lt,fontFamily:"monospace",marginTop:6,textAlign:"center"}}>
                   Total: {((parseInt(form.breastL)||0)+(parseInt(form.breastR)||0))} min
                 </div>
               </div>
@@ -2525,7 +2759,7 @@ function App(){
             <Inp label="Time" type="time" value={form.time} onChange={e=>setForm(f=>({...f,time:e.target.value}))}/>
             {!nightMode&&(
               <div style={{marginBottom:12}}>
-                <label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>Night feed?</label>
+                <label style={{fontSize:13,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>Night feed?</label>
                 <select value={form.night} onChange={e=>setForm(f=>({...f,night:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}>
                   <option value="no">No — daytime</option>
                   <option value="yes">Yes — night wake</option>
@@ -2540,7 +2774,7 @@ function App(){
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
                 {["start","end"].map(k=>(
                   <div key={k}>
-                    <label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>{k}</label>
+                    <label style={{fontSize:13,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>{k}</label>
                     <input type="time" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
                   </div>
                 ))}
@@ -2560,7 +2794,7 @@ function App(){
             <>
               <Inp label="Time" type="time" value={form.time} onChange={e=>setForm(f=>({...f,time:e.target.value}))}/>
               <div style={{marginBottom:12}}>
-                <label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6}}>Colour / type</label>
+                <label style={{fontSize:13,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6}}>Colour / type</label>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {POOP_TYPES.map(pt=>(
                     <button key={pt} onClick={()=>setForm(f=>({...f,poopType:pt}))} style={{padding:"6px 12px",borderRadius:99,border:`1.5px solid ${form.poopType===pt?"#8a7060":C.blush}`,background:form.poopType===pt?"#e8e0d4":C.warm,fontSize:12,color:form.poopType===pt?"#5a4030":C.mid,cursor:"pointer",fontFamily:"inherit",fontWeight:form.poopType===pt?600:400}}>
@@ -2578,9 +2812,10 @@ function App(){
       )}
 
       {modal==="addDay"&&(
-        <Sheet onClose={()=>setModal(null)} title="Add New Day">
-          <Inp label="Date" type="date" value={newDate} onChange={e=>setNewDate(e.target.value)}/>
-          <PBtn onClick={addDay}>Add Day</PBtn>
+        <Sheet onClose={()=>setModal(null)} title="Add Past Day">
+          <div style={{fontSize:13,color:C.lt,marginBottom:12,lineHeight:1.6}}>Today is created automatically. Use this to log a past day you missed.</div>
+          <Inp label="Date" type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} max={(()=>{const y=new Date();y.setDate(y.getDate()-1);return y.toISOString().split("T")[0];})()}/>
+          <PBtn onClick={addDay}>Add Past Day</PBtn>
         </Sheet>
       )}
 
@@ -2602,7 +2837,7 @@ function App(){
               <div style={{fontSize:13,color:C.mid,marginBottom:4,lineHeight:1.6}}>
                 Paste your notes in any format — the app will read them and sort them into the right categories.
               </div>
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,marginBottom:12,padding:"10px",background:C.cream,borderRadius:10,lineHeight:1.8}}>
+              <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,marginBottom:12,padding:"10px",background:C.cream,borderRadius:10,lineHeight:1.8}}>
                 e.g. "Woke up 7am · Feed 8am 180ml · Nap 10:15-11:30 · Feed 1pm 150ml · Asleep 7pm · Wake1 10:30pm 60ml"
               </div>
               <textarea
@@ -2626,7 +2861,7 @@ function App(){
                   📅 No date found — entries will be added to <strong>{fmtLong(selDay||todayStr())}</strong>
                 </div>
               )}
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>
+              <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>
                 Found {parsedEntries.entries.length} entr{parsedEntries.entries.length===1?"y":"ies"}
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12,maxHeight:280,overflowY:"auto"}}>
@@ -2635,7 +2870,7 @@ function App(){
                     <span style={{fontSize:16}}>{ICONS[e.type]}</span>
                     <div style={{flex:1}}>
                       <div style={{fontSize:13,fontWeight:500}}>{NAMES[e.type]}{e.night?" (night)":""}</div>
-                      <div style={{fontSize:11,fontFamily:"monospace",color:C.lt}}>
+                      <div style={{fontSize:13,fontFamily:"monospace",color:C.lt}}>
                         {e.type==="nap"?`${fmt12(e.start)} – ${fmt12(e.end)} (${minDiff(e.start,e.end)}min)`:`${fmt12(e.time)}${e.amount?` · ${e.amount}ml`:""}`}
                         {e.note?` · ${e.note}`:""}
                       </div>
@@ -2645,9 +2880,9 @@ function App(){
               </div>
               {parsedEntries.warnings.length>0&&(
                 <div style={{marginBottom:12}}>
-                  <div style={{fontSize:11,fontFamily:"monospace",color:C.gold,marginBottom:5}}>⚠️ Couldn't parse {parsedEntries.warnings.length} line{parsedEntries.warnings.length>1?"s":""}:</div>
+                  <div style={{fontSize:13,fontFamily:"monospace",color:C.gold,marginBottom:5}}>⚠️ Couldn't parse {parsedEntries.warnings.length} line{parsedEntries.warnings.length>1?"s":""}:</div>
                   {parsedEntries.warnings.map((w,i)=>(
-                    <div key={i} style={{fontSize:11,color:C.mid,fontFamily:"monospace",padding:"4px 8px",background:"#fffbf0",borderRadius:8,marginBottom:3}}>{w}</div>
+                    <div key={i} style={{fontSize:13,color:C.mid,fontFamily:"monospace",padding:"4px 8px",background:"#fffbf0",borderRadius:8,marginBottom:3}}>{w}</div>
                   ))}
                 </div>
               )}
@@ -2704,21 +2939,21 @@ function App(){
               <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#c9705a,#7a5c52)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>📊</div>
               <div>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:18}}>Day Report</div>
-                <div style={{fontSize:11,fontFamily:"monospace",color:C.lt}}>{fmtLong(selDay)}</div>
+                <div style={{fontSize:13,fontFamily:"monospace",color:C.lt}}>{fmtLong(selDay)}</div>
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
               <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 10px",textAlign:"center"}}>
-                <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Wake Up</div>
+                <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Wake Up</div>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.gold}}>{wakeEv?fmt12(wakeEv.time):"—"}</div>
               </div>
               <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 10px",textAlign:"center"}}>
-                <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Bedtime</div>
+                <div style={{fontSize:12,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Bedtime</div>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.sky}}>{sleepEv?fmt12(sleepEv.time):"—"}</div>
               </div>
             </div>
             <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.ter}`,borderRadius:14,padding:"12px",marginBottom:10}}>
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>🍼 Feeding</div>
+              <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>🍼 Feeding</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                 <span style={{fontSize:13,color:C.deep}}>Total</span>
                 <span style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.ter}}>{totalFeedMl}<span style={{fontSize:12,color:C.lt,fontWeight:400}}>ml</span></span>
@@ -2733,32 +2968,32 @@ function App(){
               </div>}
             </div>
             <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.mint}`,borderRadius:14,padding:"12px",marginBottom:10}}>
-              <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>😴 Naps</div>
+              <div style={{fontSize:13,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>😴 Naps</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <span style={{fontSize:13,color:C.deep}}>{dayNaps.length} nap{dayNaps.length!==1?"s":""}</span>
                 <span style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.mint}}>{hm(totalNapM)}</span>
               </div>
               {dayNaps.map((n,i)=>(
-                <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:11,color:C.lt,fontFamily:"monospace",marginTop:4,borderTop:i===0?`1px solid ${C.blush}`:"none",paddingTop:i===0?6:0}}>
+                <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:13,color:C.lt,fontFamily:"monospace",marginTop:4,borderTop:i===0?`1px solid ${C.blush}`:"none",paddingTop:i===0?6:0}}>
                   <span>{fmt12(n.start)} – {fmt12(n.end)}</span>
                   <span>{minDiff(n.start,n.end)}min</span>
                 </div>
               ))}
             </div>
             <div style={{background:"#1a1228",borderRadius:14,padding:"12px",marginBottom:10}}>
-              <div style={{fontSize:11,fontFamily:"monospace",color:"#6a5880",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>🌟 Night Wakes</div>
+              <div style={{fontSize:13,fontFamily:"monospace",color:"#6a5880",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>🌟 Night Wakes</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:stretches.length?10:0}}>
                 <span style={{fontSize:13,color:"#d8cce8"}}>{nEs.length} wake{nEs.length!==1?"s":""}</span>
                 {nightFeedMl>0&&<span style={{background:"rgba(212,168,85,0.2)",color:C.gold,fontFamily:"monospace",fontSize:12,padding:"2px 8px",borderRadius:99}}>{nightFeedMl}ml total</span>}
               </div>
               {stretches.length>0&&(
                 <>
-                  <div style={{fontSize:10,fontFamily:"monospace",color:"#6a5880",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Stretches between wakes</div>
+                  <div style={{fontSize:12,fontFamily:"monospace",color:"#6a5880",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Stretches between wakes</div>
                   {stretches.map((s,i)=>(
                     <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid #3a2e50",marginBottom:5}}>
                       <div>
                         <div style={{fontSize:12,color:"#d8cce8"}}>{s.from} → {s.to}</div>
-                        <div style={{fontSize:10,fontFamily:"monospace",color:"#6a5880",marginTop:2}}>{fmt12(s.toTime)}{s.feed?` · ${s.feed}ml`:""}</div>
+                        <div style={{fontSize:12,fontFamily:"monospace",color:"#6a5880",marginTop:2}}>{fmt12(s.toTime)}{s.feed?` · ${s.feed}ml`:""}</div>
                       </div>
                       <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:s.mins>=180?"#6fa898":s.mins>=120?"#d4a855":"#c9705a",fontWeight:700}}>{hm(s.mins)}</span>
                     </div>
