@@ -28,7 +28,6 @@
 const { useState, useEffect, useRef } = React;
 
 const STORAGE_KEY = "babyTracker_v6";
-  // check for siri shortcut actions
 const params = new URLSearchParams(window.location.search);
 const quickAction = params.get("action");
 const SEED_DAYS = {};
@@ -111,13 +110,8 @@ function TrendLine({vals,keys,color,unit=""}){
   );
 }
 
-// WHO Child Growth Standards — Weight-for-age, 0–24 months
-// L, M, S values taken directly from the official WHO data tables
-// Source: WHO Child Growth Standards, https://www.who.int/tools/child-growth-standards/standards/weight-for-age
-// These are the published LMS parameters used by the NHS and all WHO-compliant growth charts
-
+// WHO Child Growth Standards
 const WHO_LMS_BOYS = [
-  // [month, L, M, S]
   [0,0.3487,3.3464,0.14602],[1,0.2297,4.4709,0.13395],[2,0.1970,5.5675,0.12979],
   [3,0.1738,6.3762,0.12703],[4,0.1553,7.0023,0.12512],[5,0.1395,7.5105,0.12357],
   [6,0.1257,7.9340,0.12232],[7,0.1134,8.2970,0.12138],[8,0.1021,8.6151,0.12060],
@@ -141,7 +135,6 @@ const WHO_LMS_GIRLS = [
   [24,-0.2941,11.4775,0.14244]
 ];
 
-// Normal distribution CDF approximation (Abramowitz & Stegun)
 function normalCDF(z) {
   const t = 1 / (1 + 0.2316419 * Math.abs(z));
   const poly = t*(0.319381530 + t*(-0.356563782 + t*(1.781477937 + t*(-1.821255978 + t*1.330274429))));
@@ -149,8 +142,6 @@ function normalCDF(z) {
   return z >= 0 ? p : 1 - p;
 }
 
-// WHO LMS percentile calculation
-// Returns percentile (0-100) for a given weight (kg) and age in months
 function getPercentile(kg, ageMonths, sex) {
   const table = sex === "girl" ? WHO_LMS_GIRLS : WHO_LMS_BOYS;
   const mo = Math.min(Math.round(ageMonths), 24);
@@ -158,17 +149,15 @@ function getPercentile(kg, ageMonths, sex) {
   const row = table[mo];
   if (!row) return null;
   const [, L, M, S] = row;
-  // WHO z-score formula: z = [(X/M)^L - 1] / (L*S)
   let z;
   if (Math.abs(L) < 0.0001) {
     z = Math.log(kg / M) / S;
   } else {
     z = (Math.pow(kg / M, L) - 1) / (L * S);
   }
-  // Clamp z to ±3.5 for display purposes
   z = Math.max(-3.5, Math.min(3.5, z));
   const pct = normalCDF(z) * 100;
-  return Math.round(pct * 10) / 10; // one decimal place
+  return Math.round(pct * 10) / 10;
 }
 
 function percentileColor(p) {
@@ -195,7 +184,6 @@ function percentileNote(p) {
   return "Within normal range ✓";
 }
 
-// Milestone categories
 const MILESTONE_CATS = [
   { key:"social", label:"Social & Emotional", icon:"💛" },
   { key:"language", label:"Language & Communication", icon:"💬" },
@@ -203,10 +191,7 @@ const MILESTONE_CATS = [
   { key:"cognitive", label:"Cognitive & Play", icon:"🔆" },
 ];
 
-// Each milestone: earliest/typical/latest in WEEKS
-// Sources: NHS developmental milestones, WHO Motor Development Study, CDC Learn the Signs
 const MILESTONES = [
-  // Social & Emotional
   { id:"m1",  cat:"social",    label:"First smile",                   earliest:4,  typical:6,   latest:12  },
   { id:"m2",  cat:"social",    label:"Recognises your face & voice",  earliest:4,  typical:8,   latest:16  },
   { id:"m3",  cat:"social",    label:"Laughs out loud",               earliest:10, typical:16,  latest:24  },
@@ -215,7 +200,6 @@ const MILESTONES = [
   { id:"m6",  cat:"social",    label:"Plays peek-a-boo",              earliest:24, typical:32,  latest:44  },
   { id:"m7",  cat:"social",    label:"Waves bye-bye",                 earliest:32, typical:40,  latest:52  },
   { id:"m8",  cat:"social",    label:"Separation anxiety",            earliest:32, typical:40,  latest:56  },
-  // Language
   { id:"m9",  cat:"language",  label:"Coos and gurgles",              earliest:4,  typical:8,   latest:16  },
   { id:"m10", cat:"language",  label:"Turns toward sounds",           earliest:4,  typical:8,   latest:16  },
   { id:"m11", cat:"language",  label:"Babbles (ba-ba, da-da)",        earliest:16, typical:24,  latest:36  },
@@ -224,7 +208,6 @@ const MILESTONES = [
   { id:"m14", cat:"language",  label:"First word",                    earliest:36, typical:48,  latest:64  },
   { id:"m15", cat:"language",  label:"Points to things",              earliest:36, typical:44,  latest:56  },
   { id:"m16", cat:"language",  label:"Follows simple instructions",   earliest:40, typical:52,  latest:68  },
-  // Motor
   { id:"m17", cat:"motor",     label:"Holds head up briefly",         earliest:2,  typical:6,   latest:12  },
   { id:"m18", cat:"motor",     label:"Steady head control",           earliest:8,  typical:12,  latest:20  },
   { id:"m19", cat:"motor",     label:"Grasps objects placed in hand", earliest:8,  typical:12,  latest:20  },
@@ -238,7 +221,6 @@ const MILESTONES = [
   { id:"m27", cat:"motor",     label:"Pulls to stand",                earliest:32, typical:40,  latest:52  },
   { id:"m28", cat:"motor",     label:"Cruises along furniture",       earliest:36, typical:44,  latest:56  },
   { id:"m29", cat:"motor",     label:"First steps",                   earliest:40, typical:52,  latest:72  },
-  // Cognitive
   { id:"m30", cat:"cognitive", label:"Tracks moving objects",         earliest:4,  typical:8,   latest:16  },
   { id:"m31", cat:"cognitive", label:"Explores with hands & mouth",   earliest:12, typical:20,  latest:28  },
   { id:"m32", cat:"cognitive", label:"Bangs objects together",        earliest:24, typical:32,  latest:44  },
@@ -248,7 +230,6 @@ const MILESTONES = [
   { id:"m36", cat:"cognitive", label:"Stacks two objects",            earliest:44, typical:52,  latest:68  },
 ];
 
-// Precise age breakdown from DOB to today
 function calcAge(dob) {
   if (!dob) return null;
   const birth = new Date(dob + "T00:00:00");
@@ -256,8 +237,6 @@ function calcAge(dob) {
   const totalDays = Math.floor((today - birth) / (1000*60*60*24));
   if (totalDays < 0) return null;
   const totalWeeks = Math.floor(totalDays / 7);
-
-  // Precise months/weeks/days
   let months = (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth());
   let afterMonths = new Date(birth);
   afterMonths.setMonth(afterMonths.getMonth() + months);
@@ -265,7 +244,6 @@ function calcAge(dob) {
   const daysAfterMonths = Math.floor((today - afterMonths) / (1000*60*60*24));
   const weeksAfterMonths = Math.floor(daysAfterMonths / 7);
   const remainingDays = daysAfterMonths % 7;
-
   return { months, weeksAfterMonths, remainingDays, totalWeeks, totalDays };
 }
 
@@ -301,7 +279,6 @@ function App(){
     : {primary:"#c9705a",secondary:"#7a5c52"};
   const[growthForm,setGrowthForm]=useState({date:todayStr(),kg:""});
   const[onboarded,setOnboarded]=useState(()=>{
-    // Show onboarding if never completed OR if name+dob both missing
     const done = localStorage.getItem("onboarded_v2");
     const hasName = localStorage.getItem("bn_v2");
     const hasDob = localStorage.getItem("dob_v1");
@@ -311,14 +288,13 @@ function App(){
   const[obName,setObName]=useState("");
   const[obDob,setObDob]=useState("");
   const[obSex,setObSex]=useState("");
-  const[editEntry,setEditEntry]=useState(null); // entry being edited
+  const[editEntry,setEditEntry]=useState(null);
   const[insightDismissed,setInsightDismissed]=useState(()=>!!localStorage.getItem("ins_v1"));
   const[showInsights,setShowInsights]=useState(false);
   const[pasteText,setPasteText]=useState("");
   const[parsedEntries,setParsedEntries]=useState(null);
   const[parseError,setParseError]=useState("");
 
-  // "Oliver" → "Oliver's" | "James" → "James'" | "Alice" → "Alice's"
   const possessive = (n) => {
     if (!n) return "";
     return n.endsWith("s") ? `${n}'` : `${n}'s`;
@@ -376,8 +352,6 @@ function App(){
     return d>0?{icon:"↑",color:C.mint}:{icon:"↓",color:C.ter};
   }
 
-  // Age-appropriate wake windows (minutes) by age in weeks
-  // Source: Taking Cara Babies / Precious Little Sleep / NHS guidelines
   function getWakeWindow(ageWeeks) {
     if (ageWeeks < 6)  return { min:45,  max:60,  label:"45–60 min" };
     if (ageWeeks < 10) return { min:60,  max:90,  label:"1–1.5 hrs" };
@@ -409,7 +383,6 @@ function App(){
     return diff;
   }
 
-  // Predict next nap based on last wake/nap end and age
   function predictNextNap() {
     const age = calcAge(babyDob);
     const ageWeeks = age ? age.totalWeeks : null;
@@ -427,8 +400,8 @@ function App(){
       const recent = loggedDays.slice(-7);
       let windows = [];
       recent.forEach(d => {
-        const wins = getAwakeWindows(days[d]||[]);
-        wins.forEach(w => { if (w.mins) windows.push(w.mins); });
+        const ws = getAwakeWindows(days[d]||[]);
+        ws.forEach(w => { if (w.mins) windows.push(w.mins); });
       });
       const avgWindow = windows.length ? Math.round(windows.reduce((a,b)=>a+b,0)/windows.length) : getWakeWindow(ageWeeks).min;
       wakeWindowMin = Math.max(30, Math.round(avgWindow * 0.9));
@@ -451,46 +424,111 @@ function App(){
     return { napStart_min, napStart_max, wakeWindowMin, wakeWindowMax, sourceLabel, lastAwakeStart };
   }
 
-  // Analyse trends across available days
+  // ── SLEEP ANALYTICS (now correctly inside App, with access to state) ──
+
+  function sleepScore() {
+    const today = days[selDay] || [];
+    const todayNaps = today.filter(e => e.type === "nap" && !e.night);
+    const napMinutes = todayNaps.reduce((s, n) => s + minDiff(n.start, n.end), 0);
+    const nightWakes = today.filter(e => e.night).length;
+    const age = calcAge(babyDob);
+    const ageWeeks = age ? age.totalWeeks : null;
+    const ww = ageWeeks ? getWakeWindow(ageWeeks) : null;
+
+    let score = 100;
+    // Penalise if nap time is too short for age
+    const idealNapMin = ww ? Math.min(ww.min * todayNaps.length, 240) : 120;
+    if (napMinutes < 90) score -= 20;
+    else if (napMinutes > 240) score -= 10;
+    // Night wakes
+    if (nightWakes > 3) score -= 20;
+    else if (nightWakes === 0 && todayNaps.length > 0) score += 5;
+    // Bonus: wake window data exists
+    const dayWins = getAwakeWindows(today);
+    if (dayWins.length > 0) score += 5;
+    return Math.max(0, Math.min(100, score));
+  }
+
+  function sleepScoreColor(score) {
+    if (score >= 80) return C.mint;
+    if (score >= 55) return C.gold;
+    return C.ter;
+  }
+
+  function sleepScoreLabel(score) {
+    if (score >= 80) return "Great day";
+    if (score >= 55) return "Good day";
+    if (score >= 35) return "Tricky day";
+    return "Rough day";
+  }
+
+  function bedtimePrediction() {
+    const today = days[selDay] || [];
+    const todayNaps = today.filter(e => e.type === "nap" && !e.night);
+    if (!todayNaps.length) return null;
+    const age = calcAge(babyDob);
+    if (!age) return null;
+    const ww = getWakeWindow(age.totalWeeks);
+    const lastNap = todayNaps[todayNaps.length - 1];
+    if (!lastNap.end) return null;
+    return addMinutes(lastNap.end, ww.max);
+  }
+
+  function sleepAdvice() {
+    const today = days[selDay] || [];
+    const todayNaps = today.filter(e => e.type === "nap" && !e.night);
+    const napMinutes = todayNaps.reduce((s, n) => s + minDiff(n.start, n.end), 0);
+    const hrs = (napMinutes / 60).toFixed(1);
+    if (napMinutes === 0) return "No naps logged yet today.";
+    if (napMinutes < 90) return `Baby napped ${hrs}h today — consider an earlier bedtime to avoid overtiredness.`;
+    if (napMinutes > 210) return `Baby napped ${hrs}h today — a slightly later bedtime may help build sleep pressure.`;
+    return `Baby napped ${hrs}h today — sleep pressure looks well balanced. ✓`;
+  }
+
+  function tiredDetection() {
+    const today = days[selDay] || [];
+    const todayNaps = today.filter(e => e.type === "nap" && !e.night);
+    const napMinutes = todayNaps.reduce((s, n) => s + minDiff(n.start, n.end), 0);
+    if (napMinutes === 0) return null;
+    if (napMinutes < 90) return "⚠️ May be overtired today";
+    if (napMinutes > 240) return "💤 May be undertired today";
+    return "✓ Wake windows look appropriate";
+  }
+
+  // ── END SLEEP ANALYTICS ──
+
   function analyseTrends() {
     const dk = Object.keys(days).sort();
     if (dk.length < 3) return null;
     const recent = dk.slice(-7);
 
-    // Average wake time
     const wakeTimes = recent.map(d=>{
       const w=(days[d]||[]).find(e=>e.type==="wake"&&!e.night);
       return w?timeVal(w):null;
     }).filter(v=>v!==null);
     const avgWake = wakeTimes.length ? Math.round(avgArr(wakeTimes)) : null;
 
-    // Average bedtime
     const bedTimes = recent.map(d=>{
       const s=(days[d]||[]).find(e=>e.type==="sleep"&&!e.night);
       return s?timeVal(s):null;
     }).filter(v=>v!==null);
     const avgBed = bedTimes.length ? Math.round(avgArr(bedTimes)) : null;
 
-    // Average naps per day
     const napCounts = recent.map(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night).length);
     const avgNaps = napCounts.length ? Math.round(avgArr(napCounts)*10)/10 : null;
 
-    // Average total nap mins
     const napMinsArr = recent.map(d=>{
       const ns=(days[d]||[]).filter(e=>e.type==="nap"&&!e.night);
       return ns.reduce((s,n)=>s+minDiff(n.start,n.end),0);
     });
     const avgNapMins = Math.round(avgArr(napMinsArr));
 
-    // Average night wakes
     const nightWakes = recent.map(d=>(days[d]||[]).filter(e=>e.night).length);
     const avgNightWakes = Math.round(avgArr(nightWakes)*10)/10;
 
-    // Average daily ml
     const mlArr = recent.map(d=>(days[d]||[]).filter(e=>e.type==="feed").reduce((s,f)=>s+(f.amount||0),0));
     const avgMlRecent = Math.round(avgArr(mlArr));
 
-    // Consistency score (std dev of bedtimes)
     const bedStdDev = bedTimes.length>1 ? Math.round(Math.sqrt(bedTimes.reduce((s,v)=>s+Math.pow(v-avgBed,2),0)/bedTimes.length)) : null;
 
     const minsToTime = m => {
@@ -502,7 +540,6 @@ function App(){
     const ageWeeks = calcAge(babyDob) ? calcAge(babyDob).totalWeeks : null;
     const ww = ageWeeks ? getWakeWindow(ageWeeks) : null;
 
-    // Build insights
     const insights = [];
 
     if (avgBed !== null) {
@@ -542,7 +579,6 @@ function App(){
     }
 
     if (avgNapMins > 0 && ww) {
-      const totalDayWake = 16*60 - avgNapMins; // rough estimate
       insights.push({
         type:"info", icon:"😴", title:"Nap totals",
         body:`Averaging ${hm(avgNapMins)} of day sleep across ${avgNaps} nap${avgNaps!==1?"s":""}. Appropriate wake windows for this age are ${ww.label}.`
@@ -559,11 +595,7 @@ function App(){
     return { insights, avgWake: avgWake!==null?minsToTime(avgWake):null, avgBed: avgBed!==null?minsToTime(avgBed):null, avgNaps, avgNapMins, avgNightWakes, avgMlRecent, days: dk.length };
   }
 
-  // ── SMART PASTE PARSER ──────────────────────────────────────────
-  // Parses free-text notes into structured entries
-  // Handles formats like:
-  //   "Feed 9am 210ml", "Nap 11:15-12:35", "Woke up 7:08",
-  //   "Wake1 8:30pm 70ml", "Dream feed 10pm 60ml", "Asleep 7pm"
+  // ── SMART PASTE PARSER ──
   function parseTime(str, previousMinutes=null) {
     if (!str) return null;
     str = str.trim().toLowerCase();
@@ -605,7 +637,6 @@ function App(){
   }
 
   function parseTimeRange(str, previousMinutes=null) {
-    // Handles "11:15-12:35", "11:15am-12:35pm", "11:15 to 12:35", "11:15am to 1:25pm"
     const sep = str.match(/(.+?)\s*(?:-|–|to)\s*(.+)/i);
     if (!sep) return null;
     const start = parseTime(sep[1], previousMinutes);
@@ -621,7 +652,6 @@ function App(){
     const warnings = [];
     let lastMinutes = null;
 
-    // Try to detect a date line at the top
     let detectedDate = null;
     if (rawLines.length > 0) {
       const dateMatch = rawLines[0].match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
@@ -634,12 +664,9 @@ function App(){
 
     rawLines.forEach(function(raw) {
       const l = raw.toLowerCase();
-
-      // Skip date/header lines
       if (/^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.](\d{2,4})/.test(l)) return;
       if (/^(day|date)\s*:/.test(l)) return;
 
-      // ── DREAM FEED (check before general feed) ──
       if (/dream\s*feed/.test(l)) {
         const t = parseTime(raw.replace(/dream\s*feed/i,""), lastMinutes);
         const ml = parseAmount(raw);
@@ -648,7 +675,6 @@ function App(){
         return;
       }
 
-      // ── NIGHT WAKE (Wake1, Wake 1, Night wake etc.) ──
       if (/wake\s*\d|night\s*wake|woke\s*\d/.test(l)) {
         const t = parseTime(raw.replace(/wake\s*\d+|night\s*wake|woke\s*\d+/i,""), lastMinutes);
         const ml = parseAmount(raw);
@@ -659,7 +685,6 @@ function App(){
         return;
       }
 
-      // ── WAKE UP (morning) ──
       if (/woke?\s*up|wake\s*up|morning|got\s*up/.test(l)) {
         const t = parseTime(raw.replace(/woke?\s*up|wake\s*up|morning|got\s*up/i,""), lastMinutes);
         if (t) { entries.push({type:"wake",time:t,night:false,note:"",id:uid()}); lastMinutes = timeVal(t); }
@@ -667,7 +692,6 @@ function App(){
         return;
       }
 
-      // ── BEDTIME / SLEEP ──
       if (/\b(asleep|bedtime|bed time|went to sleep|down for bed)\b/.test(l) && !/nap/.test(l)) {
         const t = parseTime(raw.replace(/asleep|bedtime|bed time|went to sleep|down for bed/i,""), lastMinutes);
         if (t) { entries.push({type:"sleep",time:t,night:false,note:"",id:uid()}); lastMinutes = timeVal(t); }
@@ -675,7 +699,6 @@ function App(){
         return;
       }
 
-      // ── NAP ──
       if (/\bnap\b/.test(l)) {
         const rangeStr = raw.replace(/nap\s*\d*/i,"").replace(/^[\s:\-–]+/,"").trim();
         const range = parseTimeRange(rangeStr, lastMinutes);
@@ -689,7 +712,6 @@ function App(){
         return;
       }
 
-      // ── FEED ──
       if (/feed|fed|bottle|milk|oz|\bml\b/.test(l) && !/sleep/.test(l)) {
         const ml = parseAmount(raw);
         const cleaned = raw.replace(/feed|fed|bottle|milk/i,"").replace(/\d+\s*ml/i,"").trim();
@@ -724,7 +746,6 @@ function App(){
   function confirmPaste() {
     if (!parsedEntries) return;
     const date = parsedEntries.detectedDate || selDay;
-    // Ensure the day exists
     setDays(d => {
       const existing = d[date] || [];
       return { ...d, [date]: [...existing, ...parsedEntries.entries] };
@@ -732,7 +753,6 @@ function App(){
     if (parsedEntries.detectedDate) setSelDay(parsedEntries.detectedDate);
     setModal(null); setParsedEntries(null); setPasteText("");
   }
-  // ── END SMART PASTE ─────────────────────────────────────────────
 
   function openEntry(night=false){setEditEntry(null);setNightMode(night);setEType("feed");setForm({amount:"",time:nowTime(),start:nowTime(),end:nowTime(),note:"",night:"no"});setModal("entry");}
   function openEdit(entry){
@@ -793,92 +813,10 @@ function App(){
     setWeights(updated);setWForm({date:todayStr(),kg:""});
   }
 
-
-
-
-
-
-
   const tabSt=t=>({flex:1,padding:"10px 2px",border:"none",background:"none",fontSize:10,fontWeight:700,cursor:"pointer",color:tab===t?C.ter:C.lt,borderTop:tab===t?`2px solid ${C.ter}`:"2px solid transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.04em",textTransform:"uppercase"});
-  
-{(() => {
+  const card={background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"};
 
-  if(!days || !selDay || !days[selDay]){
-    return null;
-  }
-
-  let score = 0;
-  let bed = null;
-  let advice = "";
-  let tired = "";
-
-  try { score = sleepScore(); } catch(e){}
-  try { bed = bedtimePrediction(); } catch(e){}
-  try { advice = sleepAdvice(); } catch(e){}
-  try { tired = tiredDetection(); } catch(e){}
-
-  const bed = bedtimePrediction();
-  const advice = sleepAdvice();
-  const tired = tiredDetection();
-  return (
-    <div style={{background:"white",border:"1px solid #f2d9cc",borderRadius:20,padding:16,marginBottom:14}}>
-      <div style={{fontSize:12,fontFamily:"monospace",color:"#7a5c52"}}>Sleep score</div>
-      <div style={{fontSize:28,fontWeight:700}}>{score}/100</div>
-      {bed && <div style={{marginTop:6}}>Suggested bedtime: {fmt12(bed)}</div>}
-      <div style={{marginTop:6}}>{advice}</div>
-      <div style={{fontSize:12,color:"#b89890",marginTop:4}}>{tired}</div>
-    </div>
-  );
-})()}
-
-const card={background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"};
-
-  
-// --- Sleep analytics ---
-function sleepScore(){
-  const today = days[selDay]||[];
-  const naps = today.filter(e=>e.type==="nap"&&!e.night);
-  const napMinutes = naps.reduce((s,n)=>s+minDiff(n.start,n.end),0);
-  const nightWakes = today.filter(e=>e.night).length;
-  let score = 100;
-  if(napMinutes < 90) score -= 20;
-  if(napMinutes > 240) score -= 10;
-  if(nightWakes > 3) score -= 20;
-  if(nightWakes === 0) score += 5;
-  return Math.max(0,Math.min(100,score));
-}
-
-function bedtimePrediction(){
-  const today = days[selDay]||[];
-  const naps = today.filter(e=>e.type==="nap"&&!e.night);
-  if(!naps.length) return null;
-  const lastNap = naps[naps.length-1];
-  const age = calcAge(babyDob);
-  if(!age) return null;
-  const ww = getWakeWindow(age.totalWeeks);
-  return addMinutes(lastNap.end, ww.max);
-}
-
-function sleepAdvice(){
-  const today = days[selDay]||[];
-  const naps = today.filter(e=>e.type==="nap"&&!e.night);
-  const napMinutes = naps.reduce((s,n)=>s+minDiff(n.start,n.end),0);
-  const hrs = (napMinutes/60).toFixed(1);
-  if(napMinutes < 120) return `Baby napped ${hrs} hours today. Consider an earlier bedtime.`;
-  if(napMinutes > 210) return `Baby napped ${hrs} hours today. A slightly later bedtime may help build sleep pressure.`;
-  return `Baby napped ${hrs} hours today. Sleep pressure looks balanced.`;
-}
-
-function tiredDetection(){
-  const today = days[selDay]||[];
-  const naps = today.filter(e=>e.type==="nap"&&!e.night);
-  const napMinutes = naps.reduce((s,n)=>s+minDiff(n.start,n.end),0);
-  if(napMinutes < 90) return "Baby may be overtired today.";
-  if(napMinutes > 240) return "Baby may be undertired today.";
-  return "Wake windows look appropriate today.";
-}
-
-const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"⭐"};
+  const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"⭐"};
   const tabLabels={day:"Day",week:"Week",trends:"Trends",growth:"Growth",milestones:"Miles"};
 
   // ONBOARDING
@@ -892,11 +830,11 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
     const steps = [
       {
         icon:<img src="oliver.png" style={{width:140,height:140,borderRadius:24,boxShadow:"0 10px 28px rgba(0,0,0,0.12)"}}/>, title:"Welcome to\nO Baby!",
-        sub:"Let’s make life easy.",
+        sub:"Let's make life easy.",
         action: (
           <div style={{width:"100%",marginTop:18}}>
             <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:18,textAlign:"left"}}>
-              {[["🍼","Log feeds"],["😴","Track naps & sleep"],["📈","Look at trends"],["📏","Watch baby’s growth"],["⭐","Track milestones"],["🧠","Sleep advice"]].map(function(item,i){
+              {[["🍼","Log feeds"],["😴","Track naps & sleep"],["📈","Look at trends"],["📏","Watch baby's growth"],["⭐","Track milestones"],["🧠","Sleep advice"]].map(function(item,i){
                 return (
                   <div key={i} style={{display:"flex",alignItems:"center",gap:10,background:"white",border:`1px solid ${C.blush}`,borderRadius:14,padding:"10px 12px"}}>
                     <div style={{fontSize:18}}>{item[0]}</div>
@@ -906,7 +844,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
               })}
             </div>
             <div style={{fontSize:13,color:C.lt,marginBottom:14}}>All in one place.</div>
-            <button onClick={()=>setObStep(1)} style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:"none",borderRadius:99,padding:"14px 40px",color:"white",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 20px rgba(201,112,90,0.4)"}}>Let’s begin →</button>
+            <button onClick={()=>setObStep(1)} style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:"none",borderRadius:99,padding:"14px 40px",color:"white",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 20px rgba(201,112,90,0.4)"}}>Let's begin →</button>
           </div>
         )
       },
@@ -981,7 +919,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
     );
   }
 
-
   return(
     <div style={{background:"#f7f3ee",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:C.deep,paddingBottom:80}}>
       <style>{`
@@ -993,15 +930,13 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
 
       {/* HERO HEADER */}
       <div style={{background:theme.primary,padding:"52px 20px 24px",position:"relative",overflow:"hidden"}}>
-
-        {/* Name / title */}
         <div style={{position:"relative",zIndex:1}}>
           {!nameEdit?(
-            <div onClick={()=>{setNameIn(babyName);setNameEdit(true);}} style={{cursor:"pointer"}}>
+            <div onClick={()=>{setNameIn(babyName);setNameEdit(true);}}>
               <div style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:4}}>
                 {babyName ? possessive(babyName) : "Your baby's"}
               </div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:C.deep,fontWeight:700,lineHeight:1.1}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:C.deep,fontWeight:700,lineHeight:1.1,cursor:"pointer"}}>
                 {babyName ? `${possessive(babyName)} Tracker` : "Baby Tracker"}
                 <span style={{fontSize:18,marginLeft:8,opacity:0.5}}>✦</span>
               </div>
@@ -1042,7 +977,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
           )}
         </div>
 
-        {/* Date strip inside header */}
+        {/* Date strip */}
         <div style={{position:"relative",zIndex:1,marginTop:20,display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
           <button onClick={()=>{setNewDate(todayStr());setModal("addDay");}} style={{flexShrink:0,background:"rgba(255,255,255,0.5)",border:`1px dashed ${C.lt}`,borderRadius:20,padding:"5px 12px",color:C.mid,fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>+ Day</button>
           {displayDayKeys.map(d=>(
@@ -1066,6 +1001,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
             </div>
           ):(
             <div>
+              {/* Stats row */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
                 {[{big:totalMl,unit:"ml",label:"Total Feed",color:C.ter,bg:"#fdf0eb"},{big:naps.length,unit:"naps",label:"Day Sleep",color:C.mint,bg:"#eaf6f3"},{big:hm(napMins),unit:"",label:"Nap Time",color:C.sky,bg:"#eaf3f8"}].map((s,i)=>(
                   <div key={i} style={{background:s.bg,borderRadius:18,padding:"14px 6px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
@@ -1075,6 +1011,72 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                   </div>
                 ))}
               </div>
+
+              {/* ── SLEEP ANALYTICS CARD ── */}
+              {(()=>{
+                const score = sleepScore();
+                const scoreColor = sleepScoreColor(score);
+                const scoreLabel = sleepScoreLabel(score);
+                const advice = sleepAdvice();
+                const tired = tiredDetection();
+                const bed = bedtimePrediction();
+                const hasData = (days[selDay]||[]).some(e=>e.type==="nap");
+
+                if (!hasData) return null;
+
+                // Score ring as a simple arc
+                const radius = 22;
+                const circumference = 2 * Math.PI * radius;
+                const strokeDash = (score / 100) * circumference;
+
+                return (
+                  <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
+                    <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>🧠 Sleep Analytics</div>
+                    <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:12}}>
+                      {/* Score ring */}
+                      <div style={{position:"relative",flexShrink:0}}>
+                        <svg width={60} height={60} viewBox="0 0 60 60">
+                          <circle cx={30} cy={30} r={radius} fill="none" stroke={C.blush} strokeWidth={5}/>
+                          <circle
+                            cx={30} cy={30} r={radius}
+                            fill="none"
+                            stroke={scoreColor}
+                            strokeWidth={5}
+                            strokeDasharray={`${strokeDash} ${circumference}`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 30 30)"
+                            style={{transition:"stroke-dasharray 0.6s ease"}}
+                          />
+                          <text x={30} y={34} textAnchor="middle" fontSize={13} fontWeight="700" fill={scoreColor} fontFamily="'DM Sans',sans-serif">{score}</text>
+                        </svg>
+                      </div>
+                      {/* Label + advice */}
+                      <div style={{flex:1}}>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:scoreColor,lineHeight:1,marginBottom:4}}>{scoreLabel}</div>
+                        <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{advice}</div>
+                      </div>
+                    </div>
+                    {/* Tired detection pill */}
+                    {tired && (
+                      <div style={{display:"inline-block",fontSize:11,fontFamily:"monospace",padding:"4px 12px",borderRadius:99,background:tired.startsWith("⚠️")||tired.startsWith("💤")?`${C.ter}18`:`${C.mint}18`,color:tired.startsWith("✓")?C.mint:C.ter,marginBottom:bed?10:0}}>
+                        {tired}
+                      </div>
+                    )}
+                    {/* Bedtime suggestion */}
+                    {bed && (
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"linear-gradient(135deg,#d5e7f2,#e8f3fa)",borderRadius:14,padding:"10px 14px",marginTop:8}}>
+                        <div>
+                          <div style={{fontSize:10,fontFamily:"monospace",color:C.sky,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>Suggested Bedtime</div>
+                          <div style={{fontSize:11,color:C.mid}}>Based on last nap end + wake window</div>
+                        </div>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.sky}}>{fmt12(bed)}</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Quick add */}
               <div style={{...card}}>
                 <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:9}}>Quick Add</div>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
@@ -1093,6 +1095,8 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                   )}
                 </div>
               </div>
+
+              {/* Awake windows */}
               {wins.length>0&&(
                 <div style={{...card}}>
                   <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Awake Windows</div>
@@ -1105,6 +1109,8 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                   </div>
                 </div>
               )}
+
+              {/* Daytime entries */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,marginTop:4}}>
                 <div style={{display:"flex",alignItems:"center",gap:7}}>
                   <div style={{width:3,height:18,background:C.gold,borderRadius:99}}/>
@@ -1134,6 +1140,8 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                   </div>
                 ))}
               </div>
+
+              {/* Night wakes */}
               <div style={{background:"#1a1228",borderRadius:20,padding:"14px 17px",marginBottom:14}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <div style={{display:"flex",alignItems:"center",gap:7}}>
@@ -1149,7 +1157,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                   if(sleepEv) pts.push({label:"Bedtime",time:sleepEv.time});
                   nightE.forEach((e,i)=>pts.push({label:`Wake ${i+1}`,time:e.time,id:e.id,amount:e.amount,note:e.note}));
                   return nightE.map((e,i)=>{
-                    const stretch=pts.length>i+1?null:null; // built below
                     const fromPt=pts[i];const toPt=pts[i+1];
                     let strMins=fromPt&&toPt?minDiff(fromPt.time,toPt.time):0;
                     if(strMins<=0&&strMins!=null&&fromPt&&toPt) strMins+=720;
@@ -1179,7 +1186,8 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                   });
                 })()}
               </div>
-              {/* NAP PREDICTION */}
+
+              {/* Nap prediction */}
               {(()=>{
                 const pred = predictNextNap();
                 const minsAway = pred ? minutesUntil(pred.napStart_min) : null;
@@ -1198,7 +1206,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 );
               })()}
 
-              {/* INSIGHTS PROMPT — after 7 days */}
+              {/* Insights prompt */}
               {Object.keys(days).length >= 7 && !insightDismissed && !showInsights && (
                 <div style={{background:"linear-gradient(135deg,#fdf4f0,#f8ede8)",border:`1px solid ${C.rose}`,borderRadius:18,padding:"14px 15px",marginBottom:12}}>
                   <div style={{fontSize:13,fontWeight:600,color:C.ter,marginBottom:4}}>✨ You have 7 days of data!</div>
@@ -1210,7 +1218,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 </div>
               )}
 
-              {/* INSIGHTS PANEL */}
+              {/* Insights panel */}
               {showInsights && (()=>{
                 const t = analyseTrends();
                 if (!t) return null;
@@ -1235,6 +1243,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 );
               })()}
 
+              {/* Action buttons */}
               <div style={{display:"flex",gap:8,marginTop:4}}>
                 <button onClick={copySummary} style={{flex:1,padding:"13px",borderRadius:14,border:`1.5px solid ${C.rose}`,background:"white",color:C.ter,fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:600,boxShadow:"0 2px 8px rgba(201,112,90,0.08)"}}>
                   {copied?"✓ Copied!":"📋 Copy Day"}
@@ -1242,7 +1251,8 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 <button onClick={()=>setModal("report")} style={{flex:1,padding:"13px",borderRadius:14,border:"none",background:`linear-gradient(135deg,#c9705a,#a85a44)`,color:"white",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:600,boxShadow:"0 4px 14px rgba(201,112,90,0.3)"}}>
                   📊 Day Report
                 </button>
-              </div>            </div>
+              </div>
+            </div>
           )
         )}
 
@@ -1355,24 +1365,15 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
 
         {/* GROWTH TAB */}
         {tab==="growth"&&(()=>{
-          // Age in months from DOB
           const ageMonths = babyDob ? Math.floor((new Date() - new Date(babyDob)) / (1000*60*60*24*30.44)) : null;
-
-          // Sort weights for chart
           const sortedW = [...weights].sort((a,b)=>a.date.localeCompare(b.date));
-
-          // Percentiles for each logged weight
           const wWithPct = sortedW.map(w => {
             if(!babyDob) return {...w, pct: null};
             const ageMo = Math.floor((new Date(w.date) - new Date(babyDob)) / (1000*60*60*24*30.44));
             if(ageMo < 0 || ageMo > 24) return {...w, pct: null};
             return {...w, pct: getPercentile(w.kg, ageMo, babySex), ageMo};
           });
-
-          // Latest percentile
           const latest = wWithPct.filter(w=>w.pct!==null).slice(-1)[0];
-
-          // Weight chart
           const W=280,H=80;
           const kgs = sortedW.map(w=>w.kg);
           const maxKg = Math.max(...kgs,1);
@@ -1386,7 +1387,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
 
           return(
             <div>
-              {/* Setup card */}
               <div style={{...card}}>
                 <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Baby Info</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
@@ -1407,7 +1407,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 </div>}
               </div>
 
-              {/* Latest percentile hero */}
               {latest&&(
                 <div style={{...card,textAlign:"center",padding:"20px 16px"}}>
                   <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Latest Weight Percentile</div>
@@ -1419,7 +1418,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 </div>
               )}
 
-              {/* Log weight */}
               <div style={{...card}}>
                 <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Log Weight</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
@@ -1433,7 +1431,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 }}>Save Weight</PBtn>
               </div>
 
-              {/* Weight chart */}
               {sortedW.length>=2&&(
                 <div style={{...card}}>
                   <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Weight Over Time</div>
@@ -1450,7 +1447,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 </div>
               )}
 
-              {/* Percentile history */}
               {wWithPct.filter(w=>w.pct!==null).length>0&&(
                 <div style={{...card}}>
                   <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Percentile History</div>
@@ -1466,7 +1462,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 </div>
               )}
 
-              {/* All weights list */}
               {weights.length>0&&(
                 <div style={{display:"flex",flexDirection:"column",gap:7}}>
                   {[...weights].sort((a,b)=>b.date.localeCompare(a.date)).map((w,i)=>(
@@ -1489,8 +1484,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
         {tab==="milestones"&&(()=>{
           const age = calcAge(babyDob);
           const ageWeeks = age ? age.totalWeeks : null;
-          const ageMonthsExact = age ? age.months + (age.weeksAfterMonths / 4.33) : null;
-          const currentMonth = age ? age.months : null; // full months completed
+          const currentMonth = age ? age.months : null;
           const doneCount = MILESTONES.filter(m=>milestones[m.id]&&milestones[m.id].date).length;
 
           if (!babyDob) return (
@@ -1502,19 +1496,15 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
             </div>
           );
 
-          // Helper: which calendar months does a milestone belong to?
-          // earliest/latest are in weeks, convert to month ranges
           const msMonths = (m) => {
             const startMo = Math.floor(m.earliest / 4.33);
             const endMo = Math.floor(m.latest / 4.33);
             return { startMo, endMo };
           };
 
-          // Build month buckets from 0 up to max(currentMonth+1, 12)
           const maxMonth = Math.max((currentMonth||0) + 1, 12);
           const months = Array.from({length: maxMonth + 1}, (_, i) => i);
 
-          // For each month, get milestones whose typical window overlaps that month
           const msForMonth = (mo) => MILESTONES.filter(m => {
             const { startMo, endMo } = msMonths(m);
             return mo >= startMo && mo <= endMo;
@@ -1523,18 +1513,15 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
           const MilestoneRow = ({m, monthIdx}) => {
             const done = milestones[m.id] && milestones[m.id].date;
             const isCurrent = currentMonth !== null && monthIdx === currentMonth;
-            const isNext = currentMonth !== null && monthIdx === currentMonth + 1;
             const isPast = currentMonth !== null && monthIdx < currentMonth;
             const isFuture = currentMonth !== null && monthIdx > currentMonth + 1;
-
-            const bg = done ? "#f0faf6" : isFuture ? "#fafafa" : isCurrent ? "#fff8f4" : isPast && !done ? "#fffaf8" : "white";
-            const textColor = done ? C.mint : isFuture ? "#c8bdb8" : C.deep;
             const checkBorder = done ? C.mint : isCurrent ? C.ter : isFuture ? "#ddd" : C.blush;
             const checkBg = done ? C.mint : "transparent";
+            const textColor = done ? C.mint : isFuture ? "#c8bdb8" : C.deep;
 
             return (
               <div onClick={()=>{
-                if(isFuture) return; // can't log future milestones
+                if(isFuture) return;
                 if(done){
                   if(window.confirm(`Remove "${m.label}"?`)) setMilestones(ms=>({...ms,[m.id]:{}}));
                 } else {
@@ -1562,20 +1549,17 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
             const isPast = currentMonth !== null && mo < currentMonth;
             const isFuture = currentMonth !== null && mo > currentMonth + 1;
             const doneMsInBlock = ms.filter(m => milestones[m.id] && milestones[m.id].date);
-
             const headerBg = isCurrent
               ? `linear-gradient(135deg,#c9705a,#a85a44)`
               : isNext ? `linear-gradient(135deg,#e8a898,#d49080)`
               : isPast ? "white"
               : "#f5f2ef";
             const headerText = (isCurrent || isNext) ? "white" : isPast ? C.mid : "#b0a8a4";
-
             const monthLabel = mo === 0 ? "Newborn" : `Month ${mo}`;
             const monthRange = mo === 0 ? "0–4 weeks" : `${mo}–${mo+1} months`;
 
             return (
               <div style={{...card, padding:0, overflow:"hidden", marginBottom:12}}>
-                {/* Month header */}
                 <div style={{background:headerBg, padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
                   <div>
                     <div style={{fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:700, color:headerText, lineHeight:1}}>{monthLabel}</div>
@@ -1588,7 +1572,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                     {isFuture && <span style={{fontSize:11,color:"#c0b8b4",fontFamily:"monospace"}}>{ms.length} milestones</span>}
                   </div>
                 </div>
-                {/* Milestone rows */}
                 <div style={{padding:"4px 16px 6px"}}>
                   {ms.map(m => <MilestoneRow key={m.id} m={m} monthIdx={mo}/>)}
                 </div>
@@ -1596,7 +1579,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
             );
           };
 
-          // Age summary
           const ageParts = [];
           if (age.months > 0) ageParts.push(`${age.months} month${age.months!==1?"s":""}`);
           if (age.weeksAfterMonths > 0) ageParts.push(`${age.weeksAfterMonths} week${age.weeksAfterMonths!==1?"s":""}`);
@@ -1604,7 +1586,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
 
           return (
             <div>
-              {/* Age hero card */}
               <div style={{...card, background:`linear-gradient(135deg,#fdf4f0,#fff8f4)`, marginBottom:16}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
                   <div>
@@ -1622,8 +1603,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 </div>
                 <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,marginTop:3,textAlign:"right"}}>{doneCount} of {MILESTONES.length}</div>
               </div>
-
-              {/* Month blocks — past months first, current, next greyed, then rest collapsed */}
               {months.map(mo => <MonthBlock key={mo} mo={mo}/>)}
             </div>
           );
@@ -1704,7 +1683,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
         </Sheet>
       )}
 
-      {/* DAY REPORT MODAL */}
       {/* SMART PASTE MODAL */}
       {modal==="paste"&&(
         <Sheet onClose={()=>{setModal(null);setParsedEntries(null);setPasteText("");}} title="📋 Paste Day Notes">
@@ -1727,7 +1705,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
             </>
           ) : (
             <>
-              {/* Date detected */}
               {parsedEntries.detectedDate&&(
                 <div style={{fontSize:12,fontFamily:"monospace",color:C.mint,background:"#f0faf6",borderRadius:10,padding:"7px 12px",marginBottom:12}}>
                   📅 Detected date: <strong>{fmtLong(parsedEntries.detectedDate)}</strong> — entries will be added to this day
@@ -1738,8 +1715,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                   📅 No date found — entries will be added to <strong>{fmtLong(selDay||todayStr())}</strong>
                 </div>
               )}
-
-              {/* Parsed entries preview */}
               <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>
                 Found {parsedEntries.entries.length} entr{parsedEntries.entries.length===1?"y":"ies"}
               </div>
@@ -1757,8 +1732,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                   </div>
                 ))}
               </div>
-
-              {/* Warnings */}
               {parsedEntries.warnings.length>0&&(
                 <div style={{marginBottom:12}}>
                   <div style={{fontSize:11,fontFamily:"monospace",color:C.gold,marginBottom:5}}>⚠️ Couldn't parse {parsedEntries.warnings.length} line{parsedEntries.warnings.length>1?"s":""}:</div>
@@ -1767,7 +1740,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                   ))}
                 </div>
               )}
-
               <PBtn onClick={confirmPaste}>✓ Add {parsedEntries.entries.length} {parsedEntries.entries.length===1?"Entry":"Entries"}</PBtn>
               <button onClick={()=>setParsedEntries(null)} style={{width:"100%",marginTop:8,padding:"10px",borderRadius:12,border:`1px solid ${C.blush}`,background:"none",color:C.mid,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>← Edit notes</button>
             </>
@@ -1775,6 +1747,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
         </Sheet>
       )}
 
+      {/* DAY REPORT MODAL */}
       {modal==="report"&&(()=>{
         const es=days[selDay]||[];
         const dEs=es.filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
@@ -1786,7 +1759,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
         const totalFeedMl=es.filter(e=>e.type==="feed").reduce((s,f)=>s+(f.amount||0),0);
         const nightFeedMl=nEs.filter(e=>e.type==="feed").reduce((s,f)=>s+(f.amount||0),0);
         const totalNapM=dayNaps.reduce((s,n)=>s+minDiff(n.start,n.end),0);
-        // Night stretches: bedtime → wake1, wake1 → wake2, etc.
         const nightPoints=[];
         if(sleepEv) nightPoints.push({label:"Bedtime",time:sleepEv.time});
         nEs.forEach((e,i)=>nightPoints.push({label:`Wake ${i+1}`,time:e.time,feed:e.amount||0}));
@@ -1794,11 +1766,9 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
         for(let i=0;i<nightPoints.length-1;i++){
           const from=nightPoints[i];const to=nightPoints[i+1];
           let mins=minDiff(from.time,to.time);
-          // handle cross-midnight: if negative, add 12h
           if(mins<=0) mins+=720;
           stretches.push({from:from.label,to:to.label,mins,toTime:to.time,feed:to.feed});
         }
-        // Copy report text
         function copyReport(){
           const ln=[`📋 ${fmtLong(selDay)} — ${babyName||"Baby"}'s Day Report`,``];
           ln.push(`☀️ Wake up: ${wakeEv?fmt12(wakeEv.time):"—"}`);
@@ -1826,8 +1796,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 <div style={{fontSize:11,fontFamily:"monospace",color:C.lt}}>{fmtLong(selDay)}</div>
               </div>
             </div>
-
-            {/* Top stats row */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
               <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 10px",textAlign:"center"}}>
                 <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Wake Up</div>
@@ -1838,8 +1806,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.sky}}>{sleepEv?fmt12(sleepEv.time):"—"}</div>
               </div>
             </div>
-
-            {/* Feed */}
             <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.ter}`,borderRadius:14,padding:"12px",marginBottom:10}}>
               <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>🍼 Feeding</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
@@ -1855,8 +1821,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 <span style={{fontFamily:"monospace"}}>{nightFeedMl}ml</span>
               </div>}
             </div>
-
-            {/* Sleep */}
             <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.mint}`,borderRadius:14,padding:"12px",marginBottom:10}}>
               <div style={{fontSize:11,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>😴 Naps</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1870,8 +1834,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 </div>
               ))}
             </div>
-
-            {/* Night */}
             <div style={{background:"#1a1228",borderRadius:14,padding:"12px",marginBottom:10}}>
               <div style={{fontSize:11,fontFamily:"monospace",color:"#6a5880",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>🌟 Night Wakes</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:stretches.length?10:0}}>
@@ -1894,7 +1856,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
               )}
               {stretches.length===0&&nEs.length===0&&<div style={{fontSize:12,color:"#6a5880",fontFamily:"monospace",textAlign:"center",padding:"4px 0"}}>No night wakes logged</div>}
             </div>
-
             <div style={{display:"flex",gap:8}}>
               <button onClick={copyReport} style={{flex:1,padding:"11px",borderRadius:99,border:`1px dashed ${C.rose}`,background:"none",color:C.ter,fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:500}}>{copied?"✓ Copied!":"📋 Copy Report"}</button>
               <button onClick={()=>setModal(null)} style={{flex:1,padding:"11px",borderRadius:99,border:"none",background:C.blush,color:C.mid,fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>Done</button>
@@ -1902,8 +1863,6 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
           </Sheet>
         );
       })()}
-
-
 
     </div>
   );
@@ -1913,23 +1872,18 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 
 <style>
-:root{
-  --boy:#eaf3fb;
-  --girl:#fde7e4;
-}
-body.boy header, body.boy .gender-accent{ background:#eaf3fb!important;}
-body.girl header, body.girl .gender-accent{ background:#fde7e4!important;}
+:root{--boy:#eaf3fb;--girl:#fde7e4;}
+body.boy header,body.boy .gender-accent{background:#eaf3fb!important;}
+body.girl header,body.girl .gender-accent{background:#fde7e4!important;}
 </style>
-
 <script>
 (function(){
- try{
-   const sex = localStorage.getItem("sex_v1");
-   if(sex==="girl") document.body.classList.add("girl");
-   else if(sex==="boy") document.body.classList.add("boy");
- }catch(e){}
+  try{
+    const sex=localStorage.getItem("sex_v1");
+    if(sex==="girl")document.body.classList.add("girl");
+    else if(sex==="boy")document.body.classList.add("boy");
+  }catch(e){}
 })();
 </script>
 </body>
-
 </html>
