@@ -984,17 +984,17 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
         <div style={{position:"relative",zIndex:1}}>
           {!nameEdit?(
             <div onClick={()=>{setNameIn(babyName);setNameEdit(true);}} style={{cursor:"pointer"}}>
-              <div style={{fontSize:11,fontFamily:"monospace",color:"rgba(255,255,255,0.6)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:4}}>
+              <div style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:4}}>
                 {babyName ? possessive(babyName) : "Your baby's"}
               </div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:"white",fontWeight:700,lineHeight:1.1}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:C.deep,fontWeight:700,lineHeight:1.1}}>
                 {babyName ? `${possessive(babyName)} Tracker` : "Baby Tracker"}
-                <span style={{fontSize:18,marginLeft:8,opacity:0.7}}>✦</span>
+                <span style={{fontSize:18,marginLeft:8,opacity:0.5}}>✦</span>
               </div>
               {(()=>{
                 const age = calcAge(babyDob);
                 if (!age) return (
-                  <div onClick={e=>{e.stopPropagation();setTab("growth");}} style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginTop:7,fontFamily:"monospace",cursor:"pointer"}}>
+                  <div onClick={e=>{e.stopPropagation();setTab("growth");}} style={{fontSize:11,color:C.lt,marginTop:7,fontFamily:"monospace",cursor:"pointer"}}>
                     tap to edit name · add DOB in Growth tab for age tracking
                   </div>
                 );
@@ -1004,25 +1004,25 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
                 if (age.remainingDays > 0 || parts.length===0) parts.push(`${age.remainingDays} day${age.remainingDays!==1?"s":""}`);
                 return (
                   <div style={{marginTop:10,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                    <div style={{background:"rgba(255,255,255,0.18)",backdropFilter:"blur(4px)",borderRadius:20,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:6}}>
+                    <div style={{background:"rgba(255,255,255,0.5)",borderRadius:20,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:6}}>
                       <span style={{fontSize:14}}>🎂</span>
-                      <span style={{fontSize:13,color:"white",fontWeight:600}}>{parts.join(", ")} old</span>
+                      <span style={{fontSize:13,color:C.deep,fontWeight:600}}>{parts.join(", ")} old</span>
                     </div>
-                    <div style={{background:"rgba(255,255,255,0.1)",borderRadius:20,padding:"5px 12px",display:"inline-flex",alignItems:"center"}}>
-                      <span style={{fontSize:11,color:"rgba(255,255,255,0.7)",fontFamily:"monospace"}}>{age.totalDays} days · {age.totalWeeks} wks</span>
+                    <div style={{background:"rgba(255,255,255,0.35)",borderRadius:20,padding:"5px 12px",display:"inline-flex",alignItems:"center"}}>
+                      <span style={{fontSize:11,color:C.mid,fontFamily:"monospace"}}>{age.totalDays} days · {age.totalWeeks} wks</span>
                     </div>
                   </div>
                 );
               })()}
-              <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",marginTop:5,fontFamily:"monospace"}}>tap to edit name</div>
+              <div style={{fontSize:10,color:C.lt,marginTop:5,fontFamily:"monospace"}}>tap to edit name</div>
             </div>
           ):(
             <div>
-              <div style={{fontSize:11,fontFamily:"monospace",color:"rgba(255,255,255,0.6)",textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:8}}>Enter baby's name</div>
+              <div style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.15em",marginBottom:8}}>Enter baby's name</div>
               <form onSubmit={e=>{e.preventDefault();setBabyName(nameIn.trim());setNameEdit(false);}} style={{display:"flex",gap:8,alignItems:"center"}}>
-                <input autoFocus value={nameIn} onChange={e=>setNameIn(e.target.value)} placeholder="e.g. Oliver" style={{flex:1,fontSize:18,padding:"10px 14px",borderRadius:12,border:"none",background:"rgba(255,255,255,0.2)",color:"white",outline:"none",fontFamily:"inherit","::placeholder":{color:"rgba(255,255,255,0.5)"}}}/>
-                <button type="submit" style={{background:"white",border:"none",borderRadius:10,color:C.ter,fontSize:14,padding:"10px 16px",cursor:"pointer",fontWeight:700}}>Save</button>
-                {babyName&&<button type="button" onClick={()=>setNameEdit(false)} style={{background:"rgba(255,255,255,0.15)",border:"none",borderRadius:10,color:"white",fontSize:14,padding:"10px 12px",cursor:"pointer"}}>✕</button>}
+                <input autoFocus value={nameIn} onChange={e=>setNameIn(e.target.value)} placeholder="e.g. Oliver" style={{flex:1,fontSize:18,padding:"10px 14px",borderRadius:12,border:"none",background:"rgba(255,255,255,0.6)",color:C.deep,outline:"none",fontFamily:"inherit"}}/>
+                <button type="submit" style={{background:C.ter,border:"none",borderRadius:10,color:"white",fontSize:14,padding:"10px 16px",cursor:"pointer",fontWeight:700}}>Save</button>
+                {babyName&&<button type="button" onClick={()=>setNameEdit(false)} style={{background:"rgba(255,255,255,0.4)",border:"none",borderRadius:10,color:C.mid,fontSize:14,padding:"10px 12px",cursor:"pointer"}}>✕</button>}
               </form>
             </div>
           )}
@@ -1030,14 +1030,14 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
 
         {/* Date strip inside header */}
         <div style={{position:"relative",zIndex:1,marginTop:20,display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2}}>
-          <button onClick={()=>{setNewDate(todayStr());setModal("addDay");}} style={{flexShrink:0,background:"rgba(255,255,255,0.2)",border:"1px dashed rgba(255,255,255,0.4)",borderRadius:20,padding:"5px 12px",color:"white",fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>+ Day</button>
+          <button onClick={()=>{setNewDate(todayStr());setModal("addDay");}} style={{flexShrink:0,background:"rgba(255,255,255,0.5)",border:`1px dashed ${C.lt}`,borderRadius:20,padding:"5px 12px",color:C.mid,fontSize:12,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>+ Day</button>
           {displayDayKeys.map(d=>(
-            <div key={d} style={{flexShrink:0,display:"flex",alignItems:"center",gap:2,background:d===selDay?"white":"rgba(255,255,255,0.15)",borderRadius:20,padding:"4px 4px 4px 11px",border:d===selDay?"none":"1px solid rgba(255,255,255,0.2)"}}>
-              <button onClick={()=>setSelDay(d)} style={{background:"none",border:"none",color:d===selDay?C.ter:"rgba(255,255,255,0.9)",fontSize:12,fontFamily:"monospace",cursor:"pointer",padding:"1px 0",whiteSpace:"nowrap",fontWeight:d===selDay?700:400}}>{fmtDate(d)}</button>
-              <button onClick={e=>{setMenuDay(d);setEditDate(d);setModal("dayMenu");e.stopPropagation();}} style={{background:d===selDay?"#f2d9cc":"rgba(255,255,255,0.2)",border:"none",borderRadius:"50%",width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:9,color:d===selDay?C.mid:"rgba(255,255,255,0.8)"}}>✎</button>
+            <div key={d} style={{flexShrink:0,display:"flex",alignItems:"center",gap:2,background:d===selDay?"white":"rgba(255,255,255,0.35)",borderRadius:20,padding:"4px 4px 4px 11px",border:d===selDay?"none":`1px solid rgba(255,255,255,0.5)`}}>
+              <button onClick={()=>setSelDay(d)} style={{background:"none",border:"none",color:d===selDay?C.ter:C.mid,fontSize:12,fontFamily:"monospace",cursor:"pointer",padding:"1px 0",whiteSpace:"nowrap",fontWeight:d===selDay?700:400}}>{fmtDate(d)}</button>
+              <button onClick={e=>{setMenuDay(d);setEditDate(d);setModal("dayMenu");e.stopPropagation();}} style={{background:d===selDay?"#f2d9cc":"rgba(255,255,255,0.4)",border:"none",borderRadius:"50%",width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:9,color:d===selDay?C.mid:C.lt}}>✎</button>
             </div>
           ))}
-          {!displayDayKeys.length&&<span style={{color:"rgba(255,255,255,0.6)",fontSize:12,fontFamily:"monospace",alignSelf:"center"}}>No days yet</span>}
+          {!displayDayKeys.length&&<span style={{color:C.lt,fontSize:12,fontFamily:"monospace",alignSelf:"center"}}>No days yet</span>}
         </div>
       </div>
 
