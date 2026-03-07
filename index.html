@@ -810,7 +810,7 @@ function App(){
     };
     const steps = [
       {
-        icon:<img src="oliver.png" style={{width:80,height:80,borderRadius:16}}/>, title:"Welcome to\nO Baby!",
+        icon:<img src="oliver.png" style={{width:140,height:140,borderRadius:24,boxShadow:"0 10px 28px rgba(0,0,0,0.12)"}}/>, title:"Welcome to\nO Baby!",
         sub:"Let’s make life easy.",
         action: (
           <div style={{width:"100%",marginTop:18}}>
@@ -830,7 +830,7 @@ function App(){
         )
       },
       {
-        icon:<img src="oliver.png" style={{width:80,height:80,borderRadius:16}}/>, title:"What's your\nbaby's name?",
+        icon:<img src="oliver.png" style={{width:140,height:140,borderRadius:24,boxShadow:"0 10px 28px rgba(0,0,0,0.12)"}}/>, title:"What's your\nbaby's name?",
         sub:"You can always change this later by tapping the title.",
         action: (
           <div style={{width:"100%",marginTop:20}}>
@@ -1826,79 +1826,23 @@ function App(){
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 
+<style>
+:root{
+  --boy:#7aa7ff;
+  --girl:#ff9ecf;
+}
+body.boy header, body.boy .gender-accent{ background:linear-gradient(135deg,#7aa7ff,#4c79d8)!important;}
+body.girl header, body.girl .gender-accent{ background:linear-gradient(135deg,#ff9ecf,#e66aa8)!important;}
+</style>
+
 <script>
-// Nap countdown + bedtime suggestion
-function fmt12(t){
-  if(!t) return "";
-  const [h,m]=t.split(":").map(Number);
-  return `${h%12||12}:${String(m).padStart(2,"0")}${h>=12?"pm":"am"}`;
-}
-
-function minutesUntil(timeStr){
-  if(!timeStr) return null;
-  const now=new Date();
-  const [h,m]=timeStr.split(":").map(Number);
-  const target=new Date();
-  target.setHours(h,m,0,0);
-  let diff=Math.round((target-now)/60000);
-  if(diff<0) diff=0;
-  return diff;
-}
-
-function addMinutes(time,mins){
-  const [h,m]=time.split(":").map(Number);
-  const total=h*60+m+mins;
-  const hh=Math.floor(total/60)%24;
-  const mm=total%60;
-  return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0");
-}
-
-function renderNapCard(){
-  if(typeof predictNextNap!=="function") return;
-  const pred=predictNextNap();
-  if(!pred) return;
-
-  const mins=minutesUntil(pred.napStart_min);
-  const bedtime=addMinutes(pred.napStart_max,150);
-
-  let card=document.getElementById("napPredictionCard");
-  if(!card){
-    card=document.createElement("div");
-    card.id="napPredictionCard";
-    card.style.background="white";
-    card.style.border="1px solid #f2d9cc";
-    card.style.borderRadius="20px";
-    card.style.padding="16px";
-    card.style.margin="14px";
-    card.style.boxShadow="0 2px 12px rgba(201,112,90,0.06)";
-    document.body.prepend(card);
-  }
-
-  card.innerHTML=`
-  <div style="font-size:12px;color:#7a5c52;font-family:monospace;margin-bottom:6px">
-  Next nap window
-  </div>
-
-  <div style="font-family:Playfair Display,serif;font-size:22px;color:#2c1f1a;margin-bottom:6px">
-  ${fmt12(pred.napStart_min)} – ${fmt12(pred.napStart_max)}
-  </div>
-
-  <div style="font-size:13px;color:#c9705a;margin-bottom:6px">
-  Next nap in ${mins} min
-  </div>
-
-  <div style="font-size:13px;color:#2c1f1a;margin-top:6px">
-  Suggested bedtime tonight: <b>${fmt12(bedtime)}</b>
-  </div>
-
-  <div style="font-size:11px;color:#b89890;margin-top:6px">
-  Based on ${pred.sourceLabel}
-  </div>
-  `;
-}
-
-setInterval(renderNapCard,60000);
-setTimeout(renderNapCard,2000);
+(function(){
+ try{
+   const sex = localStorage.getItem("sex_v1");
+   if(sex==="girl") document.body.classList.add("girl");
+   else if(sex==="boy") document.body.classList.add("boy");
+ }catch(e){}
+})();
 </script>
 </body>
 
