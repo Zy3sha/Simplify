@@ -295,9 +295,9 @@ function App(){
   const[babyDob,setBabyDob]=useState(()=>localStorage.getItem("dob_v1")||"");
   const[babySex,setBabySex]=useState(()=>localStorage.getItem("sex_v1")||"");
   const theme = babySex==="girl"
-    ? {primary:"#f4b8cc",secondary:"#e8a0b8"}
+    ? {primary:"#fde7e4",secondary:"#f5ccc7"}
     : babySex==="boy"
-    ? {primary:"#aad4f0",secondary:"#8bbde0"}
+    ? {primary:"#eaf3fb",secondary:"#d0e6f5"}
     : {primary:"#c9705a",secondary:"#7a5c52"};
   const[growthForm,setGrowthForm]=useState({date:todayStr(),kg:""});
   const[onboarded,setOnboarded]=useState(()=>{
@@ -926,7 +926,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
         action: (
           <div style={{width:"100%",marginTop:20}}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
-              {[["boy","👦","Boy","#8bbde0"],["girl","👧","Girl","#e8a0b8"]].map(([v,emoji,l,accent])=>(
+              {[["boy","👦","Boy","#d0e6f5"],["girl","👧","Girl","#f5ccc7"]].map(([v,emoji,l,accent])=>(
                 <div key={v} onClick={()=>setObSex(v)} style={{padding:"20px 10px",borderRadius:18,border:`2px solid ${obSex===v?accent:C.blush}`,background:obSex===v?`${accent}22`:"white",textAlign:"center",cursor:"pointer",transition:"all 0.2s"}}>
                   <div style={{fontSize:28,marginBottom:4}}>{emoji}</div>
                   <div style={{fontSize:15,fontWeight:700,color:obSex===v?accent:C.mid}}>{l}</div>
@@ -1903,8 +1903,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 
 <style>
 :root{
-  --boy:#aad4f0;
-  --girl:#f4b8cc;
+  --boy:#eaf3fb;
+  --girl:#fde7e4;
 }
 body.boy header, body.boy .gender-accent{ background:linear-gradient(135deg,#7aa7ff,#4c79d8)!important;}
 body.girl header, body.girl .gender-accent{ background:linear-gradient(135deg,#ff9ecf,#e66aa8)!important;}
