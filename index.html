@@ -1391,69 +1391,88 @@ function App(){
             )}
 
             {/* Tooltip card */}
-            <div style={{
-              position:"absolute",
-              bottom: step.arrow==="bottom"||step.arrow==="bottom-right" ? 130 : step.arrow==="top-right" ? "auto" : "50%",
-              top: step.arrow==="top-right" ? 68 : step.arrow==="bottom"||step.arrow==="bottom-right" ? "auto" : "auto",
-              left: step.arrow==="bottom-right"||step.arrow==="top-right" ? "auto" : "50%",
-              right: step.arrow==="bottom-right"||step.arrow==="top-right" ? 16 : "auto",
-              transform: step.arrow==="bottom"||step.arrow==="bottom-right"||step.arrow==="top-right" ? "none" : "translate(-50%, -50%)",
-              width: step.arrow ? "min(320px, calc(100vw - 40px))" : "min(340px, calc(100vw - 40px))",
-              background:"white",
-              borderRadius:22,
-              padding:"22px 20px 18px",
-              boxShadow:"0 20px 60px rgba(0,0,0,0.35)",
-              animation:"tutPop 0.3s ease",
-              zIndex:1002,
-              pointerEvents:"auto",
-            }}>
-              {/* Arrow pointer */}
-              {step.arrow==="bottom" && (
-                <div style={{position:"absolute",bottom:-10,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderTop:"10px solid white"}}/>
-              )}
-              {step.arrow==="bottom-right" && (
-                <div style={{position:"absolute",bottom:-10,right:24,width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderTop:"10px solid white"}}/>
-              )}
-              {step.arrow==="top-right" && (
-                <div style={{position:"absolute",top:-10,right:24,width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderBottom:"10px solid white"}}/>
-              )}
+            {(()=>{
+              // Calculate safe position based on arrow direction
+              // All positions use fixed so they're always relative to viewport
+              let cardStyle = {
+                position:"fixed",
+                left:"50%",
+                transform:"translateX(-50%)",
+                width:"min(340px, calc(100vw - 32px))",
+                background:"white",
+                borderRadius:22,
+                padding:"20px 18px 16px",
+                boxShadow:"0 20px 60px rgba(0,0,0,0.4)",
+                animation:"tutPop 0.3s ease",
+                zIndex:1002,
+                pointerEvents:"auto",
+                maxHeight:"calc(100vh - 40px)",
+                overflowY:"auto",
+              };
+              if (step.arrow==="bottom" || step.arrow==="bottom-right") {
+                // Card sits above the bottom nav — anchor to bottom
+                cardStyle.bottom = 140;
+                cardStyle.top = "auto";
+              } else if (step.arrow==="top-right") {
+                // Card sits below the top element
+                cardStyle.top = 80;
+                cardStyle.bottom = "auto";
+              } else {
+                // Centered — use fixed centering
+                cardStyle.top = "50%";
+                cardStyle.transform = "translate(-50%, -50%)";
+              }
+              return (
+                <div style={cardStyle}>
+                  {/* Arrow pointer */}
+                  {step.arrow==="bottom" && (
+                    <div style={{position:"absolute",bottom:-10,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderTop:"10px solid white"}}/>
+                  )}
+                  {step.arrow==="bottom-right" && (
+                    <div style={{position:"absolute",bottom:-10,right:24,width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderTop:"10px solid white"}}/>
+                  )}
+                  {step.arrow==="top-right" && (
+                    <div style={{position:"absolute",top:-10,right:24,width:0,height:0,borderLeft:"10px solid transparent",borderRight:"10px solid transparent",borderBottom:"10px solid white"}}/>
+                  )}
 
-              {/* Header row */}
-              <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:12}}>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:40,height:40,borderRadius:12,background:"#fdf0eb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{step.icon}</div>
-                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,fontWeight:700,color:C.deep,lineHeight:1.2}}>{step.title}</div>
+                  {/* Header row */}
+                  <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:38,height:38,borderRadius:12,background:"#fdf0eb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>{step.icon}</div>
+                      <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:C.deep,lineHeight:1.2}}>{step.title}</div>
+                    </div>
+                    <button onClick={dismissTutorial} style={{background:"none",border:"none",color:C.lt,fontSize:18,cursor:"pointer",padding:"0 0 0 8px",lineHeight:1,flexShrink:0}}>&#x2715;</button>
+                  </div>
+
+                  <div style={{fontSize:13,color:C.mid,lineHeight:1.6,marginBottom:14}}>{step.body}</div>
+
+                  {/* Progress dots */}
+                  <div style={{display:"flex",gap:4,justifyContent:"center",marginBottom:12}}>
+                    {TUT_STEPS.map((_,i)=>(
+                      <div key={i} onClick={()=>setTutStep(i)} style={{width:i===tutStep?18:6,height:6,borderRadius:99,background:i===tutStep?C.ter:C.blush,transition:"all 0.3s",cursor:"pointer"}}/>
+                    ))}
+                  </div>
+
+                  {/* Buttons */}
+                  <div style={{display:"flex",gap:8}}>
+                    {tutStep > 0 && (
+                      <button onClick={prevStep} style={{flex:1,padding:"9px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"white",color:C.mid,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
+                        ← Back
+                      </button>
+                    )}
+                    <button onClick={nextStep} style={{flex:2,padding:"10px",borderRadius:12,border:"none",background:`linear-gradient(135deg,#c9705a,#a85a44)`,color:"white",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 14px rgba(201,112,90,0.35)"}}>
+                      {isLast ? "Start Tracking!" : "Next →"}
+                    </button>
+                  </div>
+
+                  {tutStep === 0 && (
+                    <button onClick={dismissTutorial} style={{width:"100%",marginTop:8,background:"none",border:"none",color:C.lt,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
+                      Skip tutorial
+                    </button>
+                  )}
                 </div>
-                <button onClick={dismissTutorial} style={{background:"none",border:"none",color:C.lt,fontSize:18,cursor:"pointer",padding:"0 0 0 8px",lineHeight:1,flexShrink:0}}>&#x2715;</button>
-              </div>
-
-              <div style={{fontSize:14,color:C.mid,lineHeight:1.65,marginBottom:18}}>{step.body}</div>
-
-              {/* Progress dots */}
-              <div style={{display:"flex",gap:5,justifyContent:"center",marginBottom:14}}>
-                {TUT_STEPS.map((_,i)=>(
-                  <div key={i} onClick={()=>setTutStep(i)} style={{width:i===tutStep?20:6,height:6,borderRadius:99,background:i===tutStep?C.ter:C.blush,transition:"all 0.3s",cursor:"pointer"}}/>
-                ))}
-              </div>
-
-              {/* Buttons */}
-              <div style={{display:"flex",gap:8}}>
-                {tutStep > 0 && (
-                  <button onClick={prevStep} style={{flex:1,padding:"10px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"white",color:C.mid,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>
-                    ← Back
-                  </button>
-                )}
-                <button onClick={nextStep} style={{flex:2,padding:"11px",borderRadius:12,border:"none",background:`linear-gradient(135deg,#c9705a,#a85a44)`,color:"white",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 4px 14px rgba(201,112,90,0.35)"}}>
-                  {isLast ? "Start Tracking!" : "Next →"}
-                </button>
-              </div>
-
-              {tutStep === 0 && (
-                <button onClick={dismissTutorial} style={{width:"100%",marginTop:10,background:"none",border:"none",color:C.lt,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
-                  Skip tutorial
-                </button>
-              )}
-            </div>
+              );
+            })()}
           </div>
         );
       })()}
