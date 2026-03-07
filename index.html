@@ -1347,7 +1347,29 @@ function App(){
           {
             icon:"📱",
             title:"Add to Your Home Screen",
-            body:"Get the best experience by saving O Baby as an app!\n\n🍎 iPhone: tap the Share button (□↑) at the bottom of Safari, then tap \"Add to Home Screen\".\n\n🤖 Android: tap the three-dot menu (⋮) in Chrome, then tap \"Add to Home Screen\".\n\nIt'll appear on your home screen as O Baby — no app store needed!",
+            body:null,
+            bodyJSX: (
+              <div style={{fontSize:13,color:"#5a4a3a",lineHeight:1.6}}>
+                <div style={{marginBottom:10}}>Get the best experience by saving O Baby as an app — no app store needed!</div>
+                <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
+                  <div style={{fontWeight:700,marginBottom:6}}>🍎 iPhone (Safari)</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                    <div>1. Tap the <strong>Share</strong> button (□↑) at the bottom</div>
+                    <div>2. Scroll down and tap <strong>View More</strong></div>
+                    <div>3. Tap <strong>Add to Home Screen</strong></div>
+                    <div>4. Tap <strong>Add</strong> to confirm</div>
+                  </div>
+                </div>
+                <div style={{background:"#f0f5f0",borderRadius:12,padding:"10px 12px"}}>
+                  <div style={{fontWeight:700,marginBottom:6}}>🤖 Android (Chrome)</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                    <div>1. Tap the <strong>three-dot menu</strong> (⋮) top right</div>
+                    <div>2. Tap <strong>Add to Home Screen</strong></div>
+                    <div>3. Tap <strong>Add</strong> to confirm</div>
+                  </div>
+                </div>
+              </div>
+            ),
             spot:"center",
             arrow:null,
           },
@@ -1460,7 +1482,7 @@ function App(){
                     <button onClick={dismissTutorial} style={{background:"none",border:"none",color:C.lt,fontSize:18,cursor:"pointer",padding:"0 0 0 8px",lineHeight:1,flexShrink:0}}>&#x2715;</button>
                   </div>
 
-                  <div style={{fontSize:13,color:C.mid,lineHeight:1.6,marginBottom:14}}>{step.body}</div>
+                  <div style={{fontSize:13,color:C.mid,lineHeight:1.6,marginBottom:14}}>{step.bodyJSX || step.body}</div>
 
                   {/* Progress dots */}
                   <div style={{display:"flex",gap:4,justifyContent:"center",marginBottom:12}}>
