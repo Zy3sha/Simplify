@@ -65,8 +65,9 @@ function getAwakeWindows(entries) {
   return wins;
 }
 
-const ICONS={feed:"🍼",nap:"😴",wake:"☀️",sleep:"🌙"};
-const NAMES={feed:"Feed",nap:"Nap",wake:"Wake Up",sleep:"Bedtime"};
+const ICONS={feed:"🍼",nap:"😴",wake:"☀️",sleep:"🌙",poop:"💩"};
+const NAMES={feed:"Feed",nap:"Nap",wake:"Wake Up",sleep:"Bedtime",poop:"Nappy"};
+const POOP_TYPES=["Yellow/seedy","Mustard","Green","Brown","Black","Other"];
 const C={ter:"#c9705a",mid:"#7a5c52",lt:"#b89890",blush:"#f2d9cc",rose:"#e8b4a0",cream:"#faf6f0",warm:"#fff9f2",mint:"#6fa898",sky:"#7aabc4",gold:"#d4a855",deep:"#2c1f1a"};
 
 function Sheet({onClose,title,children}){
@@ -96,9 +97,9 @@ function PBtn({children,onClick,v="pri",style={}}){
 }
 
 function Badge({type,children}){
-  const bg={feed:"#f5e0d8",nap:"#d4ede6",sleep:"#d5e7f2",wake:"#f5eccb"};
-  const fg={feed:C.ter,nap:C.mint,sleep:C.sky,wake:"#b88a20"};
-  return <span style={{display:"inline-block",padding:"3px 9px",borderRadius:99,fontSize:11,fontFamily:"monospace",background:bg[type],color:fg[type]}}>{children}</span>;
+  const bg={feed:"#f5e0d8",nap:"#d4ede6",sleep:"#d5e7f2",wake:"#f5eccb",poop:"#e8e0d4"};
+  const fg={feed:C.ter,nap:C.mint,sleep:C.sky,wake:"#b88a20",poop:"#8a7060"};
+  return <span style={{display:"inline-block",padding:"3px 9px",borderRadius:99,fontSize:11,fontFamily:"monospace",background:bg[type]||bg.feed,color:fg[type]||fg.feed}}>{children}</span>;
 }
 
 function TrendLine({vals,keys,color,unit=""}){
@@ -307,6 +308,9 @@ function App(){
   const[pasteText,setPasteText]=useState("");
   const[parsedEntries,setParsedEntries]=useState(null);
   const[parseError,setParseError]=useState("");
+  const[feedType,setFeedType]=useState("milk"); // "milk" | "solids"
+  const[dragId,setDragId]=useState(null); // id of entry being dragged
+  const[dragOver,setDragOver]=useState(null); // id of entry being hovered over
 
   const possessive = (n) => {
     if (!n) return "";
@@ -344,6 +348,21 @@ function App(){
     countdownRef.current = setInterval(tick, 1000);
     return()=>clearInterval(countdownRef.current);
   },[selDay, days, babyDob]);
+
+  // ── AGE-ADAPTIVE STAGE ──
+  function getAgeStage(){
+    const age=calcAge(babyDob);
+    if(!age) return null;
+    const w=age.totalWeeks;
+    if(w<6)   return{stage:"newborn",label:"Newborn",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"4-6 naps",feedGoal:"8-12 feeds/day",nightNote:"Wake every 2-3h is normal",tip:"Tiny tummy — feed on demand, log every feed."};
+    if(w<13)  return{stage:"infant",label:"Young Infant",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"4-5 naps",feedGoal:"6-8 feeds/day",nightNote:"Stretches of 3-4h emerging",tip:"Watch for wake windows of 45-60 min."};
+    if(w<26)  return{stage:"3to6mo",label:"3–6 Months",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"3-4 naps",feedGoal:"5-6 feeds/day",nightNote:"Some babies sleep 5-6h stretches",tip:"Consolidation beginning — longer naps likely."};
+    if(w<39)  return{stage:"6to9mo",label:"6–9 Months",weeks:w,feedUnit:"ml",showSolids:true,napGoal:"2-3 naps",feedGoal:"4-5 milk + solids 1-2×",nightNote:"Night feeds reducing",tip:"Starting solids! Log meals separately from milk."};
+    if(w<52)  return{stage:"9to12mo",label:"9–12 Months",weeks:w,feedUnit:"ml",showSolids:true,napGoal:"2 naps",feedGoal:"3-4 milk + solids 3×",nightNote:"Most can sleep through",tip:"Nap consolidation to 2 naps likely."};
+    if(w<78)  return{stage:"1year",label:"1–1.5 Years",weeks:w,feedUnit:"g/portion",showSolids:true,napGoal:"1-2 naps",feedGoal:"3 meals + 2 snacks",nightNote:"One wake at most is common",tip:"Watch for 2→1 nap transition around 15-18 months."};
+    return      {stage:"toddler",label:"Toddler",weeks:w,feedUnit:"portion",showSolids:true,napGoal:"1 nap",feedGoal:"3 meals + snacks",nightNote:"Should sleep through",tip:"Nap may drop around 2.5–3 years."};
+  }
+  const ageStage = getAgeStage();
 
   const dayKeys=Object.keys(days).sort();
   const displayDayKeys=[...dayKeys].reverse();
@@ -790,19 +809,21 @@ function App(){
     setModal(null); setParsedEntries(null); setPasteText("");
   }
 
-  function openEntry(night=false){setEditEntry(null);setNightMode(night);setEType("feed");setForm({amount:"",time:nowTime(),start:nowTime(),end:nowTime(),note:"",night:"no"});setModal("entry");}
+  function openEntry(night=false){setEditEntry(null);setNightMode(night);setEType("feed");setFeedType("milk");setForm({amount:"",time:nowTime(),start:nowTime(),end:nowTime(),note:"",night:"no",poopType:""});setModal("entry");}
   function openEdit(entry){
     setEditEntry(entry);
     setEType(entry.type);
+    setFeedType(entry.feedType||"milk");
     setNightMode(!!entry.night);
-    setForm({amount:entry.amount||"",time:entry.time||nowTime(),start:entry.start||nowTime(),end:entry.end||nowTime(),note:entry.note||"",night:entry.night?"yes":"no"});
+    setForm({amount:entry.amount||"",time:entry.time||nowTime(),start:entry.start||nowTime(),end:entry.end||nowTime(),note:entry.note||"",night:entry.night?"yes":"no",poopType:entry.poopType||""});
     setModal("entry");
   }
   function delEntry(id){setDays(d=>({...d,[selDay]:(d[selDay]||[]).filter(e=>e.id!==id)}));}
   function saveEntry(){
     let e={id:editEntry?editEntry.id:uid(),note:form.note||""};
-    if(eType==="feed"){if(!form.time)return;e={...e,type:"feed",time:form.time,amount:parseInt(form.amount)||0,night:nightMode||form.night==="yes"};}
+    if(eType==="feed"){if(!form.time)return;e={...e,type:"feed",time:form.time,amount:parseInt(form.amount)||0,night:nightMode||form.night==="yes",feedType:feedType};}
     else if(eType==="nap"){if(!form.start||!form.end)return;e={...e,type:"nap",start:form.start,end:form.end,night:false};}
+    else if(eType==="poop"){if(!form.time)return;e={...e,type:"poop",time:form.time,poopType:form.poopType||"",night:false};}
     else{if(!form.time)return;e={...e,type:eType,time:form.time,night:false};}
     if(editEntry){
       setDays(d=>({...d,[selDay]:(d[selDay]||[]).map(x=>x.id===editEntry.id?e:x)}));
@@ -811,7 +832,20 @@ function App(){
     }
     setModal(null);setEditEntry(null);
   }
-  function quickFeed(ml){setDays(d=>({...d,[selDay]:[...(d[selDay]||[]),{id:uid(),type:"feed",time:nowTime(),amount:ml,night:false,note:""}]}));}
+  function quickFeed(ml){setDays(d=>({...d,[selDay]:[...(d[selDay]||[]),{id:uid(),type:"feed",time:nowTime(),amount:ml,feedType:"milk",night:false,note:""}]}));}
+
+  function reorderEntry(fromId, toId){
+    if(fromId===toId) return;
+    setDays(d=>{
+      const arr=[...(d[selDay]||[])];
+      const fi=arr.findIndex(e=>e.id===fromId);
+      const ti=arr.findIndex(e=>e.id===toId);
+      if(fi<0||ti<0) return d;
+      const [moved]=arr.splice(fi,1);
+      arr.splice(ti,0,moved);
+      return {...d,[selDay]:arr};
+    });
+  }
   function startNap(){setNapStartT(nowTime());setNapSec(0);setNapOn(true);}
   function endNap(){
     setNapOn(false);const end=nowTime();
@@ -1095,13 +1129,35 @@ function App(){
             </div>
           ):(
             <div>
+              {/* Age-adaptive tip banner */}
+              {ageStage&&(
+                <div style={{background:`linear-gradient(135deg,${C.warm},#fff4ee)`,border:`1px solid ${C.blush}`,borderLeft:`4px solid ${C.ter}`,borderRadius:16,padding:"12px 14px",marginBottom:14}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:10,fontFamily:"monospace",color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:3}}>{ageStage.label}</div>
+                      <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{ageStage.tip}</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:7}}>
+                        {[{icon:"😴",val:ageStage.napGoal,label:"naps"},{icon:"🍼",val:ageStage.feedGoal,label:"feeds"},{icon:"🌙",val:ageStage.nightNote,label:""}].map((x,i)=>(
+                          <span key={i} style={{fontSize:10,fontFamily:"monospace",background:"rgba(201,112,90,0.1)",color:C.ter,padding:"2px 8px",borderRadius:99}}>{x.icon} {x.val}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Stats row */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
-                {[{big:totalMl,unit:"ml",label:"Total Feed",color:C.ter,bg:"#fdf0eb"},{big:naps.length,unit:"naps",label:"Day Sleep",color:C.mint,bg:"#eaf6f3"},{big:hm(napMins),unit:"",label:"Nap Time",color:C.sky,bg:"#eaf3f8"}].map((s,i)=>(
-                  <div key={i} style={{background:s.bg,borderRadius:18,padding:"14px 6px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
-                    <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:s.color,lineHeight:1}}>{s.big}</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:14}}>
+                {[
+                  {big:totalMl||dayE.filter(e=>e.type==="feed"&&e.feedType==="solids").length,unit:totalMl?"ml":"meals",label:totalMl?"Milk":"Solids",color:C.ter,bg:"#fdf0eb"},
+                  {big:naps.length,unit:"naps",label:"Day Sleep",color:C.mint,bg:"#eaf6f3"},
+                  {big:hm(napMins),unit:"",label:"Nap Time",color:C.sky,bg:"#eaf3f8"},
+                  {big:dayE.filter(e=>e.type==="poop").length,unit:"💩",label:"Nappies",color:"#8a7060",bg:"#f0ece6"}
+                ].map((s,i)=>(
+                  <div key={i} style={{background:s.bg,borderRadius:16,padding:"12px 4px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
+                    <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:s.color,lineHeight:1}}>{s.big}</div>
                     {s.unit&&<div style={{fontSize:10,fontFamily:"monospace",color:s.color,opacity:0.7,marginTop:1}}>{s.unit}</div>}
-                    <div style={{fontSize:9,color:C.mid,marginTop:4,textTransform:"uppercase",letterSpacing:"0.1em",fontFamily:"monospace"}}>{s.label}</div>
+                    <div style={{fontSize:8,color:C.mid,marginTop:3,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:"monospace"}}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -1255,25 +1311,44 @@ function App(){
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:13}}>
                 {dayE.length===0&&<div style={{textAlign:"center",padding:"20px",color:C.lt,fontSize:13,fontFamily:"monospace"}}>No entries yet</div>}
-                {dayE.map(e=>(
-                  <div key={e.id} style={{background:C.warm,borderRadius:14,padding:"11px 12px",border:`1px solid ${C.blush}`,borderLeft:`3px solid ${e.type==="feed"?C.ter:e.type==="nap"?C.mint:e.type==="sleep"?C.sky:C.gold}`}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:9}}>
-                        <span style={{fontSize:17}}>{ICONS[e.type]}</span>
-                        <div>
-                          <div style={{fontSize:14,fontWeight:500}}>{NAMES[e.type]}</div>
-                          {e.type==="nap"&&<div style={{fontSize:11,color:C.lt,fontFamily:"monospace"}}>{minDiff(e.start,e.end)} min</div>}
-                          {e.note&&<div style={{fontSize:11,color:C.mid,fontStyle:"italic",marginTop:1}}>{e.note}</div>}
+                {dayE.map(e=>{
+                  const isDragging=dragId===e.id;
+                  const isOver=dragOver===e.id;
+                  const borderCol=e.type==="feed"?(e.feedType==="solids"?"#b8860b":C.ter):e.type==="nap"?C.mint:e.type==="sleep"?C.sky:e.type==="poop"?"#8a7060":C.gold;
+                  return(
+                    <div key={e.id}
+                      draggable
+                      onDragStart={()=>setDragId(e.id)}
+                      onDragOver={ev=>{ev.preventDefault();setDragOver(e.id);}}
+                      onDragEnd={()=>{if(dragId&&dragOver&&dragId!==dragOver)reorderEntry(dragId,dragOver);setDragId(null);setDragOver(null);}}
+                      onDrop={ev=>{ev.preventDefault();}}
+                      style={{background:isOver?"#f5ede8":C.warm,borderRadius:14,padding:"11px 12px",border:`1px solid ${isOver?C.ter:C.blush}`,borderLeft:`3px solid ${borderCol}`,opacity:isDragging?0.45:1,transition:"opacity 0.15s,background 0.15s",cursor:"grab"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:9}}>
+                          <span style={{fontSize:16,cursor:"grab",color:C.lt}}>⠿</span>
+                          <span style={{fontSize:17}}>{ICONS[e.type]}</span>
+                          <div>
+                            <div style={{fontSize:14,fontWeight:500}}>
+                              {e.type==="feed"?(e.feedType==="solids"?"Solids":"Milk Feed"):NAMES[e.type]}
+                            </div>
+                            {e.type==="nap"&&<div style={{fontSize:11,color:C.lt,fontFamily:"monospace"}}>{minDiff(e.start,e.end)} min</div>}
+                            {e.type==="poop"&&e.poopType&&<div style={{fontSize:11,color:"#8a7060",fontFamily:"monospace"}}>{e.poopType}</div>}
+                            {e.note&&e.type!=="feed"&&<div style={{fontSize:11,color:C.mid,fontStyle:"italic",marginTop:1}}>{e.note}</div>}
+                            {e.note&&e.type==="feed"&&e.feedType==="solids"&&<div style={{fontSize:11,color:C.mid,fontStyle:"italic",marginTop:1}}>{e.note}</div>}
+                          </div>
+                        </div>
+                        <div style={{display:"flex",alignItems:"center",gap:7}}>
+                          <Badge type={e.type}>
+                            {e.type==="feed"?(e.feedType==="solids"?fmt12(e.time):`${e.amount}ml`):e.type==="nap"?`${fmt12(e.start)}–${fmt12(e.end)}`:e.type==="poop"?fmt12(e.time):fmt12(e.time)}
+                          </Badge>
+                          <button onClick={()=>openEdit(e)} style={{background:"#f0e8e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.mid,cursor:"pointer",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
+                          <button onClick={()=>delEntry(e.id)} style={{background:"#f0e5e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.lt,cursor:"pointer",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                         </div>
                       </div>
-                      <div style={{display:"flex",alignItems:"center",gap:7}}>
-                        <Badge type={e.type}>{e.type==="feed"?`${e.amount} ml`:e.type==="nap"?`${fmt12(e.start)}–${fmt12(e.end)}`:fmt12(e.time)}</Badge>
-                        <button onClick={()=>openEdit(e)} style={{background:"#f0e8e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.mid,cursor:"pointer",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
-                        <button onClick={()=>delEntry(e.id)} style={{background:"#f0e5e0",border:"none",borderRadius:"50%",width:23,height:23,color:C.lt,cursor:"pointer",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
               </div>
 
               {/* Night wakes */}
@@ -1747,16 +1822,27 @@ function App(){
       {/* ENTRY MODAL */}
       {modal==="entry"&&(
         <Sheet onClose={()=>{setModal(null);setEditEntry(null);}} title={editEntry?"Edit Entry":"Add Entry"}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:15}}>
-            {["feed","nap","wake","sleep"].map(t=>(
-              <div key={t} onClick={()=>setEType(t)} style={{padding:"12px",borderRadius:14,border:`2px solid ${eType===t?C.ter:C.blush}`,background:eType===t?"#fdf0eb":C.warm,textAlign:"center",cursor:"pointer"}}>
-                <div style={{fontSize:22}}>{ICONS[t]}</div>
-                <div style={{fontSize:13,fontWeight:500,color:eType===t?C.ter:C.mid,marginTop:3}}>{NAMES[t]}</div>
+          {/* Type selector — feed/nap/wake/sleep/poop */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:15}}>
+            {["feed","nap","wake","sleep","poop"].map(t=>(
+              <div key={t} onClick={()=>setEType(t)} style={{padding:"10px 6px",borderRadius:14,border:`2px solid ${eType===t?C.ter:C.blush}`,background:eType===t?"#fdf0eb":C.warm,textAlign:"center",cursor:"pointer"}}>
+                <div style={{fontSize:20}}>{ICONS[t]}</div>
+                <div style={{fontSize:12,fontWeight:500,color:eType===t?C.ter:C.mid,marginTop:3}}>{NAMES[t]}</div>
               </div>
             ))}
           </div>
+
           {eType==="feed"&&<>
-            <Inp label="Amount (ml)" type="number" inputMode="numeric" placeholder="e.g. 180" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}/>
+            {/* Milk / Solids toggle */}
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              {["milk","solids"].map(ft=>(
+                <button key={ft} onClick={()=>setFeedType(ft)} style={{flex:1,padding:"8px",borderRadius:12,border:`2px solid ${feedType===ft?C.ter:C.blush}`,background:feedType===ft?"#fdf0eb":C.warm,fontSize:13,fontWeight:600,color:feedType===ft?C.ter:C.mid,cursor:"pointer",fontFamily:"inherit"}}>
+                  {ft==="milk"?"🍼 Milk":"🥣 Solids"}
+                </button>
+              ))}
+            </div>
+            {feedType==="milk"&&<Inp label="Amount (ml)" type="number" inputMode="numeric" placeholder="e.g. 180" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}/>}
+            {feedType==="solids"&&<Inp label="Description / amount" type="text" placeholder="e.g. porridge, half jar" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}/>}
             <Inp label="Time" type="time" value={form.time} onChange={e=>setForm(f=>({...f,time:e.target.value}))}/>
             {!nightMode&&(
               <div style={{marginBottom:12}}>
@@ -1767,19 +1853,47 @@ function App(){
                 </select>
               </div>
             )}
+            {feedType==="milk"&&<Inp label="Note (optional)" type="text" placeholder="e.g. fussy, didn't finish…" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}/>}
           </>}
+
           {eType==="nap"&&(
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-              {["start","end"].map(k=>(
-                <div key={k}>
-                  <label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>{k}</label>
-                  <input type="time" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
-                </div>
-              ))}
-            </div>
+            <>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                {["start","end"].map(k=>(
+                  <div key={k}>
+                    <label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:4}}>{k}</label>
+                    <input type="time" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/>
+                  </div>
+                ))}
+              </div>
+              <Inp label="Note (optional)" type="text" placeholder="e.g. fussy, didn't finish…" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}/>
+            </>
           )}
-          {(eType==="wake"||eType==="sleep")&&<Inp label="Time" type="time" value={form.time} onChange={e=>setForm(f=>({...f,time:e.target.value}))}/>}
-          <Inp label="Note (optional)" type="text" placeholder="e.g. fussy, didn't finish…" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}/>
+
+          {(eType==="wake"||eType==="sleep")&&(
+            <>
+              <Inp label="Time" type="time" value={form.time} onChange={e=>setForm(f=>({...f,time:e.target.value}))}/>
+              <Inp label="Note (optional)" type="text" placeholder="e.g. fussy, didn't finish…" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}/>
+            </>
+          )}
+
+          {eType==="poop"&&(
+            <>
+              <Inp label="Time" type="time" value={form.time} onChange={e=>setForm(f=>({...f,time:e.target.value}))}/>
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:11,fontFamily:"monospace",color:C.mid,textTransform:"uppercase",letterSpacing:"0.08em",display:"block",marginBottom:6}}>Colour / type</label>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {POOP_TYPES.map(pt=>(
+                    <button key={pt} onClick={()=>setForm(f=>({...f,poopType:pt}))} style={{padding:"6px 12px",borderRadius:99,border:`1.5px solid ${form.poopType===pt?"#8a7060":C.blush}`,background:form.poopType===pt?"#e8e0d4":C.warm,fontSize:12,color:form.poopType===pt?"#5a4030":C.mid,cursor:"pointer",fontFamily:"inherit",fontWeight:form.poopType===pt?600:400}}>
+                      {pt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <Inp label="Note (optional)" type="text" placeholder="e.g. explosive, small…" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}/>
+            </>
+          )}
+
           <PBtn onClick={saveEntry}>{editEntry?"Update Entry":"Save Entry"}</PBtn>
         </Sheet>
       )}
