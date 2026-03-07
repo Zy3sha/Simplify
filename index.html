@@ -155,7 +155,17 @@ function normalCDF(z) {
 function getPercentile(kg, ageMonths, sex) {
   const table = sex === "girl" ? WHO_LMS_GIRLS : WHO_LMS_BOYS;
   const mo = Math.min(Math.round(ageMonths), 24);
-  if (mo < 0) return null;
+  if (mo < 0) 
+    // If no am/pm but hour <=7 assume morning, otherwise afternoon heuristic
+    const hOnly = str.match(/^(\d{1,2})$/);
+    if (hOnly):
+        h=int(hOnly.group(1))
+        if h<=7:
+            return f"{h:02d}:00"
+        else:
+            return f"{(h+12)%24:02d}:00"
+    return None;
+
   const row = table[mo];
   if (!row) return null;
   const [, L, M, S] = row;
@@ -332,7 +342,7 @@ function App(){
     return()=>clearInterval(timerRef.current);
   },[napOn]);
 
-  const dayKeys=Object.keys(days).sort();
+  const dayKeys=Object.keys(days).sort().reverse();
   const entries=days[selDay]||[];
   const dayE=entries.filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
   const nightE=entries.filter(e=>e.night).sort((a,b)=>timeVal(a)-timeVal(b));
@@ -886,6 +896,9 @@ function App(){
 
 
 
+  
+  const nextNap = predictNextNap();
+
   const tabSt=t=>({flex:1,padding:"10px 2px",border:"none",background:"none",fontSize:10,fontWeight:700,cursor:"pointer",color:tab===t?C.ter:C.lt,borderTop:tab===t?"2px solid "+C.ter:"2px solid transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.04em",textTransform:"uppercase"});
   const card={background:"white",border:"1px solid "+C.blush,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"};
 
@@ -926,7 +939,7 @@ function App(){
               Feeds, naps, growth and milestones — all in one place. Private, offline, and always with you.
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:11,marginBottom:32}}>
-              {[["🍼","Log feeds, naps, wake-ups and bedtime"],["📊","See patterns and sleep analysis"],["📏","Track growth with WHO percentile charts"],["⭐","Follow milestones month by month"]].map(function(item,i){
+              {[["🍼","Log feeds and naps"],["📊","Look at trends"],["📏","Watch baby's growth"],["⭐","Track milestones"],["😴","Sleep advice"],["✨","All in one place"]].map(function(item,i){
                 return (
                   <div key={i} style={{display:"flex",alignItems:"center",gap:12,animation:"fadeUp 0.6s ease "+(0.1+i*0.08)+"s both"}}>
                     <div style={{width:36,height:36,borderRadius:12,background:"rgba(255,255,255,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{item[0]}</div>
