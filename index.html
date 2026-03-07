@@ -978,7 +978,7 @@ const tabIcons={day:"📅",week:"📊",trends:"📈",growth:"📏",milestones:"�
       `}</style>
 
       {/* HERO HEADER */}
-      <div style={{background:`linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 60%, #7a4535 100%)`,padding:"52px 20px 24px",position:"relative",overflow:"hidden"}}>
+      <div style={{background:theme.primary,padding:"52px 20px 24px",position:"relative",overflow:"hidden"}}>
         {/* decorative circles */}
         <div style={{position:"absolute",top:-40,right:-40,width:180,height:180,borderRadius:"50%",background:"rgba(255,255,255,0.07)"}}/>
         <div style={{position:"absolute",bottom:-60,left:-30,width:220,height:220,borderRadius:"50%",background:"rgba(255,255,255,0.05)"}}/>
@@ -1906,8 +1906,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
   --boy:#eaf3fb;
   --girl:#fde7e4;
 }
-body.boy header, body.boy .gender-accent{ background:linear-gradient(135deg,#7aa7ff,#4c79d8)!important;}
-body.girl header, body.girl .gender-accent{ background:linear-gradient(135deg,#ff9ecf,#e66aa8)!important;}
+body.boy header, body.boy .gender-accent{ background:#eaf3fb!important;}
+body.girl header, body.girl .gender-accent{ background:#fde7e4!important;}
 </style>
 
 <script>
