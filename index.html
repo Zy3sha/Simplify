@@ -4639,6 +4639,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 
 <script>
+window.onerror = function(msg, src, line, col, err) {
+  document.getElementById('root').innerHTML = '<div style="padding:30px;font-family:monospace;font-size:13px;background:#fff;color:#333;word-break:break-all"><b>Error:</b> ' + msg + '<br><b>Line:</b> ' + line + '<br><b>Detail:</b> ' + (err&&err.stack?err.stack:'') + '</div>';
+};
 (function() {
   try {
     if (typeof Babel === 'undefined') throw new Error('Babel not loaded');
@@ -4653,7 +4656,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
     s.onerror = function(e) { console.error('JSX load error', e); };
     document.body.appendChild(s);
   } catch(e) {
-    console.error('OBubba loader error:', e);
+    document.getElementById('root').innerHTML = '<div style="padding:30px;font-family:monospace;font-size:13px;background:#fff;color:#333;word-break:break-all"><b>Loader error:</b> ' + e.message + '<br>' + e.stack + '</div>';
   }
 })();
 </script>
