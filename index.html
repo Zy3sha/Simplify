@@ -5496,129 +5496,6 @@ function App(){
                 ))}
               </div>
 
-              {/* 5. Today's narrative summary */}
-              {(()=>{
-                if (!age || dayE.length === 0) return null;
-                const isToday = selDay === todayStr();
-                const name = babyName || "Baby";
-                const ageWeeks = age.totalWeeks;
-                const dayLabel = isToday ? "Today" : fmtLong(selDay);
-
-                const napCount = naps.length;
-                const p = getAgeNapProfile(ageWeeks);
-                const range = napNormalRange();
-                let sleepLine = "";
-                if (napCount === 0) {
-                  sleepLine = "No naps logged yet.";
-                } else if (napMins < (range ? range.min : 60)) {
-                  sleepLine = `Naps were a little shorter today (${hm(napMins)} across ${napCount} nap${napCount!==1?"s":""}).`;
-                } else if (napMins > (range ? range.max : 300)) {
-                  sleepLine = `Plenty of nap time today (${hm(napMins)} across ${napCount} nap${napCount!==1?"s":""}).`;
-                } else {
-                  sleepLine = `Nap time looks good (${hm(napMins)} across ${napCount} nap${napCount!==1?"s":""}).`;
-                }
-                const bedEntry = dayE.find(e => e.type === "sleep");
-                if (bedEntry) sleepLine += ` Bedtime logged at ${fmt12(bedEntry.time)}.`;
-
-                const dayMlTotal = entries.filter(e => e.type === "feed" && !e.night).reduce((s,f) => s+(f.amount||0), 0);
-                const feedCount = dayE.filter(e => e.type === "feed").length;
-                let feedLine = "";
-                if (feedCount === 0) {
-                  feedLine = "No feeds logged yet.";
-                } else if (dayMlTotal > 0) {
-                  feedLine = `${dayMlTotal}ml across ${feedCount} feed${feedCount!==1?"s":""}`;
-                  const solids = dayE.filter(e => e.type === "feed" && e.feedType === "solids").length;
-                  if (solids > 0) feedLine += ` + ${solids} solid${solids!==1?"s":""}`;
-                  feedLine += ".";
-                } else {
-                  const breast = dayE.filter(e => e.type === "feed" && e.feedType === "breast").length;
-                  const solids = dayE.filter(e => e.type === "feed" && e.feedType === "solids").length;
-                  const parts = [];
-                  if (breast > 0) parts.push(`${breast} breastfeed${breast!==1?"s":""}`);
-                  if (solids > 0) parts.push(`${solids} solid${solids!==1?"s":""}`);
-                  feedLine = parts.length ? parts.join(" + ") + "." : `${feedCount} feed${feedCount!==1?"s":""}.`;
-                }
-
-                const devSkills = MILESTONES.filter(m => ageWeeks >= m.weeks[0] && ageWeeks <= m.weeks[1] && !milestones[m.id]?.date);
-                const cats = [...new Set(devSkills.map(m => m.cat))];
-                const catNames = {social:"social skills",language:"communication",motor:"movement",cognitive:"thinking & play"};
-                let devLine = "";
-                if (cats.length > 0) {
-                  const catList = cats.slice(0,2).map(c => catNames[c]||c).join(" and ");
-                  devLine = `Working on ${catList}.`;
-                }
-
-                return (
-                  <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:22,padding:"18px",marginBottom:16,boxShadow:"0 2px 14px rgba(201,112,90,0.05)"}}>
-                    <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:C.deep,marginBottom:2}}>{dayLabel} with {name}</div>
-                    <div style={{fontSize:13,color:C.lt,fontFamily:_fM,marginBottom:14}}>{fmtAge(age)} · week {ageWeeks}</div>
-
-                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                      {sleepLine && (
-                        <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                          <span style={{fontSize:16,flexShrink:0,marginTop:1}}>😴</span>
-                          <div>
-                            <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Sleep</div>
-                            <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{sleepLine}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {feedLine && (
-                        <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                          <span style={{fontSize:16,flexShrink:0,marginTop:1}}>🍼</span>
-                          <div>
-                            <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Feeding</div>
-                            <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{feedLine}</div>
-                          </div>
-                        </div>
-                      )}
-
-                      {devLine && (
-                        <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                          <span style={{fontSize:16,flexShrink:0,marginTop:1}}>🧠</span>
-                          <div>
-                            <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Development</div>
-                            <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{devLine}</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* 6. Leap / development insight */}
-              {(()=>{
-                if (!age) return null;
-                const ageWeeks = age.totalWeeks;
-                const activePhase = DEV_PHASES.find(l => ageWeeks >= l.windowStart && ageWeeks <= l.windowEnd);
-                const nextPhase = DEV_PHASES.find(l => l.windowStart > ageWeeks);
-                let phaseLine = "";
-                let phaseDetail = "";
-                if (activePhase) {
-                  phaseLine = `In developmental phase ${activePhase.phase}: ${activePhase.name}`;
-                  phaseDetail = `${activePhase.fussy} New skills emerging: ${activePhase.skills.slice(0,2).join(", ")}.`;
-                } else if (nextPhase) {
-                  const weeksUntil = nextPhase.windowStart - ageWeeks;
-                  if (weeksUntil <= 3) {
-                    phaseLine = `Phase ${nextPhase.phase} (${nextPhase.name}) starting in ~${weeksUntil} week${weeksUntil!==1?"s":""}`;
-                    phaseDetail = `What to expect: ${nextPhase.fussy} Afterwards, look out for: ${nextPhase.skills.slice(0,2).join(", ")}.`;
-                  }
-                }
-                if (!phaseLine) return null;
-                return (
-                  <div style={{background:activePhase?"linear-gradient(135deg,#f0eeff,#e8e4ff)":"#f8f7ff",borderRadius:16,padding:"14px",marginBottom:14,border:activePhase?"1.5px solid #c5bef5":"1px solid #e0dbf5"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                      <div style={{width:26,height:26,borderRadius:"50%",background:activePhase?"#7b68ee":"#c5bef5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                        <span style={{fontSize:11,color:"white",fontWeight:700}}>{activePhase?activePhase.phase:nextPhase.phase}</span>
-                      </div>
-                      <div style={{fontSize:14,fontWeight:700,color:activePhase?"#4a3cb5":"#7060c0"}}>{phaseLine}</div>
-                    </div>
-                    {phaseDetail && <div style={{fontSize:13,color:"#5040a0",lineHeight:1.55,paddingLeft:34}}>{phaseDetail}</div>}
-                  </div>
-                );
-              })()}
 
               {/* 7. Daily timeline header */}
 
@@ -5821,85 +5698,6 @@ function App(){
                   });
                 })()}
               </div>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-                <div style={{width:3,height:16,background:C.ter,borderRadius:99}}/>
-                <div style={{fontSize:14,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700}}>Feeds</div>
-              </div>
-              {(()=>{
-                const fc = feedCard();
-                if (!fc) return (
-                  <div style={{background:C.warm,borderRadius:14,padding:"16px",marginBottom:10,border:`1px dashed ${C.blush}`,textAlign:"center"}}>
-                    <div style={{fontSize:22,marginBottom:6}}>🍼</div>
-                    <div style={{fontSize:14,fontWeight:600,color:C.mid,marginBottom:3}}>No feeds logged yet</div>
-                    <div style={{fontSize:13,color:C.lt}}>Log a bottle or breast feed to see intake tracking and NHS guidance here.</div>
-                  </div>
-                );
-                return (
-                  <div style={{background:fc.bg,border:`1px solid ${fc.color}30`,borderLeft:`4px solid ${fc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:10}}>
-                    <div style={{fontSize:14,fontFamily:_fM,color:fc.color,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>{fc.isPastDay ? "Milk Intake" : fc.bedLogged ? "Today's Milk Intake" : "Today's Milk Intake"}</div>
-                    <div style={{display:"flex",gap:10,marginBottom:12}}>
-                      <div style={{flex:1,background:"rgba(255,255,255,0.7)",borderRadius:12,padding:"10px 12px"}}>
-                        <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Daytime</div>
-                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:fc.color,lineHeight:1}}>{fc.dayMl}ml</div>
-                        <div style={{fontSize:12,color:fc.metMinimum?C.mint:fc.approachingBed?C.ter:C.lt,marginTop:2,fontWeight:fc.approachingBed&&!fc.metMinimum?600:400}}>
-                          {fc.metMinimum ? `✓ min ${fc.totalMin}ml reached` : `min ${fc.totalMin}ml by bedtime`}
-                        </div>
-                      </div>
-                      {fc.nightMl > 0 && (
-                        <div style={{flex:1,background:"rgba(42,31,58,0.07)",borderRadius:12,padding:"10px 12px"}}>
-                          <div style={{fontSize:12,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Night feeds</div>
-                          <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:"#7a6898",lineHeight:1}}>{fc.nightMl}ml</div>
-                          <div style={{fontSize:12,color:"#9888b8",marginTop:2}}>total {fc.totalMl}ml</div>
-                        </div>
-                      )}
-                      {fc.nightMl === 0 && (
-                        <div style={{flex:1,background:"rgba(255,255,255,0.5)",borderRadius:12,padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
-                          <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>NHS range</div>
-                          <div style={{fontSize:14,fontWeight:600,color:C.mid}}>{fc.totalLabel}</div>
-                        </div>
-                      )}
-                    </div>
-                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"white",borderRadius:10,padding:"10px 12px",marginBottom:(fc.sleepLink||fc.suggestions.length)?8:0}}>
-                      <span style={{fontSize:16,flexShrink:0}}>{fc.icon}</span>
-                      <div style={{fontSize:15,color:C.mid,lineHeight:1.6}}>{fc.statusMsg}</div>
-                    </div>
-                    {fc.sleepLink && (
-                      <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"#f0ecff",border:"1px solid #d4c8f8",borderRadius:10,padding:"10px 12px",marginBottom:fc.suggestions.length?8:0}}>
-                        <span style={{fontSize:15,flexShrink:0}}>{fc.sleepLink.icon}</span>
-                        <div>
-                          {fc.sleepLink.title && <div style={{fontSize:14,fontWeight:700,color:"#6040c0",marginBottom:3}}>{fc.sleepLink.title}</div>}
-                          <div style={{fontSize:14,color:"#5030a0",lineHeight:1.6}}>{fc.sleepLink.body}</div>
-                        </div>
-                      </div>
-                    )}
-                    {fc.suggestions.map((s,i)=>(
-                      <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,background:"rgba(255,255,255,0.6)",borderRadius:10,padding:"9px 12px",marginTop:6}}>
-                        <span style={{fontSize:15,flexShrink:0}}>{s.icon}</span>
-                        <div style={{fontSize:14,color:C.mid,lineHeight:1.6}}>{s.body}</div>
-                      </div>
-                    ))}
-                    {fc.status==="low" && (
-                      <div style={{fontSize:13,color:C.lt,marginTop:10,paddingTop:8,borderTop:`1px solid ${fc.color}20`,lineHeight:1.5}}>
-                        ℹ️ {fc.nhsNote}
-                      </div>
-                    )}
-                    {fc.personalTarget && (
-                      <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.blush}`,display:"flex",gap:8}}>
-                        <div style={{flex:1,background:"#f0faf5",borderRadius:10,padding:"8px 10px",textAlign:"center"}}>
-                          <div style={{fontSize:11,fontFamily:_fM,color:"#4a8070",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>✨ Personal target</div>
-                          <div style={{fontSize:18,fontWeight:700,color:"#2a7060",fontFamily:"'Playfair Display',serif"}}>{fc.personalTarget}ml</div>
-                          {fc.personalFeedCount && <div style={{fontSize:11,color:"#5a9080",fontFamily:_fM}}>{fc.personalFeedCount} feeds/day</div>}
-                        </div>
-                        <div style={{flex:1,background:"#f5f8ff",borderRadius:10,padding:"8px 10px",textAlign:"center"}}>
-                          <div style={{fontSize:11,fontFamily:_fM,color:"#5a6a90",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>NHS guideline</div>
-                          <div style={{fontSize:18,fontWeight:700,color:"#4a5a80",fontFamily:"'Playfair Display',serif"}}>{fc.totalLabel.split(" ")[0]}</div>
-                          <div style={{fontSize:11,color:"#6a7a90",fontFamily:_fM}}>{fc.totalLabel.split("(")[0].trim()}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
               {(()=>{
                 const sc = sleepNormalCard();
                 if (!sc) return (
@@ -6137,6 +5935,145 @@ function App(){
                   )}
                 </div>
               </div>
+
+              {/* ── TODAY WITH [NAME] ── */}
+              {(()=>{
+                if (!age || !days[selDay] || (days[selDay]||[]).filter(e=>!e.night).length === 0) return null;
+                const isToday = selDay === todayStr();
+                const name = babyName || "Baby";
+                const ageWeeks = age.totalWeeks;
+                const dayLabel = isToday ? "Today" : fmtLong(selDay);
+                const todayEntries = days[selDay]||[];
+                const todayDayE = todayEntries.filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
+
+                const napCount = todayDayE.filter(e=>e.type==="nap").length;
+                const todayNapMins = todayDayE.filter(e=>e.type==="nap").reduce((s,n)=>s+minDiff(n.start,n.end),0);
+                const range = napNormalRange();
+                let sleepLine = "";
+                if (napCount === 0) sleepLine = "No naps logged yet.";
+                else if (todayNapMins < (range ? range.min : 60)) sleepLine = `Naps were a little shorter today (${hm(todayNapMins)} across ${napCount} nap${napCount!==1?"s":""}).`;
+                else if (todayNapMins > (range ? range.max : 300)) sleepLine = `Plenty of nap time today (${hm(todayNapMins)} across ${napCount} nap${napCount!==1?"s":""}).`;
+                else sleepLine = `Nap time looks good (${hm(todayNapMins)} across ${napCount} nap${napCount!==1?"s":""}).`;
+                const bedEntry2 = todayDayE.find(e => e.type === "sleep");
+                if (bedEntry2) sleepLine += ` Bedtime logged at ${fmt12(bedEntry2.time)}.`;
+
+                const dayMlTotal = todayEntries.filter(e => e.type === "feed" && !e.night).reduce((s,f) => s+(f.amount||0), 0);
+                const feedCount = todayDayE.filter(e => e.type === "feed").length;
+                let feedLine = "";
+                if (feedCount === 0) feedLine = "No feeds logged yet.";
+                else if (dayMlTotal > 0) {
+                  feedLine = `${dayMlTotal}ml across ${feedCount} feed${feedCount!==1?"s":""}`;
+                  const solids = todayDayE.filter(e => e.type === "feed" && e.feedType === "solids").length;
+                  if (solids > 0) feedLine += ` + ${solids} solid${solids!==1?"s":""}`;
+                  feedLine += ".";
+                } else {
+                  const breast = todayDayE.filter(e => e.type === "feed" && e.feedType === "breast").length;
+                  const solids = todayDayE.filter(e => e.type === "feed" && e.feedType === "solids").length;
+                  const parts = [];
+                  if (breast > 0) parts.push(`${breast} breastfeed${breast!==1?"s":""}`);
+                  if (solids > 0) parts.push(`${solids} solid${solids!==1?"s":""}`);
+                  feedLine = parts.length ? parts.join(" + ") + "." : `${feedCount} feed${feedCount!==1?"s":""}.`;
+                }
+
+                const devSkills = MILESTONES.filter(m => ageWeeks >= m.weeks[0] && ageWeeks <= m.weeks[1] && !milestones[m.id]?.date);
+                const cats = [...new Set(devSkills.map(m => m.cat))];
+                const catNames = {social:"social skills",language:"communication",motor:"movement",cognitive:"thinking & play"};
+                let devLine = "";
+                if (cats.length > 0) devLine = `Working on ${cats.slice(0,2).map(c => catNames[c]||c).join(" and ")}.`;
+
+                return (
+                  <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
+                    <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,fontWeight:700,color:C.deep,marginBottom:2}}>{dayLabel} with {name}</div>
+                    <div style={{fontSize:12,color:C.lt,fontFamily:_fM,marginBottom:14}}>{fmtAge(age)} · week {ageWeeks}</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                      {sleepLine && (
+                        <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                          <span style={{fontSize:15,flexShrink:0,marginTop:1}}>😴</span>
+                          <div>
+                            <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Sleep</div>
+                            <div style={{fontSize:13,color:C.mid,lineHeight:1.5}}>{sleepLine}</div>
+                          </div>
+                        </div>
+                      )}
+                      {feedLine && (
+                        <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                          <span style={{fontSize:15,flexShrink:0,marginTop:1}}>🍼</span>
+                          <div>
+                            <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Feeding</div>
+                            <div style={{fontSize:13,color:C.mid,lineHeight:1.5}}>{feedLine}</div>
+                          </div>
+                        </div>
+                      )}
+                      {devLine && (
+                        <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                          <span style={{fontSize:15,flexShrink:0,marginTop:1}}>🧠</span>
+                          <div>
+                            <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Development</div>
+                            <div style={{fontSize:13,color:C.mid,lineHeight:1.5}}>{devLine}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── TODAY'S FEEDING INSIGHT ── */}
+              {(()=>{
+                const fc = feedCard();
+                if (!fc) return null;
+                return (
+                  <div style={{background:fc.bg,border:`1px solid ${fc.color}30`,borderLeft:`4px solid ${fc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:14}}>
+                    <div style={{fontSize:13,fontFamily:_fM,color:fc.color,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>{fc.isPastDay ? "Milk Intake" : "Today's Milk Intake"}</div>
+                    <div style={{display:"flex",gap:10,marginBottom:10}}>
+                      <div style={{flex:1,background:"rgba(255,255,255,0.7)",borderRadius:12,padding:"10px 12px"}}>
+                        <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Daytime</div>
+                        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:fc.color,lineHeight:1}}>{fc.dayMl}ml</div>
+                        <div style={{fontSize:11,color:fc.metMinimum?C.mint:fc.approachingBed?C.ter:C.lt,marginTop:2,fontWeight:fc.approachingBed&&!fc.metMinimum?600:400}}>
+                          {fc.metMinimum ? `✓ min ${fc.totalMin}ml reached` : `min ${fc.totalMin}ml by bedtime`}
+                        </div>
+                      </div>
+                      {fc.nightMl > 0 && (
+                        <div style={{flex:1,background:"rgba(42,31,58,0.07)",borderRadius:12,padding:"10px 12px"}}>
+                          <div style={{fontSize:11,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Night feeds</div>
+                          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:"#7a6898",lineHeight:1}}>{fc.nightMl}ml</div>
+                          <div style={{fontSize:11,color:"#9888b8",marginTop:2}}>total {fc.totalMl}ml</div>
+                        </div>
+                      )}
+                      {fc.nightMl === 0 && (
+                        <div style={{flex:1,background:"rgba(255,255,255,0.5)",borderRadius:12,padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                          <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>NHS range</div>
+                          <div style={{fontSize:13,fontWeight:600,color:C.mid}}>{fc.totalLabel}</div>
+                        </div>
+                      )}
+                    </div>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"white",borderRadius:10,padding:"9px 11px",marginBottom:(fc.sleepLink||fc.suggestions.length)?6:0}}>
+                      <span style={{fontSize:14,flexShrink:0}}>{fc.icon}</span>
+                      <div style={{fontSize:13,color:C.mid,lineHeight:1.5}}>{fc.statusMsg}</div>
+                    </div>
+                    {fc.sleepLink && (
+                      <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"#f0ecff",border:"1px solid #d4c8f8",borderRadius:10,padding:"9px 11px",marginBottom:fc.suggestions.length?6:0}}>
+                        <span style={{fontSize:13,flexShrink:0}}>{fc.sleepLink.icon}</span>
+                        <div>
+                          {fc.sleepLink.title && <div style={{fontSize:12,fontWeight:700,color:"#6040c0",marginBottom:2}}>{fc.sleepLink.title}</div>}
+                          <div style={{fontSize:12,color:"#5030a0",lineHeight:1.5}}>{fc.sleepLink.body}</div>
+                        </div>
+                      </div>
+                    )}
+                    {fc.suggestions.map((s,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,background:"rgba(255,255,255,0.6)",borderRadius:10,padding:"8px 11px",marginTop:5}}>
+                        <span style={{fontSize:13,flexShrink:0}}>{s.icon}</span>
+                        <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{s.body}</div>
+                      </div>
+                    ))}
+                    {fc.status==="low" && (
+                      <div style={{fontSize:12,color:C.lt,marginTop:8,paddingTop:6,borderTop:`1px solid ${fc.color}20`,lineHeight:1.4}}>
+                        ℹ️ {fc.nhsNote}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* ── TRENDS SECTION (collapsible) ── */}
               {collHead("trends","📈","Trends")}
@@ -7182,6 +7119,78 @@ function App(){
 
           return (
             <div>
+              {/* ── COMING UP — Development Phase ── */}
+              {(()=>{
+                if (!ageWeeks) return null;
+                const activePhase = DEV_PHASES.find(l => ageWeeks >= l.windowStart && ageWeeks <= l.windowEnd);
+                const nextPhase = DEV_PHASES.find(l => l.windowStart > ageWeeks);
+                const upcomingPhases = DEV_PHASES.filter(l => l.windowStart > ageWeeks).slice(0,2);
+                if (!activePhase && !nextPhase) return null;
+                return (
+                  <div style={{marginBottom:14}}>
+                    <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:12}}>Coming Up</div>
+                    {activePhase && (
+                      <div style={{background:"linear-gradient(135deg,#f0eeff,#e8e4ff)",borderRadius:18,padding:"16px",marginBottom:10,border:"1.5px solid #c5bef5"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                          <div style={{width:32,height:32,borderRadius:"50%",background:"#7b68ee",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <span style={{fontSize:13,color:"white",fontWeight:700}}>{activePhase.phase}</span>
+                          </div>
+                          <div>
+                            <div style={{fontSize:11,fontFamily:_fM,color:"#9080c8",textTransform:"uppercase",letterSpacing:_ls08}}>Currently in</div>
+                            <div style={{fontSize:16,fontWeight:700,color:"#4a3cb5"}}>Phase {activePhase.phase}: {activePhase.name}</div>
+                          </div>
+                        </div>
+                        <div style={{fontSize:13,color:"#5040a0",lineHeight:1.6,marginBottom:10,paddingLeft:42}}>
+                          <strong>Weeks {activePhase.windowStart}–{activePhase.windowEnd}</strong> (peak around week {activePhase.peakWeek})
+                        </div>
+                        <div style={{fontSize:13,color:"#5040a0",lineHeight:1.6,marginBottom:10,paddingLeft:42}}>
+                          <strong>What you'll notice:</strong> {activePhase.fussy}
+                        </div>
+                        <div style={{paddingLeft:42}}>
+                          <div style={{fontSize:12,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>New skills emerging</div>
+                          {activePhase.skills.map((s,i)=>(
+                            <div key={i} style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4}}>
+                              <span style={{fontSize:12,color:"#7b68ee",marginTop:1}}>✦</span>
+                              <div style={{fontSize:13,color:"#4a3cb5",lineHeight:1.5}}>{s}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {upcomingPhases.map(phase => {
+                      const weeksUntil = phase.windowStart - ageWeeks;
+                      return (
+                        <div key={phase.phase} style={{background:"#f8f7ff",borderRadius:16,padding:"14px",marginBottom:8,border:"1px solid #e0dbf5"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+                            <div style={{width:28,height:28,borderRadius:"50%",background:"#c5bef5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <span style={{fontSize:11,color:"white",fontWeight:700}}>{phase.phase}</span>
+                            </div>
+                            <div>
+                              <div style={{fontSize:14,fontWeight:700,color:"#7060c0"}}>Phase {phase.phase}: {phase.name}</div>
+                              <div style={{fontSize:12,color:C.lt,fontFamily:_fM}}>
+                                {weeksUntil <= 0 ? "Starting now" : `In ~${weeksUntil} week${weeksUntil!==1?"s":""}`} · weeks {phase.windowStart}–{phase.windowEnd}
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{fontSize:13,color:"#5040a0",lineHeight:1.55,paddingLeft:38,marginBottom:6}}>
+                            <strong>Expect:</strong> {phase.fussy}
+                          </div>
+                          <div style={{paddingLeft:38}}>
+                            <div style={{fontSize:11,fontFamily:_fM,color:"#9080c8",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4}}>Skills to watch for</div>
+                            {phase.skills.map((s,i)=>(
+                              <div key={i} style={{display:"flex",alignItems:"flex-start",gap:5,marginBottom:3}}>
+                                <span style={{fontSize:11,color:"#c5bef5",marginTop:1}}>○</span>
+                                <div style={{fontSize:12,color:"#6050b0",lineHeight:1.4}}>{s}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
               <div style={{background:"linear-gradient(135deg,#fdeee8,#f5e4dc)",border:`1px solid ${C.rose}`,borderRadius:20,padding:"16px",marginBottom:14,display:"flex",alignItems:"center",gap:14}}>
                 <div style={{width:52,height:52,borderRadius:16,background:`linear-gradient(135deg,${C.ter},#a85a44)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <span style={{fontSize:24}}>🧩</span>
