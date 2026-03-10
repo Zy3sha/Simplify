@@ -5087,7 +5087,8 @@ function App(){
       {tutStep >= 0 && (()=>{
         const TUT_STEPS = [
           { icon:"👋", title:"Welcome to OBubba!", body:"A quick tour of how everything works — takes about 90 seconds. Tap anywhere or Next to continue.", location:null },
-          { icon:"🍼", title:"Log Feeds, Nappies & Sleep", body:"The buttons below the header are your main logging tools. Tap Feed for bottle, breast or solids. Pump for pumping sessions. Nappy for changes. Sleep for naps or bedtime. Wake Up to log the morning.", location:"Centre of screen" },
+          { icon:"🍼", title:"Log Feeds, Nappies & Sleep", body:"The buttons below the header are your main logging tools. Tap Feed for bottle, breast or solids. Pump for pumping sessions. Nappy for wet or dirty changes (dirty lets you pick poop type). Sleep for naps or bedtime. Wake Up to log the morning.", location:"Centre of screen" },
+          { icon:"🕐", title:"Time Inputs", body:"When logging anything, tap the time field to open a popup where you can either type a time (like 7:30am or 14:00) or use the scroll wheel. Leave it empty and it logs as now — you can always edit later.", location:"Any log panel" },
           { icon:"⏱️", title:"Nap & Bedtime Countdown", body:"The countdown pill in the top right shows when the next nap is due — based on your baby's age and wake windows. Once all naps are done it switches to a bedtime countdown. Tap it to start a nap timer or log bedtime.", location:"Top right of screen" },
           { icon:"🤱", title:"Breastfeed & Pump Timers", body:"Tap 🤱 Start Feed in the header to begin a live breastfeed — switch sides and save when done. Tap 🫙 Pump in the log bar to record a pumping session with time, duration and amount. Both log automatically.", location:"Header & log bar" },
           { icon:"📅", title:"Browse Past Days", body:"The date strip below the header lets you scroll through past days. Tap any date to see that day's log. You can edit or delete entries, and use the ✎ button on any date to rename, copy or delete the whole day.", location:"Date strip below header" },
@@ -5104,9 +5105,33 @@ function App(){
                 <div style={{fontSize:13,color:C.lt,lineHeight:1.5}}>It understands wake times, feeds with amounts, nap ranges, bedtime, night wakes, and dream feeds. Perfect for catching up at the end of the day or pasting notes from a partner.</div>
               </div>
             ), location:"Log bar — Notes button" },
-          { icon:"📈", title:"Trends & Smart Insights", body:"The Trends tab shows your baby's patterns over time — nap totals, feed amounts, bedtimes and more. After 7 days of logging, Smart Insights appear with personalised observations based on your baby's own rhythms.", location:"Bottom navigation" },
-          { icon:"📏", title:"Growth Chart", body:"The Growth tab shows your baby's weight plotted on an NHS-style WHO percentile chart. Log weights after each weigh-in to track progress between health visitor appointments.", location:"Bottom navigation" },
-          { icon:"⭐", title:"Milestones & Development", body:"The Milestones tab shows age-appropriate developmental milestones from NHS guidelines. Tap to mark them done. Developmental phases are highlighted too. The Develop tab has age-specific play ideas.", location:"Bottom navigation" },
+          { icon:"💡", title:"Insights Tab",
+            bodyJSX:(
+              <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
+                <div style={{marginBottom:8}}>The <strong style={{color:C.ter}}>Insights</strong> tab is your baby's command centre — everything in one place:</div>
+                <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                  <div>📏 <strong>Growth Percentiles</strong> — log weight and height, see WHO percentiles for both</div>
+                  <div>🍼 <strong>Today with {babyName||"Baby"}</strong> — daily summary of sleep, feeds and development</div>
+                  <div>🍼 <strong>Feeding Insight</strong> — NHS milk targets, intake tracking and suggestions</div>
+                  <div>📈 <strong>Trends</strong> — growth chart, week-on-week comparisons, feed and nap trend lines</div>
+                  <div>😴 <strong>Sleep Analysis</strong> — stability score, bedtime prediction, wake windows, tomorrow's schedule</div>
+                  <div>📊 <strong>Day Report</strong> — full daily breakdown with feeding, naps and night wakes</div>
+                </div>
+              </div>
+            ), location:"Bottom navigation — Insights" },
+          { icon:"😴", title:"Is This Normal?", body:"On the Day tab, below your log, you'll see the \"Is This Normal?\" card. It compares today's nap time to NHS guidelines for your baby's age and tells you if sleep is on track — this stays on the home page for quick reference.", location:"Day tab — below the log" },
+          { icon:"⭐", title:"Milestones", body:"The Miles tab shows age-appropriate milestones from NHS guidelines. Tap any to mark it achieved. Filter by category — social, language, movement or cognitive. A compact link at the top takes you to the current developmental phase.", location:"Bottom navigation — Miles" },
+          { icon:"🧩", title:"Development",
+            bodyJSX:(
+              <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
+                <div style={{marginBottom:8}}>The <strong style={{color:C.ter}}>Develop</strong> tab is all about what's ahead:</div>
+                <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                  <div>🔮 <strong>Coming Up</strong> — shows the current or next developmental phase with fussy storm and skills bloom dates, what to expect, and all the new skills emerging</div>
+                  <div>🎯 <strong>Activities</strong> — age-appropriate play ideas filtered by category (movement, social, language, thinking)</div>
+                  <div>🏥 <strong>NHS & WHO Guidance</strong> — expert advice tailored to your baby's exact age</div>
+                </div>
+              </div>
+            ), location:"Bottom navigation — Develop" },
           { icon:"👨‍👩‍👧", title:"Share with Your Partner",
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
@@ -5126,7 +5151,7 @@ function App(){
                 <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
                   <div>👆 <strong>Swipe left/right</strong> on the header to switch between children</div>
                   <div>＋ Tap the <strong>+ button</strong> in the top left to add another child</div>
-                  <div>✏️ To edit a child's name, DOB or sex, go to the <strong>Growth tab</strong> → tap <strong>Edit</strong></div>
+                  <div>✏️ To edit a child's name, DOB or sex, tap their name in the header</div>
                 </div>
               </div>
             ), location:"Top left — child dots & + button" },
@@ -5142,7 +5167,7 @@ function App(){
                 <div style={{marginTop:10,padding:"9px 12px",background:"#fff3f0",borderRadius:10,fontSize:13,color:C.ter,fontWeight:600,lineHeight:1.5}}>⚠️ Without a recovery word or backup code, a forgotten PIN means losing access. Set one as soon as you finish this tour!</div>
               </div>
             ), location:"👤 Account → Share & Sync" },
-          { icon:"🎉", title:"You're all set!", body:"Start by logging today's wake time — the countdown will guide nap and bedtime from there. Tap the Tour button in the header anytime to revisit this guide. Happy tracking!", location:null },
+          { icon:"🎉", title:"You're all set!", body:"Start by logging today's wake time — the countdown will guide nap and bedtime from there. You can replay this tour anytime from Settings. Happy tracking!", location:null },
         ];
 
         const dismissTutorial = () => {
