@@ -5996,7 +5996,6 @@ function App(){
                             <div>
                               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
                                 <div style={{fontSize:14,fontFamily:_fM,color:C.mint,textTransform:"uppercase",letterSpacing:_ls08}}>😴 Next Nap Window</div>
-                                {usePersonalRecs===true&&<span style={{fontSize:10,background:"#d0f0e4",color:"#2a7055",borderRadius:99,padding:"2px 7px",fontFamily:_fM,fontWeight:700}}>✨ Personal</span>}
                               </div>
                               <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.mint}}>{minsAway!==null&&minsAway<=0?"Now!":fmtCountdown(napCountdown||0)}</div>
                               <div style={{fontSize:14,color:C.lt,marginTop:2}}>{pred.sourceLabel}</div>
