@@ -906,14 +906,14 @@ function RestoreDataForm({ restoreFromBackup, setShowFamilyModal, familyUsername
         </div>
         {!restoreMode && (
           <button onClick={()=>setRestoreMode(true)} style={{width:"100%",padding:"8px 16px",background:_bN,border:_bN,borderTop:"1px dashed #b0e8cc",textAlign:"left",cursor:_cP,fontSize:13,color:"#4a9a70",fontFamily:_fI}}>
-            ↗ Restore from a different backup code instead…
+            ↗ Restore from a different account instead…
           </button>
         )}
         {restoreMode && (
           <div style={{padding:"0 16px 16px",borderTop:"1px dashed #b0e8cc"}}>
-            <div style={{fontSize:13,color:C.lt,marginBottom:8,marginTop:10}}>Enter a backup code from another device to import that data.</div>
+            <div style={{fontSize:13,color:C.lt,marginBottom:8,marginTop:10}}>Enter an account code from another device to import that data.</div>
             <input value={restoreInput} onChange={e=>setRestoreInput(e.target.value.toUpperCase())}
-              placeholder="Enter backup code"
+              placeholder="Enter account code"
               style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"#faf6f0",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
             {restoreStatus==="fail" && <div style={{fontSize:13,color:C.ter,marginBottom:8,textAlign:"center"}}>Code not found — check and try again</div>}
             {restoreStatus==="ok" && <div style={{fontSize:13,color:"#50c878",marginBottom:8,textAlign:"center"}}>✓ Data restored successfully!</div>}
@@ -940,9 +940,9 @@ function RestoreDataForm({ restoreFromBackup, setShowFamilyModal, familyUsername
       </button>
       {restoreMode && (
         <div style={{padding:"0 16px 16px"}}>
-          <div style={{fontSize:13,color:C.lt,marginBottom:8}}>Enter your backup code from another device to restore all data.</div>
+          <div style={{fontSize:13,color:C.lt,marginBottom:8}}>Enter an account code from another device to restore all data.</div>
           <input value={restoreInput} onChange={e=>setRestoreInput(e.target.value.toUpperCase())}
-            placeholder="Enter backup code"
+            placeholder="Enter account code"
             style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"#faf6f0",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
           {restoreStatus==="fail" && <div style={{fontSize:13,color:C.ter,marginBottom:8,textAlign:"center"}}>Code not found — check and try again</div>}
           {restoreStatus==="ok" && <div style={{fontSize:13,color:C.mint,marginBottom:8,textAlign:"center"}}>✓ Data restored successfully!</div>}
@@ -1910,7 +1910,7 @@ function App(){
       const codeMatch = (data.backupCode||data.familyCode||"").toUpperCase() === wordOrCode.trim().toUpperCase();
       const wordMatch = data.recoveryHash && data.recoveryHash === hashPin(wordOrCode.trim().toLowerCase());
       if(!codeMatch && !wordMatch)
-        return {ok:false, error:"That doesn't match — check your recovery word or backup code"};
+        return {ok:false, error:"That doesn't match — check your recovery word"};
       await setDoc(doc(db,"usernames",key), {pinHash: hashPin(newPin)}, {merge:true});
       return {ok:true};
     } catch(e) { return {ok:false, error:"Something went wrong — try again"}; }
@@ -4675,15 +4675,15 @@ function App(){
 
             {forgotPinStep==="word" && (
               <>
-                <div style={{fontSize:14,color:C.mid,marginBottom:16,lineHeight:1.6}}>Enter your <strong>recovery word</strong> or <strong>backup code</strong> to verify it's you.</div>
-                <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:"0.06em",display:"block",marginBottom:6}}>Recovery word or backup code</label>
+                <div style={{fontSize:14,color:C.mid,marginBottom:16,lineHeight:1.6}}>Enter your <strong>recovery word</strong> to verify it's you.</div>
+                <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:"0.06em",display:"block",marginBottom:6}}>Recovery word</label>
                 <input value={forgotPinWord} onChange={e=>{setForgotPinWord(e.target.value);setForgotPinError("");}}
                   placeholder="e.g. sunshine  or  AB3X7Y"
                   autoCapitalize="none" autoCorrect="off" spellCheck="false"
                   style={{width:"100%",fontSize:15,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"#faf6f0",outline:"none",fontFamily:_fI,color:C.deep,boxSizing:"border-box",marginBottom:14}}/>
                 {forgotPinError&&<div style={{fontSize:13,color:C.ter,textAlign:"center",marginBottom:10,fontWeight:600}}>{forgotPinError}</div>}
                 <button onClick={async()=>{
-                  if(!forgotPinWord.trim()){setForgotPinError("Enter your recovery word or backup code");return;}
+                  if(!forgotPinWord.trim()){setForgotPinError("Enter your recovery word");return;}
                   if(!authUsername.trim()){setForgotPinError("Enter your username first");setShowForgotPin(false);return;}
                   setForgotPinLoading(true);setForgotPinError("");
                   if(!window._fb){setForgotPinError("Not connected");setForgotPinLoading(false);return;}
@@ -4696,7 +4696,7 @@ function App(){
                     const codeMatch=(data.backupCode||data.familyCode||"").toUpperCase()===forgotPinWord.trim().toUpperCase();
                     const wordMatch=data.recoveryHash&&data.recoveryHash===wordHash;
                     if(codeMatch||wordMatch){setForgotPinStep("newpin");}
-                    else{setForgotPinError("That doesn't match — check your recovery word or backup code");}
+                    else{setForgotPinError("That doesn't match — check your recovery word");}
                   }catch(e){setForgotPinError("Something went wrong — try again");}
                   setForgotPinLoading(false);
                 }} disabled={forgotPinLoading||!forgotPinWord.trim()}
@@ -5126,7 +5126,7 @@ function App(){
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
                 <div style={{marginBottom:8}}>The <strong style={{color:C.ter}}>Develop</strong> tab is all about what's ahead:</div>
                 <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
-                  <div>🔮 <strong>Coming Up</strong> — shows the current or next developmental phase with fussy storm and skills bloom dates, what to expect, and all the new skills emerging</div>
+                  <div>🔮 <strong>Coming Up</strong> — shows the current or next developmental phase with expected timelines, what to expect, and all the new skills emerging</div>
                   <div>🎯 <strong>Activities</strong> — age-appropriate play ideas filtered by category (movement, social, language, thinking)</div>
                   <div>🏥 <strong>NHS & WHO Guidance</strong> — expert advice tailored to your baby's exact age</div>
                 </div>
@@ -5141,7 +5141,7 @@ function App(){
                   <div>📲 Your partner opens Share & Sync → <strong>Link a child</strong> → enters that code</div>
                   <div>✅ Both phones stay in sync automatically from then on</div>
                 </div>
-                <div style={{marginTop:8,fontSize:13,color:C.lt}}>Your <strong>backup code</strong> (shown in Share & Sync under your username) stores all your data in the cloud and can restore it on any device.</div>
+                <div style={{marginTop:8,fontSize:13,color:C.lt}}>Your data backs up to the cloud automatically and restores on any device when you sign in.</div>
               </div>
             ), location:"👤 Account → Share & Sync" },
           { icon:"👶", title:"Multiple Children",
@@ -5160,11 +5160,11 @@ function App(){
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
                 <div style={{marginBottom:8}}>Your data backs up to the cloud automatically and works offline too.</div>
                 <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:7,fontSize:14}}>
-                  <div>🔑 <strong>Set a recovery word</strong> in Share & Sync — this lets you reset your PIN if you ever forget it. Your backup code works too.</div>
+                  <div>🔑 <strong>Set a recovery word</strong> in Share & Sync — this lets you reset your PIN if you ever forget it.</div>
                   <div>📱 To move to a new phone, just sign in with your <strong>username & PIN</strong> — all your data restores automatically</div>
                   <div>☁️ Everything backs up on its own — nothing to export or save manually</div>
                 </div>
-                <div style={{marginTop:10,padding:"9px 12px",background:"#fff3f0",borderRadius:10,fontSize:13,color:C.ter,fontWeight:600,lineHeight:1.5}}>⚠️ Without a recovery word or backup code, a forgotten PIN means losing access. Set one as soon as you finish this tour!</div>
+                <div style={{marginTop:10,padding:"9px 12px",background:"#fff3f0",borderRadius:10,fontSize:13,color:C.ter,fontWeight:600,lineHeight:1.5}}>⚠️ Without a recovery word, a forgotten PIN means losing access. Set one as soon as you finish this tour!</div>
               </div>
             ), location:"👤 Account → Share & Sync" },
           { icon:"🎉", title:"You're all set!", body:"Start by logging today's wake time — the countdown will guide nap and bedtime from there. You can replay this tour anytime from Settings. Happy tracking!", location:null },
@@ -7064,12 +7064,12 @@ function App(){
                           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                             <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#f5c840,#e8a820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>⛈</div>
                             <div>
-                              <div style={{fontSize:10,fontFamily:_fM,color:"#8a6808",textTransform:"uppercase",letterSpacing:_ls1}}>Storm brewing · Phase {heroPhase.phase}</div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:"#8a6808",textTransform:"uppercase",letterSpacing:_ls1}}>Approaching · Phase {heroPhase.phase}</div>
                               <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:"#5a3800"}}>{heroPhase.name}</div>
                             </div>
                           </div>
                           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
-                            {[["Fussy storm",`${sd} – ${pd}`],["Skills bloom",`${pd} – ${ed}`]].map(([lbl,val])=>(
+                            {[["Unsettled period",`${sd} – ${pd}`],["New skills",`${pd} – ${ed}`]].map(([lbl,val])=>(
                               <div key={lbl} style={{background:"rgba(245,200,64,0.18)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
                                 <span style={{color:"#8a6808",fontWeight:600}}>{lbl} </span><span style={{color:"#6a4808",fontFamily:_fM}}>{val}</span>
                               </div>
@@ -7089,18 +7089,18 @@ function App(){
                           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                             <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#8848e0,#6030c0)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🌀</div>
                             <div>
-                              <div style={{fontSize:10,fontFamily:_fM,color:"#5030a0",textTransform:"uppercase",letterSpacing:_ls1}}>Phase {heroPhase.phase} · Fussy storm</div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:"#5030a0",textTransform:"uppercase",letterSpacing:_ls1}}>Phase {heroPhase.phase} · Unsettled period</div>
                               <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:"#2e1070"}}>{heroPhase.name}</div>
                             </div>
                           </div>
                           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
-                            {[["Fussy storm","now → "+pd],["Skills bloom",pd+" → "+ed]].map(([lbl,val])=>(
+                            {[["Unsettled period","now → "+pd],["New skills",pd+" → "+ed]].map(([lbl,val])=>(
                               <div key={lbl} style={{background:"rgba(136,72,224,0.12)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
                                 <span style={{color:"#5030a0",fontWeight:600}}>{lbl} </span><span style={{color:"#3a1880",fontFamily:_fM}}>{val}</span>
                               </div>
                             ))}
                           </div>
-                          <div style={{fontSize:13,color:"#3a1880",lineHeight:1.55,marginBottom:9}}>{heroPhase.fussy} Skills bloom starts around {pd}.</div>
+                          <div style={{fontSize:13,color:"#3a1880",lineHeight:1.55,marginBottom:9}}>{heroPhase.fussy} New skills start emerging around {pd}.</div>
                           <div style={{fontSize:12,fontWeight:700,color:"#3a1880",marginBottom:5}}>Skills unlocking soon</div>
                           {heroPhase.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#8848e0",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"#2e1070"}}>{s}</span></div>))}
                         </div>
@@ -7114,11 +7114,11 @@ function App(){
                           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                             <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#38c870,#20a050)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🌱</div>
                             <div>
-                              <div style={{fontSize:10,fontFamily:_fM,color:"#187040",textTransform:"uppercase",letterSpacing:_ls1}}>Phase {heroPhase.phase} · Skills blooming</div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:"#187040",textTransform:"uppercase",letterSpacing:_ls1}}>Phase {heroPhase.phase} · New skills emerging</div>
                               <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:"#0a4020"}}>{heroPhase.name}</div>
                             </div>
                           </div>
-                          <div style={{fontSize:13,color:"#125030",lineHeight:1.55,marginBottom:9}}>The storm has cleared — watch for new abilities over the next few days.</div>
+                          <div style={{fontSize:13,color:"#125030",lineHeight:1.55,marginBottom:9}}>The unsettled period has passed — watch for new abilities over the next few days.</div>
                           <div style={{fontSize:12,fontWeight:700,color:"#125030",marginBottom:5}}>Skills developing now (until {ed})</div>
                           {heroPhase.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#38c870",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"#0a4020"}}>{s}</span></div>))}
                         </div>
@@ -7137,7 +7137,7 @@ function App(){
                             </div>
                           </div>
                           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:9}}>
-                            {[["Fussy storm",`${sd} – ${pd}`],["Skills bloom",`${pd} – ${ed}`]].map(([lbl,val])=>(
+                            {[["Unsettled period",`${sd} – ${pd}`],["New skills",`${pd} – ${ed}`]].map(([lbl,val])=>(
                               <div key={lbl} style={{background:"rgba(160,128,216,0.12)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
                                 <span style={{color:"#5040a0",fontWeight:600}}>{lbl} </span><span style={{color:"#3a2880",fontFamily:_fM}}>{val}</span>
                               </div>
@@ -8143,22 +8143,15 @@ function App(){
               </div>
             </div>
             {backupCode && (
-              <div style={{background:"white",borderRadius:12,padding:"12px 14px",marginBottom:8,border:`1px solid ${C.blush}`}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-                  <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Your backup code</div>
-                  <button onClick={()=>{try{navigator.clipboard.writeText(backupCode);}catch{}}} style={{padding:"4px 10px",borderRadius:99,border:`1px solid ${C.blush}`,background:"white",fontSize:12,fontWeight:600,color:C.mid,cursor:_cP,fontFamily:_fI}}>Copy</button>
-                </div>
-                <div style={{fontFamily:_fM,fontSize:26,fontWeight:700,color:C.ter,letterSpacing:"0.18em",marginBottom:8}}>{backupCode}</div>
-                <div style={{background:"#fff8e8",borderRadius:8,padding:"8px 10px",display:"flex",gap:8,alignItems:"flex-start",border:"1px solid #f0d890"}}>
-                  <span style={{fontSize:14,flexShrink:0}}>⚠️</span>
-                  <div style={{fontSize:12,color:"#8a6a10",lineHeight:1.5}}>Keep this safe — you'll need your backup code <strong>or</strong> a recovery word to reset your PIN if you ever forget it.</div>
-                </div>
+              <div style={{background:"#f0faf5",borderRadius:12,padding:"10px 14px",marginBottom:8,border:"1px solid #b0e8cc",display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:16}}>☁️</span>
+                <div style={{fontSize:13,color:"#2a7a50",lineHeight:1.4}}>Auto-backup active — your data saves to the cloud and restores when you sign in on any device.</div>
               </div>
             )}
             {familyUsername && (
               <div style={{background:"white",borderRadius:12,padding:"12px 14px",marginBottom:12,border:`1px solid ${C.blush}`}}>
                 <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Recovery word</div>
-                <div style={{fontSize:13,color:C.mid,marginBottom:10,lineHeight:1.5}}>A secret word you choose — used to reset your PIN without needing your backup code. No email or phone required.</div>
+                <div style={{fontSize:13,color:C.mid,marginBottom:10,lineHeight:1.5}}>A secret word you choose — used to reset your PIN if you ever forget it. No email or phone number required.</div>
                 <div style={{display:"flex",gap:8}}>
                   <input
                     type="text"
