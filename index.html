@@ -4410,7 +4410,7 @@ function App(){
 
   function openEntry(night=false){setEditEntry(null);setEType("feed");setFeedType("milk");setForm({amount:"",time:nowTime(),start:nowTime(),end:nowTime(),note:"",night:"no",poopType:"",breastL:"",breastR:"",pumpL:"",pumpR:""});setModal("entry");}
   function openLogPanel(panel){
-    setLogForm({feedType:"bottle",amount:"",breastL:"",breastR:"",pumpL:"",pumpR:"",pumpTotal:"",pumpDuration:"",pumpStart:"",note:"",poopType:"wet",sleepType:sleepDefault(),napStart:nowTime(),napEnd:nowTime(),bedTime:nowTime(),feedTime:nowTime(),feedTimeSet:false});
+    setLogForm({feedType:"bottle",amount:"",breastL:"",breastR:"",pumpL:"",pumpR:"",pumpTotal:"",pumpDuration:"",pumpStart:"",note:"",poopType:"wet",sleepType:sleepDefault(),napStart:"",napEnd:"",bedTime:"",feedTime:"",feedTimeSet:false,nappyTime:""});
     setLogPanel(panel);
   }
 
@@ -4518,7 +4518,7 @@ function App(){
 
   function saveLogFeed(){
     const f=logForm;
-    const t = f.feedTimeSet && f.feedTime ? f.feedTime : nowTime();
+    const t = f.feedTime || nowTime();
     if(f.feedType==="bottle"){
       quickAddLog("feed",{type:"feed",time:t,feedType:"milk",amount:parseInt(f.amount)||0,note:f.note||""});
     } else if(f.feedType==="breast"){
@@ -4544,16 +4544,16 @@ function App(){
     quickAddLog("feed",{type:"feed",time:t,feedType:"pump",pumpL:finalL,pumpR:finalR,amount:finalTotal,pumpDuration:parseInt(f.pumpDuration)||0,note:f.note||""});
   }
 
-  function saveLogNappy(poopType){
-    quickAddLog("poop",{type:"poop",time:nowTime(),poopType,note:""});
+  function saveLogNappy(poopType, time){
+    quickAddLog("poop",{type:"poop",time:time||nowTime(),poopType,note:""});
   }
 
   function saveLogSleep(){
     const f=logForm;
     if(f.sleepType==="nap"){
-      quickAddLog("nap",{type:"nap",start:f.napStart,end:f.napEnd,night:false,note:""});
+      quickAddLog("nap",{type:"nap",start:f.napStart||nowTime(),end:f.napEnd||nowTime(),night:false,note:""});
     } else {
-      quickAddLog("sleep",{type:"sleep",time:f.bedTime,night:false,note:""});
+      quickAddLog("sleep",{type:"sleep",time:f.bedTime||nowTime(),night:false,note:""});
     }
   }
   function saveEntry(){
@@ -4831,8 +4831,8 @@ function App(){
   const tabSt=t=>({flex:1,padding:"6px 2px",border:_bN,background:"none",fontSize:10,fontWeight:700,cursor:_cP,color:tab===t?C.ter:C.lt,borderTop:tab===t?`2px solid ${C.ter}`:"2px solid transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:1,letterSpacing:"0.04em",textTransform:"uppercase"});
   const card={background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"};
 
-  const tabIcons={home:"🏠",insights:"📊",milestones:"⭐",develop:"🧩",settings:"👤"};
-  const tabLabels={home:"Home",insights:"Insights",milestones:"Miles",develop:"Develop",settings:"Profile"};
+  const tabIcons={home:"🏠",insights:"📊",milestones:"⭐",develop:"🧩"};
+  const tabLabels={home:"Home",insights:"Insights",milestones:"Miles",develop:"Develop"};
 
 
   if (authScreen) {
@@ -5346,6 +5346,48 @@ function App(){
     );
   }
 
+  // ── Timeline entry renderers (extracted to avoid block-body arrows inside JSX expressions) ──
+  const renderDayEntry = (e) => {
+    const isDragging=dragId===e.id;
+    const isOver=dragOver===e.id;
+    const accentCol=e.type==="feed"?(e.feedType==="solids"?"#b8860b":e.feedType==="breast"?"#c07080":e.feedType==="pump"?"#7090c0":C.ter):e.type==="nap"?C.mint:e.type==="sleep"?C.sky:e.type==="poop"?"#8a7060":e.type==="wake"?C.gold:C.mid;
+    const timeStr=e.time||e.start||"";
+    const timeDisplay=timeStr?fmt12(timeStr):"";
+    const name=e.type==="feed"?(e.feedType==="solids"?"Solids":e.feedType==="breast"?"Breast Feed":e.feedType==="pump"?"Pump":"Bottle Feed"):e.type==="nap"?"Nap":e.type==="sleep"?"Bedtime":e.type==="wake"?"Wake Up":e.type==="poop"?"Nappy":NAMES[e.type]||e.type;
+    const actLabel=timeDisplay?`${timeDisplay} - ${name}`:name;
+    let subDetail=null;
+    if(e.type==="feed"&&e.feedType==="breast"){const parts=[];const total=(e.breastL||0)+(e.breastR||0);if(total>0)parts.push(`${total}min`);if(e.breastL>0)parts.push(`L: ${e.breastL}min`);if(e.breastR>0)parts.push(`R: ${e.breastR}min`);if(parts.length)subDetail=parts.join(" · ");}
+    else if(e.type==="feed"&&e.feedType==="pump"){const parts=[];const total=(e.pumpL||0)+(e.pumpR||0)||e.amount||0;if(total>0)parts.push(`${total}ml`);if(e.pumpL>0)parts.push(`L: ${e.pumpL}ml`);if(e.pumpR>0)parts.push(`R: ${e.pumpR}ml`);if(e.pumpDuration>0)parts.push(`${e.pumpDuration}min`);if(parts.length)subDetail=parts.join(" · ");}
+    else if(e.type==="feed"&&e.feedType==="solids"){subDetail=e.note||null;}
+    else if(e.type==="feed"){if(e.amount>0)subDetail=`${e.amount}ml`;}
+    else if(e.type==="poop"){subDetail=e.poopType||null;}
+    if(e.note&&!subDetail)subDetail=e.note;
+    else if(e.note&&subDetail)subDetail+=` · ${e.note}`;
+    let badgeVal=null;
+    if(e.type==="feed"){if(e.feedType==="breast")badgeVal=`${(e.breastL||0)+(e.breastR||0)}min`;else if(e.feedType==="pump")badgeVal=`${(e.pumpL||0)+(e.pumpR||0)||e.amount||0}ml`;else if(e.feedType==="solids")badgeVal=null;else badgeVal=e.amount?`${e.amount}ml`:null;}
+    else if(e.type==="nap"){const dur=e.start&&e.end?minDiff(e.start,e.end):0;badgeVal=dur>0?hm(dur):null;}
+    else if(e.type==="poop"){badgeVal=e.poopType||null;}
+    return(
+      <div key={e.id} data-entry-id={e.id} draggable onDragStart={()=>setDragId(e.id)} onDragOver={ev=>{ev.preventDefault();setDragOver(e.id);}} onDragEnd={()=>{if(dragId&&dragOver&&dragId!==dragOver)reorderEntry(dragId,dragOver);setDragId(null);setDragOver(null);}} onDrop={ev=>{ev.preventDefault();}} style={{background:isOver?"#f5ede8":C.warm,borderRadius:14,padding:"11px 12px",border:`1px solid ${isOver?C.ter:C.blush}`,borderLeft:`3px solid ${accentCol}`,opacity:isDragging?0.45:1,transition:"opacity 0.15s,background 0.15s"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:9}}>
+            <span data-drag-handle="1" style={{fontSize:18,cursor:"grab",color:C.lt,letterSpacing:-1,touchAction:"none",padding:"6px 4px",userSelect:"none",WebkitUserSelect:"none"}}>&#x2261;</span>
+            <span style={{fontSize:17}}>{ICONS[e.type]||"📝"}</span>
+            <div>
+              <div style={{fontSize:14,fontWeight:500}}>{actLabel}</div>
+              {subDetail&&<div style={{fontSize:13,color:C.lt,fontFamily:_fM,marginTop:1}}>{subDetail}</div>}
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:7}}>
+            {badgeVal&&<Badge type={e.type}>{badgeVal}</Badge>}
+            <button onClick={()=>openEdit(e)} style={{background:"#f0e8e0",border:_bN,borderRadius:"50%",width:23,height:23,color:C.mid,cursor:_cP,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
+            <button onClick={()=>delEntry(e.id)} style={{background:"#f0e5e0",border:_bN,borderRadius:"50%",width:23,height:23,color:C.lt,cursor:_cP,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return(
     <div style={{background:"#f7f3ee",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:C.deep,paddingBottom:80,transition:"background 0.5s,color 0.5s"}}>
       <style>{`
@@ -5524,7 +5566,7 @@ function App(){
               display:"flex",alignItems:"center",justifyContent:"center"
             }}>+</button>
           </div>
-          <button onClick={e=>{e.stopPropagation();setTab("settings");}}
+          <button onClick={e=>{e.stopPropagation();setShowFamilyModal(true);}}
             style={{background:"rgba(255,255,255,0.5)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:140}}>
             <span style={{fontSize:14}}>👤</span>
             <span style={{fontSize:11,fontFamily:_fM,fontWeight:700,color:C.mid,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{familyUsername||"Account"}</span>
@@ -5984,100 +6026,7 @@ function App(){
                     </div>
                   </div>
                 )}
-                {[...dayE].sort((a,b)=>timeVal(a)-timeVal(b)).map(e=>{
-                  const isDragging=dragId===e.id;
-                  const isOver=dragOver===e.id;
-                  const accentCol=e.type==="feed"?(e.feedType==="solids"?"#b8860b":e.feedType==="breast"?"#c07080":e.feedType==="pump"?"#7090c0":C.ter):e.type==="nap"?C.mint:e.type==="sleep"?C.sky:e.type==="poop"?"#8a7060":e.type==="wake"?C.gold:C.mid;
-
-                  // Activity label: "time - Activity (type)" format
-                  const actLabel = (() => {
-                    const timeStr = e.time || e.start || "";
-                    const timeDisplay = timeStr ? fmt12(timeStr) : "";
-                    const name = e.type==="feed"
-                      ? (e.feedType==="solids"?"Solids":e.feedType==="breast"?"Breast Feed":e.feedType==="pump"?"Pump":"Bottle Feed")
-                      : e.type==="nap"?"Nap"
-                      : e.type==="sleep"?"Bedtime"
-                      : e.type==="wake"?"Wake Up"
-                      : e.type==="poop"?"Nappy"
-                      : NAMES[e.type]||e.type;
-                    return timeDisplay ? `${timeDisplay} - ${name}` : name;
-                  })();
-
-                  // Sub-detail: key info per type
-                  // Nap: duration | Feed: ml or food desc | Nappy: poop type | Pump: amount pumped | Breast: duration + L/R
-                  let subDetail = null;
-                  if(e.type==="feed"&&e.feedType==="breast"){
-                    const parts=[];
-                    const total = (e.breastL||0)+(e.breastR||0);
-                    if(total>0) parts.push(`${total}min`);
-                    if(e.breastL>0) parts.push(`L: ${e.breastL}min`);
-                    if(e.breastR>0) parts.push(`R: ${e.breastR}min`);
-                    if(parts.length) subDetail=parts.join(" · ");
-                  } else if(e.type==="feed"&&e.feedType==="pump"){
-                    const parts=[];
-                    const total=(e.pumpL||0)+(e.pumpR||0)||e.amount||0;
-                    if(total>0) parts.push(`${total}ml`);
-                    if(e.pumpL>0) parts.push(`L: ${e.pumpL}ml`);
-                    if(e.pumpR>0) parts.push(`R: ${e.pumpR}ml`);
-                    if(e.pumpDuration>0) parts.push(`${e.pumpDuration}min`);
-                    if(parts.length) subDetail=parts.join(" · ");
-                  } else if(e.type==="feed"&&e.feedType==="solids"){
-                    subDetail = e.note||null;
-                  } else if(e.type==="feed"){
-                    // bottle
-                    if(e.amount>0) subDetail=`${e.amount}ml`;
-                  } else if(e.type==="nap"&&e.start){
-                    // Duration shown in badge chip; sub-detail is empty to avoid duplication
-                    subDetail = null;
-                  } else if(e.type==="poop"){
-                    subDetail=e.poopType||null;
-                  }
-                  if(e.note&&!subDetail) subDetail=e.note;
-                  else if(e.note&&subDetail) subDetail+=` · ${e.note}`;
-
-                  // Badge chip value (right side) — show key metric only, no time duplication
-                  let badgeVal = null;
-                  if(e.type==="feed"){
-                    if(e.feedType==="breast") badgeVal=`${(e.breastL||0)+(e.breastR||0)}min`;
-                    else if(e.feedType==="pump") badgeVal=`${(e.pumpL||0)+(e.pumpR||0)||e.amount||0}ml`;
-                    else if(e.feedType==="solids") badgeVal=null;
-                    else badgeVal=e.amount?`${e.amount}ml`:null;
-                  } else if(e.type==="nap"){
-                    const dur=e.start&&e.end?minDiff(e.start,e.end):0;
-                    badgeVal=dur>0?hm(dur):null;
-                  } else if(e.type==="poop"){
-                    badgeVal=e.poopType||null;
-                  } else {
-                    badgeVal=null; // time is already in actLabel
-                  }
-
-                  return(
-                    <div key={e.id}
-                      data-entry-id={e.id}
-                      draggable
-                      onDragStart={()=>setDragId(e.id)}
-                      onDragOver={ev=>{ev.preventDefault();setDragOver(e.id);}}
-                      onDragEnd={()=>{if(dragId&&dragOver&&dragId!==dragOver)reorderEntry(dragId,dragOver);setDragId(null);setDragOver(null);}}
-                      onDrop={ev=>{ev.preventDefault();}}
-                      style={{background:isOver?"#f5ede8":C.warm,borderRadius:14,padding:"11px 12px",border:`1px solid ${isOver?C.ter:C.blush}`,borderLeft:`3px solid ${accentCol}`,opacity:isDragging?0.45:1,transition:"opacity 0.15s,background 0.15s"}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div style={{display:"flex",alignItems:"center",gap:9}}>
-                          <span data-drag-handle="1" style={{fontSize:18,cursor:"grab",color:C.lt,letterSpacing:-1,touchAction:"none",padding:"6px 4px",userSelect:"none",WebkitUserSelect:"none"}}>&#x2261;</span>
-                          <span style={{fontSize:17}}>{ICONS[e.type]||"📝"}</span>
-                          <div>
-                            <div style={{fontSize:14,fontWeight:500}}>{actLabel}</div>
-                            {subDetail&&<div style={{fontSize:13,color:C.lt,fontFamily:_fM,marginTop:1}}>{subDetail}</div>}
-                          </div>
-                        </div>
-                        <div style={{display:"flex",alignItems:"center",gap:7}}>
-                          {badgeVal&&<Badge type={e.type}>{badgeVal}</Badge>}
-                          <button onClick={()=>openEdit(e)} style={{background:"#f0e8e0",border:_bN,borderRadius:"50%",width:23,height:23,color:C.mid,cursor:_cP,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
-                          <button onClick={()=>delEntry(e.id)} style={{background:"#f0e5e0",border:_bN,borderRadius:"50%",width:23,height:23,color:C.lt,cursor:_cP,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {[...dayE].sort((a,b)=>timeVal(a)-timeVal(b)).map(e=>(renderDayEntry(e)))}
               </div>
               <div style={{background:"#f0eeff",borderRadius:20,padding:"14px 17px",marginBottom:18,border:"1px solid #d8d2f0"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -6093,7 +6042,7 @@ function App(){
                   const pts=[];
                   if(sleepEv) pts.push({label:"Bedtime",time:sleepEv.time});
                   nightE.forEach((e,i)=>pts.push({label:`Wake ${i+1}`,time:e.time,id:e.id,amount:e.amount,note:e.note}));
-                  return nightE.map((e,i)=>{
+                  const renderNightWake=(e,i)=>{
                     const fromPt=pts[i];const toPt=pts[i+1];
                     let strMins=fromPt&&toPt?minDiff(fromPt.time,toPt.time):0;
                     if(strMins<=0&&strMins!=null&&fromPt&&toPt) strMins+=1440;
@@ -6113,7 +6062,7 @@ function App(){
                               {e.selfSettled&&<div style={{fontSize:12,color:"#50c878",fontFamily:_fM,marginTop:2}}>Self settled</div>}
                               {e.assisted&&<div style={{fontSize:12,color:"#7b68ee",fontFamily:_fM,marginTop:2}}>
                                 Assisted soothing{e.assistedType==="milk"?" – milk":e.assistedNote?" – "+e.assistedNote:""}
-                                {e.assistedDuration?<span> · Duration: {e.assistedDuration}m</span>:null}
+                                {e.assistedDuration?(<span> · Duration: {e.assistedDuration}m</span>):null}
                               </div>}
                               {!e.selfSettled&&!e.assisted&&e.note&&<div style={{fontSize:14,color:"#9080c8",fontStyle:"italic",marginTop:1}}>{e.note}</div>}
                             </div>
@@ -6126,7 +6075,8 @@ function App(){
                         </div>
                       </div>
                     );
-                  });
+                  };
+                  return nightE.map(renderNightWake);
                 })()}
               </div>
               )}{/* end timelineExpanded */}
@@ -7203,83 +7153,9 @@ function App(){
 
       </div>
       
-      {tab==="settings"&&(
-        <div style={{padding:"16px 16px 100px"}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,marginBottom:4}}>👤 {familyUsername||"Account"}</div>
-          {familyUsername&&<div style={{fontSize:12,fontFamily:_fM,color:C.lt,marginBottom:20}}>{syncStatus==="synced"?"🔄 Synced":syncStatus==="syncing"?"⏳ Syncing…":syncStatus==="error"?"⚠️ Sync error":"☁️ "+familyUsername}</div>}
-
-          {/* Baby Info card */}
-          <div style={{...card,marginBottom:10}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-              <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>Baby Info</div>
-              <button onClick={()=>{setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsConfirmDelete(false);setShowChildSettings(true);}}
-                style={{background:C.warm,border:`1.5px solid ${C.blush}`,borderRadius:99,padding:"4px 12px",fontSize:13,color:C.mid,cursor:_cP,fontFamily:_fM,fontWeight:600}}>
-                ✏️ Edit
-              </button>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-              <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
-                <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>{babyUnborn?"Due Date":"Born"}</div>
-                <div style={{fontSize:13,fontWeight:600,color:C.deep,lineHeight:1.3}}>
-                  {babyDob ? new Date(babyDob+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"2-digit"}) : <span style={{color:C.lt,fontStyle:"italic",fontSize:12}}>Not set</span>}
-                </div>
-                {age&&<div style={{fontSize:11,color:C.ter,fontFamily:_fM,marginTop:2,fontWeight:600}}>{babyUnborn?(()=>{const d=Math.ceil((new Date(babyDob)-new Date())/(1000*60*60*24));return d>0?`${d}d to go`:"Any day!";})():fmtAge(age)}</div>}
-              </div>
-              <div style={{background:babySex==="boy"?"#eaf3fb":babySex==="girl"?"#fde7e4":C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${babySex?C.blush:C.ter}`}}>
-                <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Sex</div>
-                {babySex ? <div style={{fontSize:13,fontWeight:600,color:babySex==="boy"?"#3d6a8a":"#a85070"}}>{babySex==="boy"?"👦 Boy":"👧 Girl"}</div>
-                  : <div><div style={{fontSize:12,color:C.ter,fontWeight:600}}>⚠ Not set</div><div style={{fontSize:10,color:C.lt,marginTop:1}}>Needed for percentiles</div></div>}
-              </div>
-              <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
-                <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Name</div>
-                <div style={{fontSize:13,fontWeight:600,color:C.deep}}>{babyName||<span style={{color:C.lt,fontStyle:"italic",fontSize:12}}>—</span>}</div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            <button onClick={()=>setShowFamilyModal(true)} style={{display:"flex",alignItems:"center",gap:14,background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
-              <span style={{fontSize:24}}>👨‍👩‍👧</span>
-              <div>
-                <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Share & Sync</div>
-                <div style={{fontSize:12,color:C.lt,marginTop:2}}>{familyCode?"Manage sync & backup":"Connect with partner or restore data"}</div>
-              </div>
-            </button>
-            {backupCode&&(
-              <button onClick={()=>{
-                const tot=Object.values(children).reduce((s,c)=>s+Object.values(c.days||{}).reduce((s2,arr)=>s2+(arr||[]).length,0),0);
-                const days2=Object.values(children).reduce((s,c)=>s+Object.keys(c.days||{}).length,0);
-                if(window.confirm("Save all data to cloud now?\n\n"+days2+" days · "+tot+" entries\n\nThis overwrites the existing cloud backup.")){pushToCloud(backupCode,childrenRef.current);}
-              }} style={{display:"flex",alignItems:"center",gap:14,background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
-                <span style={{fontSize:24}}>💾</span>
-                <div>
-                  <div style={{fontSize:15,fontWeight:700,color:C.mint}}>Save to Cloud</div>
-                  <div style={{fontSize:12,color:C.lt,marginTop:2}}>Manually back up all data now</div>
-                </div>
-              </button>
-            )}
-            <button onClick={()=>{setTutStep(0);try{localStorage.removeItem("tut_v2");}catch{}}} style={{display:"flex",alignItems:"center",gap:14,background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
-              <span style={{fontSize:24}}>❓</span>
-              <div>
-                <div style={{fontSize:15,fontWeight:700,color:C.deep}}>App Tour</div>
-                <div style={{fontSize:12,color:C.lt,marginTop:2}}>Replay the walkthrough</div>
-              </div>
-            </button>
-            {familyUsername&&(
-              <button onClick={logout} style={{display:"flex",alignItems:"center",gap:14,background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%",marginTop:6}}>
-                <span style={{fontSize:24}}>🚪</span>
-                <div>
-                  <div style={{fontSize:15,fontWeight:700,color:C.mid}}>Sign Out</div>
-                  <div style={{fontSize:12,color:C.lt,marginTop:2}}>Signed in as {familyUsername}</div>
-                </div>
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"white",borderTop:`1px solid ${C.blush}`,display:"flex",alignItems:"stretch",boxShadow:"0 -4px 20px rgba(44,31,26,0.08)",maxWidth:520,margin:"0 auto"}}>
-        {["home","insights","milestones","develop","settings"].map(t=>(
+        {["home","insights","milestones","develop"].map(t=>(
           <button key={t} onClick={()=>{setTab(t);setLogPanel(null);}} style={tabSt(t)}>
             <span style={{fontSize:16}}>{tabIcons[t]}</span>
             <span>{tabLabels[t]}</span>
@@ -7297,20 +7173,8 @@ function App(){
             ))}
           </div>
           <div style={{marginBottom:14}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-              <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Time</label>
-              <button onClick={()=>setLogForm(f=>({...f,feedTimeSet:!f.feedTimeSet,feedTime:f.feedTime||nowTime()}))}
-                style={{fontSize:12,background:_bN,border:`1px solid ${logForm.feedTimeSet?C.ter:C.blush}`,borderRadius:99,padding:"3px 10px",color:logForm.feedTimeSet?C.ter:C.lt,cursor:_cP,fontFamily:_fI,fontWeight:600}}>
-                {logForm.feedTimeSet?"✓ Time set":"Set time"}
-              </button>
-            </div>
-            {logForm.feedTimeSet ? (
-              <TimeInput value={logForm.feedTime} onChange={t=>setLogForm(f=>({...f,feedTime:t}))} style={{marginBottom:0}} inputStyle={{border:`2px solid ${C.ter}`,background:"#fdf0eb"}}/>
-            ) : (
-              <div style={{fontSize:13,color:C.lt,background:C.warm,borderRadius:12,padding:"9px 11px",border:`1px dashed ${C.blush}`}}>
-                📍 Will log as <strong style={{color:C.mid}}>{fmt12(nowTime())}</strong> — tap "Set time" to change
-              </div>
-            )}
+            <TimeInput label="Time (optional)" value={logForm.feedTime} onChange={t=>setLogForm(f=>({...f,feedTime:t}))} style={{marginBottom:0}}/>
+            <div style={{fontSize:12,color:C.lt,fontFamily:_fM,marginTop:4}}>Leave blank to log as current time.</div>
           </div>
 
           {logForm.feedType==="bottle"&&(
@@ -7346,14 +7210,18 @@ function App(){
 
       {logPanel==="nappy"&&(
         <Sheet onClose={()=>setLogPanel(null)} title="💩 Log Nappy">
-          <div style={{fontSize:14,color:C.lt,marginBottom:12,fontFamily:_fM}}>Tap to log instantly</div>
+          <div style={{marginBottom:14}}>
+            <TimeInput label="Time (optional)" value={logForm.nappyTime||""} onChange={t=>setLogForm(f=>({...f,nappyTime:t}))} placeholder="Leave blank for now"/>
+            <div style={{fontSize:12,color:C.lt,fontFamily:_fM,marginTop:4}}>Leave blank to log as current time. You can always edit later.</div>
+          </div>
+          <div style={{fontSize:14,color:C.lt,marginBottom:12,fontFamily:_fM}}>Tap to log:</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
-            <button onClick={()=>saveLogNappy("wet")}
+            <button onClick={()=>saveLogNappy("wet", logForm.nappyTime||"")}
               style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:C.warm,fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
               <span>💧</span>
               <span style={{fontSize:14,fontWeight:700,color:C.mid}}>Wet</span>
             </button>
-            <button onClick={()=>saveLogNappy("dirty")}
+            <button onClick={()=>saveLogNappy("dirty", logForm.nappyTime||"")}
               style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:C.warm,fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
               <span>💩</span>
               <span style={{fontSize:14,fontWeight:700,color:C.mid}}>Dirty</span>
@@ -7362,7 +7230,7 @@ function App(){
           <div style={{fontSize:13,color:C.lt,marginBottom:10,fontFamily:_fM,textAlign:"center"}}>Or specify poop type:</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>
             {POOP_TYPES.map(pt=>(
-              <button key={pt} onClick={()=>saveLogNappy(pt)}
+              <button key={pt} onClick={()=>saveLogNappy(pt, logForm.nappyTime||"")}
                 style={{padding:"6px 14px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:14,color:C.mid,cursor:_cP,fontFamily:_fI}}>
                 {pt}
               </button>
@@ -7382,13 +7250,16 @@ function App(){
             ))}
           </div>
           {logForm.sleepType==="nap"&&(
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-              {[["napStart","Start"],["napEnd","End"]].map(([k,lbl])=>(
-                <div key={k}>
-                  <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>{lbl}</label>
-                  <TimeInput value={logForm[k]} onChange={t=>setLogForm(f=>({...f,[k]:t}))} style={{marginBottom:0}}/>
-                </div>
-              ))}
+            <div style={{marginBottom:12}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:4}}>
+                {[["napStart","Start"],["napEnd","End"]].map(([k,lbl])=>(
+                  <div key={k}>
+                    <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>{lbl}</label>
+                    <TimeInput value={logForm[k]} onChange={t=>setLogForm(f=>({...f,[k]:t}))} style={{marginBottom:0}}/>
+                  </div>
+                ))}
+              </div>
+              <div style={{fontSize:12,color:C.lt,fontFamily:_fM}}>Leave blank to use current time.</div>
             </div>
           )}
           {logForm.sleepType==="bed"&&(
@@ -8186,7 +8057,61 @@ function App(){
           <div onClick={e=>e.stopPropagation()} style={{background:"#faf6f0",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
 
             <div style={{width:40,height:4,background:C.blush,borderRadius:99,margin:"0 auto 20px"}}/>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:C.deep,marginBottom:6}}>Data & Sync</div>
+
+            {/* Baby Info */}
+            <div style={{background:"white",borderRadius:14,padding:"14px",marginBottom:12,border:`1px solid ${C.blush}`}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>Baby Info</div>
+                <button onClick={()=>{setShowFamilyModal(false);setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsConfirmDelete(false);setShowChildSettings(true);}}
+                  style={{background:C.warm,border:`1.5px solid ${C.blush}`,borderRadius:99,padding:"4px 12px",fontSize:13,color:C.mid,cursor:_cP,fontFamily:_fM,fontWeight:600}}>
+                  ✏️ Edit
+                </button>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                  <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>{babyUnborn?"Due Date":"Born"}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:C.deep,lineHeight:1.3}}>
+                    {babyDob ? new Date(babyDob+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"2-digit"}) : <span style={{color:C.lt,fontStyle:"italic",fontSize:12}}>Not set</span>}
+                  </div>
+                  {age&&<div style={{fontSize:11,color:C.ter,fontFamily:_fM,marginTop:2,fontWeight:600}}>{babyUnborn?(()=>{const d=Math.ceil((new Date(babyDob)-new Date())/(1000*60*60*24));return d>0?`${d}d to go`:"Any day!";})():fmtAge(age)}</div>}
+                </div>
+                <div style={{background:babySex==="boy"?"#eaf3fb":babySex==="girl"?"#fde7e4":C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${babySex?C.blush:C.ter}`}}>
+                  <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Sex</div>
+                  {babySex ? <div style={{fontSize:13,fontWeight:600,color:babySex==="boy"?"#3d6a8a":"#a85070"}}>{babySex==="boy"?"👦 Boy":"👧 Girl"}</div>
+                    : <div><div style={{fontSize:12,color:C.ter,fontWeight:600}}>⚠ Not set</div><div style={{fontSize:10,color:C.lt,marginTop:1}}>Needed for percentiles</div></div>}
+                </div>
+                <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                  <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Name</div>
+                  <div style={{fontSize:13,fontWeight:600,color:C.deep}}>{babyName||<span style={{color:C.lt,fontStyle:"italic",fontSize:12}}>—</span>}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Save to Cloud + App Tour */}
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+              {backupCode&&(
+                <button onClick={()=>{
+                  const tot=Object.values(children).reduce((s,c)=>s+Object.values(c.days||{}).reduce((s2,arr)=>s2+(arr||[]).length,0),0);
+                  const days2=Object.values(children).reduce((s,c)=>s+Object.keys(c.days||{}).length,0);
+                  if(window.confirm("Save all data to cloud now?\n\n"+days2+" days · "+tot+" entries\n\nThis overwrites the existing cloud backup.")){pushToCloud(backupCode,childrenRef.current);}
+                }} style={{display:"flex",alignItems:"center",gap:12,background:"white",border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 14px",cursor:_cP,textAlign:"left",width:"100%"}}>
+                  <span style={{fontSize:22}}>💾</span>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700,color:C.mint}}>Save to Cloud</div>
+                    <div style={{fontSize:12,color:C.lt,marginTop:1}}>Manually back up all data now</div>
+                  </div>
+                </button>
+              )}
+              <button onClick={()=>{setShowFamilyModal(false);setTutStep(0);try{localStorage.removeItem("tut_v2");}catch{}}} style={{display:"flex",alignItems:"center",gap:12,background:"white",border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 14px",cursor:_cP,textAlign:"left",width:"100%"}}>
+                <span style={{fontSize:22}}>❓</span>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.deep}}>App Tour</div>
+                  <div style={{fontSize:12,color:C.lt,marginTop:1}}>Replay the walkthrough</div>
+                </div>
+              </button>
+            </div>
+
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:6}}>Data & Sync</div>
             <div style={{background: backupCode?"#e8f7f0":"#fff8e8",borderRadius:12,padding:"12px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10,border:`1px solid ${backupCode?"#b0e8cc":"#f0d890"}`}}>
               <span style={{fontSize:20}}>{backupCode?"🛡️":"⏳"}</span>
               <div>
