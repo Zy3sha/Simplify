@@ -223,7 +223,7 @@ function getNightWindows(thisDayEntries, nextDayEntries) {
 
 const ICONS={feed:"🍼",nap:"😴",wake:"☀️",sleep:"🌙",poop:"💩"};
 const NAMES={feed:"Feed",nap:"Nap",wake:"Wake Up",sleep:"Bedtime",poop:"Nappy"};
-const POOP_TYPES=["Yellow/seedy","Mustard","Green","Brown","Black","Other"];
+const POOP_TYPES=["Yellow/seedy","Mustard","Green","Brown","Dark green","Orange","Black/tarry","White/pale","Mucousy","Watery","Formed/solid","Pellet-like","Frothy","Bloody/streaked","Other"];
 const C={ter:"#c9705a",mid:"#7a5c52",lt:"#b89890",blush:"#f2d9cc",rose:"#e8b4a0",cream:"#faf6f0",warm:"#fff9f2",mint:"#6fa898",sky:"#7aabc4",gold:"#d4a855",deep:"#2c1f1a"};
 const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em",_ls08="0.08em",_bN="none",_oN="none";
 
@@ -255,6 +255,7 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
   const [raw, setRaw] = React.useState(value ? fmt12(value) : "");
   const [parsed, setParsed] = React.useState(value || null);
   const [error, setError] = React.useState(false);
+  const pickerRef = React.useRef(null);
 
   // Sync external value changes (e.g. when form resets)
   React.useEffect(()=>{
@@ -298,6 +299,15 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
     }
   }
 
+  function handlePickerChange(e){
+    const v = e.target.value;
+    if(!v) return;
+    setParsed(v);
+    setRaw(fmt12(v));
+    setError(false);
+    onChange(v);
+  }
+
   const previewText = parsed ? fmt12(parsed) : null;
   const showPreview = parsed && raw && fmt12(raw.trim())!==previewText;
   const borderColor = error ? "#e8574a" : parsed ? C.ter : C.blush;
@@ -306,22 +316,30 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
   return(
     <div style={{marginBottom:12,...style}}>
       {label&&<label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>{label}</label>}
-      <input
-        type="text"
-        inputMode="text"
-        placeholder="e.g. 7:30, 2pm, 14:00"
-        value={raw}
-        onChange={e=>{
-          setRaw(e.target.value);
-          // Live parse as user types
-          const r = tryParse(e.target.value);
-          if(r){ setParsed(r); setError(false); onChange(r); }
-          else if(!e.target.value.trim()){ setParsed(null); setError(false); onChange(""); }
-        }}
-        onBlur={()=>commit(raw)}
-        onKeyDown={e=>{if(e.key==="Enter"||e.key==="Tab") commit(raw);}}
-        style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${borderColor}`,background:bgColor,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,...inputStyle}}
-      />
+      <div style={{display:"flex",gap:6,alignItems:"center"}}>
+        <input
+          type="text"
+          inputMode="text"
+          placeholder="e.g. 7:30, 2pm, 14:00"
+          value={raw}
+          onChange={e=>{
+            setRaw(e.target.value);
+            // Live parse as user types
+            const r = tryParse(e.target.value);
+            if(r){ setParsed(r); setError(false); onChange(r); }
+            else if(!e.target.value.trim()){ setParsed(null); setError(false); onChange(""); }
+          }}
+          onBlur={()=>commit(raw)}
+          onKeyDown={e=>{if(e.key==="Enter"||e.key==="Tab") commit(raw);}}
+          style={{flex:1,padding:"9px 11px",borderRadius:12,border:`1.5px solid ${borderColor}`,background:bgColor,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,...inputStyle}}
+        />
+        <input ref={pickerRef} type="time" value={parsed||""} onChange={handlePickerChange}
+          style={{position:"absolute",opacity:0,width:0,height:0,pointerEvents:"none"}}/>
+        <button onClick={()=>{if(pickerRef.current){pickerRef.current.showPicker?pickerRef.current.showPicker():pickerRef.current.focus();pickerRef.current.click();}}}
+          style={{width:38,height:38,borderRadius:10,border:`1.5px solid ${C.blush}`,background:C.warm,display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,flexShrink:0,fontSize:16}}>
+          🕐
+        </button>
+      </div>
       {error&&<div style={{fontSize:12,color:"#e8574a",marginTop:3,fontFamily:_fM}}>⚠ Couldn't parse — try "7:30am" or "19:00"</div>}
       {showPreview&&!error&&<div style={{fontSize:12,color:C.ter,marginTop:3,fontFamily:_fM}}>→ {previewText}</div>}
     </div>
@@ -4107,7 +4125,7 @@ function App(){
 
   function openEntry(night=false){setEditEntry(null);setEType("feed");setFeedType("milk");setForm({amount:"",time:nowTime(),start:nowTime(),end:nowTime(),note:"",night:"no",poopType:"",breastL:"",breastR:"",pumpL:"",pumpR:""});setModal("entry");}
   function openLogPanel(panel){
-    setLogForm({feedType:"bottle",amount:"",breastL:"",breastR:"",pumpL:"",pumpR:"",pumpTotal:"",pumpDuration:"",pumpStart:"",note:"",poopType:"wet",sleepType:sleepDefault(),napStart:nowTime(),napEnd:nowTime(),bedTime:nowTime(),feedTime:nowTime(),feedTimeSet:false});
+    setLogForm({feedType:"bottle",amount:"",breastL:"",breastR:"",pumpL:"",pumpR:"",pumpTotal:"",pumpDuration:"",pumpStart:"",note:"",poopType:"wet",sleepType:sleepDefault(),napStart:"",napEnd:"",bedTime:"",feedTime:"",feedTimeSet:false});
     setLogPanel(panel);
   }
 
@@ -4215,7 +4233,7 @@ function App(){
 
   function saveLogFeed(){
     const f=logForm;
-    const t = f.feedTimeSet && f.feedTime ? f.feedTime : nowTime();
+    const t = f.feedTime || nowTime();
     if(f.feedType==="bottle"){
       quickAddLog("feed",{type:"feed",time:t,feedType:"milk",amount:parseInt(f.amount)||0,note:f.note||""});
     } else if(f.feedType==="breast"){
@@ -4248,9 +4266,9 @@ function App(){
   function saveLogSleep(){
     const f=logForm;
     if(f.sleepType==="nap"){
-      quickAddLog("nap",{type:"nap",start:f.napStart,end:f.napEnd,night:false,note:""});
+      quickAddLog("nap",{type:"nap",start:f.napStart||nowTime(),end:f.napEnd||nowTime(),night:false,note:""});
     } else {
-      quickAddLog("sleep",{type:"sleep",time:f.bedTime,night:false,note:""});
+      quickAddLog("sleep",{type:"sleep",time:f.bedTime||nowTime(),night:false,note:""});
     }
   }
   function saveEntry(){
@@ -5363,8 +5381,8 @@ function App(){
                 : isBed ? "Bedtime in"
                 : "Next Nap";
               const bedTimerValue = napOn
-                ? "🌙 " + fmtSec(napSec)
-                : isBedNow ? "🌙 Now!"
+                ? fmtSec(napSec)
+                : isBedNow ? "Now!"
                 : countdown !== null ? fmtCountdown(countdown) : "–";
               const bedBtnTappable = isBed || isBedNow || napOn;
               const handleBedBtn = () => {
@@ -7121,72 +7139,114 @@ function App(){
             <div>
               {/* ── COMING UP — Development Phase ── */}
               {(()=>{
-                if (!ageWeeks) return null;
+                if (!ageWeeks || !babyDob) return null;
+                const dobDate = new Date(babyDob+"T00:00:00");
+                const wkToDate2 = (w) => { const d = new Date(dobDate); d.setDate(d.getDate() + w*7); return d; };
+                const fmtD2 = (d) => d.toLocaleDateString("en-GB",{day:"numeric",month:"short"});
                 const activePhase = DEV_PHASES.find(l => ageWeeks >= l.windowStart && ageWeeks <= l.windowEnd);
-                const nextPhase = DEV_PHASES.find(l => l.windowStart > ageWeeks);
-                const upcomingPhases = DEV_PHASES.filter(l => l.windowStart > ageWeeks).slice(0,2);
-                if (!activePhase && !nextPhase) return null;
+                const nextPhase2 = DEV_PHASES.find(l => l.windowStart > (activePhase ? activePhase.windowEnd : ageWeeks));
+                const isPrePhase = !activePhase && nextPhase2 && ageWeeks >= nextPhase2.windowStart - 1;
+                const isFussy2 = activePhase && ageWeeks < activePhase.peakWeek;
+                const isBloom2 = activePhase && ageWeeks >= activePhase.peakWeek;
+                const heroPhase = activePhase || (isPrePhase ? nextPhase2 : null);
+                if (!heroPhase && !nextPhase2) return null;
+
                 return (
                   <div style={{marginBottom:14}}>
                     <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:12}}>Coming Up</div>
-                    {activePhase && (
-                      <div style={{background:"linear-gradient(135deg,#f0eeff,#e8e4ff)",borderRadius:18,padding:"16px",marginBottom:10,border:"1.5px solid #c5bef5"}}>
-                        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                          <div style={{width:32,height:32,borderRadius:"50%",background:"#7b68ee",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            <span style={{fontSize:13,color:"white",fontWeight:700}}>{activePhase.phase}</span>
-                          </div>
-                          <div>
-                            <div style={{fontSize:11,fontFamily:_fM,color:"#9080c8",textTransform:"uppercase",letterSpacing:_ls08}}>Currently in</div>
-                            <div style={{fontSize:16,fontWeight:700,color:"#4a3cb5"}}>Phase {activePhase.phase}: {activePhase.name}</div>
-                          </div>
-                        </div>
-                        <div style={{fontSize:13,color:"#5040a0",lineHeight:1.6,marginBottom:10,paddingLeft:42}}>
-                          <strong>Weeks {activePhase.windowStart}–{activePhase.windowEnd}</strong> (peak around week {activePhase.peakWeek})
-                        </div>
-                        <div style={{fontSize:13,color:"#5040a0",lineHeight:1.6,marginBottom:10,paddingLeft:42}}>
-                          <strong>What you'll notice:</strong> {activePhase.fussy}
-                        </div>
-                        <div style={{paddingLeft:42}}>
-                          <div style={{fontSize:12,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>New skills emerging</div>
-                          {activePhase.skills.map((s,i)=>(
-                            <div key={i} style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4}}>
-                              <span style={{fontSize:12,color:"#7b68ee",marginTop:1}}>✦</span>
-                              <div style={{fontSize:13,color:"#4a3cb5",lineHeight:1.5}}>{s}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {upcomingPhases.map(phase => {
-                      const weeksUntil = phase.windowStart - ageWeeks;
+
+                    {isPrePhase && heroPhase && (()=>{
+                      const sd=fmtD2(wkToDate2(heroPhase.windowStart)), pd=fmtD2(wkToDate2(heroPhase.peakWeek)), ed=fmtD2(wkToDate2(heroPhase.windowEnd));
                       return (
-                        <div key={phase.phase} style={{background:"#f8f7ff",borderRadius:16,padding:"14px",marginBottom:8,border:"1px solid #e0dbf5"}}>
-                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-                            <div style={{width:28,height:28,borderRadius:"50%",background:"#c5bef5",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                              <span style={{fontSize:11,color:"white",fontWeight:700}}>{phase.phase}</span>
-                            </div>
+                        <div style={{background:"linear-gradient(135deg,#fffbec,#fff5cc)",border:"1px solid #f0d060",borderRadius:18,padding:"16px",marginBottom:14}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                            <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#f5c840,#e8a820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>⛈</div>
                             <div>
-                              <div style={{fontSize:14,fontWeight:700,color:"#7060c0"}}>Phase {phase.phase}: {phase.name}</div>
-                              <div style={{fontSize:12,color:C.lt,fontFamily:_fM}}>
-                                {weeksUntil <= 0 ? "Starting now" : `In ~${weeksUntil} week${weeksUntil!==1?"s":""}`} · weeks {phase.windowStart}–{phase.windowEnd}
-                              </div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:"#8a6808",textTransform:"uppercase",letterSpacing:_ls1}}>Storm brewing · Phase {heroPhase.phase}</div>
+                              <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:"#5a3800"}}>{heroPhase.name}</div>
                             </div>
                           </div>
-                          <div style={{fontSize:13,color:"#5040a0",lineHeight:1.55,paddingLeft:38,marginBottom:6}}>
-                            <strong>Expect:</strong> {phase.fussy}
-                          </div>
-                          <div style={{paddingLeft:38}}>
-                            <div style={{fontSize:11,fontFamily:_fM,color:"#9080c8",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4}}>Skills to watch for</div>
-                            {phase.skills.map((s,i)=>(
-                              <div key={i} style={{display:"flex",alignItems:"flex-start",gap:5,marginBottom:3}}>
-                                <span style={{fontSize:11,color:"#c5bef5",marginTop:1}}>○</span>
-                                <div style={{fontSize:12,color:"#6050b0",lineHeight:1.4}}>{s}</div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
+                            {[["Fussy storm",`${sd} – ${pd}`],["Skills bloom",`${pd} – ${ed}`]].map(([lbl,val])=>(
+                              <div key={lbl} style={{background:"rgba(245,200,64,0.18)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
+                                <span style={{color:"#8a6808",fontWeight:600}}>{lbl} </span><span style={{color:"#6a4808",fontFamily:_fM}}>{val}</span>
                               </div>
                             ))}
                           </div>
+                          <div style={{fontSize:13,color:"#6a4808",lineHeight:1.55,marginBottom:9}}>{heroPhase.fussy}</div>
+                          <div style={{fontSize:12,fontWeight:700,color:"#6a4000",marginBottom:5}}>Skills coming with this phase</div>
+                          {heroPhase.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#d4a010",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"#5a3808"}}>{s}</span></div>))}
                         </div>
                       );
-                    })}
+                    })()}
+
+                    {isFussy2 && heroPhase && (()=>{
+                      const pd=fmtD2(wkToDate2(heroPhase.peakWeek)), ed=fmtD2(wkToDate2(heroPhase.windowEnd));
+                      return (
+                        <div style={{background:"linear-gradient(135deg,#f0ebff,#e4d8ff)",border:"1px solid #b8a4f8",borderRadius:18,padding:"16px",marginBottom:14}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                            <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#8848e0,#6030c0)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🌀</div>
+                            <div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:"#5030a0",textTransform:"uppercase",letterSpacing:_ls1}}>Phase {heroPhase.phase} · Fussy storm</div>
+                              <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:"#2e1070"}}>{heroPhase.name}</div>
+                            </div>
+                          </div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
+                            {[["Fussy storm","now → "+pd],["Skills bloom",pd+" → "+ed]].map(([lbl,val])=>(
+                              <div key={lbl} style={{background:"rgba(136,72,224,0.12)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
+                                <span style={{color:"#5030a0",fontWeight:600}}>{lbl} </span><span style={{color:"#3a1880",fontFamily:_fM}}>{val}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{fontSize:13,color:"#3a1880",lineHeight:1.55,marginBottom:9}}>{heroPhase.fussy} Skills bloom starts around {pd}.</div>
+                          <div style={{fontSize:12,fontWeight:700,color:"#3a1880",marginBottom:5}}>Skills unlocking soon</div>
+                          {heroPhase.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#8848e0",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"#2e1070"}}>{s}</span></div>))}
+                        </div>
+                      );
+                    })()}
+
+                    {isBloom2 && heroPhase && (()=>{
+                      const ed=fmtD2(wkToDate2(heroPhase.windowEnd));
+                      return (
+                        <div style={{background:"linear-gradient(135deg,#e8f8ee,#d0f0e0)",border:"1px solid #70d098",borderRadius:18,padding:"16px",marginBottom:14}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                            <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#38c870,#20a050)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🌱</div>
+                            <div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:"#187040",textTransform:"uppercase",letterSpacing:_ls1}}>Phase {heroPhase.phase} · Skills blooming</div>
+                              <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:"#0a4020"}}>{heroPhase.name}</div>
+                            </div>
+                          </div>
+                          <div style={{fontSize:13,color:"#125030",lineHeight:1.55,marginBottom:9}}>The storm has cleared — watch for new abilities over the next few days.</div>
+                          <div style={{fontSize:12,fontWeight:700,color:"#125030",marginBottom:5}}>Skills developing now (until {ed})</div>
+                          {heroPhase.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#38c870",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"#0a4020"}}>{s}</span></div>))}
+                        </div>
+                      );
+                    })()}
+
+                    {!activePhase && !isPrePhase && nextPhase2 && (nextPhase2.windowStart - ageWeeks) <= 8 && (()=>{
+                      const wksAway=nextPhase2.windowStart-ageWeeks, sd=fmtD2(wkToDate2(nextPhase2.windowStart)), pd=fmtD2(wkToDate2(nextPhase2.peakWeek)), ed=fmtD2(wkToDate2(nextPhase2.windowEnd));
+                      return (
+                        <div style={{background:"#f8f4ff",border:"1px solid #d8cef8",borderRadius:18,padding:"14px 16px 12px",marginBottom:14}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:9}}>
+                            <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#c0a8f0,#a080d8)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>🔭</div>
+                            <div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:"#6050b0",textTransform:"uppercase",letterSpacing:_ls1}}>Coming in ~{wksAway} week{wksAway!==1?"s":""} · Phase {nextPhase2.phase}</div>
+                              <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:700,color:"#2e1870"}}>{nextPhase2.name}</div>
+                            </div>
+                          </div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:9}}>
+                            {[["Fussy storm",`${sd} – ${pd}`],["Skills bloom",`${pd} – ${ed}`]].map(([lbl,val])=>(
+                              <div key={lbl} style={{background:"rgba(160,128,216,0.12)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
+                                <span style={{color:"#5040a0",fontWeight:600}}>{lbl} </span><span style={{color:"#3a2880",fontFamily:_fM}}>{val}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{fontSize:13,color:"#3a2880",lineHeight:1.55,marginBottom:7}}>{nextPhase2.fussy}</div>
+                          <div style={{fontSize:12,fontWeight:700,color:"#5040a0",marginBottom:5}}>Skills coming with this phase</div>
+                          {nextPhase2.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#a080d8",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"#3a2880"}}>{s}</span></div>))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })()}
@@ -7343,20 +7403,9 @@ function App(){
             ))}
           </div>
           <div style={{marginBottom:14}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-              <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Time</label>
-              <button onClick={()=>setLogForm(f=>({...f,feedTimeSet:!f.feedTimeSet,feedTime:f.feedTime||nowTime()}))}
-                style={{fontSize:12,background:_bN,border:`1px solid ${logForm.feedTimeSet?C.ter:C.blush}`,borderRadius:99,padding:"3px 10px",color:logForm.feedTimeSet?C.ter:C.lt,cursor:_cP,fontFamily:_fI,fontWeight:600}}>
-                {logForm.feedTimeSet?"✓ Time set":"Set time"}
-              </button>
-            </div>
-            {logForm.feedTimeSet ? (
-              <TimeInput value={logForm.feedTime} onChange={t=>setLogForm(f=>({...f,feedTime:t}))} style={{marginBottom:0}} inputStyle={{border:`2px solid ${C.ter}`,background:"#fdf0eb"}}/>
-            ) : (
-              <div style={{fontSize:13,color:C.lt,background:C.warm,borderRadius:12,padding:"9px 11px",border:`1px dashed ${C.blush}`}}>
-                📍 Will log as <strong style={{color:C.mid}}>{fmt12(nowTime())}</strong> — tap "Set time" to change
-              </div>
-            )}
+            <label style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>Time (optional)</label>
+            <TimeInput value={logForm.feedTime} onChange={t=>setLogForm(f=>({...f,feedTime:t}))} style={{marginBottom:0}}/>
+            <div style={{fontSize:11,color:C.lt,marginTop:3}}>Leave empty to log as now</div>
           </div>
 
           {logForm.feedType==="bottle"&&(
@@ -7392,28 +7441,58 @@ function App(){
 
       {logPanel==="nappy"&&(
         <Sheet onClose={()=>setLogPanel(null)} title="💩 Log Nappy">
-          <div style={{fontSize:14,color:C.lt,marginBottom:12,fontFamily:_fM}}>Tap to log instantly</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
-            <button onClick={()=>saveLogNappy("wet")}
-              style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:C.warm,fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-              <span>💧</span>
-              <span style={{fontSize:14,fontWeight:700,color:C.mid}}>Wet</span>
-            </button>
-            <button onClick={()=>saveLogNappy("dirty")}
-              style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:C.warm,fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-              <span>💩</span>
-              <span style={{fontSize:14,fontWeight:700,color:C.mid}}>Dirty</span>
-            </button>
-          </div>
-          <div style={{fontSize:13,color:C.lt,marginBottom:10,fontFamily:_fM,textAlign:"center"}}>Or specify poop type:</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>
-            {POOP_TYPES.map(pt=>(
-              <button key={pt} onClick={()=>saveLogNappy(pt)}
-                style={{padding:"6px 14px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:14,color:C.mid,cursor:_cP,fontFamily:_fI}}>
-                {pt}
-              </button>
-            ))}
-          </div>
+          {(()=>{
+            const [nappyMode, setNappyMode] = React.useState(null); // null | "wet" | "dirty"
+            const [nappyTime, setNappyTime] = React.useState("");
+            const doSave = (poopType) => {
+              const t = nappyTime || nowTime();
+              quickAddLog("poop",{type:"poop",time:t,poopType,note:""});
+              setNappyMode(null); setNappyTime("");
+            };
+            return (
+              <div>
+                <div style={{marginBottom:12}}>
+                  <label style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>Time (optional)</label>
+                  <TimeInput value={nappyTime} onChange={t=>setNappyTime(t)} style={{marginBottom:0}} inputStyle={{padding:"8px 10px",fontSize:14}}/>
+                  <div style={{fontSize:11,color:C.lt,marginTop:3}}>Leave empty to log as now</div>
+                </div>
+                {!nappyMode && (
+                  <div>
+                    <div style={{fontSize:13,color:C.lt,marginBottom:10,fontFamily:_fM}}>What type?</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
+                      <button onClick={()=>doSave("wet")}
+                        style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:C.warm,fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                        <span>💧</span>
+                        <span style={{fontSize:14,fontWeight:700,color:C.mid}}>Wet</span>
+                      </button>
+                      <button onClick={()=>setNappyMode("dirty")}
+                        style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:C.warm,fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                        <span>💩</span>
+                        <span style={{fontSize:14,fontWeight:700,color:C.mid}}>Dirty</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {nappyMode==="dirty" && (
+                  <div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                      <div style={{fontSize:13,fontFamily:_fM,color:C.mid,fontWeight:600}}>💩 What did it look like?</div>
+                      <button onClick={()=>setNappyMode(null)} style={{fontSize:12,color:C.lt,background:_bN,border:_bN,cursor:_cP,fontFamily:_fI}}>← Back</button>
+                    </div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
+                      {POOP_TYPES.map(pt=>(
+                        <button key={pt} onClick={()=>doSave(pt)}
+                          style={{padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:13,color:C.mid,cursor:_cP,fontFamily:_fI,transition:"all 0.15s"}}>
+                          {pt}
+                        </button>
+                      ))}
+                    </div>
+                    <PBtn v="ghost" onClick={()=>doSave("dirty")}>Just log as dirty</PBtn>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </Sheet>
       )}
 
@@ -7428,18 +7507,22 @@ function App(){
             ))}
           </div>
           {logForm.sleepType==="nap"&&(
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-              {[["napStart","Start"],["napEnd","End"]].map(([k,lbl])=>(
-                <div key={k}>
-                  <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>{lbl}</label>
-                  <TimeInput value={logForm[k]} onChange={t=>setLogForm(f=>({...f,[k]:t}))} style={{marginBottom:0}}/>
-                </div>
-              ))}
+            <div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:4}}>
+                {[["napStart","Start"],["napEnd","End"]].map(([k,lbl])=>(
+                  <div key={k}>
+                    <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>{lbl}</label>
+                    <TimeInput value={logForm[k]} onChange={t=>setLogForm(f=>({...f,[k]:t}))} style={{marginBottom:0}}/>
+                  </div>
+                ))}
+              </div>
+              <div style={{fontSize:11,color:C.lt,marginBottom:12}}>Leave empty to log as now</div>
             </div>
           )}
           {logForm.sleepType==="bed"&&(
             <div style={{marginBottom:12}}>
               <TimeInput label="Bedtime" value={logForm.bedTime} onChange={t=>setLogForm(f=>({...f,bedTime:t}))} nightOnly={true}/>
+              <div style={{fontSize:11,color:C.lt,marginTop:-8}}>Leave empty to log as now</div>
             </div>
           )}
           <PBtn onClick={saveLogSleep}>✓ Log Sleep</PBtn>
