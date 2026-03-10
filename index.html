@@ -416,6 +416,49 @@ const WHO_LMS_GIRLS = [
   [24,-0.2941,11.4775,0.14244]
 ];
 
+// WHO Length/Height-for-age LMS (0–24 months, boys)
+const WHO_LENGTH_LMS_BOYS = [
+  [0,1,49.8842,0.03795],[1,1,54.7244,0.03557],[2,1,58.4249,0.03424],
+  [3,1,61.4292,0.03328],[4,1,63.8860,0.03257],[5,1,65.9026,0.03204],
+  [6,1,67.6236,0.03165],[7,1,69.1645,0.03139],[8,1,70.5994,0.03124],
+  [9,1,71.9687,0.03117],[10,1,73.2812,0.03118],[11,1,74.5388,0.03125],
+  [12,1,75.7488,0.03137],[13,1,76.9186,0.03154],[14,1,78.0497,0.03174],
+  [15,1,79.1458,0.03197],[16,1,80.2113,0.03222],[17,1,81.2487,0.03248],
+  [18,1,82.2587,0.03277],[19,1,83.2418,0.03307],[20,1,84.1996,0.03337],
+  [21,1,85.1348,0.03369],[22,1,86.0477,0.03401],[23,1,86.9412,0.03433],
+  [24,1,87.8161,0.03466]
+];
+
+const WHO_LENGTH_LMS_GIRLS = [
+  [0,1,49.1477,0.03790],[1,1,53.6872,0.03614],[2,1,57.0673,0.03508],
+  [3,1,59.8029,0.03428],[4,1,62.0899,0.03362],[5,1,64.0301,0.03310],
+  [6,1,65.7311,0.03272],[7,1,67.2873,0.03246],[8,1,68.7498,0.03229],
+  [9,1,70.1435,0.03222],[10,1,71.4818,0.03222],[11,1,72.7710,0.03229],
+  [12,1,74.0153,0.03241],[13,1,75.2172,0.03259],[14,1,76.3817,0.03280],
+  [15,1,77.5099,0.03305],[16,1,78.6055,0.03331],[17,1,79.6713,0.03360],
+  [18,1,80.7079,0.03390],[19,1,81.7182,0.03422],[20,1,82.7065,0.03455],
+  [21,1,83.6742,0.03489],[22,1,84.6235,0.03524],[23,1,85.5573,0.03560],
+  [24,1,86.4767,0.03596]
+];
+
+function getHeightPercentile(cm, ageMonths, sex) {
+  const table = sex === "girl" ? WHO_LENGTH_LMS_GIRLS : WHO_LENGTH_LMS_BOYS;
+  const mo = Math.min(Math.round(ageMonths), 24);
+  if (mo < 0) return null;
+  const row = table[mo];
+  if (!row) return null;
+  const [, L, M, S] = row;
+  let z;
+  if (Math.abs(L) < 0.0001) {
+    z = Math.log(cm / M) / S;
+  } else {
+    z = (Math.pow(cm / M, L) - 1) / (L * S);
+  }
+  z = Math.max(-3.5, Math.min(3.5, z));
+  const pct = normalCDF(z) * 100;
+  return Math.round(pct * 10) / 10;
+}
+
 function normalCDF(z) {
   const t = 1 / (1 + 0.2316419 * Math.abs(z));
   const poly = t*(0.319381530 + t*(-0.356563782 + t*(1.781477937 + t*(-1.821255978 + t*1.330274429))));
@@ -984,6 +1027,7 @@ function App(){
   const babyUnborn  = activeChild.unborn;
   const days        = activeChild.days || {};
   const weights     = activeChild.weights;
+  const heights     = activeChild.heights || [];
   const milestones  = activeChild.milestones;
 
 
@@ -1005,6 +1049,11 @@ function App(){
     const next = typeof fn === "function" ? fn(cur.weights) : fn;
     return {...prev, [resolvedActiveId]: {...cur, weights: next}};
   });
+  const setHeights     = (fn) => setChildren(prev => {
+    const cur = prev[resolvedActiveId];
+    const next = typeof fn === "function" ? fn(cur.heights || []) : fn;
+    return {...prev, [resolvedActiveId]: {...cur, heights: next}};
+  });
   const setMilestones  = (fn) => setChildren(prev => {
     const cur = prev[resolvedActiveId];
     const next = typeof fn === "function" ? fn(cur.milestones) : fn;
@@ -1018,6 +1067,9 @@ function App(){
   const[msShowPastMs,setMsShowPastMs]=useState(false);
   const[msShowUpcoming,setMsShowUpcoming]=useState(false);
     const[growthLogOpen,setGrowthLogOpen]=useState(false);
+  const[insightSection,setInsightSection]=useState({trends:true,sleep:false,reports:false});
+  const toggleInsight=(k)=>setInsightSection(p=>({...p,[k]:!p[k]}));
+  const[heightForm,setHeightForm]=useState({date:todayStr(),cm:""});
   const[devActFilter,setDevActFilter]=useState("all");
   const[modal,setModal]=useState(null);
   const[logPanel,setLogPanel]=useState(null);
@@ -4475,8 +4527,8 @@ function App(){
   const tabSt=t=>({flex:1,padding:"6px 2px",border:_bN,background:"none",fontSize:10,fontWeight:700,cursor:_cP,color:tab===t?C.ter:C.lt,borderTop:tab===t?`2px solid ${C.ter}`:"2px solid transparent",display:"flex",flexDirection:"column",alignItems:"center",gap:1,letterSpacing:"0.04em",textTransform:"uppercase"});
   const card={background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"};
 
-  const tabIcons={day:"📅",trends:"📈",growth:"📏",milestones:"⭐",develop:"🧩",settings:"👤"};
-  const tabLabels={day:"Day",trends:"Trends",growth:"Growth",milestones:"Miles",develop:"Develop",settings:""};
+  const tabIcons={day:"📅",insights:"💡",milestones:"⭐",develop:"🧩",settings:"👤"};
+  const tabLabels={day:"Day",insights:"Insights",milestones:"Miles",develop:"Develop",settings:""};
 
 
   if (authScreen) {
@@ -6316,300 +6368,346 @@ function App(){
             </div>
           </div>
         )}
-        {tab==="trends"&&(()=>{
-          // Growth banner data
-          const ageMonths = babyDob ? Math.floor((new Date() - new Date(babyDob)) / (1000*60*60*24*30.44)) : null;
-          const sortedWforTrends = [...weights].sort((a,b)=>a.date.localeCompare(b.date));
-          const wWithPctForTrends = sortedWforTrends.map(w => {
-            if(!babyDob) return {...w, pct: null};
-            const ageMo = Math.floor((new Date(w.date) - new Date(babyDob)) / (1000*60*60*24*30.44));
-            if(ageMo < 0 || ageMo > 24) return {...w, pct: null};
-            return {...w, pct: getPercentile(w.kg, ageMo, babySex), ageMo};
-          });
-          const latestW = wWithPctForTrends.filter(w=>w.pct!==null).slice(-1)[0];
-          const prevW = wWithPctForTrends.filter(w=>w.pct!==null).slice(-2,-1)[0];
-          const weightGain = latestW && prevW ? Math.round((latestW.kg - prevW.kg)*1000)/1000 : null;
-
-          return (
-            <div>
-              {(latestW || weights.length === 0) && (
-                <div style={{background: latestW ? `linear-gradient(135deg,${percentileColor(latestW?.pct)}18,${percentileColor(latestW?.pct)}08)` : "linear-gradient(135deg,#f5f0eb,#ede8e0)", border:`2px solid ${latestW ? percentileColor(latestW?.pct)+"44" : C.blush}`, borderRadius:20, marginBottom:14, overflow:"hidden"}}>
-                  <div style={{padding:"16px 16px 12px"}}>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                      <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>📏 Growth</div>
-                      <button onClick={()=>setGrowthLogOpen(o=>!o)} style={{background:_bN,border:`1px solid ${C.blush}`,borderRadius:99,padding:"4px 11px",fontSize:12,color:C.mid,cursor:_cP,fontFamily:_fI,display:"flex",alignItems:"center",gap:4}}>
-                        History {growthLogOpen?"▲":"▼"}
-                      </button>
-                    </div>
-                    {latestW ? (
-                      <div style={{display:"flex",alignItems:"center",gap:16}}>
-                        <div style={{textAlign:"center",minWidth:70}}>
-                          <div style={{fontFamily:"'Playfair Display',serif",fontSize:44,fontWeight:700,color:percentileColor(latestW.pct),lineHeight:1}}>{ordinal(latestW.pct)}</div>
-                          <div style={{fontSize:11,fontFamily:_fM,color:C.lt,marginTop:2}}>percentile</div>
-                        </div>
-                        <div style={{flex:1}}>
-                          <div style={{fontSize:22,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{latestW.kg}kg</div>
-                          <div style={{fontSize:13,color:C.mid,marginTop:2}}>{latestW.ageMo} months · {fmtLong(latestW.date)}</div>
-                          {weightGain !== null && (
-                            <div style={{fontSize:12,color:weightGain>=0?C.mint:C.ter,fontFamily:_fM,marginTop:3,fontWeight:700}}>
-                              {weightGain>=0?"↑":"↓"} {Math.abs(weightGain*1000)}g since last weigh-in
-                            </div>
-                          )}
-                          <div style={{fontSize:12,marginTop:5,padding:"4px 10px",borderRadius:99,display:"inline-block",background:percentileColor(latestW.pct)+"22",color:percentileColor(latestW.pct),fontFamily:_fM,fontWeight:600}}>
-                            {percentileNote(latestW.pct)}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{textAlign:"center",padding:"8px 0"}}>
-                        <div style={{fontSize:15,color:C.lt,marginBottom:4}}>No weight logged yet</div>
-                        <button onClick={()=>setTab("growth")} style={{background:C.ter,border:_bN,borderRadius:99,padding:"8px 18px",color:"white",fontSize:13,fontWeight:700,cursor:_cP,fontFamily:_fI}}>Log weight →</button>
-                      </div>
-                    )}
-                  </div>
-                  {growthLogOpen && wWithPctForTrends.filter(w=>w.pct!==null).length > 0 && (
-                    <div style={{borderTop:`1px solid ${C.blush}`,padding:"10px 16px 14px"}}>
-                      <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:8}}>Previous measurements</div>
-                      {wWithPctForTrends.filter(w=>w.pct!==null).slice().reverse().map((w,i)=>(
-                        <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 0",borderBottom:i<wWithPctForTrends.filter(x=>x.pct!==null).length-1?`1px solid ${C.blush}`:"none"}}>
-                          <div>
-                            <div style={{fontSize:14,fontWeight:500,color:C.deep}}>{fmtLong(w.date)}</div>
-                            <div style={{fontSize:12,fontFamily:_fM,color:C.lt,marginTop:1}}>{w.ageMo} months · {w.kg}kg</div>
-                          </div>
-                          <div style={{textAlign:"right"}}>
-                            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:percentileColor(w.pct)}}>{ordinal(w.pct)}</div>
-                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt}}>percentile</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {growthLogOpen && wWithPctForTrends.filter(w=>w.pct!==null).length === 0 && (
-                    <div style={{borderTop:`1px solid ${C.blush}`,padding:"12px 16px",textAlign:"center",fontSize:13,color:C.lt}}>No previous measurements to show.</div>
-                  )}
-                </div>
-              )}
-
-          {dayKeys.length<3?(
-            <div style={{textAlign:"center",padding:"48px 20px",color:C.lt}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.mid,marginBottom:8}}>Not enough data yet</div>
-              <div style={{fontSize:15,fontFamily:_fM}}>Add at least 3 days to see trends</div>
-            </div>
-          ):(
-            <div>
-              {tLast&&tPrev&&(
-                <div style={card}>
-                  <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:12}}>This Week vs Last Week</div>
-                  {[
-                    {label:"Avg Daily Feed",curr:tLast.avgMl,prev:tPrev.avgMl,unit:"ml"},
-                    {label:"Avg Nap Time",curr:tLast.avgNap,prev:tPrev.avgNap,unit:"",fmt:hm},
-                    {label:"Avg Night Wakes",curr:tLast.avgNight,prev:tPrev.avgNight,unit:""},
-                  ].map((row,i)=>{
-                    const t=arrow(row.curr,row.prev);
-                    return(
-                      <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderBottom:i<2?`1px solid ${C.blush}`:"none"}}>
-                        <div>
-                          <div style={{fontSize:15,fontWeight:500}}>{row.label}</div>
-                          <div style={{fontSize:15,fontFamily:_fM,color:C.lt,marginTop:2}}>Last week: {row.fmt?row.fmt(row.prev):row.prev}{row.unit}</div>
-                        </div>
-                        <div style={{textAlign:"right"}}>
-                          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.ter}}>{row.fmt?row.fmt(row.curr):row.curr}<span style={{fontSize:14,color:C.lt}}>{row.unit}</span></div>
-                          {t&&<div style={{fontSize:16,color:t.color,lineHeight:1}}>{t.icon}</div>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              <div style={card}>
-                <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>Daily Feed (ml)</div>
-                <TrendLine vals={mlVals} keys={dayKeys} color={C.ter}/>
-              </div>
-              <div style={card}>
-                <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>Daily Nap Time</div>
-                <TrendLine vals={napVals} keys={dayKeys} color={C.mint} unit="m"/>
-              </div>
-              {weekAvgs.length>1&&(
-                <div style={card}>
-                  <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>Weekly Averages</div>
-                  {weekAvgs.map((wk,i)=>(
-                    <div key={i} style={{padding:"9px 0",borderBottom:i<weekAvgs.length-1?`1px solid ${C.blush}`:"none"}}>
-                      <div style={{fontSize:15,fontFamily:_fM,color:C.lt,marginBottom:5}}>{wk.label} · {wk.days} days</div>
-                      <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-                        <span style={{background:"#f5e0d8",color:C.ter,fontFamily:_fM,fontSize:15,padding:"2px 8px",borderRadius:99}}>~{wk.avgMl}ml/day</span>
-                        <span style={{background:"#d4ede6",color:C.mint,fontFamily:_fM,fontSize:15,padding:"2px 8px",borderRadius:99}}>~{hm(wk.avgNap)} naps</span>
-                        <span style={{background:"#f5eccb",color:"#b88a20",fontFamily:_fM,fontSize:15,padding:"2px 8px",borderRadius:99}}>~{wk.avgNight} night wakes</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-            </div>
-          );
-        })()}
-        {tab==="growth"&&(()=>{
+        {tab==="insights"&&(()=>{
           const ageMonths = babyDob ? Math.floor((new Date() - new Date(babyDob)) / (1000*60*60*24*30.44)) : null;
           const sortedW = [...weights].sort((a,b)=>a.date.localeCompare(b.date));
+          const sortedH = [...heights].sort((a,b)=>a.date.localeCompare(b.date));
           const wWithPct = sortedW.map(w => {
             if(!babyDob) return {...w, pct: null};
             const ageMo = Math.floor((new Date(w.date) - new Date(babyDob)) / (1000*60*60*24*30.44));
             if(ageMo < 0 || ageMo > 24) return {...w, pct: null};
             return {...w, pct: getPercentile(w.kg, ageMo, babySex), ageMo};
           });
-          const latest = wWithPct.filter(w=>w.pct!==null).slice(-1)[0];
-          const W=280,H=80;
-          const kgs = sortedW.map(w=>w.kg);
-          const maxKg = Math.max(...kgs,1);
-          const minKg = Math.min(...kgs)*0.95;
-          const pts = sortedW.map((w,i)=>({
-            x: sortedW.length===1?W/2:(i/(sortedW.length-1))*W,
-            y: H-((w.kg-minKg)/(maxKg-minKg||1))*H,
-            kg:w.kg, date:w.date
-          }));
-          const path = pts.map((p,i)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ");
+          const hWithPct = sortedH.map(h => {
+            if(!babyDob) return {...h, pct: null};
+            const ageMo = Math.floor((new Date(h.date) - new Date(babyDob)) / (1000*60*60*24*30.44));
+            if(ageMo < 0 || ageMo > 24) return {...h, pct: null};
+            return {...h, pct: getHeightPercentile(h.cm, ageMo, babySex), ageMo};
+          });
+          const latestW = wWithPct.filter(w=>w.pct!==null).slice(-1)[0];
+          const latestH = hWithPct.filter(h=>h.pct!==null).slice(-1)[0];
+          const prevW = wWithPct.filter(w=>w.pct!==null).slice(-2,-1)[0];
+          const weightGain = latestW && prevW ? Math.round((latestW.kg - prevW.kg)*1000)/1000 : null;
 
-          return(
+          const collHead = (key, icon, label) => (
+            <button onClick={()=>toggleInsight(key)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"white",border:`1.5px solid ${C.blush}`,borderRadius:16,marginBottom:insightSection[key]?0:12,borderBottomLeftRadius:insightSection[key]?0:16,borderBottomRightRadius:insightSection[key]?0:16,cursor:_cP,boxShadow:"0 2px 8px rgba(201,112,90,0.05)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:16}}>{icon}</span>
+                <span style={{fontSize:14,fontWeight:700,color:C.deep,letterSpacing:"0.02em"}}>{label}</span>
+              </div>
+              <span style={{fontSize:12,color:C.lt,transition:"transform 0.2s",transform:insightSection[key]?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
+            </button>
+          );
+
+          return (
             <div>
-              <div style={{...card}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                  <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>Baby Info</div>
-                  <button onClick={()=>{setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsConfirmDelete(false);setShowChildSettings(true);}}
-                    style={{background:C.warm,border:`1.5px solid ${C.blush}`,borderRadius:99,padding:"4px 12px",fontSize:13,color:C.mid,cursor:_cP,fontFamily:_fM,fontWeight:600}}>
-                    ✏️ Edit
+              {/* ── GROWTH PERCENTILE BANNER ── */}
+              <div style={{background:`linear-gradient(135deg,${latestW?percentileColor(latestW?.pct)+"18":"#f5f0eb"},${latestW?percentileColor(latestW?.pct)+"08":"#ede8e0"})`, border:`2px solid ${latestW ? percentileColor(latestW?.pct)+"44" : C.blush}`, borderRadius:20, marginBottom:14, overflow:"hidden"}}>
+                <div style={{padding:"16px 16px 14px"}}>
+                  <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:12}}>📏 Growth Percentiles</div>
+
+                  {/* Weight + Height side by side */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                    {/* Weight side */}
+                    <div style={{background:"white",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
+                      <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Weight</div>
+                      {latestW ? (
+                        <div>
+                          <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:700,color:percentileColor(latestW.pct),lineHeight:1}}>{ordinal(latestW.pct)}</div>
+                          <div style={{fontSize:10,fontFamily:_fM,color:C.lt,marginTop:1}}>percentile</div>
+                          <div style={{fontSize:14,fontWeight:700,color:C.deep,marginTop:6}}>{latestW.kg}kg</div>
+                          <div style={{fontSize:11,color:C.mid,marginTop:1}}>{latestW.ageMo}mo · {fmtLong(latestW.date)}</div>
+                          {weightGain !== null && (
+                            <div style={{fontSize:11,color:weightGain>=0?C.mint:C.ter,fontFamily:_fM,marginTop:3,fontWeight:700}}>
+                              {weightGain>=0?"↑":"↓"} {Math.abs(weightGain*1000)}g
+                            </div>
+                          )}
+                        </div>
+                      ) : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
+                    </div>
+                    {/* Height side */}
+                    <div style={{background:"white",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
+                      <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Height</div>
+                      {latestH ? (
+                        <div>
+                          <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:700,color:percentileColor(latestH.pct),lineHeight:1}}>{ordinal(latestH.pct)}</div>
+                          <div style={{fontSize:10,fontFamily:_fM,color:C.lt,marginTop:1}}>percentile</div>
+                          <div style={{fontSize:14,fontWeight:700,color:C.deep,marginTop:6}}>{latestH.cm}cm</div>
+                          <div style={{fontSize:11,color:C.mid,marginTop:1}}>{latestH.ageMo}mo · {fmtLong(latestH.date)}</div>
+                        </div>
+                      ) : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
+                    </div>
+                  </div>
+
+                  {/* Overall status */}
+                  {latestW && (
+                    <div style={{fontSize:12,padding:"5px 12px",borderRadius:99,display:"inline-block",background:percentileColor(latestW.pct)+"22",color:percentileColor(latestW.pct),fontFamily:_fM,fontWeight:600}}>
+                      {percentileNote(latestW.pct)}
+                    </div>
+                  )}
+
+                  {/* Log inputs */}
+                  <div style={{marginTop:12,borderTop:`1px solid ${C.blush}`,paddingTop:12}}>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:8}}>
+                      <Inp label="Date" type="date" value={growthForm.date} onChange={e=>{setGrowthForm(f=>({...f,date:e.target.value}));setHeightForm(f=>({...f,date:e.target.value}));}} style={{marginBottom:0}}/>
+                      <Inp label="Weight (kg)" type="number" step="0.01" placeholder="5.2" value={growthForm.kg} onChange={e=>setGrowthForm(f=>({...f,kg:e.target.value}))} style={{marginBottom:0}}/>
+                      <Inp label="Height (cm)" type="number" step="0.1" placeholder="62" value={heightForm.cm} onChange={e=>setHeightForm(f=>({...f,cm:e.target.value}))} style={{marginBottom:0}}/>
+                    </div>
+                    <PBtn onClick={()=>{
+                      if(growthForm.kg){
+                        const updated=[...weights.filter(x=>x.date!==growthForm.date),{date:growthForm.date,kg:parseFloat(growthForm.kg)}].sort((a,b)=>a.date.localeCompare(b.date));
+                        setWeights(updated);
+                      }
+                      if(heightForm.cm){
+                        const updated=[...heights.filter(x=>x.date!==heightForm.date),{date:heightForm.date,cm:parseFloat(heightForm.cm)}].sort((a,b)=>a.date.localeCompare(b.date));
+                        setHeights(updated);
+                      }
+                      setGrowthForm({date:todayStr(),kg:""});setHeightForm({date:todayStr(),cm:""});
+                    }} style={{marginTop:2}}>Save Measurements</PBtn>
+                  </div>
+
+                  {/* History toggle */}
+                  <button onClick={()=>setGrowthLogOpen(o=>!o)} style={{background:_bN,border:_bN,fontSize:12,color:C.mid,cursor:_cP,fontFamily:_fI,marginTop:8,display:"flex",alignItems:"center",gap:4,padding:0}}>
+                    {growthLogOpen?"Hide":"Show"} history {growthLogOpen?"▲":"▼"}
                   </button>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                  <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
-                    <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>{babyUnborn?"Due Date":"Born"}</div>
-                    <div style={{fontSize:13,fontWeight:600,color:C.deep,lineHeight:1.3}}>
-                      {babyDob ? new Date(babyDob+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"2-digit"}) : <span style={{color:C.lt,fontStyle:"italic",fontSize:12}}>Not set</span>}
+                  {growthLogOpen && (weights.length>0 || heights.length>0) && (
+                    <div style={{marginTop:8}}>
+                      {[...weights].sort((a,b)=>b.date.localeCompare(a.date)).map((w,i)=>(
+                        <div key={"w"+i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${C.blush}`}}>
+                          <div style={{fontSize:13,color:C.deep}}>{fmtLong(w.date)}</div>
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <span style={{background:"#f5e0d8",color:C.ter,fontFamily:_fM,fontSize:12,padding:"2px 8px",borderRadius:99}}>{w.kg}kg</span>
+                            <button onClick={()=>setWeights(ws=>ws.filter(x=>x.date!==w.date))} style={{background:"#f0e5e0",border:_bN,borderRadius:"50%",width:20,height:20,color:C.lt,cursor:_cP,fontSize:12,lineHeight:"20px",padding:0}}>✕</button>
+                          </div>
+                        </div>
+                      ))}
+                      {[...heights].sort((a,b)=>b.date.localeCompare(a.date)).map((h,i)=>(
+                        <div key={"h"+i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${C.blush}`}}>
+                          <div style={{fontSize:13,color:C.deep}}>{fmtLong(h.date)}</div>
+                          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            <span style={{background:"#d5e7f2",color:C.sky,fontFamily:_fM,fontSize:12,padding:"2px 8px",borderRadius:99}}>{h.cm}cm</span>
+                            <button onClick={()=>setHeights(hs=>hs.filter(x=>x.date!==h.date))} style={{background:"#f0e5e0",border:_bN,borderRadius:"50%",width:20,height:20,color:C.lt,cursor:_cP,fontSize:12,lineHeight:"20px",padding:0}}>✕</button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    {ageMonths!==null&&<div style={{fontSize:11,color:C.ter,fontFamily:_fM,marginTop:2,fontWeight:600}}>
-                      {babyUnborn?(()=>{const d=Math.ceil((new Date(babyDob)-new Date())/(1000*60*60*24));return d>0?`${d}d to go`:"Any day!";})():fmtAge(age)}
-                    </div>}
-                  </div>
-                  <div style={{background:babySex==="boy"?"#eaf3fb":babySex==="girl"?"#fde7e4":C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${babySex?C.blush:C.ter}`}}>
-                    <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Sex</div>
-                    {babySex
-                      ? <div style={{fontSize:13,fontWeight:600,color:babySex==="boy"?"#3d6a8a":"#a85070"}}>{babySex==="boy"?"👦 Boy":"👧 Girl"}</div>
-                      : <div><div style={{fontSize:12,color:C.ter,fontWeight:600}}>⚠ Not set</div><div style={{fontSize:10,color:C.lt,marginTop:1}}>Needed for percentiles</div></div>
-                    }
-                  </div>
-                  <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
-                    <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Name</div>
-                    <div style={{fontSize:13,fontWeight:600,color:C.deep}}>{babyName||<span style={{color:C.lt,fontStyle:"italic",fontSize:12}}>—</span>}</div>
-                  </div>
+                  )}
                 </div>
               </div>
 
-              {latest&&(
-                <div style={{...card,textAlign:"center",padding:"20px 16px"}}>
-                  <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>Latest Weight Percentile</div>
-                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:52,fontWeight:700,color:percentileColor(latest.pct),lineHeight:1}}>{ordinal(latest.pct)}</div>
-                  <div style={{fontSize:15,color:C.mid,marginTop:6}}>{latest.kg}kg at {latest.ageMo} months · {babySex}</div>
-                  <div style={{fontSize:14,marginTop:6,padding:"6px 12px",borderRadius:99,display:"inline-block",background:percentileColor(latest.pct)+"22",color:percentileColor(latest.pct),fontFamily:_fM,fontWeight:600}}>
-                    {percentileNote(latest.pct)}
-                  </div>
+              {/* ── TRENDS SECTION (collapsible) ── */}
+              {collHead("trends","📈","Trends")}
+              {insightSection.trends && (
+                <div style={{background:"white",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
+
+                  {/* Growth Chart */}
+                  {sortedW.length>=1&&babySex&&babyDob&&(()=>{
+                    const PCTL=[2,9,25,50,75,91,98];
+                    const PC={2:"#e8b4a0",9:"#e8c4b0",25:"#d4ede6",50:"#6fa898",75:"#d4ede6",91:"#e8c4b0",98:"#e8b4a0"};
+                    const maxMo=Math.min(Math.max(...wWithPct.filter(w=>w.ageMo!=null).map(w=>w.ageMo),6)+2,24);
+                    const CW=320,CH=240,PL=30,PR=28,PT=12,PB=24;
+                    const pW=CW-PL-PR,pH2=CH-PT-PB;
+                    const allKg=[];
+                    for(let mo=0;mo<=maxMo;mo++) PCTL.forEach(p=>{const kg=weightForPercentile(mo,p,babySex);if(kg)allKg.push(kg);});
+                    sortedW.forEach(w=>allKg.push(w.kg));
+                    const kMin=Math.floor(Math.min(...allKg)*0.92*10)/10;
+                    const kMax=Math.ceil(Math.max(...allKg)*1.05*10)/10;
+                    const kR=kMax-kMin||1;
+                    const tX=mo=>PL+((mo)/(maxMo))*pW;
+                    const tY=kg=>PT+(1-(kg-kMin)/kR)*pH2;
+                    const pp={};
+                    PCTL.forEach(p=>{const d=[];for(let mo=0;mo<=maxMo;mo++){const kg=weightForPercentile(mo,p,babySex);if(kg)d.push(`${mo===0?"M":"L"}${tX(mo).toFixed(1)},${tY(kg).toFixed(1)}`);}pp[p]=d.join(" ");});
+                    const bp=wWithPct.filter(w=>w.ageMo!=null&&w.ageMo<=maxMo);
+                    const bPath=bp.map((w,i)=>`${i===0?"M":"L"}${tX(w.ageMo).toFixed(1)},${tY(w.kg).toFixed(1)}`).join(" ");
+                    const bands=[[2,9],[9,25],[25,50],[50,75],[75,91],[91,98]];
+                    const bf=["rgba(232,180,160,0.18)","rgba(232,196,176,0.12)","rgba(212,237,230,0.22)","rgba(212,237,230,0.22)","rgba(232,196,176,0.12)","rgba(232,180,160,0.18)"];
+                    return(
+                      <div style={{marginBottom:14}}>
+                        <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:4}}>Growth Chart · WHO Percentiles</div>
+                        <div style={{fontSize:11,color:C.lt,marginBottom:10}}>{babySex==="boy"?"👦 Boys":"👧 Girls"} · 0–{maxMo} months</div>
+                        <svg width="100%" viewBox={`0 0 ${CW} ${CH}`} style={{display:"block"}}>
+                          {bands.map(([lo,hi],bi)=>{const d=[];for(let mo=0;mo<=maxMo;mo++){const k=weightForPercentile(mo,hi,babySex);if(k)d.push(`${tX(mo).toFixed(1)},${tY(k).toFixed(1)}`);}for(let mo=maxMo;mo>=0;mo--){const k=weightForPercentile(mo,lo,babySex);if(k)d.push(`${tX(mo).toFixed(1)},${tY(k).toFixed(1)}`);}return<polygon key={bi} points={d.join(" ")} fill={bf[bi]} stroke="none"/>;
+                          })}
+                          {PCTL.map(p=><g key={p}><path d={pp[p]} fill="none" stroke={PC[p]} strokeWidth={p===50?1.8:0.7} strokeDasharray={p===50?"":"4,3"} opacity={0.85}/><text x={CW-PR+4} y={tY(weightForPercentile(maxMo,p,babySex))+3} fontSize={8} fill={C.lt} fontFamily="monospace">{p===50?"50th":p}</text></g>)}
+                          {[0,3,6,9,12,15,18,21,24].filter(m=>m<=maxMo).map(m=><g key={m}><line x1={tX(m)} y1={PT} x2={tX(m)} y2={CH-PB} stroke={C.blush} strokeWidth={0.4}/><text x={tX(m)} y={CH-PB+14} textAnchor="middle" fontSize={9} fill={C.lt} fontFamily="monospace">{m}m</text></g>)}
+                          {bp.length>1&&<path d={bPath} fill="none" stroke={C.ter} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>}
+                          {(()=>{
+                            const R=3.5;
+                            const positioned=bp.map(w=>({cx:tX(w.ageMo),cy:tY(w.kg),w}));
+                            for(let i=1;i<positioned.length;i++){
+                              for(let j=0;j<i;j++){
+                                const dx=Math.abs(positioned[i].cx-positioned[j].cx);
+                                const dy=Math.abs(positioned[i].cy-positioned[j].cy);
+                                if(dx<R*2&&dy<R*2) positioned[i].cy=positioned[j].cy-R*2.2;
+                              }
+                            }
+                            return positioned.map((p,i)=>(
+                              <g key={i}>
+                                <circle cx={p.cx} cy={p.cy} r={R} fill="white" stroke={C.ter} strokeWidth={2}/>
+                                {i===positioned.length-1&&<text x={p.cx} y={p.cy-R-2} textAnchor="middle" fontSize={7} fill={C.ter} fontFamily="monospace">{p.w.kg}kg</text>}
+                              </g>
+                            ));
+                          })()}
+                        </svg>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Feed & Nap Trends */}
+                  {dayKeys.length<3?(
+                    <div style={{textAlign:"center",padding:"24px 10px",color:C.lt}}>
+                      <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:C.mid,marginBottom:6}}>Not enough data yet</div>
+                      <div style={{fontSize:13,fontFamily:_fM}}>Add at least 3 days to see trends</div>
+                    </div>
+                  ):(
+                    <div>
+                      {tLast&&tPrev&&(
+                        <div style={{marginBottom:14}}>
+                          <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>This Week vs Last Week</div>
+                          {[
+                            {label:"Avg Daily Feed",curr:tLast.avgMl,prev:tPrev.avgMl,unit:"ml"},
+                            {label:"Avg Nap Time",curr:tLast.avgNap,prev:tPrev.avgNap,unit:"",fmt:hm},
+                            {label:"Avg Night Wakes",curr:tLast.avgNight,prev:tPrev.avgNight,unit:""},
+                          ].map((row,i)=>{
+                            const t=arrow(row.curr,row.prev);
+                            return(
+                              <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 0",borderBottom:i<2?`1px solid ${C.blush}`:"none"}}>
+                                <div>
+                                  <div style={{fontSize:14,fontWeight:500}}>{row.label}</div>
+                                  <div style={{fontSize:13,fontFamily:_fM,color:C.lt,marginTop:2}}>Last: {row.fmt?row.fmt(row.prev):row.prev}{row.unit}</div>
+                                </div>
+                                <div style={{textAlign:"right"}}>
+                                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.ter}}>{row.fmt?row.fmt(row.curr):row.curr}<span style={{fontSize:12,color:C.lt}}>{row.unit}</span></div>
+                                  {t&&<div style={{fontSize:14,color:t.color,lineHeight:1}}>{t.icon}</div>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div style={{marginBottom:14}}>
+                        <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>Daily Feed (ml)</div>
+                        <TrendLine vals={mlVals} keys={dayKeys} color={C.ter}/>
+                      </div>
+                      <div style={{marginBottom:14}}>
+                        <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>Daily Nap Time</div>
+                        <TrendLine vals={napVals} keys={dayKeys} color={C.mint} unit="m"/>
+                      </div>
+                      {weekAvgs.length>1&&(
+                        <div>
+                          <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>Weekly Averages</div>
+                          {weekAvgs.map((wk,i)=>(
+                            <div key={i} style={{padding:"8px 0",borderBottom:i<weekAvgs.length-1?`1px solid ${C.blush}`:"none"}}>
+                              <div style={{fontSize:13,fontFamily:_fM,color:C.lt,marginBottom:4}}>{wk.label} · {wk.days} days</div>
+                              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                                <span style={{background:"#f5e0d8",color:C.ter,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{wk.avgMl}ml/day</span>
+                                <span style={{background:"#d4ede6",color:C.mint,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{hm(wk.avgNap)} naps</span>
+                                <span style={{background:"#f5eccb",color:"#b88a20",fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{wk.avgNight} wakes</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div style={{...card}}>
-                <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>Log Weight</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
-                  <Inp label="Date" type="date" value={growthForm.date} onChange={e=>setGrowthForm(f=>({...f,date:e.target.value}))} style={{marginBottom:0}}/>
-                  <Inp label="Weight (kg)" type="number" step="0.01" placeholder="e.g. 5.2" value={growthForm.kg} onChange={e=>setGrowthForm(f=>({...f,kg:e.target.value}))} style={{marginBottom:0}}/>
-                </div>
-                <PBtn onClick={()=>{
-                  if(!growthForm.kg)return;
-                  const updated=[...weights.filter(x=>x.date!==growthForm.date),{date:growthForm.date,kg:parseFloat(growthForm.kg)}].sort((a,b)=>a.date.localeCompare(b.date));
-                  setWeights(updated);setGrowthForm({date:todayStr(),kg:""});
-                }}>Save Weight</PBtn>
-              </div>
-
-              {sortedW.length>=1&&babySex&&babyDob&&(()=>{
-                const PCTL=[2,9,25,50,75,91,98];
-                const PC={2:"#e8b4a0",9:"#e8c4b0",25:"#d4ede6",50:"#6fa898",75:"#d4ede6",91:"#e8c4b0",98:"#e8b4a0"};
-                const maxMo=Math.min(Math.max(...wWithPct.filter(w=>w.ageMo!=null).map(w=>w.ageMo),6)+2,24);
-                const CW=320,CH=240,PL=30,PR=28,PT=12,PB=24;
-                const pW=CW-PL-PR,pH2=CH-PT-PB;
-                const allKg=[];
-                for(let mo=0;mo<=maxMo;mo++) PCTL.forEach(p=>{const kg=weightForPercentile(mo,p,babySex);if(kg)allKg.push(kg);});
-                sortedW.forEach(w=>allKg.push(w.kg));
-                const kMin=Math.floor(Math.min(...allKg)*0.92*10)/10;
-                const kMax=Math.ceil(Math.max(...allKg)*1.05*10)/10;
-                const kR=kMax-kMin||1;
-                const tX=mo=>PL+((mo)/(maxMo))*pW;
-                const tY=kg=>PT+(1-(kg-kMin)/kR)*pH2;
-                const pp={};
-                PCTL.forEach(p=>{const d=[];for(let mo=0;mo<=maxMo;mo++){const kg=weightForPercentile(mo,p,babySex);if(kg)d.push(`${mo===0?"M":"L"}${tX(mo).toFixed(1)},${tY(kg).toFixed(1)}`);}pp[p]=d.join(" ");});
-                const bp=wWithPct.filter(w=>w.ageMo!=null&&w.ageMo<=maxMo);
-                const bPath=bp.map((w,i)=>`${i===0?"M":"L"}${tX(w.ageMo).toFixed(1)},${tY(w.kg).toFixed(1)}`).join(" ");
-                const bands=[[2,9],[9,25],[25,50],[50,75],[75,91],[91,98]];
-                const bf=["rgba(232,180,160,0.18)","rgba(232,196,176,0.12)","rgba(212,237,230,0.22)","rgba(212,237,230,0.22)","rgba(232,196,176,0.12)","rgba(232,180,160,0.18)"];
-                return(
-                  <div style={{...card,padding:"18px 10px 14px"}}>
-                    <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:4,paddingLeft:8}}>Growth Chart · WHO Percentiles</div>
-                    <div style={{fontSize:11,color:C.lt,marginBottom:10,paddingLeft:8}}>{babySex==="boy"?"👦 Boys":"👧 Girls"} · 0–{maxMo} months</div>
-                    <svg width="100%" viewBox={`0 0 ${CW} ${CH}`} style={{display:"block"}}>
-                      {bands.map(([lo,hi],bi)=>{const d=[];for(let mo=0;mo<=maxMo;mo++){const k=weightForPercentile(mo,hi,babySex);if(k)d.push(`${tX(mo).toFixed(1)},${tY(k).toFixed(1)}`);}for(let mo=maxMo;mo>=0;mo--){const k=weightForPercentile(mo,lo,babySex);if(k)d.push(`${tX(mo).toFixed(1)},${tY(k).toFixed(1)}`);}return<polygon key={bi} points={d.join(" ")} fill={bf[bi]} stroke="none"/>;
-                      })}
-                      {PCTL.map(p=><g key={p}><path d={pp[p]} fill="none" stroke={PC[p]} strokeWidth={p===50?1.8:0.7} strokeDasharray={p===50?"":"4,3"} opacity={0.85}/><text x={CW-PR+4} y={tY(weightForPercentile(maxMo,p,babySex))+3} fontSize={8} fill={C.lt} fontFamily="monospace">{p===50?"50th":p}</text></g>)}
-                      {[0,3,6,9,12,15,18,21,24].filter(m=>m<=maxMo).map(m=><g key={m}><line x1={tX(m)} y1={PT} x2={tX(m)} y2={CH-PB} stroke={C.blush} strokeWidth={0.4}/><text x={tX(m)} y={CH-PB+14} textAnchor="middle" fontSize={9} fill={C.lt} fontFamily="monospace">{m}m</text></g>)}
-                      {bp.length>1&&<path d={bPath} fill="none" stroke={C.ter} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>}
-                      {(()=>{
-                        // Collision avoidance: jitter overlapping points vertically
-                        const R=3.5;
-                        const positioned=bp.map(w=>({cx:tX(w.ageMo),cy:tY(w.kg),w}));
-                        for(let i=1;i<positioned.length;i++){
-                          for(let j=0;j<i;j++){
-                            const dx=Math.abs(positioned[i].cx-positioned[j].cx);
-                            const dy=Math.abs(positioned[i].cy-positioned[j].cy);
-                            if(dx<R*2&&dy<R*2) positioned[i].cy=positioned[j].cy-R*2.2;
-                          }
-                        }
-                        return positioned.map((p,i)=>(
-                          <g key={i}>
-                            <circle cx={p.cx} cy={p.cy} r={R} fill="white" stroke={C.ter} strokeWidth={2}/>
-                            {i===positioned.length-1&&<text x={p.cx} y={p.cy-R-2} textAnchor="middle" fontSize={7} fill={C.ter} fontFamily="monospace">{p.w.kg}kg</text>}
-                          </g>
-                        ));
-                      })()}
-                    </svg>
-                  </div>
-                );
-              })()}
-
-              {wWithPct.filter(w=>w.pct!==null).length>0&&(
-                <div style={{...card}}>
-                  <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>Percentile History</div>
-                  {wWithPct.filter(w=>w.pct!==null).reverse().map((w,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 0",borderBottom:i<wWithPct.filter(x=>x.pct!==null).length-1?`1px solid ${C.blush}`:"none"}}>
+              {/* ── SLEEP ANALYSIS SECTION (collapsible) ── */}
+              {collHead("sleep","😴","Sleep Analysis")}
+              {insightSection.sleep && (
+                <div style={{background:"white",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
+                  {(()=>{
+                    const last14 = dayKeys.slice(-14);
+                    if(last14.length < 3) return <div style={{textAlign:"center",padding:"20px",color:C.lt,fontSize:13}}>Need at least 3 days of data for sleep analysis.</div>;
+                    const sleepData = last14.map(d=>{
+                      const es = days[d]||[];
+                      const bedEntry = es.filter(e=>e.type==="sleep"&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b)).pop();
+                      const wakeEntry = es.filter(e=>e.type==="wake"&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b))[0];
+                      const naps = es.filter(e=>e.type==="nap"&&!e.night);
+                      const napMin = naps.reduce((s,n)=>s+minDiff(n.start,n.end),0);
+                      const nightWakes = es.filter(e=>e.night).length;
+                      return {date:d, bedtime:bedEntry?bedEntry.time:null, waketime:wakeEntry?wakeEntry.time:null, napMin, napCount:naps.length, nightWakes};
+                    });
+                    const bedtimes = sleepData.filter(d=>d.bedtime).map(d=>{const[h,m]=d.bedtime.split(":").map(Number);return h*60+m;});
+                    const waketimes = sleepData.filter(d=>d.waketime).map(d=>{const[h,m]=d.waketime.split(":").map(Number);return h*60+m;});
+                    const avgBed = bedtimes.length ? avgArr(bedtimes) : null;
+                    const avgWake = waketimes.length ? avgArr(waketimes) : null;
+                    const avgNightWakes = sleepData.length ? (sleepData.reduce((s,d)=>s+d.nightWakes,0)/sleepData.length).toFixed(1) : "—";
+                    const avgNapMin = sleepData.length ? avgArr(sleepData.map(d=>d.napMin)) : 0;
+                    const avgNapCount = sleepData.length ? (sleepData.reduce((s,d)=>s+d.napCount,0)/sleepData.length).toFixed(1) : "—";
+                    const fmtMins = m => { if(m===null) return "—"; const h=Math.floor(m/60),mi=m%60; return `${h%12||12}:${String(mi).padStart(2,"0")}${h>=12?"pm":"am"}`; };
+                    return (
                       <div>
-                        <div style={{fontSize:15,fontWeight:500}}>{fmtLong(w.date)}</div>
-                        <div style={{fontSize:15,fontFamily:_fM,color:C.lt,marginTop:2}}>{w.ageMo} months · {w.kg}kg</div>
+                        <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>Last {last14.length} Days Average</div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                          <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>🌙 Avg Bedtime</div>
+                            <div style={{fontSize:18,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{fmtMins(avgBed)}</div>
+                          </div>
+                          <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>☀️ Avg Wake</div>
+                            <div style={{fontSize:18,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{fmtMins(avgWake)}</div>
+                          </div>
+                          <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>🔔 Avg Night Wakes</div>
+                            <div style={{fontSize:18,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{avgNightWakes}</div>
+                          </div>
+                          <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>😴 Avg Nap Time</div>
+                            <div style={{fontSize:18,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{hm(avgNapMin)}</div>
+                            <div style={{fontSize:11,color:C.lt,marginTop:1}}>{avgNapCount} naps/day avg</div>
+                          </div>
+                        </div>
+                        {/* Night wakes trend */}
+                        <div style={{marginTop:4}}>
+                          <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:6}}>Night Wakes Trend</div>
+                          <TrendLine vals={last14.map(d=>(days[d]||[]).filter(e=>e.night).length)} keys={last14} color={C.sky}/>
+                        </div>
                       </div>
-                      <span style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:percentileColor(w.pct)}}>{ordinal(w.pct)}</span>
-                    </div>
-                  ))}
+                    );
+                  })()}
                 </div>
               )}
 
-              {weights.length>0&&(
-                <div style={{display:"flex",flexDirection:"column",gap:7}}>
-                  {[...weights].sort((a,b)=>b.date.localeCompare(a.date)).map((w,i)=>(
-                    <div key={i} style={{background:C.warm,border:`1px solid ${C.blush}`,borderRadius:14,padding:"11px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:15,fontWeight:500}}>{fmtLong(w.date)}</span>
-                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                        <span style={{background:"#f5e0d8",color:C.ter,fontFamily:_fM,fontSize:15,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{w.kg} kg</span>
-                        <button onClick={()=>setWeights(ws=>ws.filter(x=>x.date!==w.date))} style={{background:"#f0e5e0",border:_bN,borderRadius:"50%",width:23,height:23,color:C.lt,cursor:_cP,fontSize:14}}>✕</button>
+              {/* ── REPORTS SECTION (collapsible) ── */}
+              {collHead("reports","📋","Reports")}
+              {insightSection.reports && (
+                <div style={{background:"white",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
+                  {(()=>{
+                    const last7 = dayKeys.slice(-7);
+                    if(last7.length < 1) return <div style={{textAlign:"center",padding:"20px",color:C.lt,fontSize:13}}>No data yet for reports.</div>;
+                    const totalFeeds = last7.reduce((s,d)=>s+(days[d]||[]).filter(e=>e.type==="feed").length,0);
+                    const totalMlWeek = last7.reduce((s,d)=>s+(days[d]||[]).filter(e=>e.type==="feed").reduce((ss,f)=>ss+(f.amount||0),0),0);
+                    const totalNaps = last7.reduce((s,d)=>s+(days[d]||[]).filter(e=>e.type==="nap"&&!e.night).length,0);
+                    const totalNapMin = last7.reduce((s,d)=>{const ns=(days[d]||[]).filter(e=>e.type==="nap"&&!e.night);return s+ns.reduce((ss,n)=>ss+minDiff(n.start,n.end),0);},0);
+                    const totalNightWakes = last7.reduce((s,d)=>s+(days[d]||[]).filter(e=>e.night).length,0);
+                    const totalPoops = last7.reduce((s,d)=>s+(days[d]||[]).filter(e=>e.type==="poop").length,0);
+                    return (
+                      <div>
+                        <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:12}}>7-Day Summary</div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                          {[
+                            {icon:"🍼",label:"Feeds",val:totalFeeds,sub:`${totalMlWeek}ml total`},
+                            {icon:"😴",label:"Naps",val:totalNaps,sub:hm(totalNapMin)+" total"},
+                            {icon:"🌙",label:"Night Wakes",val:totalNightWakes,sub:`${(totalNightWakes/last7.length).toFixed(1)}/night`},
+                            {icon:"💩",label:"Nappies",val:totalPoops,sub:`${(totalPoops/last7.length).toFixed(1)}/day`},
+                            {icon:"📅",label:"Days Tracked",val:last7.length,sub:"this week"},
+                            {icon:"📏",label:"Weigh-ins",val:weights.length,sub:"total logged"},
+                          ].map((item,i)=>(
+                            <div key={i} style={{background:C.warm,borderRadius:12,padding:"10px",border:`1px solid ${C.blush}`,textAlign:"center"}}>
+                              <div style={{fontSize:16,marginBottom:2}}>{item.icon}</div>
+                              <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep}}>{item.val}</div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:C.lt,marginTop:1}}>{item.label}</div>
+                              <div style={{fontSize:10,color:C.mid,marginTop:1}}>{item.sub}</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })()}
                 </div>
               )}
-              {weights.length===0&&<div style={{textAlign:"center",color:C.lt,fontSize:15,fontFamily:_fM,padding:"20px 0"}}>No weights logged yet</div>}
             </div>
           );
         })()}
@@ -7205,7 +7303,7 @@ function App(){
       )}
 
       <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"white",borderTop:`1px solid ${C.blush}`,display:"flex",alignItems:"stretch",boxShadow:"0 -4px 20px rgba(44,31,26,0.08)",maxWidth:520,margin:"0 auto"}}>
-        {["day","trends","growth","milestones","develop"].map(t=>(
+        {["day","insights","milestones","develop"].map(t=>(
           <button key={t} onClick={()=>{setTab(t);setLogPanel(null);}} style={tabSt(t)}>
             <span style={{fontSize:16}}>{tabIcons[t]}</span>
             <span>{tabLabels[t]}</span>
