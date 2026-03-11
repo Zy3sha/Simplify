@@ -3351,6 +3351,8 @@ function App() {
   // ─── Auth functions ────────────────────────────────────────────
   async function verifyLogin(username, pin) {
     if (!window._fb) { setAuthError("Not connected"); return false; }
+    // Claim restore so the cloud restore effect doesn't race with us
+    restoreRanRef.current = true;
     const { db, doc, getDoc } = window._fb;
     const key = normaliseUsername(username);
     if (!key) { setAuthError("Enter a username"); return false; }
@@ -3376,6 +3378,7 @@ function App() {
                   const merged = mergeChildren(prev, cloud);
                   const hasNamed = cloudIds.some(id => cloud[id] && cloud[id].name);
                   if (hasNamed) Object.keys(merged).forEach(id => { if (!cloud[id]) { const ch = merged[id]; if (!ch.name && !ch.dob && Object.values(ch.days || {}).every(d => !d || d.length === 0) && !(ch.weights || []).length) delete merged[id]; } });
+                  try { localStorage.setItem("children_v1", JSON.stringify(merged)); } catch {}
                   return merged;
                 });
                 if (cloudIds.length) { setActiveChildId(cloudIds[0]); try { localStorage.setItem("active_child", cloudIds[0]); } catch {} }
