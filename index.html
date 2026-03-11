@@ -200,8 +200,8 @@ body.dark-mode.girl header,body.dark-mode.girl .gender-accent{background:rgba(45
   position:relative;
   overflow:hidden;
   background:var(--card-bg);
-  backdrop-filter:blur(var(--glass-blur));
-  -webkit-backdrop-filter:blur(var(--glass-blur));
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
   border:1px solid var(--card-border);
   border-radius:22px;
   box-shadow:var(--card-shadow);
@@ -249,7 +249,7 @@ button:active{transform:scale(0.94)!important;}
   position:fixed;top:12px;right:12px;z-index:100;
   width:40px;height:40px;border-radius:50%;border:none;
   background:var(--card-bg);
-  backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
   box-shadow:var(--card-shadow);
   cursor:pointer;font-size:18px;
   display:flex;align-items:center;justify-content:center;
@@ -500,7 +500,7 @@ const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em"
 function Sheet({onClose,title,children}){
   return(
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px 52px",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",borderRadius:"24px 24px 0 0",padding:"18px 18px 52px",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto"}}>
         <div style={{width:48,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
         {title&&<div style={{fontFamily:"'Playfair Display',serif",fontSize:20,marginBottom:16}}>{title}</div>}
         {children}
@@ -567,7 +567,7 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
   }
 
   const borderColor = parsed ? C.ter : C.blush;
-  const bgColor = parsed ? "#fdf0eb" : C.warm;
+  const bgColor = parsed ? "var(--chip-bg-active)" : C.warm;
 
   return(
     <div style={{marginBottom:12,...style}}>
@@ -580,7 +580,7 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
 
       {showPicker && (
         <div onClick={()=>setShowPicker(false)} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.5)",backdropFilter:"blur(3px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--picker-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:20,padding:"20px",width:"100%",maxWidth:300,boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--picker-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",borderRadius:20,padding:"20px",width:"100%",maxWidth:300,boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}}>
             <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:14,textAlign:"center"}}>Set Time</div>
 
             <div style={{marginBottom:14}}>
@@ -593,7 +593,7 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
                 value={typeBuf}
                 onChange={e=>handleType(e.target.value)}
                 onKeyDown={e=>{if(e.key==="Enter") handleDone();}}
-                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`2px solid ${typeErr?"#e8574a":tryParse(typeBuf)?C.ter:C.blush}`,background:tryParse(typeBuf)?"#fdf0eb":"#fdf8f5",fontSize:18,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center",caretColor:C.ter,letterSpacing:"0.02em"}}
+                style={{width:"100%",padding:"11px 14px",borderRadius:12,border:`2px solid ${typeErr?"#e8574a":tryParse(typeBuf)?C.ter:C.blush}`,background:tryParse(typeBuf)?"var(--chip-bg-active)":"var(--card-bg-alt)",fontSize:18,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center",caretColor:C.ter,letterSpacing:"0.02em"}}
               />
               {typeErr&&<div style={{fontSize:11,color:"#e8574a",marginTop:3,fontFamily:_fM,textAlign:"center"}}>Couldn't parse — try "7:30am" or "19:00"</div>}
               {tryParse(typeBuf)&&<div style={{fontSize:12,color:C.ter,marginTop:4,fontFamily:_fM,textAlign:"center"}}>→ {fmt12(tryParse(typeBuf))}</div>}
@@ -5277,7 +5277,7 @@ function App(){
               <div style={{position:"relative",marginBottom:28}}>
                 <div style={{position:"absolute",inset:-16,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(201,112,90,0.25) 0%,transparent 70%)",animation:"obGlow 3s ease infinite"}}/>
                 <div style={{width:158,height:158,borderRadius:36,overflow:"hidden",border:`1.5px solid ${C.blush}`,boxShadow:"0 24px 48px rgba(201,112,90,0.2), inset 0 1px 0 rgba(255,255,255,0.8)",animation:"obFloat 5s ease infinite",position:"relative"}}>
-                  <img src="oliver.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";e.target.parentNode.style.background="#fdf0eb";e.target.parentNode.innerHTML="<div style='font-size:72px;line-height:158px'>👶</div>";}}/>
+                  <img src="oliver.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";e.target.parentNode.style.background="var(--chip-bg-active)";e.target.parentNode.innerHTML="<div style='font-size:72px;line-height:158px'>👶</div>";}}/>
                 </div>
                 <div style={{position:"absolute",bottom:-6,right:-6,width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#50c878,#38b060)",border:"2.5px solid var(--card-border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,boxShadow:"0 4px 14px rgba(80,200,120,0.45)"}}>✓</div>
               </div>
@@ -5364,7 +5364,7 @@ function App(){
                 style={{width:"100%",fontSize:18,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"var(--card-bg-solid)",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
               <div style={{display:"flex",gap:8,marginBottom:10}}>
                 {[["born","Already born 🎉"],["unborn","Not born yet 🤰"]].map(([v,l])=>(
-                  <div key={v} onClick={()=>setBabyUnborn(v==="unborn")} style={{flex:1,padding:"10px 6px",borderRadius:12,border:`2px solid ${(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.blush}`,background:(v==="unborn"?babyUnborn:!babyUnborn)?"#fdf0eb":"white",textAlign:"center",cursor:_cP,fontSize:13,fontWeight:700,color:(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.mid,transition:"all 0.2s"}}>
+                  <div key={v} onClick={()=>setBabyUnborn(v==="unborn")} style={{flex:1,padding:"10px 6px",borderRadius:12,border:`2px solid ${(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.blush}`,background:(v==="unborn"?babyUnborn:!babyUnborn)?"var(--chip-bg-active)":"white",textAlign:"center",cursor:_cP,fontSize:13,fontWeight:700,color:(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.mid,transition:"all 0.2s"}}>
                     {l}
                   </div>
                 ))}
@@ -5866,7 +5866,7 @@ function App(){
 
               {/* 2. Age guidance */}
               {ageStage&&(
-                <div style={{background:`linear-gradient(135deg,${C.warm},#fff4ee)`,border:`1px solid ${C.blush}`,borderLeft:`4px solid ${C.ter}`,borderRadius:16,padding:"12px 14px",marginBottom:14}}>
+                <div style={{background:"var(--card-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",border:"1px solid var(--card-border)",borderLeft:`4px solid ${C.ter}`,borderRadius:16,padding:"12px 14px",marginBottom:14,boxShadow:"var(--card-shadow)"}}>
                   <div style={{flex:1}}>
                     <div style={{fontSize:14,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:3}}>{ageStage.label}</div>
                     <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{ageStage.tip}</div>
@@ -5880,7 +5880,7 @@ function App(){
               )}
 
               {/* ONE-TAP QUICK LOG ROW */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:18,padding:"10px 14px",marginBottom:10,gap:4}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",border:"1px solid var(--card-border)",borderRadius:18,padding:"10px 14px",marginBottom:10,gap:4,boxShadow:"var(--card-shadow)"}}>
                 <span style={{fontSize:10,fontWeight:700,color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:_fM,whiteSpace:"nowrap",marginRight:6}}>Quick</span>
                 {[
                   {emoji:"🍼",label:"Feed",action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""})},
@@ -5897,9 +5897,9 @@ function App(){
                 ].map(({emoji,label,action})=>(
                   <button key={label} onClick={action}
                     style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1,padding:"6px 2px",borderRadius:12,border:"none",background:"transparent",cursor:_cP,transition:"background 0.1s"}}
-                    onMouseDown={e=>e.currentTarget.style.background="#fde7dc"}
+                    onMouseDown={e=>e.currentTarget.style.background="var(--chip-bg-active)"}
                     onMouseUp={e=>e.currentTarget.style.background="transparent"}
-                    onTouchStart={e=>e.currentTarget.style.background="#fde7dc"}
+                    onTouchStart={e=>e.currentTarget.style.background="var(--chip-bg-active)"}
                     onTouchEnd={e=>{e.currentTarget.style.background="transparent";}}
                   >
                     <span style={{fontSize:24,lineHeight:1}}>{emoji}</span>
@@ -5919,7 +5919,7 @@ function App(){
                   {id:"paste", icon:"📋", label:"Notes"},
                 ].map(({id,icon,label})=>(
                   <button key={id} onClick={()=>id==="paste"?openPaste():openLogPanel(id)}
-                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"10px 4px",borderRadius:14,border:`2px solid ${logPanel===id?C.ter:C.blush}`,background:logPanel===id?"#fdf0eb":C.warm,cursor:_cP,fontFamily:_fI,transition:"all 0.15s"}}>
+                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"10px 4px",borderRadius:14,border:`2px solid ${logPanel===id?C.ter:C.blush}`,background:logPanel===id?"var(--chip-bg-active)":"var(--card-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",cursor:_cP,fontFamily:_fI,transition:"all 0.15s",boxShadow:"var(--chip-shadow)"}}>
                     <span style={{fontSize:22}}>{icon}</span>
                     <span style={{fontSize:11,fontWeight:700,color:logPanel===id?C.ter:C.mid,letterSpacing:"0.01em",textAlign:"center",lineHeight:1.2}}>{label}</span>
                   </button>
@@ -5929,12 +5929,12 @@ function App(){
               {/* 5. Today's summary stats */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:14}}>
                 {[
-                  {big:totalMl||dayE.filter(e=>e.type==="feed"&&e.feedType==="solids").length,unit:totalMl?"ml":"meals",label:totalMl?"Total Milk":"Solids",color:C.ter,bg:"#fdf0eb"},
-                  {big:dayE.filter(e=>e.type==="poop").length,unit:"💩",label:"Nappies",color:"#8a7060",bg:"#f0ece6"},
-                  {big:naps.length,unit:"naps",label:"Day Sleep",color:C.mint,bg:"#eaf6f3"},
-                  {big:hm(napMins),unit:"",label:"Nap Time",color:C.sky,bg:"#eaf3f8"},
+                  {big:totalMl||dayE.filter(e=>e.type==="feed"&&e.feedType==="solids").length,unit:totalMl?"ml":"meals",label:totalMl?"Total Milk":"Solids",color:C.ter,bg:"var(--card-bg)"},
+                  {big:dayE.filter(e=>e.type==="poop").length,unit:"💩",label:"Nappies",color:C.mid,bg:"var(--card-bg)"},
+                  {big:naps.length,unit:"naps",label:"Day Sleep",color:C.mint,bg:"var(--card-bg)"},
+                  {big:hm(napMins),unit:"",label:"Nap Time",color:C.sky,bg:"var(--card-bg)"},
                 ].map((s,i)=>(
-                  <div key={i} style={{background:s.bg,borderRadius:16,padding:"12px 4px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
+                  <div key={i} style={{background:s.bg,backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",borderRadius:16,padding:"12px 4px",textAlign:"center",boxShadow:"var(--card-shadow)",border:"1px solid var(--card-border)"}}>
                     <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:s.color,lineHeight:1}}>{s.big}</div>
                     {s.unit&&<div style={{fontSize:14,fontFamily:_fM,color:s.color,opacity:0.7,marginTop:1}}>{s.unit}</div>}
                     <div style={{fontSize:8,color:C.mid,marginTop:3,textTransform:"uppercase",letterSpacing:_ls08,fontFamily:_fM}}>{s.label}</div>
@@ -7295,7 +7295,7 @@ function App(){
               <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,marginBottom:12,WebkitOverflowScrolling:"touch"}}>
                 {[{key:"all",icon:"⭐",label:"All"},...MILESTONE_CATS].map(c=>(
                   <button key={c.key} onClick={()=>setMsFilter(c.key)}
-                    style={{flexShrink:0,padding:"7px 14px",borderRadius:999,border:`1px solid ${msFilter===c.key?"var(--card-border)":"var(--card-border)"}`,background:msFilter===c.key?"var(--chip-bg-active)":"var(--chip-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",color:msFilter===c.key?C.ter:C.mid,fontSize:12,fontWeight:msFilter===c.key?700:400,cursor:_cP,fontFamily:_fI,whiteSpace:"nowrap",boxShadow:msFilter===c.key?"var(--chip-shadow-active)":"var(--chip-shadow)"}}>
+                    style={{flexShrink:0,padding:"7px 14px",borderRadius:999,border:`1px solid ${msFilter===c.key?"var(--card-border)":"var(--card-border)"}`,background:msFilter===c.key?"var(--chip-bg-active)":"var(--chip-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",color:msFilter===c.key?C.ter:C.mid,fontSize:12,fontWeight:msFilter===c.key?700:400,cursor:_cP,fontFamily:_fI,whiteSpace:"nowrap",boxShadow:msFilter===c.key?"var(--chip-shadow-active)":"var(--chip-shadow)"}}>
                     {c.icon} {c.label}
                   </button>
                 ))}
@@ -7545,7 +7545,7 @@ function App(){
                 );
               })()}
 
-              <div style={{background:"linear-gradient(135deg,#fdeee8,var(--card-bg-alt))",border:`1px solid ${C.rose}`,borderRadius:20,padding:"16px",marginBottom:14,display:"flex",alignItems:"center",gap:14}}>
+              <div style={{background:"var(--card-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",border:`1px solid ${C.rose}`,borderRadius:20,padding:"16px",marginBottom:14,display:"flex",alignItems:"center",gap:14,boxShadow:"var(--card-shadow)"}}>
                 <div style={{width:52,height:52,borderRadius:16,background:`linear-gradient(135deg,${C.ter},#a85a44)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <span style={{fontSize:24}}>🧩</span>
                 </div>
@@ -7562,7 +7562,7 @@ function App(){
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
                   {[{key:"all",label:"All",icon:"✦"},...ACT_CATS].map(c=>(
                     <button key={c.key} onClick={()=>setDevActFilter(c.key)}
-                      style={{padding:"7px 14px",borderRadius:999,border:"1px solid var(--card-border)",background:devActFilter===c.key?"var(--chip-bg-active)":"var(--chip-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",fontSize:12,fontWeight:600,color:devActFilter===c.key?C.ter:C.mid,cursor:_cP,fontFamily:_fI,transition:"all 0.2s",boxShadow:devActFilter===c.key?"var(--chip-shadow-active)":"var(--chip-shadow)"}}>
+                      style={{padding:"7px 14px",borderRadius:999,border:"1px solid var(--card-border)",background:devActFilter===c.key?"var(--chip-bg-active)":"var(--chip-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",fontSize:12,fontWeight:600,color:devActFilter===c.key?C.ter:C.mid,cursor:_cP,fontFamily:_fI,transition:"all 0.2s",boxShadow:devActFilter===c.key?"var(--chip-shadow-active)":"var(--chip-shadow)"}}>
                       {c.icon} {c.label}
                     </button>
                   ))}
@@ -7678,7 +7678,7 @@ function App(){
         </div>
       )}
 
-      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"var(--nav-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderTop:"1px solid var(--nav-border)",display:"flex",alignItems:"stretch",boxShadow:"var(--nav-shadow)",maxWidth:520,margin:"0 auto",borderRadius:"22px 22px 0 0",paddingBottom:"env(safe-area-inset-bottom,0)"}}>
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"var(--nav-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",borderTop:"1px solid var(--nav-border)",display:"flex",alignItems:"stretch",boxShadow:"var(--nav-shadow)",maxWidth:520,margin:"0 auto",borderRadius:"22px 22px 0 0",paddingBottom:"env(safe-area-inset-bottom,0)"}}>
         {["day","insights","milestones","develop"].map(t=>(
           <button key={t} onClick={()=>{setTab(t);setLogPanel(null);}} style={tabSt(t)}>
             <span style={{fontSize:14,transition:"transform 0.15s",transform:tab===t?"scale(1.1)":"scale(1)"}}>{tabIcons[t]}</span>
@@ -7741,7 +7741,7 @@ function App(){
           <div style={{display:"flex",gap:8,marginBottom:16}}>
             {[{v:"bottle",label:"🍼 Bottle"},{v:"breast",label:"🤱 Breast"},{v:"solids",label:"🥣 Solids"}].map(({v,label})=>(
               <button key={v} onClick={()=>setLogForm(f=>({...f,feedType:v}))}
-                style={{flex:1,padding:"9px 4px",borderRadius:12,border:`2px solid ${logForm.feedType===v?C.ter:C.blush}`,background:logForm.feedType===v?"#fdf0eb":C.warm,fontSize:13,fontWeight:700,color:logForm.feedType===v?C.ter:C.mid,cursor:_cP,fontFamily:_fI}}>
+                style={{flex:1,padding:"9px 4px",borderRadius:12,border:`2px solid ${logForm.feedType===v?C.ter:C.blush}`,background:logForm.feedType===v?"var(--chip-bg-active)":C.warm,fontSize:13,fontWeight:700,color:logForm.feedType===v?C.ter:C.mid,cursor:_cP,fontFamily:_fI}}>
                 {label}
               </button>
             ))}
@@ -7834,7 +7834,7 @@ function App(){
           <div style={{display:"flex",gap:8,marginBottom:16}}>
             {[{v:"nap",label:"😴 Nap"},{v:"bed",label:"🌙 Bedtime"}].map(({v,label})=>(
               <button key={v} onClick={()=>setLogForm(f=>({...f,sleepType:v}))}
-                style={{flex:1,padding:"9px 4px",borderRadius:12,border:`2px solid ${logForm.sleepType===v?C.ter:C.blush}`,background:logForm.sleepType===v?"#fdf0eb":C.warm,fontSize:13,fontWeight:700,color:logForm.sleepType===v?C.ter:C.mid,cursor:_cP,fontFamily:_fI}}>
+                style={{flex:1,padding:"9px 4px",borderRadius:12,border:`2px solid ${logForm.sleepType===v?C.ter:C.blush}`,background:logForm.sleepType===v?"var(--chip-bg-active)":C.warm,fontSize:13,fontWeight:700,color:logForm.sleepType===v?C.ter:C.mid,cursor:_cP,fontFamily:_fI}}>
                 {label}
               </button>
             ))}
@@ -7927,7 +7927,7 @@ function App(){
         <Sheet onClose={()=>{setModal(null);setEditEntry(null);}} title={editEntry?"Edit Entry":"Add Entry"}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:15}}>
             {["feed","nap","wake","sleep","poop"].map(t=>(
-              <div key={t} onClick={()=>setEType(t)} style={{padding:"10px 6px",borderRadius:14,border:`2px solid ${eType===t?C.ter:C.blush}`,background:eType===t?"#fdf0eb":C.warm,textAlign:"center",cursor:_cP}}>
+              <div key={t} onClick={()=>setEType(t)} style={{padding:"10px 6px",borderRadius:14,border:`2px solid ${eType===t?C.ter:C.blush}`,background:eType===t?"var(--chip-bg-active)":C.warm,textAlign:"center",cursor:_cP}}>
                 <div style={{fontSize:20}}>{ICONS[t]}</div>
                 <div style={{fontSize:14,fontWeight:500,color:eType===t?C.ter:C.mid,marginTop:3}}>{NAMES[t]}</div>
               </div>
@@ -7937,7 +7937,7 @@ function App(){
           {eType==="feed"&&<>
             <div style={{display:"flex",gap:6,marginBottom:12}}>
               {["milk","breast","solids"].map(ft=>(
-                <button key={ft} onClick={()=>setFeedType(ft)} style={{flex:1,padding:"7px 4px",borderRadius:12,border:`2px solid ${feedType===ft?C.ter:C.blush}`,background:feedType===ft?"#fdf0eb":C.warm,fontSize:14,fontWeight:600,color:feedType===ft?C.ter:C.mid,cursor:_cP,fontFamily:_fI}}>
+                <button key={ft} onClick={()=>setFeedType(ft)} style={{flex:1,padding:"7px 4px",borderRadius:12,border:`2px solid ${feedType===ft?C.ter:C.blush}`,background:feedType===ft?"var(--chip-bg-active)":C.warm,fontSize:14,fontWeight:600,color:feedType===ft?C.ter:C.mid,cursor:_cP,fontFamily:_fI}}>
                   {ft==="milk"?"🍼 Bottle":ft==="breast"?"🤱 Breast":"🥣 Solids"}
                 </button>
               ))}
