@@ -5328,15 +5328,60 @@ function App(){
               display:"flex",alignItems:"center",justifyContent:"center"
             }}>+</button>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <div style={{display:"flex",alignItems:"center",gap:5}}>
+            {/* Nap/Bed countdown pill — inline in header */}
+            {tab==="day"&&!napOn&&!breastStartTime&&(()=>{
+              const hasBedLogged = (days[selDay]||[]).some(e=>e.type==="sleep"&&!e.night);
+              if(hasBedLogged) return null;
+              const isBed = bedCountdown !== null;
+              const countdown = isBed ? bedCountdown : napCountdown;
+              if(!isBed && napCountdown === null) return null;
+              const isNeutral = !isBed && napCountdown === -1;
+              const isNapNow = !isBed && !isNeutral && napCountdown !== null && napCountdown <= 0;
+              const isBedNow = isBed && bedCountdown <= 0;
+              const isNow = isNapNow || isBedNow;
+              if(isNeutral) {
+                return (
+                  <button onClick={()=>{setInlineWakeTime(nowTime());setShowWakeInline(v=>!v);}}
+                    style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"3px 10px",display:"flex",alignItems:"center",gap:4,cursor:_cP,fontSize:11,color:C.ter,fontWeight:700,fontFamily:_fM}}>
+                    ☀️ Log wake
+                  </button>
+                );
+              }
+              const isNapTappable = !isBed && !isNeutral && napCountdown !== null;
+              const handleTap = () => {
+                if(isNapTappable || isNapNow){ if(napOn) endNap(); else startNap(); }
+                else if(isBedNow || isBed){ startNap(); }
+              };
+              const icon = isBedNow||isBed ? "🌙" : isNapNow ? "😴" : "⏱️";
+              const pillBg = isNow ? (isBedNow?C.sky:C.mint) : "var(--card-bg)";
+              const pillColor = isNow ? "white" : (isBed?C.sky:C.mint);
+              const pillBorder = isNow ? "none" : "1px solid var(--card-border)";
+              const valueText = isNow ? "Now!" : (countdown!==null ? fmtCountdown(countdown) : "–");
+              const label = isBed ? "Bed" : "Nap";
+              return (
+                <button onClick={handleTap}
+                  style={{background:pillBg,border:pillBorder,borderRadius:99,padding:"3px 10px",display:"flex",alignItems:"center",gap:4,cursor:"pointer",fontFamily:_fM}}>
+                  <span style={{fontSize:11}}>{icon}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:pillColor}}>{label} {valueText}</span>
+                </button>
+              );
+            })()}
+            {/* Active nap timer pill */}
+            {tab==="day"&&napOn&&(
+              <div style={{display:"flex",alignItems:"center",gap:4,background:C.mint,borderRadius:99,padding:"3px 5px 3px 10px"}}>
+                <span style={{fontSize:11,fontFamily:_fM,fontWeight:700,color:"white"}}>😴 {fmtSec(napSec)}</span>
+                <button onClick={endNap} style={{background:"rgba(255,255,255,0.3)",border:_bN,borderRadius:99,padding:"2px 8px",fontSize:10,color:"white",cursor:_cP,fontWeight:700}}>Stop</button>
+              </div>
+            )}
             <button onClick={e=>{e.stopPropagation();toggleTheme();}}
-              style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,fontSize:15,flexShrink:0}}>
+              style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,fontSize:14,flexShrink:0}}>
               {isDark?"☀️":"🌙"}
             </button>
             <button onClick={e=>{e.stopPropagation();setTab("settings");}}
-              style={{background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:140}}>
-              <span style={{fontSize:14}}>👤</span>
-              <span style={{fontSize:11,fontFamily:_fM,fontWeight:700,color:C.mid,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{familyUsername||"Account"}</span>
+              style={{background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:120}}>
+              <span style={{fontSize:13}}>👤</span>
+              <span style={{fontSize:10,fontFamily:_fM,fontWeight:700,color:C.mid,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{familyUsername||"Account"}</span>
             </button>
           </div>
         </div>
@@ -5407,110 +5452,12 @@ function App(){
             )}
           </div>
         )}
+        {/* Start Feed shows only when no active timers */}
         {tab === "day" && !napOn && !breastStartTime && (
           <div style={{display:"flex",gap:8,marginBottom:10}}>
-            <button onClick={()=>startBreastTimer("L")} style={{background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"5px 14px",fontSize:13,color:C.ter,cursor:_cP,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+            <button onClick={()=>startBreastTimer("L")} style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"5px 14px",fontSize:13,color:C.ter,cursor:_cP,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
               🤱 Start Feed
             </button>
-            {(()=>{
-              const hasBedLogged = (days[selDay]||[]).some(e=>e.type==="sleep"&&!e.night);
-              if(hasBedLogged) return null;
-
-              const isBed = bedCountdown !== null;
-              const countdown = isBed ? bedCountdown : napCountdown;
-
-              // napCountdown === null means tick hasn't fired yet — don't render
-              if(!isBed && napCountdown === null) return null;
-
-              const isNeutral = !isBed && napCountdown === -1;
-
-              // Nap "Now!" — tap to start nap
-              const isNapNow = !isBed && !isNeutral && napCountdown !== null && napCountdown <= 0;
-              // Bed "Now!" — tap to log bedtime
-              const isBedNow = isBed && bedCountdown <= 0;
-              const isNow = isNapNow || isBedNow;
-              const isUrgent = !isNow && !isNeutral && countdown !== null && countdown <= 300;
-
-              // No prediction — need wake logged
-              if(isNeutral) {
-                return (
-                  <button onClick={()=>{setInlineWakeTime(nowTime());setShowWakeInline(v=>!v);}}
-                    style={{marginLeft:"auto",background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"5px 11px",display:"flex",alignItems:"center",gap:5,cursor:_cP,fontFamily:_fI,transition:"all 0.15s"}}>
-                    <span style={{fontSize:13}}>☀️</span>
-                    <div style={{textAlign:"left"}}>
-                      <div style={{fontSize:9,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:"0.06em",lineHeight:1}}>Next Nap</div>
-                      <div style={{fontSize:12,fontFamily:_fM,color:C.ter,lineHeight:1.3,fontWeight:700}}>Log wake time</div>
-                    </div>
-                  </button>
-                );
-              }
-
-              const icon = isBedNow ? "🌙" : isBed ? "🌙" : isNapNow ? "😴" : "⏱️";
-              const isNapTappable = !isBed && !isNeutral && napCountdown !== null;
-              const bg = isNapNow ? C.mint : isNapTappable ? "rgba(111,168,152,0.18)" : isBedNow ? C.sky : isUrgent ? C.ter : "rgba(255,255,255,0.6)";
-              const timeColor = isNapNow || isBedNow || isUrgent ? "white" : isBed ? C.sky : C.mint;
-              const labelColor = isNapNow || isBedNow || isUrgent ? "rgba(255,255,255,0.8)" : C.lt;
-              const shadow = isNapNow ? "0 0 0 3px rgba(111,168,152,0.3)" : isBedNow ? "0 0 0 3px rgba(122,171,196,0.3)" : "none";
-
-              if (isNapTappable || isNapNow) {
-                const label = napOn ? "Tap to stop" : isNapNow ? "Tap to start" : "Tap to start";
-                const valueText = napOn ? "😴 " + fmtSec(napSec) : isNapNow ? "😴 Now!" : "Nap " + fmtCountdown(countdown);
-                const handleNapBtn = () => {
-                  if (napOn) { endNap(); } else { startNap(); }
-                };
-                return (
-                  <button onClick={handleNapBtn}
-                    style={{marginLeft:"auto",background:napOn?C.mint:bg,border:`1px solid ${C.mint}`,borderRadius:99,padding:"5px 11px",display:"flex",alignItems:"center",gap:5,cursor:"pointer",boxShadow:shadow,transition:"all 0.2s",fontFamily:_fI}}>
-                    <span style={{fontSize:13}}>{napOn?"😴":icon}</span>
-                    <div style={{textAlign:"left"}}>
-                      <div style={{fontSize:9,fontFamily:_fM,color:napOn?"rgba(255,255,255,0.8)":labelColor,textTransform:"uppercase",letterSpacing:"0.06em",lineHeight:1}}>{label}</div>
-                      <div style={{fontSize:13,fontFamily:_fM,fontWeight:700,color:napOn?"white":timeColor,lineHeight:1.3}}>{valueText}</div>
-                    </div>
-                  </button>
-                );
-              }
-
-              // Bed countdown / fallback — tappable: first tap starts sleep timer, second tap logs bedtime
-              const bedTimerLabel = napOn
-                ? "Tap to log bedtime"
-                : isBedNow ? "Tap to start"
-                : isBed ? "Bedtime in"
-                : "Next Nap";
-              const bedTimerValue = napOn
-                ? fmtSec(napSec)
-                : isBedNow ? "Now!"
-                : countdown !== null ? fmtCountdown(countdown) : "–";
-              const bedBtnTappable = isBed || isBedNow || napOn;
-              const handleBedBtn = () => {
-                if (napOn) {
-                  // Second tap: stop timer — show prompt for what to log
-                  const end = nowTime();
-                  const start = napStartT || end;
-                  const [sh2,sm2]=start.split(":").map(Number);
-                  const [eh2,em2]=end.split(":").map(Number);
-                  let dur = (eh2*60+em2) - (sh2*60+sm2);
-                  if (dur < 0) dur += 24*60;
-                  setNapOn(false);
-                  setNapStartT(null); setNapSec(0);
-                  setTimerMode("prediction");
-                  try{["nap_on","nap_startT","nap_sec"].forEach(k=>localStorage.removeItem(k));}catch{}
-                  setTimerEndPrompt({start, end, durMins: dur, fromBedTimer: true});
-                } else if (isBedNow || isBed) {
-                  // First tap: start sleep timer (counts up)
-                  startNap();
-                }
-              };
-              return (
-                <button onClick={handleBedBtn}
-                  style={{marginLeft:"auto",background:napOn?C.sky:isBedNow?C.sky:bg,border:napOn||isBedNow?`1px solid ${C.sky}`:_bN,borderRadius:99,padding:"5px 11px",display:"flex",alignItems:"center",gap:5,cursor:bedBtnTappable?"pointer":"default",boxShadow:shadow,transition:"all 0.2s",fontFamily:_fI}}>
-                  <span style={{fontSize:13}}>{napOn?"🌙":icon}</span>
-                  <div style={{textAlign:"left"}}>
-                    <div style={{fontSize:9,fontFamily:_fM,color:napOn||isBedNow?"rgba(255,255,255,0.8)":labelColor,textTransform:"uppercase",letterSpacing:"0.06em",lineHeight:1}}>{bedTimerLabel}</div>
-                    <div style={{fontSize:13,fontFamily:_fM,fontWeight:700,color:napOn||isBedNow?"white":timeColor,lineHeight:1.3}}>{bedTimerValue}</div>
-                  </div>
-                </button>
-              );
-            })()}
           </div>
         )}
         <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",paddingBottom:14}}>
