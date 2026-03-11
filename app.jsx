@@ -4500,25 +4500,7 @@ function App(){
   }, []);
 
 
-  useEffect(()=>{
-    const todayDate = todayStr();
-    const todayMs = new Date(todayDate + "T12:00:00").getTime();
-    const sortedKeys = Object.keys(days).sort();
-    sortedKeys.forEach(dateStr => {
-      if ((days[dateStr]||[]).length > 0) {
-        const dayMs = new Date(dateStr + "T12:00:00").getTime();
-        const daysAgo = (todayMs - dayMs) / (1000*60*60*24);
-
-        if (daysAgo > 7) return;
-        const parts = dateStr.split("-").map(Number);
-        const next = new Date(parts[0], parts[1]-1, parts[2]+1);
-        const nextStr = next.toISOString().split("T")[0];
-
-        if (nextStr > new Date(todayMs + 86400000).toISOString().split("T")[0]) return;
-        if (!days[nextStr]) setDays(prev => prev[nextStr] ? prev : {...prev, [nextStr]: []});
-      }
-    });
-  }, [JSON.stringify(Object.fromEntries(Object.entries(days).map(([k,v])=>[k,v.length])))]);
+  /* Auto next-day creation removed — users add days manually */
 
 
   useEffect(()=>{
@@ -5137,12 +5119,73 @@ function App(){
       `}</style>
       {tutStep >= 0 && (()=>{
         const TUT_STEPS = [
-          { icon:"👋", title:"Welcome to OBubba!", body:"A quick tour of how everything works — takes about 90 seconds. Tap anywhere or Next to continue.", location:null },
-          { icon:"🍼", title:"Log Feeds, Nappies & Sleep", body:"The buttons below the header are your main logging tools. Tap Feed for bottle, breast or solids. Pump for pumping sessions. Nappy for wet or dirty changes (dirty lets you pick poop type). Sleep for naps or bedtime. Wake Up to log the morning.", location:"Centre of screen" },
-          { icon:"🕐", title:"Time Inputs", body:"When logging anything, tap the time field to open a popup where you can either type a time (like 7:30am or 14:00) or use the scroll wheel. Leave it empty and it logs as now — you can always edit later.", location:"Any log panel" },
-          { icon:"⏱️", title:"Nap & Bedtime Countdown", body:"The countdown pill in the top right shows when the next nap is due — based on your baby's age and wake windows. Once all naps are done it switches to a bedtime countdown. Tap it to start a nap timer or log bedtime.", location:"Top right of screen" },
-          { icon:"🤱", title:"Breastfeed & Pump Timers", body:"Tap 🤱 Start Feed in the header to begin a live breastfeed — switch sides and save when done. Tap 🫙 Pump in the log bar to record a pumping session with time, duration and amount. Both log automatically.", location:"Header & log bar" },
-          { icon:"📅", title:"Browse Past Days", body:"The date strip below the header lets you scroll through past days. Tap any date to see that day's log. You can edit or delete entries, and use the ✎ button on any date to rename, copy or delete the whole day.", location:"Date strip below header" },
+          { icon:"👋", title:"Welcome to OBubba!", body:"A quick tour of how everything works — takes about 60 seconds. Tap anywhere or Next to continue.", location:null },
+          { icon:"🍼", title:"Quick Log Row",
+            bodyJSX:(
+              <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
+                <div style={{marginBottom:8}}>The row of icons at the top is your <strong style={{color:C.ter}}>quick log bar</strong> — one tap logs instantly at the current time:</div>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                  <div>🍼 <strong>Feed</strong> — logs a bottle feed (add ml later)</div>
+                  <div>🤱 <strong>Breast</strong> — logs a breastfeed (edit L/R and duration later)</div>
+                  <div>💩 <strong>Nappy</strong> — logs a wet nappy</div>
+                  <div>😴 <strong>Nap</strong> — starts the nap timer</div>
+                  <div>🫙 <strong>Pump</strong> — opens pump session form</div>
+                  <div>☀️ <strong>Wake</strong> — logs morning wake time</div>
+                </div>
+                <div style={{fontSize:13,color:C.lt,lineHeight:1.5,marginTop:8}}>Everything logs at the current time. Tap ✎ on any entry to edit the details afterwards.</div>
+              </div>
+            ), location:"Below the header" },
+          { icon:"📝", title:"Detailed Logging",
+            bodyJSX:(
+              <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
+                <div style={{marginBottom:8}}>Below the quick log bar you'll find <strong style={{color:C.ter}}>detailed log buttons</strong> for when you need more control:</div>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                  <div>🍼 <strong>Feed</strong> — choose bottle, breast or solids with full details</div>
+                  <div>💩 <strong>Nappy</strong> — wet or dirty with poop type picker</div>
+                  <div>😴 <strong>Sleep</strong> — log a nap with start/end times, or bedtime</div>
+                  <div>🫙 <strong>Pump</strong> — full pump session with duration, L/R amounts</div>
+                  <div>☀️ <strong>Wake Up</strong> — set exact wake time</div>
+                  <div>📋 <strong>Notes</strong> — paste your whole day in plain text and it parses automatically</div>
+                </div>
+              </div>
+            ), location:"Centre of screen" },
+          { icon:"⏱️", title:"Nap & Bedtime Countdown",
+            bodyJSX:(
+              <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
+                <div style={{marginBottom:8}}>Next to <strong>🤱 Start Feed</strong> you'll see a countdown pill:</div>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                  <div>⏱️ <strong>Nap 42m</strong> — shows when the next nap is due based on wake windows</div>
+                  <div>🌙 <strong>Bed 1h 20m</strong> — switches to bedtime countdown once all naps are done</div>
+                  <div>😴 <strong>Nap Now!</strong> — tap to start the nap timer when it's time</div>
+                  <div>☀️ <strong>Log wake</strong> — appears if no wake is logged yet today</div>
+                </div>
+                <div style={{fontSize:13,color:C.lt,lineHeight:1.5,marginTop:8}}>When a nap is running, the timer appears in the same row with a Stop button.</div>
+              </div>
+            ), location:"Start Feed row" },
+          { icon:"🤱", title:"Breastfeed Timer", body:"Tap 🤱 Start Feed in the header to begin a live breastfeed timer — switch between left and right sides, pause, and save when done. The timer tracks each side separately. You can also quick-log a breastfeed from the quick bar and edit the details later.", location:"Header — Start Feed" },
+          { icon:"🧠", title:"Personal vs NHS Mode",
+            bodyJSX:(
+              <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
+                <div style={{marginBottom:8}}>OBubba can predict nap and bedtimes in two ways — change this in <strong style={{color:C.ter}}>Account → Sleep Recommendations</strong>:</div>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:8,fontSize:14}}>
+                  <div>✨ <strong>Personal</strong> — learns from your baby's actual patterns. After 5+ days of data, it blends your baby's real nap lengths and wake times with age guidance. Gets more accurate the more you log.</div>
+                  <div>🏥 <strong>NHS</strong> — uses standard NHS/WHO wake windows and nap counts for your baby's age. Best when starting out or if you prefer official guidelines.</div>
+                </div>
+                <div style={{fontSize:13,color:C.lt,lineHeight:1.5,marginTop:8}}>This affects nap countdowns, bedtime predictions, "Is This Normal?" and tomorrow's schedule. You can switch anytime.</div>
+              </div>
+            ), location:"Account → Sleep Recommendations" },
+          { icon:"📅", title:"Days & Dates",
+            bodyJSX:(
+              <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
+                <div style={{marginBottom:8}}>The date strip below the header shows your logged days:</div>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                  <div>📅 Tap any date to view that day's log</div>
+                  <div>✎ Tap the edit button on a date to rename or delete the day</div>
+                  <div>+ <strong>Date</strong> — tap to add a past day manually</div>
+                </div>
+                <div style={{fontSize:13,color:C.lt,lineHeight:1.5,marginTop:8}}>Today is created automatically. Tap + Date to log a past day you missed.</div>
+              </div>
+            ), location:"Date strip below header" },
           { icon:"📋", title:"Notes — Your Secret Weapon",
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
@@ -5153,72 +5196,60 @@ function App(){
                     Woke up 6:30am<br/>7am 180ml<br/>Nap 9:15 - 10:00<br/>11:30 150ml<br/>Nap 1pm - 2:15pm<br/>5pm 180ml<br/>Bedtime 7pm
                   </div>
                 </div>
-                <div style={{fontSize:13,color:C.lt,lineHeight:1.5}}>It understands wake times, feeds with amounts, nap ranges, bedtime, night wakes, and dream feeds. Perfect for catching up at the end of the day or pasting notes from a partner.</div>
+                <div style={{fontSize:13,color:C.lt,lineHeight:1.5}}>It understands wake times, feeds with amounts, nap ranges, bedtime, night wakes, and dream feeds.</div>
               </div>
-            ), location:"Log bar — Notes button" },
-          { icon:"💡", title:"Insights Tab",
+            ), location:"Log buttons — Notes" },
+          { icon:"💡", title:"Insights",
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
-                <div style={{marginBottom:8}}>The <strong style={{color:C.ter}}>Insights</strong> tab is your baby's command centre — everything in one place:</div>
+                <div style={{marginBottom:8}}>Tap <strong style={{color:C.ter}}>💡 Insights</strong> in the bottom navigation — your baby's data centre:</div>
                 <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
-                  <div>📏 <strong>Growth Percentiles</strong> — log weight and height, see WHO percentiles for both</div>
-                  <div>🍼 <strong>Today with {babyName||"Baby"}</strong> — daily summary of sleep, feeds and development</div>
-                  <div>🍼 <strong>Feeding Insight</strong> — NHS milk targets, intake tracking and suggestions</div>
-                  <div>📈 <strong>Trends</strong> — growth chart, week-on-week comparisons, feed and nap trend lines</div>
-                  <div>😴 <strong>Sleep Analysis</strong> — stability score, bedtime prediction, wake windows, tomorrow's schedule</div>
-                  <div>📊 <strong>Day Report</strong> — full daily breakdown with feeding, naps and night wakes</div>
+                  <div>📏 <strong>Growth Percentiles</strong> — weight and height with WHO charts</div>
+                  <div>🍼 <strong>Today with {babyName||"Baby"}</strong> — daily summary</div>
+                  <div>🍼 <strong>Feeding Insight</strong> — NHS milk targets and suggestions</div>
+                  <div>📈 <strong>Trends</strong> — growth chart, weekly comparisons, trend lines</div>
+                  <div>😴 <strong>Sleep Analysis</strong> — stability score, bedtime prediction, tomorrow's schedule</div>
+                  <div>📊 <strong>Day Report</strong> — full daily breakdown</div>
                 </div>
               </div>
             ), location:"Bottom navigation — Insights" },
-          { icon:"😴", title:"Is This Normal?", body:"On the Day tab, below your log, you'll see the \"Is This Normal?\" card. It compares today's nap time to NHS guidelines for your baby's age and tells you if sleep is on track — this stays on the home page for quick reference.", location:"Day tab — below the log" },
-          { icon:"⭐", title:"Milestones", body:"The Miles tab shows age-appropriate milestones from NHS guidelines. Tap any to mark it achieved. Filter by category — social, language, movement or cognitive. A compact link at the top takes you to the current developmental phase.", location:"Bottom navigation — Miles" },
-          { icon:"🧩", title:"Development",
+          { icon:"⭐", title:"Milestones & Development",
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
-                <div style={{marginBottom:8}}>The <strong style={{color:C.ter}}>Develop</strong> tab is all about what's ahead:</div>
+                <div style={{marginBottom:8}}>Two tabs for tracking your baby's growth:</div>
                 <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
-                  <div>🔮 <strong>Coming Up</strong> — shows the current or next developmental phase with expected timelines, what to expect, and all the new skills emerging</div>
-                  <div>🎯 <strong>Activities</strong> — age-appropriate play ideas filtered by category (movement, social, language, thinking)</div>
-                  <div>🏥 <strong>NHS & WHO Guidance</strong> — expert advice tailored to your baby's exact age</div>
+                  <div>⭐ <strong>Milestones</strong> — age-appropriate milestones from NHS guidelines. Tap to mark achieved. Filter by social, language, movement or cognitive.</div>
+                  <div>🧩 <strong>Development</strong> — current developmental phase, age-appropriate activities, and NHS/WHO expert guidance for your baby's exact age.</div>
                 </div>
               </div>
-            ), location:"Bottom navigation — Develop" },
-          { icon:"👨‍👩‍👧", title:"Share with Your Partner",
+            ), location:"Bottom navigation" },
+          { icon:"🌙", title:"Day & Night Mode", body:"Tap the 🌙 / ☀️ toggle in the top-right of the header to switch between day and night mode. It sits right next to your account button for quick access.", location:"Header — top right" },
+          { icon:"👨‍👩‍👧", title:"Share & Sync",
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
-                <div style={{marginBottom:8}}>Tap <strong style={{color:C.ter}}>👤 Account</strong> in the header, then <strong>Share & Sync</strong> to open the sync menu.</div>
+                <div style={{marginBottom:8}}>Tap <strong style={{color:C.ter}}>👤 Account</strong> in the header, then <strong>Share & Sync</strong>:</div>
                 <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
-                  <div>🔗 Tap <strong>Get code</strong> next to your child's name — this creates a 6-letter <strong>child sync code</strong></div>
-                  <div>📲 Your partner opens Share & Sync → <strong>Link a child</strong> → enters that code</div>
-                  <div>✅ Both phones stay in sync automatically from then on</div>
+                  <div>🔗 Tap <strong>Get code</strong> next to your child — share the 6-letter code with your partner</div>
+                  <div>📲 Your partner opens Share & Sync → <strong>Link a child</strong> → enters the code</div>
+                  <div>✅ Both phones stay in sync automatically</div>
+                  <div>👶 <strong>Multiple children</strong> — swipe left/right on the header, or tap + to add</div>
                 </div>
-                <div style={{marginTop:8,fontSize:13,color:C.lt}}>Your data backs up to the cloud automatically and restores on any device when you sign in.</div>
               </div>
             ), location:"👤 Account → Share & Sync" },
-          { icon:"👶", title:"Multiple Children",
-            bodyJSX:(
-              <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
-                <div style={{marginBottom:8}}>Each child has their own logs, growth chart and milestones.</div>
-                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
-                  <div>👆 <strong>Swipe left/right</strong> on the header to switch between children</div>
-                  <div>＋ Tap the <strong>+ button</strong> in the top left to add another child</div>
-                  <div>✏️ To edit a child's name, DOB or sex, tap their name in the header</div>
-                </div>
-              </div>
-            ), location:"Top left — child dots & + button" },
           { icon:"🔐", title:"Keep Your Data Safe",
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
-                <div style={{marginBottom:8}}>Your data backs up to the cloud automatically and works offline too.</div>
+                <div style={{marginBottom:8}}>Your data backs up to the cloud automatically — here's how to keep it secure:</div>
                 <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:7,fontSize:14}}>
-                  <div>🔑 <strong>Set a recovery word</strong> in Share & Sync — this lets you reset your PIN if you ever forget it.</div>
-                  <div>📱 To move to a new phone, just sign in with your <strong>username & PIN</strong> — all your data restores automatically</div>
-                  <div>☁️ Everything backs up on its own — nothing to export or save manually</div>
+                  <div>🔑 <strong>Set a recovery word</strong> in Share & Sync — this lets you reset your PIN if you ever forget it</div>
+                  <div>📱 To move to a <strong>new phone</strong>, just sign in with your username & PIN — all your data restores automatically</div>
+                  <div>☁️ Everything <strong>backs up on its own</strong> — nothing to export or save manually</div>
+                  <div>📵 Works <strong>offline</strong> too — entries save locally and sync when you reconnect</div>
                 </div>
-                <div style={{marginTop:10,padding:"9px 12px",background:"var(--card-bg-alt)",borderRadius:10,fontSize:13,color:C.ter,fontWeight:600,lineHeight:1.5}}>⚠️ Without a recovery word, a forgotten PIN means losing access. Set one as soon as you finish this tour!</div>
+                <div style={{marginTop:10,padding:"9px 12px",background:"var(--card-bg-alt)",borderRadius:10,fontSize:13,color:C.ter,fontWeight:600,lineHeight:1.5}}>⚠️ Without a recovery word, a forgotten PIN means losing access. Set one now in Account → Share & Sync!</div>
               </div>
             ), location:"👤 Account → Share & Sync" },
-          { icon:"🎉", title:"You're all set!", body:"Start by logging today's wake time — the countdown will guide nap and bedtime from there. You can replay this tour anytime from Settings. Happy tracking!", location:null },
+          { icon:"🎉", title:"You're all set!", body:"Log today's wake time to get started — the nap countdown will appear next to Start Feed. Before you go, set a recovery word in Account → Share & Sync to keep your data safe. You can replay this tour anytime from Account → App Tour. Happy tracking!", location:null },
         ];
 
         const dismissTutorial = () => {
@@ -5329,51 +5360,6 @@ function App(){
             }}>+</button>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:5}}>
-            {/* Nap/Bed countdown pill — inline in header */}
-            {tab==="day"&&!napOn&&!breastStartTime&&(()=>{
-              const hasBedLogged = (days[selDay]||[]).some(e=>e.type==="sleep"&&!e.night);
-              if(hasBedLogged) return null;
-              const isBed = bedCountdown !== null;
-              const countdown = isBed ? bedCountdown : napCountdown;
-              if(!isBed && napCountdown === null) return null;
-              const isNeutral = !isBed && napCountdown === -1;
-              const isNapNow = !isBed && !isNeutral && napCountdown !== null && napCountdown <= 0;
-              const isBedNow = isBed && bedCountdown <= 0;
-              const isNow = isNapNow || isBedNow;
-              if(isNeutral) {
-                return (
-                  <button onClick={()=>{setInlineWakeTime(nowTime());setShowWakeInline(v=>!v);}}
-                    style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"3px 10px",display:"flex",alignItems:"center",gap:4,cursor:_cP,fontSize:11,color:C.ter,fontWeight:700,fontFamily:_fM}}>
-                    ☀️ Log wake
-                  </button>
-                );
-              }
-              const isNapTappable = !isBed && !isNeutral && napCountdown !== null;
-              const handleTap = () => {
-                if(isNapTappable || isNapNow){ if(napOn) endNap(); else startNap(); }
-                else if(isBedNow || isBed){ startNap(); }
-              };
-              const icon = isBedNow||isBed ? "🌙" : isNapNow ? "😴" : "⏱️";
-              const pillBg = isNow ? (isBedNow?C.sky:C.mint) : "var(--card-bg)";
-              const pillColor = isNow ? "white" : (isBed?C.sky:C.mint);
-              const pillBorder = isNow ? "none" : "1px solid var(--card-border)";
-              const valueText = isNow ? "Now!" : (countdown!==null ? fmtCountdown(countdown) : "–");
-              const label = isBed ? "Bed" : "Nap";
-              return (
-                <button onClick={handleTap}
-                  style={{background:pillBg,border:pillBorder,borderRadius:99,padding:"3px 10px",display:"flex",alignItems:"center",gap:4,cursor:"pointer",fontFamily:_fM}}>
-                  <span style={{fontSize:11}}>{icon}</span>
-                  <span style={{fontSize:11,fontWeight:700,color:pillColor}}>{label} {valueText}</span>
-                </button>
-              );
-            })()}
-            {/* Active nap timer pill */}
-            {tab==="day"&&napOn&&(
-              <div style={{display:"flex",alignItems:"center",gap:4,background:C.mint,borderRadius:99,padding:"3px 5px 3px 10px"}}>
-                <span style={{fontSize:11,fontFamily:_fM,fontWeight:700,color:"white"}}>😴 {fmtSec(napSec)}</span>
-                <button onClick={endNap} style={{background:"rgba(255,255,255,0.3)",border:_bN,borderRadius:99,padding:"2px 8px",fontSize:10,color:"white",cursor:_cP,fontWeight:700}}>Stop</button>
-              </div>
-            )}
             <button onClick={e=>{e.stopPropagation();toggleTheme();}}
               style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,fontSize:14,flexShrink:0}}>
               {isDark?"☀️":"🌙"}
@@ -5452,12 +5438,59 @@ function App(){
             )}
           </div>
         )}
-        {/* Start Feed shows only when no active timers */}
-        {tab === "day" && !napOn && !breastStartTime && (
-          <div style={{display:"flex",gap:8,marginBottom:10}}>
-            <button onClick={()=>startBreastTimer("L")} style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"5px 14px",fontSize:13,color:C.ter,cursor:_cP,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
-              🤱 Start Feed
-            </button>
+        {/* Start Feed + Nap/Bed pill row */}
+        {tab === "day" && !breastStartTime && (
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:10}}>
+            {!napOn && (
+              <button onClick={()=>startBreastTimer("L")} style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"5px 14px",fontSize:13,color:C.ter,cursor:_cP,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+                🤱 Start Feed
+              </button>
+            )}
+            {/* Active nap timer */}
+            {napOn && (
+              <div style={{display:"flex",alignItems:"center",gap:5,background:C.mint,borderRadius:99,padding:"5px 6px 5px 14px"}}>
+                <span style={{fontSize:13,fontFamily:_fM,fontWeight:700,color:"white"}}>😴 {fmtSec(napSec)}</span>
+                <button onClick={endNap} style={{background:"rgba(255,255,255,0.3)",border:_bN,borderRadius:99,padding:"3px 10px",fontSize:11,color:"white",cursor:_cP,fontWeight:700}}>Stop</button>
+              </div>
+            )}
+            {/* Nap/Bed countdown pill — right side */}
+            {!napOn&&(()=>{
+              const hasBedLogged = (days[selDay]||[]).some(e=>e.type==="sleep"&&!e.night);
+              if(hasBedLogged) return null;
+              const isBed = bedCountdown !== null;
+              const countdown = isBed ? bedCountdown : napCountdown;
+              if(!isBed && napCountdown === null) return null;
+              const isNeutral = !isBed && napCountdown === -1;
+              const isNapNow = !isBed && !isNeutral && napCountdown !== null && napCountdown <= 0;
+              const isBedNow = isBed && bedCountdown <= 0;
+              const isNow = isNapNow || isBedNow;
+              if(isNeutral) {
+                return (
+                  <button onClick={()=>{setInlineWakeTime(nowTime());setShowWakeInline(v=>!v);}}
+                    style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"5px 14px",display:"flex",alignItems:"center",gap:5,cursor:_cP,fontSize:13,fontWeight:700,fontFamily:_fM,color:C.ter}}>
+                    ☀️ Log wake
+                  </button>
+                );
+              }
+              const isNapTappable = !isBed && !isNeutral && napCountdown !== null;
+              const handleTap = () => {
+                if(isNapTappable || isNapNow){ startNap(); }
+                else if(isBedNow || isBed){ startNap(); }
+              };
+              const icon = isBedNow||isBed ? "🌙" : isNapNow ? "😴" : "⏱️";
+              const pillBg = isNow ? (isBedNow?C.sky:C.mint) : "var(--card-bg)";
+              const pillColor = isNow ? "white" : (isBed?C.sky:C.mint);
+              const pillBorder = isNow ? "none" : "1px solid var(--card-border)";
+              const valueText = isNow ? "Now!" : (countdown!==null ? fmtCountdown(countdown) : "–");
+              const label = isBed ? "Bed" : "Nap";
+              return (
+                <button onClick={handleTap}
+                  style={{background:pillBg,border:pillBorder,borderRadius:99,padding:"5px 14px",display:"flex",alignItems:"center",gap:5,cursor:"pointer",fontFamily:_fM}}>
+                  <span style={{fontSize:13}}>{icon}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:pillColor}}>{label} {valueText}</span>
+                </button>
+              );
+            })()}
           </div>
         )}
         <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",paddingBottom:14}}>
@@ -5501,46 +5534,16 @@ function App(){
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:C.mid,marginBottom:8}}>No day selected</div>
               <div style={{fontSize:15,fontFamily:_fM}}>Tap + Day to get started</div>
             </div>
-          ):(
+          ):( 
             <div>
-              {/* Personal/NHS toggle pill — anchored under date strip */}
-              {usePersonalRecs !== null && (
-                <div style={{display:"flex",justifyContent:"flex-end",marginBottom:-6,marginTop:-6,position:"relative",zIndex:10}}>
-                  <div style={{display:"inline-flex",background:"var(--card-bg-solid)",borderRadius:99,boxShadow:"0 2px 10px rgba(0,0,0,0.10)",border:`1px solid ${C.blush}`,overflow:"hidden"}}>
-                    <button onClick={()=>{setUsePersonalRecs(true);try{localStorage.setItem("use_personal_recs_v1","true");}catch{};}} style={{padding:"5px 14px",fontSize:12,fontFamily:_fM,fontWeight:700,border:"none",background:usePersonalRecs===true?"linear-gradient(135deg,#50a888,#3a8870)":"transparent",color:usePersonalRecs===true?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap"}}>✨ Personal</button>
-                    <div style={{width:1,background:C.blush}}/>
-                    <button onClick={()=>{setUsePersonalRecs(false);try{localStorage.setItem("use_personal_recs_v1","false");}catch{};}} style={{padding:"5px 14px",fontSize:12,fontFamily:_fM,fontWeight:700,border:"none",background:usePersonalRecs===false?"#4a5a80":"transparent",color:usePersonalRecs===false?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap"}}>NHS</button>
-                  </div>
-                </div>
-              )}
-
-              {/* 2. Age guidance */}
-              {ageStage&&(
-                <div style={{background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderLeft:`4px solid ${C.ter}`,borderRadius:16,padding:"12px 14px",marginBottom:14,boxShadow:"var(--card-shadow)"}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:3}}>{ageStage.label}</div>
-                    <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{ageStage.tip}</div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:7}}>
-                      {[{icon:"😴",val:ageStage.napGoal},{icon:"🍼",val:ageStage.feedGoal},{icon:"🌙",val:ageStage.nightNote}].map((x,i)=>(
-                        <span key={i} style={{fontSize:14,fontFamily:_fM,background:"var(--chip-bg)",color:C.ter,padding:"2px 8px",borderRadius:99}}>{x.icon} {x.val}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ONE-TAP LOG ROW */}
+              {/* ONE-TAP LOG ROW — below date strip, above age guidance */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:18,padding:"10px 14px",marginBottom:10,gap:4,boxShadow:"var(--card-shadow)"}}>
                 {[
                   {emoji:"🍼",label:"Feed",action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""})},
-                  {emoji:"🤱",label:"Breast",action:()=>startBreastTimer("L")},
+                  {emoji:"🤱",label:"Breast",action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"breast",breastL:0,breastR:0,amount:0,night:false,note:""})},
                   {emoji:"💩",label:"Nappy",action:()=>quickAddLog("poop",{type:"poop",time:nowTime(),poopType:"wet",night:false,note:""})},
                   {emoji:"😴",label:napOn?"Stop":"Nap",action:()=>{
-                    if(napOn){
-                      endNap();
-                    } else {
-                      startNap();
-                    }
+                    if(napOn){ endNap(); } else { startNap(); }
                   }},
                   {emoji:"🫙",label:"Pump",action:()=>openLogPanel("pump")},
                   {emoji:"☀️",label:"Wake",action:()=>quickAddLog("wake",{type:"wake",time:nowTime(),night:false,note:""})},
@@ -5557,6 +5560,22 @@ function App(){
                   </button>
                 ))}
               </div>
+
+              {/* Age guidance */}
+              {ageStage&&(
+                <div style={{background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderLeft:`4px solid ${C.ter}`,borderRadius:16,padding:"12px 14px",marginBottom:14,boxShadow:"var(--card-shadow)"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:3}}>{ageStage.label}</div>
+                    <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{ageStage.tip}</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:7}}>
+                      {[{icon:"😴",val:ageStage.napGoal},{icon:"🍼",val:ageStage.feedGoal},{icon:"🌙",val:ageStage.nightNote}].map((x,i)=>(
+                        <span key={i} style={{fontSize:14,fontFamily:_fM,background:"var(--chip-bg)",color:C.ter,padding:"2px 8px",borderRadius:99}}>{x.icon} {x.val}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
 
               {/* 3. Quick actions */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:16}}>
@@ -7308,6 +7327,40 @@ function App(){
                 <div style={{fontSize:12,color:C.lt,marginTop:2}}>Replay the walkthrough</div>
               </div>
             </button>
+            {/* Sleep Recommendations Mode */}
+            <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",width:"100%"}}>
+              <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
+                <span style={{fontSize:24}}>🧠</span>
+                <div>
+                  <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Sleep Recommendations</div>
+                  <div style={{fontSize:12,color:C.lt,marginTop:2}}>Choose how nap and bedtime predictions are calculated</div>
+                </div>
+              </div>
+              <div style={{display:"inline-flex",background:"var(--card-bg)",borderRadius:99,border:`1px solid ${C.blush}`,overflow:"hidden",marginBottom:12}}>
+                <button onClick={()=>{setUsePersonalRecs(true);try{localStorage.setItem("use_personal_recs_v1","true");}catch{};}} style={{padding:"7px 16px",fontSize:13,fontFamily:_fM,fontWeight:700,border:"none",background:usePersonalRecs===true?"linear-gradient(135deg,#50a888,#3a8870)":"transparent",color:usePersonalRecs===true?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap",borderRadius:99}}>✨ Personal</button>
+                <div style={{width:1,background:C.blush}}/>
+                <button onClick={()=>{setUsePersonalRecs(false);try{localStorage.setItem("use_personal_recs_v1","false");}catch{};}} style={{padding:"7px 16px",fontSize:13,fontFamily:_fM,fontWeight:700,border:"none",background:(usePersonalRecs===false||usePersonalRecs===null)?"#4a5a80":"transparent",color:(usePersonalRecs===false||usePersonalRecs===null)?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap",borderRadius:99}}>NHS</button>
+              </div>
+              <div style={{fontSize:13,color:C.mid,lineHeight:1.6}}>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+                  <div style={{fontWeight:700,color:C.deep,marginBottom:4}}>✨ Personal Mode</div>
+                  Learns from your baby's actual sleep patterns. After 5+ days of data, OBubba analyses your baby's real nap lengths, wake windows, and bedtime habits, then blends them with age guidance to create personalised predictions. Gets more accurate the more you log.
+                </div>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+                  <div style={{fontWeight:700,color:C.deep,marginBottom:4}}>NHS Mode</div>
+                  Uses standard NHS and WHO recommended wake windows and nap counts for your baby's age. Population-level guidelines that work well for most babies. Best when starting out, sleep is unpredictable, or you prefer official recommendations.
+                </div>
+                <div style={{fontSize:12,color:C.lt,lineHeight:1.55}}>
+                  <div style={{fontWeight:600,color:C.mid,marginBottom:4}}>This setting affects:</div>
+                  <div>• Nap countdown timers and bedtime predictions</div>
+                  <div>• "Is This Normal?" sleep comparison card</div>
+                  <div>• Tomorrow's predicted schedule in Sleep Analysis</div>
+                  <div>• Suggested wake windows and nap counts</div>
+                  <div>• Feeding suggestions and milk targets</div>
+                  <div style={{marginTop:6}}>Switch between modes at any time — your logged data is always kept.</div>
+                </div>
+              </div>
+            </div>
             {familyUsername&&(
               <button onClick={logout} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%",marginTop:6}}>
                 <span style={{fontSize:24}}>🚪</span>
@@ -7922,47 +7975,7 @@ function App(){
         );
       })()}
       {}
-      {/* ── NHS vs Personal floating popup — shown once, dismissed on choice ── */}
-      {(()=>{
-        const activeDays=Object.keys(days).filter(d=>(days[d]||[]).some(e=>!e.night&&(e.type==="nap"||e.type==="feed")));
-        if(activeDays.length < 7 || !showPersonalPopup || usePersonalRecs !== null) return null;
-        const pb=computePersonalBaselines();
-        if(!pb) return null;
-        const choose=(val)=>{
-          setUsePersonalRecs(val);
-          setShowPersonalPopup(false);
-          try{localStorage.setItem("use_personal_recs_v1",JSON.stringify(val));}catch{}
-        };
-        return (
-          <div style={{position:"fixed",inset:0,background:"rgba(30,20,15,0.5)",backdropFilter:"blur(6px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",boxSizing:"border-box"}} onClick={()=>setShowPersonalPopup(false)}>
-            <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg-solid)",borderRadius:24,padding:"28px 22px",width:"100%",maxWidth:360,boxShadow:"0 12px 48px rgba(0,0,0,0.22)",boxSizing:"border-box"}}>
-              <div style={{textAlign:"center",marginBottom:18}}>
-                <div style={{fontSize:32,marginBottom:8}}>🎉</div>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:6}}>7 days of data!</div>
-                <div style={{fontSize:14,color:C.mid,lineHeight:1.65}}>We've analysed {possessive(babyName||"Baby")} real patterns. How would you like recommendations?</div>
-              </div>
-              {(pb.personalAvgWW||pb.personalAvgMl)&&(
-                <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"10px 14px",marginBottom:18,border:`1px solid ${C.blush}`}}>
-                  {pb.personalAvgWW&&(
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13,marginBottom:pb.personalAvgMl?6:0}}>
-                      <span style={{color:C.lt}}>Wake windows</span>
-                      <span style={{fontWeight:700,color:"var(--mint)"}}>{pb.personalAvgWW>=60?`${Math.floor(pb.personalAvgWW/60)}h ${pb.personalAvgWW%60}m`:pb.personalAvgWW+"min"} <span style={{color:C.lt,fontWeight:400}}>vs NHS {pb.nhsWW.label}</span></span>
-                    </div>
-                  )}
-                  {pb.personalAvgMl&&(
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13}}>
-                      <span style={{color:C.lt}}>Daily milk avg</span>
-                      <span style={{fontWeight:700,color:"var(--mint)"}}>~{pb.personalAvgMl}ml</span>
-                    </div>
-                  )}
-                </div>
-              )}
-              <button onClick={()=>choose(true)} style={{width:"100%",padding:"13px",borderRadius:99,border:"none",background:"linear-gradient(135deg,#50a888,#3a8870)",color:"white",fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:_fI,marginBottom:10,boxSizing:"border-box"}}>✨ Use {babyName||"Baby"}'s patterns</button>
-              <button onClick={()=>choose(false)} style={{width:"100%",padding:"12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"transparent",color:C.mid,fontSize:14,cursor:"pointer",fontFamily:_fI,boxSizing:"border-box"}}>NHS guidelines only</button>
-            </div>
-          </div>
-        );
-      })()}
+      {/* Personal/NHS toggle moved to Account → Sleep Recommendations */}
 
 
       {showNightWake&&(
