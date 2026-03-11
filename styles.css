@@ -1,9 +1,8 @@
 /* ═══════════════════════════════════════════════════════════
-   OBubba — Complete Stylesheet
-   Original base + Apple Liquid Glass Enhancement
+   OBubba — Powder Pink · Lilac · Cream Liquid Glass
+   New palette with full text visibility
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Reset & Base ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overscroll-behavior:none;}
 body{font-family:'DM Sans',-apple-system,'SF Pro Display',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
@@ -12,126 +11,149 @@ input,select,button{font-family:inherit;}
 input::placeholder{opacity:1;}
 
 /* ═══════════════════════════════════════════════════════════
-   LIGHT MODE — Base Variables
+   LIGHT MODE — Powder Pink · Lilac · Cream
    ═══════════════════════════════════════════════════════════ */
 :root,body,body.light-mode{
-  --bg-grad:linear-gradient(170deg,#f5ebe4 0%,#f0ddd6 35%,#ede0db 55%,#f2e4df 100%);
-  --bg-solid:#f0ddd6;
-  --card-bg:rgba(255,255,255,0.42);
-  --card-bg-solid:rgba(255,255,255,0.62);
-  --card-bg-alt:rgba(255,250,246,0.48);
-  --card-border:rgba(255,255,255,0.65);
+  --bg-grad:linear-gradient(135deg,#FFF6F0 0%,#F6DDE3 40%,#E8E0FF 100%);
+  --bg-solid:#FFF6F0;
+  --card-bg:rgba(255,255,255,0.35);
+  --card-bg-solid:rgba(255,255,255,0.55);
+  --card-bg-alt:rgba(255,252,250,0.42);
+  --card-border:rgba(255,255,255,0.45);
   --card-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.75),
-    inset 0 -0.5px 0 rgba(0,0,0,0.03),
-    0 2px 6px rgba(160,100,70,0.05),
-    0 10px 28px rgba(160,100,70,0.08),
-    0 22px 56px rgba(160,100,70,0.05),
-    0 0 20px rgba(255,170,80,0.10);
+    0 0 20px rgba(255,255,255,0.6),
+    0 0 40px rgba(255,220,230,0.35),
+    0 0 60px rgba(230,210,255,0.25),
+    inset 0 1.5px 0 rgba(255,255,255,0.80),
+    inset 0 -0.5px 0 rgba(180,150,200,0.04);
   --card-shadow-elevated:
-    inset 0 1px 0 rgba(255,255,255,0.8),
-    0 4px 10px rgba(160,100,70,0.06),
-    0 16px 42px rgba(160,100,70,0.10),
-    0 30px 72px rgba(160,100,70,0.06),
-    0 0 32px rgba(255,170,80,0.15);
-  --specular:linear-gradient(90deg,transparent 4%,rgba(255,215,150,0.22) 15%,rgba(255,255,255,0.42) 42%,rgba(255,255,255,0.45) 58%,rgba(255,215,150,0.22) 85%,transparent 96%);
-  --text-deep:#2c1f1a;--text-mid:#7a5c52;--text-lt:#b89890;
-  --blush:#f2d9cc;--rose:#e8b4a0;--cream:#faf6f0;--warm:#fff9f2;
-  --ter:#c9705a;--mint:#6fa898;--sky:#7aabc4;--gold:#d4a855;
-  --placeholder:#c8beb8;
-  --glow-primary:rgba(240,180,140,0.4);--glow-under:rgba(255,200,170,0.15);
-  --sheet-bg:rgba(250,246,240,0.93);--sheet-overlay:rgba(44,31,26,0.45);
-  --nav-bg:rgba(255,255,255,0.55);--nav-border:rgba(255,255,255,0.5);
-  --nav-shadow:0 -2px 24px rgba(160,100,70,0.08);
-  --chip-bg:rgba(255,255,255,0.48);--chip-bg-active:rgba(255,235,225,0.7);
-  --chip-shadow:0 2px 8px rgba(160,100,70,0.06);--chip-shadow-active:0 0 14px rgba(240,180,140,0.3);
-  --input-bg:rgba(255,252,248,0.55);--picker-bg:rgba(255,255,255,0.92);
-  --glass-blur:22px;--glass-sat:1.85;--sparkle-opacity:0.55;
+    0 0 24px rgba(255,255,255,0.7),
+    0 0 48px rgba(255,220,230,0.45),
+    0 0 72px rgba(230,210,255,0.30),
+    inset 0 2px 0 rgba(255,255,255,0.85);
+  --specular:linear-gradient(105deg,transparent 2%,rgba(255,240,245,0.35) 12%,rgba(255,255,255,0.55) 35%,rgba(255,255,255,0.60) 50%,rgba(245,230,255,0.35) 70%,transparent 95%);
+  --text-deep:#5B4F5F;
+  --text-mid:#7A6B7E;
+  --text-lt:#A898AC;
+  --blush:#F3D3DA;
+  --rose:#E8B4C0;
+  --cream:#FFF6F0;
+  --warm:#FFFAF6;
+  --ter:#C07088;
+  --mint:#6fa898;
+  --sky:#7aabc4;
+  --gold:#d4a855;
+  --placeholder:#C8B8C0;
+  --glow-primary:rgba(246,221,227,0.5);
+  --glow-under:rgba(217,207,243,0.3);
+  --sheet-bg:rgba(255,252,250,0.92);
+  --sheet-overlay:rgba(91,79,95,0.35);
+  --nav-bg:rgba(255,252,250,0.45);
+  --nav-border:rgba(255,255,255,0.45);
+  --nav-shadow:0 -2px 20px rgba(246,221,227,0.20),0 -8px 36px rgba(217,207,243,0.12);
+  --chip-bg:rgba(255,255,255,0.42);
+  --chip-bg-active:rgba(246,221,227,0.55);
+  --chip-shadow:0 2px 10px rgba(246,221,227,0.20),0 0 16px rgba(217,207,243,0.12);
+  --chip-shadow-active:0 0 18px rgba(243,211,218,0.35);
+  --input-bg:rgba(255,253,250,0.50);
+  --picker-bg:rgba(255,252,250,0.94);
+  --glass-blur:24px;
+  --glass-sat:1.8;
+  --sparkle-opacity:0.55;
   color-scheme:light;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   DARK MODE — Base Variables
+   DARK MODE — Warm Amber · Orange Glow
    ═══════════════════════════════════════════════════════════ */
 body.dark-mode{
   --bg-grad:linear-gradient(170deg,#080e1c 0%,#0c1628 30%,#101d35 55%,#0c1628 100%);
   --bg-solid:#080e1c;
-  --card-bg:rgba(18,30,52,0.55);--card-bg-solid:rgba(20,34,58,0.72);
-  --card-bg-alt:rgba(24,38,62,0.50);--card-border:rgba(200,160,110,0.18);
+  --card-bg:rgba(18,30,52,0.50);
+  --card-bg-solid:rgba(20,34,58,0.68);
+  --card-bg-alt:rgba(24,38,62,0.48);
+  --card-border:rgba(255,180,80,0.18);
   --card-shadow:
-    inset 0 1px 0 rgba(255,200,130,0.10),
+    0 0 20px rgba(255,180,80,0.06),
+    0 0 40px rgba(255,150,40,0.04),
+    inset 0 1.5px 0 rgba(255,200,130,0.12),
     inset 0 -0.5px 0 rgba(0,0,0,0.15),
-    0 2px 6px rgba(0,0,0,0.25),
-    0 10px 30px rgba(0,0,0,0.40),
-    0 22px 56px rgba(0,0,0,0.18),
-    0 0 24px rgba(255,155,50,0.06);
+    0 4px 14px rgba(0,0,0,0.25),
+    0 12px 32px rgba(0,0,0,0.18);
   --card-shadow-elevated:
-    inset 0 1px 0 rgba(255,200,130,0.14),
-    0 4px 10px rgba(0,0,0,0.30),
-    0 16px 44px rgba(0,0,0,0.48),
-    0 30px 72px rgba(0,0,0,0.22),
-    0 0 38px rgba(255,155,50,0.10);
-  --specular:linear-gradient(90deg,transparent 4%,rgba(255,170,80,0.08) 15%,rgba(255,200,130,0.16) 42%,rgba(255,200,130,0.18) 58%,rgba(255,170,80,0.08) 85%,transparent 96%);
-  --text-deep:#F0F2F5;--text-mid:#B0BEC9;--text-lt:#7E8FA0;
-  --blush:rgba(200,160,110,0.18);--rose:rgba(200,160,110,0.12);
+    0 0 24px rgba(255,180,80,0.10),
+    0 0 48px rgba(255,150,40,0.06),
+    inset 0 2px 0 rgba(255,200,130,0.16),
+    0 8px 22px rgba(0,0,0,0.30),
+    0 20px 50px rgba(0,0,0,0.22);
+  --specular:linear-gradient(105deg,transparent 2%,rgba(255,180,80,0.08) 12%,rgba(255,210,130,0.18) 35%,rgba(255,220,150,0.20) 50%,rgba(255,180,80,0.08) 70%,transparent 95%);
+  --text-deep:#F0F2F5;
+  --text-mid:#B0BEC9;
+  --text-lt:#7E8FA0;
+  --blush:rgba(200,160,110,0.18);
+  --rose:rgba(200,160,110,0.12);
   --cream:#080e1c;--warm:#162236;
   --ter:#d98b72;--mint:#7bc4ad;--sky:#8dbdd5;--gold:#e0b86a;
   --placeholder:#4a5a72;
-  --glow-primary:rgba(220,170,120,0.35);--glow-under:rgba(200,160,110,0.08);
-  --sheet-bg:rgba(12,22,40,0.96);--sheet-overlay:rgba(0,0,0,0.65);
-  --nav-bg:rgba(8,14,28,0.78);--nav-border:rgba(200,160,110,0.1);
-  --nav-shadow:0 -2px 24px rgba(0,0,0,0.45),0 0 16px rgba(200,160,110,0.03);
-  --chip-bg:rgba(18,30,52,0.60);--chip-bg-active:rgba(60,45,30,0.5);
-  --chip-shadow:0 2px 8px rgba(0,0,0,0.3);--chip-shadow-active:0 0 14px rgba(220,170,120,0.25);
-  --input-bg:rgba(24,38,62,0.65);--picker-bg:rgba(12,22,40,0.96);
-  --glass-blur:26px;--glass-sat:1.6;--sparkle-opacity:0.22;
+  --glow-primary:rgba(255,180,80,0.25);
+  --glow-under:rgba(255,150,40,0.10);
+  --sheet-bg:rgba(12,22,40,0.94);
+  --sheet-overlay:rgba(0,0,0,0.60);
+  --nav-bg:rgba(8,14,28,0.72);
+  --nav-border:rgba(255,180,80,0.10);
+  --nav-shadow:0 -2px 20px rgba(0,0,0,0.35),0 -8px 36px rgba(255,170,60,0.04);
+  --chip-bg:rgba(18,30,52,0.55);
+  --chip-bg-active:rgba(60,45,30,0.48);
+  --chip-shadow:0 2px 10px rgba(0,0,0,0.28),0 0 16px rgba(255,170,60,0.05);
+  --chip-shadow-active:0 0 18px rgba(255,170,60,0.18);
+  --input-bg:rgba(24,38,62,0.60);
+  --picker-bg:rgba(12,22,40,0.94);
+  --glass-blur:28px;
+  --glass-sat:1.6;
+  --sparkle-opacity:0.22;
   color-scheme:dark;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   BACKGROUND, SPARKLE, BODY
+   BACKGROUND · SPARKLE · BODY
    ═══════════════════════════════════════════════════════════ */
 body{background:var(--bg-grad);color:var(--text-deep);position:relative;min-height:100vh;}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(ellipse 90% 60% at 25% 15%,rgba(255,195,165,0.22),transparent),
-    radial-gradient(ellipse 70% 50% at 75% 55%,rgba(235,180,210,0.16),transparent),
-    radial-gradient(ellipse 60% 55% at 50% 0%,rgba(255,210,180,0.30),transparent 70%),
-    radial-gradient(ellipse 50% 40% at 50% 100%,rgba(255,200,170,0.12),transparent 60%);}
+  background:
+    radial-gradient(ellipse 90% 60% at 25% 15%,rgba(246,221,227,0.30),transparent),
+    radial-gradient(ellipse 70% 50% at 75% 55%,rgba(217,207,243,0.25),transparent),
+    radial-gradient(ellipse 60% 55% at 50% 0%,rgba(243,211,218,0.28),transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% 100%,rgba(207,195,236,0.18),transparent 60%);
+}
 body.dark-mode::before{
-  background:radial-gradient(ellipse 80% 50% at 20% 20%,rgba(200,160,110,0.06),transparent),
-    radial-gradient(ellipse 60% 40% at 80% 60%,rgba(140,100,170,0.04),transparent),
-    radial-gradient(ellipse 50% 50% at 50% 0%,rgba(200,160,110,0.08),transparent 65%);}
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%,rgba(255,160,60,0.08),transparent),
+    radial-gradient(ellipse 60% 40% at 80% 60%,rgba(255,140,40,0.05),transparent),
+    radial-gradient(ellipse 50% 50% at 50% 0%,rgba(255,180,80,0.09),transparent 65%);
+}
 
-/* SPARKLE */
+/* Sparkle: pink-lilac light, warm gold dark */
 body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:var(--sparkle-opacity);
   background-image:
-    radial-gradient(1.5px 1.5px at 3% 7%,rgba(255,255,255,0.9),transparent),
-    radial-gradient(1px 1px at 7% 22%,rgba(255,220,190,0.8),transparent),
+    radial-gradient(1.5px 1.5px at 3% 7%,rgba(246,221,227,0.9),transparent),
+    radial-gradient(1px 1px at 7% 22%,rgba(217,207,243,0.8),transparent),
     radial-gradient(2px 2px at 12% 45%,rgba(255,255,255,0.7),transparent),
-    radial-gradient(1px 1px at 16% 68%,rgba(255,200,170,0.7),transparent),
-    radial-gradient(1.5px 1.5px at 20% 85%,rgba(255,255,255,0.6),transparent),
-    radial-gradient(1px 1px at 25% 12%,rgba(255,220,190,0.75),transparent),
+    radial-gradient(1px 1px at 16% 68%,rgba(243,211,218,0.7),transparent),
+    radial-gradient(1.5px 1.5px at 20% 85%,rgba(207,195,236,0.6),transparent),
+    radial-gradient(1px 1px at 25% 12%,rgba(246,221,227,0.75),transparent),
     radial-gradient(2px 2px at 30% 35%,rgba(255,255,255,0.65),transparent),
-    radial-gradient(1px 1px at 34% 58%,rgba(255,200,170,0.6),transparent),
-    radial-gradient(1.5px 1.5px at 38% 78%,rgba(255,255,255,0.55),transparent),
-    radial-gradient(1px 1px at 42% 5%,rgba(255,220,190,0.7),transparent),
+    radial-gradient(1px 1px at 42% 5%,rgba(217,207,243,0.7),transparent),
     radial-gradient(2px 2px at 46% 28%,rgba(255,255,255,0.6),transparent),
-    radial-gradient(1px 1px at 50% 50%,rgba(255,200,170,0.55),transparent),
-    radial-gradient(1.5px 1.5px at 55% 72%,rgba(255,255,255,0.5),transparent),
-    radial-gradient(1px 1px at 59% 92%,rgba(255,220,190,0.65),transparent),
+    radial-gradient(1px 1px at 55% 72%,rgba(243,211,218,0.5),transparent),
     radial-gradient(2px 2px at 63% 15%,rgba(255,255,255,0.7),transparent),
-    radial-gradient(1px 1px at 67% 40%,rgba(255,200,170,0.6),transparent),
-    radial-gradient(1.5px 1.5px at 72% 62%,rgba(255,255,255,0.55),transparent),
-    radial-gradient(1px 1px at 76% 82%,rgba(255,220,190,0.5),transparent),
-    radial-gradient(2px 2px at 80% 8%,rgba(255,255,255,0.6),transparent),
-    radial-gradient(1px 1px at 84% 32%,rgba(255,200,170,0.55),transparent),
-    radial-gradient(1.5px 1.5px at 88% 55%,rgba(255,255,255,0.5),transparent),
-    radial-gradient(1px 1px at 92% 75%,rgba(255,220,190,0.45),transparent),
+    radial-gradient(1.5px 1.5px at 72% 62%,rgba(207,195,236,0.55),transparent),
+    radial-gradient(1px 1px at 84% 32%,rgba(246,221,227,0.55),transparent),
+    radial-gradient(1.5px 1.5px at 88% 55%,rgba(217,207,243,0.5),transparent),
     radial-gradient(2px 2px at 96% 18%,rgba(255,255,255,0.55),transparent),
-    radial-gradient(1px 1px at 98% 48%,rgba(255,200,170,0.5),transparent),
-    radial-gradient(1.5px 1.5px at 15% 30%,rgba(255,255,255,0.8),transparent),
-    radial-gradient(1px 1px at 48% 88%,rgba(255,220,190,0.7),transparent);
-  background-size:100% 100%;animation:sparkleShift 18s ease-in-out infinite alternate;}
+    radial-gradient(1.5px 1.5px at 15% 30%,rgba(243,211,218,0.8),transparent),
+    radial-gradient(1px 1px at 48% 88%,rgba(207,195,236,0.7),transparent);
+  background-size:100% 100%;animation:sparkleShift 18s ease-in-out infinite alternate;
+}
 body.dark-mode::after{background-image:
     radial-gradient(1px 1px at 5% 10%,rgba(255,220,160,0.6),transparent),
     radial-gradient(0.8px 0.8px at 12% 30%,rgba(255,255,255,0.3),transparent),
@@ -140,1110 +162,354 @@ body.dark-mode::after{background-image:
     radial-gradient(1px 1px at 35% 15%,rgba(255,220,160,0.45),transparent),
     radial-gradient(1.2px 1.2px at 42% 42%,rgba(255,255,255,0.3),transparent),
     radial-gradient(0.8px 0.8px at 50% 68%,rgba(255,200,140,0.35),transparent),
-    radial-gradient(1px 1px at 58% 8%,rgba(255,255,255,0.35),transparent),
-    radial-gradient(1.2px 1.2px at 65% 35%,rgba(255,220,160,0.4),transparent),
+    radial-gradient(1px 1px at 65% 35%,rgba(255,220,160,0.4),transparent),
     radial-gradient(0.8px 0.8px at 72% 60%,rgba(255,255,255,0.25),transparent),
     radial-gradient(1px 1px at 80% 22%,rgba(255,200,140,0.35),transparent),
-    radial-gradient(0.8px 0.8px at 95% 75%,rgba(255,220,160,0.3),transparent);}
+    radial-gradient(0.8px 0.8px at 95% 75%,rgba(255,220,160,0.3),transparent);
+}
 @keyframes sparkleShift{0%{transform:translateY(0) scale(1);opacity:var(--sparkle-opacity);}50%{transform:translateY(-3px) scale(1.01);opacity:calc(var(--sparkle-opacity)*1.15);}100%{transform:translateY(1px) scale(0.99);opacity:var(--sparkle-opacity);}}
 #root{position:relative;z-index:1;}
 
-/* Gender */
-body.boy header,body.boy .gender-accent{background:#eaf3fb!important;}
-body.girl header,body.girl .gender-accent{background:#fde7e4!important;}
-body.dark-mode.boy header,body.dark-mode.boy .gender-accent{background:rgba(26,42,61,0.8)!important;}
-body.dark-mode.girl header,body.dark-mode.girl .gender-accent{background:rgba(45,31,42,0.8)!important;}
+/* Gender accents */
+body.boy header,body.boy .gender-accent{background:rgba(234,243,251,0.50)!important;}
+body.girl header,body.girl .gender-accent{background:rgba(246,221,227,0.50)!important;}
+body.dark-mode.boy header,body.dark-mode.boy .gender-accent{background:rgba(26,42,61,0.65)!important;}
+body.dark-mode.girl header,body.dark-mode.girl .gender-accent{background:rgba(45,31,42,0.65)!important;}
 
 /* ═══════════════════════════════════════════════════════════
-   GLASS CARD — 3-Layer System (Original)
+   GLASS CARD — 3D Liquid Glass
    ═══════════════════════════════════════════════════════════ */
 .glass-card{
   position:relative;overflow:hidden;isolation:isolate;
   background:var(--card-bg);
   backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
   -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
-  border:1px solid var(--card-border);border-radius:20px;
+  border:1px solid var(--card-border);border-radius:22px;
   box-shadow:var(--card-shadow);
-  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1),box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
+  transform:perspective(900px) rotateX(0.15deg);transform-style:preserve-3d;
+  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1),box-shadow 0.3s ease;
 }
-.glass-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;pointer-events:none;z-index:3;background:var(--specular);border-radius:20px 20px 0 0;}
-.glass-card::after{content:"";position:absolute;bottom:0;left:8%;right:8%;height:1px;pointer-events:none;z-index:3;background:linear-gradient(90deg,transparent,rgba(0,0,0,0.04),transparent);}
-body.dark-mode .glass-card::after{background:linear-gradient(90deg,transparent,rgba(0,0,0,0.15),transparent);}
+.glass-card::before{content:"";position:absolute;top:0;left:0;right:0;height:48%;pointer-events:none;z-index:3;
+  background:linear-gradient(180deg,rgba(255,255,255,0.25) 0%,rgba(255,255,255,0.06) 40%,transparent 100%);
+  border-radius:22px 22px 0 0;mix-blend-mode:overlay;
+}
+body.dark-mode .glass-card::before{background:linear-gradient(180deg,rgba(255,200,130,0.07) 0%,transparent 100%);}
+.glass-card::after{content:"";position:absolute;bottom:0;left:5%;right:5%;height:1.5px;pointer-events:none;z-index:3;
+  background:linear-gradient(90deg,transparent,rgba(217,207,243,0.20),transparent);
+}
+body.dark-mode .glass-card::after{background:linear-gradient(90deg,transparent,rgba(255,170,60,0.12),transparent);}
 .glass-card>*{position:relative;z-index:2;}
-@media(hover:hover){.glass-card:hover{transform:translateY(-3px);box-shadow:var(--card-shadow-elevated);}}
+@media(hover:hover){.glass-card:hover{transform:perspective(900px) rotateX(0.15deg) translateY(-3px);box-shadow:var(--card-shadow-elevated);}}
 
 /* Glass entry */
 .glass-entry{
   position:relative;
-  backdrop-filter:blur(16px) saturate(1.6);-webkit-backdrop-filter:blur(16px) saturate(1.6);
-  box-shadow:inset 0 0.5px 0 rgba(255,255,255,0.5),0 2px 8px rgba(160,100,70,0.05),0 8px 22px rgba(160,100,70,0.04),0 0 16px rgba(255,170,80,0.08)!important;
+  backdrop-filter:blur(20px) saturate(1.7);-webkit-backdrop-filter:blur(20px) saturate(1.7);
+  box-shadow:
+    0 0 16px rgba(255,255,255,0.4),
+    0 0 32px rgba(255,220,230,0.25),
+    0 0 48px rgba(230,210,255,0.15),
+    inset 0 0.5px 0 rgba(255,255,255,0.60)!important;
 }
 body.dark-mode .glass-entry{box-shadow:inset 0 0.5px 0 rgba(255,200,130,0.08),0 2px 8px rgba(0,0,0,0.25),0 8px 22px rgba(0,0,0,0.18),0 0 18px rgba(255,155,50,0.05)!important;}
 .glass-entry::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;pointer-events:none;z-index:3;background:var(--specular);opacity:0.5;}
 
-/* Input fixes */
+/* ═══════════════════════════════════════════════════════════
+   TEXT VISIBILITY — Force readable contrast
+   ═══════════════════════════════════════════════════════════ */
+body.light-mode,body:not(.dark-mode){color:#5B4F5F;}
+body.light-mode .glass-card,body.light-mode .glass-entry,
+body:not(.dark-mode) .glass-card,body:not(.dark-mode) .glass-entry{color:#5B4F5F;}
+body.dark-mode .glass-card,body.dark-mode .glass-entry{color:#F0F2F5;}
+
+/* Child name & birthdate — always visible */
+div[style*="fontFamily:\"'Playfair Display'"]{color:var(--text-deep)!important;}
+/* Log entry text */
+div[data-entry-id],div[data-entry-id] div,div[data-entry-id] span{color:var(--text-deep);}
+body.dark-mode div[data-entry-id],body.dark-mode div[data-entry-id] div,body.dark-mode div[data-entry-id] span{color:var(--text-deep);}
+/* Sub-detail text under log entries */
+div[data-entry-id] div[style*="color"] { opacity:1!important; }
+/* Stat label text */
+div[style*="textTransform:\"uppercase\""][style*="letterSpacing"]{color:var(--text-mid)!important;opacity:1!important;}
+/* Age badge text */
+div[style*="borderRadius:99"][style*="padding:\"5px 14px\""] div{color:var(--text-deep)!important;}
+
+/* Dark mode input fixes */
 body.dark-mode input,body.dark-mode select,body.dark-mode textarea{background:var(--input-bg)!important;color:var(--text-deep)!important;border-color:var(--card-border)!important;}
 body.dark-mode input::placeholder{color:var(--placeholder)!important;}
 
-/* Buttons & interactions */
+/* ═══════════════════════════════════════════════════════════
+   BUTTONS — Glass + Glow
+   ═══════════════════════════════════════════════════════════ */
 button,a,[role="button"]{transition:transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.2s ease,background-color 0.25s ease,opacity 0.2s ease!important;-webkit-user-select:none;user-select:none;}
 button:active{transform:scale(0.95)!important;}
-@media(hover:hover){button:hover{opacity:0.9;}}
+@media(hover:hover){button:hover{opacity:0.92;}}
+button{position:relative!important;overflow:hidden!important;}
 
-/* CANDLELIGHT BUTTON GLOW */
-button[style*="linear-gradient(135deg"]{
-  box-shadow:0 4px 16px rgba(201,112,90,0.28),0 0 28px rgba(255,170,80,0.18),0 0 56px rgba(255,150,50,0.08)!important;
+/* CTA gradient buttons — pink-lilac glow light, amber dark */
+body.light-mode button[style*="linear-gradient(135deg"],body:not(.dark-mode) button[style*="linear-gradient(135deg"]{
+  box-shadow:0 0 20px rgba(255,255,255,0.5),0 0 36px rgba(246,221,227,0.35),0 0 56px rgba(217,207,243,0.20),0 4px 16px rgba(192,112,136,0.22)!important;
 }
 body.dark-mode button[style*="linear-gradient(135deg"]{
-  box-shadow:0 4px 16px rgba(217,139,114,0.32),0 0 28px rgba(255,160,60,0.16),0 0 56px rgba(255,140,40,0.06)!important;
+  box-shadow:0 4px 18px rgba(217,139,114,0.34),0 0 32px rgba(255,170,60,0.18),0 0 56px rgba(255,150,40,0.08)!important;
 }
-button[style*="borderRadius:99"]{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),0 2px 10px rgba(160,100,70,0.08),0 0 16px rgba(255,180,100,0.08)!important;
+/* Pill buttons */
+button[style*="borderRadius:99"]{backdrop-filter:blur(18px) saturate(1.7)!important;-webkit-backdrop-filter:blur(18px) saturate(1.7)!important;}
+body.light-mode button[style*="borderRadius:99"],body:not(.dark-mode) button[style*="borderRadius:99"]{
+  box-shadow:0 0 14px rgba(255,255,255,0.45),0 0 28px rgba(246,221,227,0.20),0 0 42px rgba(217,207,243,0.12),inset 0 1px 0 rgba(255,255,255,0.55)!important;
 }
 body.dark-mode button[style*="borderRadius:99"]{
-  box-shadow:inset 0 1px 0 rgba(255,200,130,0.06),0 2px 10px rgba(0,0,0,0.2),0 0 16px rgba(255,170,80,0.06)!important;
+  box-shadow:inset 0 1px 0 rgba(255,200,130,0.07),0 2px 10px rgba(0,0,0,0.25),0 0 18px rgba(255,170,60,0.06)!important;
 }
+/* Action grid buttons */
+button[style*="borderRadius:14"][style*="flexDirection"]{backdrop-filter:blur(22px) saturate(1.8)!important;-webkit-backdrop-filter:blur(22px) saturate(1.8)!important;}
+/* Pill segment buttons */
 button[style*="borderRadius:99"][style*="card-bg-solid"]{
-  backdrop-filter:blur(12px) saturate(1.5);-webkit-backdrop-filter:blur(12px) saturate(1.5);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.6),0 2px 8px rgba(160,100,70,0.06),0 0 14px rgba(255,180,100,0.10)!important;
+  backdrop-filter:blur(14px) saturate(1.6);-webkit-backdrop-filter:blur(14px) saturate(1.6);
 }
 
-/* Theme toggle — MUST stay visible above everything */
-#theme-toggle{
-  position:fixed;top:12px;right:12px;z-index:9999;
-  width:44px;height:44px;border-radius:50%;
-  border:1.5px solid rgba(255,200,240,0.50);
-  background:rgba(255,250,253,0.72);
-  backdrop-filter:blur(30px) saturate(2.0);
-  -webkit-backdrop-filter:blur(30px) saturate(2.0);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.70),
-    0 2px 10px rgba(220,160,220,0.18),
-    0 0 24px rgba(240,180,240,0.15),
-    0 4px 14px rgba(210,150,200,0.10);
-  cursor:pointer;font-size:18px;
-  display:flex;align-items:center;justify-content:center;
-}
-body.dark-mode #theme-toggle{
-  background:rgba(24,34,56,0.75);
-  border-color:rgba(255,180,80,0.22);
-  box-shadow:
-    inset 0 1px 0 rgba(255,200,130,0.10),
-    0 2px 10px rgba(0,0,0,0.35),
-    0 0 24px rgba(255,170,60,0.08),
-    0 4px 14px rgba(0,0,0,0.20);
-}
-#theme-toggle:active{transform:scale(0.85)!important;}
+/* ═══════════════════════════════════════════════════════════
+   THEME TOGGLE — Hidden fixed button, now inline in header
+   ═══════════════════════════════════════════════════════════ */
+#theme-toggle{display:none!important;}
 
 /* Selection */
 ::selection{background:var(--ter);color:white;}
 body.dark-mode ::selection{background:rgba(217,139,114,0.4);color:white;}
 
-/* Text visibility on glass */
-body.light-mode .glass-card,body.light-mode .glass-entry{color:#2c1f1a;}
-body.dark-mode .glass-card,body.dark-mode .glass-entry{color:#F0F2F5;}
-
 /* Tinted glass */
-body.light-mode div[style*="#c0a8f0"],body.light-mode div[style*="#a080d8"]{background:linear-gradient(135deg,rgba(192,168,240,0.12),rgba(160,128,216,0.06))!important;}
-body.light-mode div[style*="#f5c840"],body.light-mode div[style*="#e8a820"]{background:linear-gradient(135deg,rgba(245,200,64,0.12),rgba(232,168,32,0.06))!important;}
+body.light-mode div[style*="#c0a8f0"],body.light-mode div[style*="#a080d8"]{background:linear-gradient(135deg,rgba(217,207,243,0.15),rgba(207,195,236,0.08))!important;}
 
-/* ═══════════════════════════════════════════════════════════════════
-   ✨ APPLE LIQUID GLASS ENHANCEMENT
-   Light: Pink / Purple 3D glass glow
-   Dark:  Orange / Yellow 3D glass glow
-   Translucent but readable — 3D depth on everything
-   ═══════════════════════════════════════════════════════════════════ */
+/* Inputs */
+input,select,textarea{backdrop-filter:blur(14px) saturate(1.5)!important;-webkit-backdrop-filter:blur(14px) saturate(1.5)!important;}
+body.light-mode input,body:not(.dark-mode) input,body.light-mode select,body:not(.dark-mode) select,body.light-mode textarea,body:not(.dark-mode) textarea{
+  box-shadow:inset 0 1px 3px rgba(217,207,243,0.10),0 0 12px rgba(246,221,227,0.10)!important;
+}
+body.dark-mode input,body.dark-mode select,body.dark-mode textarea{box-shadow:inset 0 1px 3px rgba(0,0,0,0.22),0 0 12px rgba(255,170,60,0.05)!important;}
 
-/* ── LIGHT: Pink-Purple Liquid Glass Override ── */
-:root,body,body.light-mode{
-  --glass-blur:32px!important;--glass-sat:2.0!important;--sparkle-opacity:0.70!important;
-  --card-bg:rgba(255,245,252,0.35)!important;
-  --card-bg-solid:rgba(255,248,253,0.55)!important;
-  --card-bg-alt:rgba(255,242,250,0.42)!important;
-  --card-border:rgba(255,200,240,0.50)!important;
-  --card-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,0.85),
-    inset 0 -1px 0 rgba(200,150,200,0.06),
-    0 1px 2px rgba(210,150,190,0.08),
-    0 4px 12px rgba(210,150,190,0.10),
-    0 12px 32px rgba(210,150,190,0.08),
-    0 0 24px rgba(240,180,230,0.18),
-    0 0 52px rgba(230,170,250,0.08)!important;
-  --card-shadow-elevated:
-    inset 0 2px 0 rgba(255,255,255,0.90),
-    inset 0 -1px 0 rgba(200,150,200,0.08),
-    0 2px 4px rgba(210,150,190,0.10),
-    0 8px 20px rgba(210,150,190,0.14),
-    0 20px 50px rgba(210,150,190,0.10),
-    0 0 36px rgba(240,180,230,0.22),
-    0 0 68px rgba(230,170,250,0.10)!important;
-  --specular:linear-gradient(105deg,transparent 2%,rgba(255,220,245,0.30) 12%,rgba(255,255,255,0.50) 35%,rgba(255,255,255,0.55) 50%,rgba(255,220,245,0.30) 70%,transparent 95%)!important;
-  --chip-bg:rgba(255,240,252,0.42)!important;
-  --chip-bg-active:rgba(255,225,245,0.62)!important;
-  --chip-shadow:0 2px 10px rgba(220,160,220,0.15),0 0 18px rgba(240,180,250,0.10)!important;
-  --chip-shadow-active:0 0 18px rgba(240,180,240,0.30)!important;
-  --nav-bg:rgba(255,248,253,0.42)!important;
-  --nav-border:rgba(255,210,245,0.40)!important;
-  --nav-shadow:0 -2px 20px rgba(220,160,230,0.15),0 -8px 40px rgba(210,150,220,0.06)!important;
-  --input-bg:rgba(255,250,253,0.48)!important;
-  --sheet-bg:rgba(252,246,252,0.90)!important;
-  --picker-bg:rgba(255,250,254,0.92)!important;
-  --bg-grad:linear-gradient(170deg,#f8eff5 0%,#f3e2ef 30%,#efe0ec 50%,#f5e8f2 75%,#f8eff5 100%)!important;
-  --sheet-overlay:rgba(60,30,50,0.45)!important;
-  --blush:rgba(240,200,230,0.45)!important;
+/* Nav bar */
+div[style*="position:\"fixed\""][style*="bottom:0"]{backdrop-filter:blur(36px) saturate(2.0)!important;-webkit-backdrop-filter:blur(36px) saturate(2.0)!important;}
+body.light-mode div[style*="position:\"fixed\""][style*="bottom:0"],body:not(.dark-mode) div[style*="position:\"fixed\""][style*="bottom:0"]{
+  background:radial-gradient(ellipse 50% 100% at 50% 0%,rgba(246,221,227,0.12),transparent 60%),rgba(255,252,250,0.48)!important;
 }
 
-/* ── DARK: Orange-Yellow Liquid Glass Override ── */
-body.dark-mode{
-  --glass-blur:36px!important;--glass-sat:1.8!important;--sparkle-opacity:0.28!important;
-  --card-bg:rgba(20,28,48,0.48)!important;
-  --card-bg-solid:rgba(24,34,56,0.65)!important;
-  --card-bg-alt:rgba(26,38,60,0.45)!important;
-  --card-border:rgba(255,180,80,0.20)!important;
-  --card-shadow:
-    inset 0 1.5px 0 rgba(255,200,130,0.14),
-    inset 0 -1px 0 rgba(0,0,0,0.18),
-    0 1px 2px rgba(0,0,0,0.22),
-    0 4px 12px rgba(0,0,0,0.28),
-    0 12px 32px rgba(0,0,0,0.18),
-    0 0 24px rgba(255,170,60,0.10),
-    0 0 52px rgba(255,150,40,0.05)!important;
-  --card-shadow-elevated:
-    inset 0 2px 0 rgba(255,200,130,0.18),
-    inset 0 -1px 0 rgba(0,0,0,0.22),
-    0 2px 4px rgba(0,0,0,0.28),
-    0 8px 20px rgba(0,0,0,0.34),
-    0 20px 50px rgba(0,0,0,0.22),
-    0 0 36px rgba(255,170,60,0.14),
-    0 0 68px rgba(255,150,40,0.06)!important;
-  --specular:linear-gradient(105deg,transparent 2%,rgba(255,180,80,0.08) 12%,rgba(255,210,130,0.18) 35%,rgba(255,220,150,0.20) 50%,rgba(255,180,80,0.08) 70%,transparent 95%)!important;
-  --chip-bg:rgba(30,42,65,0.50)!important;
-  --chip-bg-active:rgba(70,55,35,0.48)!important;
-  --chip-shadow:0 2px 10px rgba(0,0,0,0.28),0 0 18px rgba(255,170,60,0.06)!important;
-  --nav-bg:rgba(10,16,30,0.65)!important;
-  --nav-border:rgba(255,180,80,0.12)!important;
-  --nav-shadow:0 -2px 20px rgba(0,0,0,0.38),0 -8px 40px rgba(255,170,60,0.04)!important;
-  --input-bg:rgba(28,40,64,0.55)!important;
-  --sheet-bg:rgba(14,22,42,0.92)!important;
-  --picker-bg:rgba(14,22,42,0.94)!important;
-  --bg-grad:linear-gradient(170deg,#060c1a 0%,#0a1424 30%,#0e1a30 55%,#0a1424 100%)!important;
-  --sheet-overlay:rgba(0,0,0,0.65)!important;
-  --blush:rgba(255,180,80,0.12)!important;
+/* Sheets / Modals */
+div[style*="borderRadius:\"24px 24px 0 0\""],div[style*="borderRadius:24px 24px 0 0"]{backdrop-filter:blur(40px) saturate(2.0)!important;-webkit-backdrop-filter:blur(40px) saturate(2.0)!important;}
+body.light-mode div[style*="borderRadius:\"24px 24px 0 0\""],body:not(.dark-mode) div[style*="borderRadius:\"24px 24px 0 0\""],body.light-mode div[style*="borderRadius:24px 24px 0 0"],body:not(.dark-mode) div[style*="borderRadius:24px 24px 0 0"]{
+  background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(246,221,227,0.14),transparent 55%),rgba(255,252,250,0.92)!important;
+  box-shadow:0 -8px 40px rgba(217,207,243,0.18),inset 0 1px 0 rgba(255,255,255,0.65)!important;
 }
-
-/* ── Background orbs: pink/purple light, orange dark ── */
-body.light-mode::before,body:not(.dark-mode)::before{
-  background:radial-gradient(ellipse 90% 60% at 25% 15%,rgba(220,160,240,0.28),transparent),radial-gradient(ellipse 70% 50% at 75% 55%,rgba(240,180,220,0.20),transparent),radial-gradient(ellipse 60% 55% at 50% 0%,rgba(230,170,240,0.30),transparent 70%),radial-gradient(ellipse 50% 40% at 50% 100%,rgba(255,200,235,0.16),transparent 60%)!important;
-}
-body.dark-mode::before{
-  background:radial-gradient(ellipse 80% 50% at 20% 20%,rgba(255,160,60,0.09),transparent),radial-gradient(ellipse 60% 40% at 80% 60%,rgba(255,140,40,0.06),transparent),radial-gradient(ellipse 50% 50% at 50% 0%,rgba(255,180,80,0.10),transparent 65%)!important;
-}
-
-/* ── Sparkle: pink tint light, warm gold dark ── */
-body.light-mode::after,body:not(.dark-mode)::after{
-  background-image:radial-gradient(1.5px 1.5px at 3% 7%,rgba(255,200,240,0.9),transparent),radial-gradient(1px 1px at 7% 22%,rgba(255,180,230,0.8),transparent),radial-gradient(2px 2px at 12% 45%,rgba(255,220,250,0.7),transparent),radial-gradient(1px 1px at 16% 68%,rgba(240,180,240,0.7),transparent),radial-gradient(1.5px 1.5px at 20% 85%,rgba(255,255,255,0.6),transparent),radial-gradient(1px 1px at 25% 12%,rgba(255,200,240,0.75),transparent),radial-gradient(2px 2px at 30% 35%,rgba(255,255,255,0.65),transparent),radial-gradient(1px 1px at 34% 58%,rgba(240,180,240,0.6),transparent),radial-gradient(1.5px 1.5px at 38% 78%,rgba(255,220,250,0.55),transparent),radial-gradient(1px 1px at 42% 5%,rgba(255,200,240,0.7),transparent),radial-gradient(2px 2px at 46% 28%,rgba(255,255,255,0.6),transparent),radial-gradient(1px 1px at 50% 50%,rgba(240,180,240,0.55),transparent),radial-gradient(1.5px 1.5px at 55% 72%,rgba(255,220,250,0.5),transparent),radial-gradient(1px 1px at 59% 92%,rgba(255,200,240,0.65),transparent),radial-gradient(2px 2px at 63% 15%,rgba(255,255,255,0.7),transparent),radial-gradient(1px 1px at 67% 40%,rgba(240,180,240,0.6),transparent),radial-gradient(1.5px 1.5px at 72% 62%,rgba(255,220,250,0.55),transparent),radial-gradient(1px 1px at 76% 82%,rgba(255,200,240,0.5),transparent),radial-gradient(2px 2px at 80% 8%,rgba(255,255,255,0.6),transparent),radial-gradient(1px 1px at 84% 32%,rgba(240,180,240,0.55),transparent),radial-gradient(1.5px 1.5px at 88% 55%,rgba(255,220,250,0.5),transparent),radial-gradient(1px 1px at 92% 75%,rgba(255,200,240,0.45),transparent),radial-gradient(2px 2px at 96% 18%,rgba(255,255,255,0.55),transparent),radial-gradient(1px 1px at 98% 48%,rgba(240,180,240,0.5),transparent),radial-gradient(1.5px 1.5px at 15% 30%,rgba(255,220,250,0.8),transparent),radial-gradient(1px 1px at 48% 88%,rgba(255,200,240,0.7),transparent)!important;
-}
-
-/* ── GLASS CARD — Enhanced 3D Liquid Glass ── */
-.glass-card{
-  background:var(--card-bg)!important;
-  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
-  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat))!important;
-  border:1.5px solid var(--card-border)!important;
-  border-radius:22px!important;
-  box-shadow:var(--card-shadow)!important;
-  transform:perspective(900px) rotateX(0.2deg);
-  transform-style:preserve-3d;
-}
-.glass-card::before{
-  content:""!important;position:absolute!important;top:0!important;left:0!important;right:0!important;
-  height:48%!important;
-  background:linear-gradient(180deg,rgba(255,255,255,0.22) 0%,rgba(255,255,255,0.06) 40%,transparent 100%)!important;
-  border-radius:22px 22px 0 0!important;pointer-events:none!important;z-index:3!important;
-  mix-blend-mode:overlay;
-}
-body.dark-mode .glass-card::before{
-  background:linear-gradient(180deg,rgba(255,200,130,0.08) 0%,rgba(255,200,130,0.02) 40%,transparent 100%)!important;
-}
-.glass-card::after{height:1.5px!important}
-body.light-mode .glass-card::after,body:not(.dark-mode) .glass-card::after{
-  background:linear-gradient(90deg,transparent,rgba(220,160,230,0.18),transparent)!important;
-}
-body.dark-mode .glass-card::after{
-  background:linear-gradient(90deg,transparent,rgba(255,170,60,0.14),transparent)!important;
-}
-@media(hover:hover){.glass-card:hover{transform:perspective(900px) rotateX(0.2deg) translateY(-3px)!important;box-shadow:var(--card-shadow-elevated)!important}}
-
-/* ── Glass Entry — Enhanced ── */
-.glass-entry{
-  backdrop-filter:blur(26px) saturate(1.9)!important;
-  -webkit-backdrop-filter:blur(26px) saturate(1.9)!important;
-}
-body.light-mode .glass-entry,body:not(.dark-mode) .glass-entry{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.65),0 2px 8px rgba(220,160,220,0.10),0 8px 24px rgba(210,150,210,0.06),0 0 20px rgba(240,180,240,0.14)!important;
-}
-body.dark-mode .glass-entry{
-  box-shadow:inset 0 1px 0 rgba(255,200,130,0.08),0 2px 8px rgba(0,0,0,0.28),0 8px 24px rgba(0,0,0,0.18),0 0 20px rgba(255,170,60,0.06)!important;
+body.dark-mode div[style*="borderRadius:\"24px 24px 0 0\""],body.dark-mode div[style*="borderRadius:24px 24px 0 0"]{
+  background:rgba(14,22,42,0.92)!important;box-shadow:0 -8px 40px rgba(0,0,0,0.40),inset 0 1px 0 rgba(255,200,130,0.08)!important;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ELEMENT-SPECIFIC LIQUID GLASS
-   Every interactive element gets depth + glow
+   ELEMENT-SPECIFIC GLASS + GRADIENT GLOW
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Log entry rows ── */
-div[data-entry-id]{
-  backdrop-filter:blur(24px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(24px) saturate(1.8)!important;
-  position:relative!important;overflow:hidden!important;
-}
+div[data-entry-id]{backdrop-filter:blur(22px) saturate(1.8)!important;-webkit-backdrop-filter:blur(22px) saturate(1.8)!important;position:relative!important;overflow:hidden!important;}
 body.light-mode div[data-entry-id],body:not(.dark-mode) div[data-entry-id]{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.60),0 2px 8px rgba(220,160,220,0.10),0 8px 22px rgba(210,150,210,0.06),0 0 18px rgba(240,180,240,0.12)!important;
+  box-shadow:0 0 16px rgba(255,255,255,0.45),0 0 32px rgba(246,221,227,0.20),0 0 48px rgba(217,207,243,0.12),inset 0 1px 0 rgba(255,255,255,0.60)!important;
+  background:radial-gradient(ellipse 70% 120% at 0% 50%,rgba(246,221,227,0.14),transparent 45%),radial-gradient(ellipse 80% 100% at 100% 30%,rgba(217,207,243,0.10),transparent 50%),var(--card-bg)!important;
 }
-body.dark-mode div[data-entry-id]{
-  box-shadow:inset 0 1px 0 rgba(255,200,130,0.08),0 2px 8px rgba(0,0,0,0.28),0 8px 22px rgba(0,0,0,0.18),0 0 18px rgba(255,170,60,0.06)!important;
-}
+body.dark-mode div[data-entry-id]{box-shadow:inset 0 1px 0 rgba(255,200,130,0.08),0 2px 8px rgba(0,0,0,0.28),0 0 18px rgba(255,170,60,0.06)!important;}
 /* 3D top-shine on entries */
-div[data-entry-id]::after{
-  content:"";position:absolute;top:0;left:0;right:0;height:42%;
-  background:linear-gradient(180deg,rgba(255,255,255,0.14) 0%,transparent 100%);
-  pointer-events:none;z-index:4;border-radius:inherit;
-}
-body.dark-mode div[data-entry-id]::after{
-  background:linear-gradient(180deg,rgba(255,200,130,0.05) 0%,transparent 100%);
-}
+div[data-entry-id]::after{content:"";position:absolute;top:0;left:0;right:0;height:42%;background:linear-gradient(180deg,rgba(255,255,255,0.16) 0%,transparent 100%);pointer-events:none;z-index:4;border-radius:inherit;}
+body.dark-mode div[data-entry-id]::after{background:linear-gradient(180deg,rgba(255,200,130,0.05) 0%,transparent 100%);}
 
-/* ── Buttons — glass treatment ── */
-button{position:relative!important;overflow:hidden!important}
-
-/* Gradient CTA buttons — pink/purple glow light, orange dark */
-body.light-mode button[style*="linear-gradient(135deg"],body:not(.dark-mode) button[style*="linear-gradient(135deg"]{
-  box-shadow:0 4px 18px rgba(201,112,90,0.30),0 0 32px rgba(240,180,230,0.18),0 0 56px rgba(230,170,250,0.08)!important;
+/* ── PIN pad ── */
+div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{backdrop-filter:blur(16px) saturate(1.6)!important;-webkit-backdrop-filter:blur(16px) saturate(1.6)!important;}
+body.light-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button,body:not(.dark-mode) div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
+  box-shadow:0 0 12px rgba(255,255,255,0.40),0 0 24px rgba(246,221,227,0.15),0 0 36px rgba(217,207,243,0.08),inset 0 1px 0 rgba(255,255,255,0.50)!important;
+  background:radial-gradient(circle at 50% 40%,rgba(246,221,227,0.14),transparent 60%),var(--card-bg-solid)!important;
 }
-body.dark-mode button[style*="linear-gradient(135deg"]{
-  box-shadow:0 4px 18px rgba(217,139,114,0.34),0 0 32px rgba(255,170,60,0.16),0 0 56px rgba(255,150,40,0.06)!important;
-}
-
-/* Pill buttons */
-button[style*="borderRadius:99"]{
-  backdrop-filter:blur(18px) saturate(1.7)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.7)!important;
-}
-body.light-mode button[style*="borderRadius:99"],body:not(.dark-mode) button[style*="borderRadius:99"]{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.50),0 2px 10px rgba(220,160,220,0.14),0 0 18px rgba(240,180,240,0.10)!important;
-}
-body.dark-mode button[style*="borderRadius:99"]{
-  box-shadow:inset 0 1px 0 rgba(255,200,130,0.07),0 2px 10px rgba(0,0,0,0.25),0 0 18px rgba(255,170,60,0.06)!important;
-}
-
-/* Action grid buttons (Feed, Nappy, Sleep, Notes, Pump, Wake) */
-button[style*="borderRadius:14"][style*="flexDirection"]{
-  backdrop-filter:blur(22px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(22px) saturate(1.8)!important;
-}
-
-/* ── Inputs ── */
-input,select,textarea{
-  backdrop-filter:blur(14px) saturate(1.5)!important;
-  -webkit-backdrop-filter:blur(14px) saturate(1.5)!important;
-}
-body.light-mode input,body:not(.dark-mode) input,
-body.light-mode select,body:not(.dark-mode) select,
-body.light-mode textarea,body:not(.dark-mode) textarea{
-  box-shadow:inset 0 1px 3px rgba(210,150,210,0.08),0 0 12px rgba(240,180,240,0.08)!important;
-}
-body.dark-mode input,body.dark-mode select,body.dark-mode textarea{
-  box-shadow:inset 0 1px 3px rgba(0,0,0,0.22),0 0 12px rgba(255,170,60,0.05)!important;
-}
-
-/* ── Navigation bar ── */
-div[style*="position:\"fixed\""][style*="bottom:0"]{
-  backdrop-filter:blur(38px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(38px) saturate(2.0)!important;
-}
-
-/* ── Sheets / Modals ── */
-div[style*="borderRadius:\"24px 24px 0 0\""],
-div[style*="borderRadius:24px 24px 0 0"]{
-  backdrop-filter:blur(42px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(42px) saturate(2.0)!important;
-}
-body.light-mode div[style*="borderRadius:\"24px 24px 0 0\""],
-body:not(.dark-mode) div[style*="borderRadius:\"24px 24px 0 0\""],
-body.light-mode div[style*="borderRadius:24px 24px 0 0"],
-body:not(.dark-mode) div[style*="borderRadius:24px 24px 0 0"]{
-  background:rgba(252,246,253,0.88)!important;
-  box-shadow:0 -8px 40px rgba(220,160,230,0.18),inset 0 1px 0 rgba(255,255,255,0.65)!important;
-}
-body.dark-mode div[style*="borderRadius:\"24px 24px 0 0\""],
-body.dark-mode div[style*="borderRadius:24px 24px 0 0"]{
-  background:rgba(14,22,42,0.90)!important;
-  box-shadow:0 -8px 40px rgba(0,0,0,0.40),inset 0 1px 0 rgba(255,200,130,0.08)!important;
-}
-
-/* ── Theme toggle — already styled above with solid bg, just ensure z-index ── */
-#theme-toggle{z-index:9999!important;}
-
-/* ── PIN pad buttons ── */
-div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
-  backdrop-filter:blur(16px) saturate(1.6)!important;
-  -webkit-backdrop-filter:blur(16px) saturate(1.6)!important;
-}
-body.light-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button,
-body:not(.dark-mode) div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.50),0 2px 8px rgba(220,160,220,0.10),0 0 14px rgba(240,180,240,0.08)!important;
-}
-body.dark-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
-  box-shadow:inset 0 1px 0 rgba(255,200,130,0.06),0 2px 8px rgba(0,0,0,0.25),0 0 14px rgba(255,170,60,0.04)!important;
-}
+body.dark-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{box-shadow:inset 0 1px 0 rgba(255,200,130,0.06),0 2px 8px rgba(0,0,0,0.25)!important;}
 
 /* ── Quick log row ── */
-div[style*="borderRadius:18"][style*="gap:4"]{
-  backdrop-filter:blur(30px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(30px) saturate(2.0)!important;
+div[style*="borderRadius:18"][style*="gap:4"]{backdrop-filter:blur(28px) saturate(1.9)!important;-webkit-backdrop-filter:blur(28px) saturate(1.9)!important;}
+body.light-mode div[style*="borderRadius:18"][style*="gap:4"],body:not(.dark-mode) div[style*="borderRadius:18"][style*="gap:4"]{
+  background:radial-gradient(ellipse 60% 100% at 15% 50%,rgba(246,221,227,0.14),transparent 50%),radial-gradient(ellipse 60% 100% at 85% 50%,rgba(217,207,243,0.12),transparent 50%),var(--card-bg)!important;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   WELCOME / ONBOARDING — Full Liquid Glass + Gradient Glow
-   Everything: pink/purple glow
-   Get Started button: YELLOW / ORANGE glow
+   PERSONAL/NHS PILL — Match aesthetic
+   ═══════════════════════════════════════════════════════════ */
+div[style*="display:\"inline-flex\""][style*="borderRadius:99"]{
+  backdrop-filter:blur(20px) saturate(1.8)!important;-webkit-backdrop-filter:blur(20px) saturate(1.8)!important;
+}
+body.light-mode div[style*="display:\"inline-flex\""][style*="borderRadius:99"],
+body:not(.dark-mode) div[style*="display:\"inline-flex\""][style*="borderRadius:99"]{
+  background:rgba(255,255,255,0.40)!important;
+  border-color:rgba(255,255,255,0.45)!important;
+  box-shadow:0 0 14px rgba(255,255,255,0.45),0 0 28px rgba(246,221,227,0.18),0 0 42px rgba(217,207,243,0.10)!important;
+}
+/* Personal button active */
+button[style*="linear-gradient(135deg,#50a888"]{
+  box-shadow:0 0 14px rgba(255,255,255,0.3),0 2px 8px rgba(111,168,152,0.20)!important;
+}
+/* NHS button active */
+button[style*="background:\"#4a5a80\""]{
+  box-shadow:0 0 14px rgba(255,255,255,0.3),0 2px 8px rgba(74,90,128,0.20)!important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAP/BEDTIME COUNTDOWN & TIMER PILLS — Match aesthetic
+   ═══════════════════════════════════════════════════════════ */
+/* The countdown pill (marginLeft:auto, borderRadius:99) */
+button[style*="marginLeft:\"auto\""][style*="borderRadius:99"]{
+  backdrop-filter:blur(20px) saturate(1.8)!important;-webkit-backdrop-filter:blur(20px) saturate(1.8)!important;
+}
+body.light-mode button[style*="marginLeft:\"auto\""][style*="borderRadius:99"],
+body:not(.dark-mode) button[style*="marginLeft:\"auto\""][style*="borderRadius:99"]{
+  background:radial-gradient(ellipse 120% 150% at 50% 40%,rgba(246,221,227,0.16),transparent 60%),var(--card-bg)!important;
+  border:1px solid rgba(255,255,255,0.40)!important;
+  box-shadow:0 0 14px rgba(255,255,255,0.45),0 0 28px rgba(246,221,227,0.18),0 0 42px rgba(217,207,243,0.10),inset 0 1px 0 rgba(255,255,255,0.50)!important;
+}
+/* Active nap/bed state overrides with matching mint/sky + glow */
+button[style*="marginLeft:\"auto\""][style*="background:\"#6fa898\""],
+button[style*="marginLeft:\"auto\""][style*="background:\"rgba(111,168,152"]{
+  box-shadow:0 0 16px rgba(111,168,152,0.35),0 0 32px rgba(111,168,152,0.18),inset 0 1px 0 rgba(255,255,255,0.30)!important;
+}
+button[style*="marginLeft:\"auto\""][style*="background:\"#7aabc4\""],
+button[style*="marginLeft:\"auto\""][style*="background:\"rgba(122,171,196"]{
+  box-shadow:0 0 16px rgba(122,171,196,0.35),0 0 32px rgba(122,171,196,0.18),inset 0 1px 0 rgba(255,255,255,0.30)!important;
+}
+
+/* Start Feed pill in header */
+button[style*="🤱 Start Feed"],
+button[style*="Start Feed"]{
+  backdrop-filter:blur(18px) saturate(1.7)!important;-webkit-backdrop-filter:blur(18px) saturate(1.7)!important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GRADIENT GLOW BACKGROUNDS — Every element
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Hero baby image frame — pink/purple glass frame with floating glow ── */
-div[style*="borderRadius:36"][style*="overflow:\"hidden\""][style*="animation"]{
-  border:2px solid rgba(255,200,240,0.55)!important;
-  backdrop-filter:blur(20px) saturate(1.8);
-  -webkit-backdrop-filter:blur(20px) saturate(1.8);
+/* Glass cards */
+body.light-mode .glass-card,body:not(.dark-mode) .glass-card{
+  background:radial-gradient(ellipse 120% 80% at 30% 20%,rgba(246,221,227,0.16),transparent 60%),radial-gradient(ellipse 100% 90% at 70% 80%,rgba(217,207,243,0.12),transparent 55%),var(--card-bg)!important;
 }
-body.light-mode div[style*="borderRadius:36"][style*="overflow:\"hidden\""][style*="animation"],
-body:not(.dark-mode) div[style*="borderRadius:36"][style*="overflow:\"hidden\""][style*="animation"]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.80),
-    0 12px 28px rgba(220,160,230,0.22),
-    0 24px 52px rgba(210,150,220,0.15),
-    0 0 40px rgba(240,180,240,0.22),
-    0 0 70px rgba(230,160,250,0.12),
-    0 0 100px rgba(220,150,240,0.06)!important;
+body.dark-mode .glass-card{background:radial-gradient(ellipse 120% 80% at 30% 20%,rgba(255,180,60,0.06),transparent 60%),var(--card-bg)!important;}
+
+/* Glass entries */
+body.light-mode .glass-entry,body:not(.dark-mode) .glass-entry{
+  background:radial-gradient(ellipse 80% 100% at 0% 50%,rgba(246,221,227,0.14),transparent 50%),radial-gradient(ellipse 60% 100% at 100% 50%,rgba(217,207,243,0.10),transparent 45%),var(--card-bg)!important;
+}
+body.dark-mode .glass-entry{background:radial-gradient(ellipse 80% 100% at 0% 50%,rgba(255,170,60,0.05),transparent 50%),var(--card-bg)!important;}
+
+/* Action grid buttons */
+body.light-mode button[style*="borderRadius:14"][style*="flexDirection"],body:not(.dark-mode) button[style*="borderRadius:14"][style*="flexDirection"]{
+  background:radial-gradient(ellipse 100% 100% at 50% 30%,rgba(246,221,227,0.18),transparent 65%),radial-gradient(ellipse 80% 80% at 50% 90%,rgba(217,207,243,0.12),transparent 55%),var(--card-bg)!important;
+}
+body.dark-mode button[style*="borderRadius:14"][style*="flexDirection"]{background:radial-gradient(ellipse 100% 100% at 50% 30%,rgba(255,180,60,0.08),transparent 65%),var(--card-bg)!important;}
+
+/* Stat boxes */
+body.light-mode div[style*="textAlign:\"center\""][style*="borderRadius:16"],body:not(.dark-mode) div[style*="textAlign:\"center\""][style*="borderRadius:16"]{
+  background:radial-gradient(ellipse 100% 100% at 50% 25%,rgba(246,221,227,0.18),transparent 60%),radial-gradient(ellipse 80% 80% at 50% 85%,rgba(217,207,243,0.12),transparent 50%),var(--card-bg)!important;
+}
+
+/* Date strip pills */
+body.light-mode div[style*="overflowX:\"auto\""] > div[style*="borderRadius:20"],body:not(.dark-mode) div[style*="overflowX:\"auto\""] > div[style*="borderRadius:20"]{
+  background:radial-gradient(ellipse 100% 150% at 50% 30%,rgba(246,221,227,0.16),transparent 60%),rgba(255,255,255,0.42)!important;
+}
+
+/* Alert / insight cards — edge glow */
+body.light-mode div[style*="borderLeft:\"4px solid\""],body:not(.dark-mode) div[style*="borderLeft:\"4px solid\""]{
+  background:radial-gradient(ellipse 60% 100% at 0% 50%,rgba(246,221,227,0.14),transparent 45%),var(--card-bg)!important;
+}
+body.light-mode div[style*="borderLeft:\"3px solid\""],body:not(.dark-mode) div[style*="borderLeft:\"3px solid\""]{
+  background:radial-gradient(ellipse 60% 100% at 0% 50%,rgba(217,207,243,0.12),transparent 40%),var(--card-bg)!important;
+}
+body.dark-mode div[style*="borderLeft:\"4px solid\""]{background:radial-gradient(ellipse 60% 100% at 0% 50%,rgba(255,175,55,0.05),transparent 45%),var(--card-bg)!important;}
+
+/* Collapsible sections */
+body.light-mode div[style*="borderRadius:\"0 0 16px 16px\""],body:not(.dark-mode) div[style*="borderRadius:\"0 0 16px 16px\""]{
+  background:radial-gradient(ellipse 80% 40% at 50% 100%,rgba(217,207,243,0.12),transparent 50%),var(--card-bg-solid)!important;
+  backdrop-filter:blur(26px) saturate(1.8)!important;-webkit-backdrop-filter:blur(26px) saturate(1.8)!important;
+}
+body.dark-mode div[style*="borderRadius:\"0 0 16px 16px\""]{backdrop-filter:blur(26px) saturate(1.8)!important;-webkit-backdrop-filter:blur(26px) saturate(1.8)!important;}
+
+/* Activity cards */
+div[style*="borderRadius:16"][style*="padding:\"14px\""]{backdrop-filter:blur(22px) saturate(1.7)!important;-webkit-backdrop-filter:blur(22px) saturate(1.7)!important;}
+/* Growth banner */
+div[style*="borderRadius:20"][style*="overflow:\"hidden\""]{backdrop-filter:blur(26px) saturate(1.8)!important;-webkit-backdrop-filter:blur(26px) saturate(1.8)!important;}
+/* Family modal */
+div[style*="maxHeight:\"85vh\""][style*="overflowY"]{backdrop-filter:blur(36px) saturate(2.0)!important;-webkit-backdrop-filter:blur(36px) saturate(2.0)!important;}
+/* Child settings sheet */
+div[style*="maxWidth:480"][style*="borderRadius:\"24px 24px 0 0\""]{backdrop-filter:blur(38px) saturate(2.0)!important;-webkit-backdrop-filter:blur(38px) saturate(2.0)!important;}
+/* Tutorial overlay */
+div[style*="animation:\"tutPop"]{backdrop-filter:blur(40px) saturate(2.0)!important;-webkit-backdrop-filter:blur(40px) saturate(2.0)!important;}
+body.light-mode div[style*="animation:\"tutPop"],body:not(.dark-mode) div[style*="animation:\"tutPop"]{box-shadow:0 0 24px rgba(255,255,255,0.6),0 0 48px rgba(246,221,227,0.30),0 28px 72px rgba(217,207,243,0.20)!important;}
+body.dark-mode div[style*="animation:\"tutPop"]{box-shadow:0 28px 72px rgba(0,0,0,0.50),inset 0 1.5px 0 rgba(255,200,130,0.08)!important;}
+/* Forgot PIN modal */
+div[style*="borderRadius:24"][style*="maxWidth:340"]{backdrop-filter:blur(40px) saturate(2.0)!important;-webkit-backdrop-filter:blur(40px) saturate(2.0)!important;}
+body.light-mode div[style*="borderRadius:24"][style*="maxWidth:340"],body:not(.dark-mode) div[style*="borderRadius:24"][style*="maxWidth:340"]{box-shadow:0 0 20px rgba(255,255,255,0.5),0 0 40px rgba(246,221,227,0.25),0 8px 40px rgba(217,207,243,0.18)!important;}
+
+/* ═══════════════════════════════════════════════════════════
+   WELCOME PAGE — Full glass treatment
+   Get Started: yellow/orange glow
+   Everything else: powder pink / lilac
+   ═══════════════════════════════════════════════════════════ */
+
+/* Hero baby image frame */
+div[style*="borderRadius:36"][style*="overflow:\"hidden\""][style*="animation"]{border:2px solid rgba(255,255,255,0.50)!important;backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);}
+body.light-mode div[style*="borderRadius:36"][style*="overflow:\"hidden\""][style*="animation"],body:not(.dark-mode) div[style*="borderRadius:36"][style*="overflow:\"hidden\""][style*="animation"]{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.80),0 0 24px rgba(255,255,255,0.5),0 0 48px rgba(246,221,227,0.30),0 0 72px rgba(217,207,243,0.20),0 24px 52px rgba(207,195,236,0.15)!important;
 }
 body.dark-mode div[style*="borderRadius:36"][style*="overflow:\"hidden\""][style*="animation"]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,200,130,0.12),
-    0 12px 28px rgba(0,0,0,0.35),
-    0 24px 52px rgba(0,0,0,0.25),
-    0 0 40px rgba(255,170,60,0.10),
-    0 0 70px rgba(255,150,40,0.06)!important;
-  border-color:rgba(255,180,80,0.25)!important;
+  box-shadow:inset 0 1px 0 rgba(255,200,130,0.12),0 0 40px rgba(255,170,60,0.10),0 24px 52px rgba(0,0,0,0.30)!important;border-color:rgba(255,180,80,0.22)!important;
 }
 
-/* ── App icon on welcome header (borderRadius:13, 44x44) ── */
-div[style*="borderRadius:13"][style*="width:44"]{
-  backdrop-filter:blur(20px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(20px) saturate(1.8)!important;
-  overflow:hidden!important;
-  position:relative!important;
-}
-body.light-mode div[style*="borderRadius:13"][style*="width:44"],
-body:not(.dark-mode) div[style*="borderRadius:13"][style*="width:44"]{
-  background:
-    radial-gradient(circle at 50% 35%, rgba(240,180,240,0.22), transparent 65%),
-    var(--card-bg-solid)!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.65),
-    0 4px 16px rgba(220,160,220,0.20),
-    0 0 24px rgba(240,180,240,0.15),
-    0 0 44px rgba(230,160,250,0.08)!important;
-  border-color:rgba(255,200,240,0.50)!important;
-}
-body.dark-mode div[style*="borderRadius:13"][style*="width:44"]{
-  background:
-    radial-gradient(circle at 50% 35%, rgba(255,180,60,0.10), transparent 65%),
-    var(--card-bg-solid)!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,200,130,0.10),
-    0 4px 16px rgba(0,0,0,0.30),
-    0 0 24px rgba(255,170,60,0.08)!important;
+/* App icon top-left */
+div[style*="borderRadius:13"][style*="width:44"]{backdrop-filter:blur(20px) saturate(1.8)!important;-webkit-backdrop-filter:blur(20px) saturate(1.8)!important;}
+body.light-mode div[style*="borderRadius:13"][style*="width:44"],body:not(.dark-mode) div[style*="borderRadius:13"][style*="width:44"]{
+  background:radial-gradient(circle at 50% 35%,rgba(246,221,227,0.22),transparent 65%),var(--card-bg-solid)!important;
+  box-shadow:0 0 16px rgba(255,255,255,0.50),0 0 32px rgba(246,221,227,0.22),0 4px 16px rgba(217,207,243,0.15)!important;
 }
 
-/* ── GET STARTED BUTTON — YELLOW / ORANGE GLOW (both modes) ── */
-button[style*="borderRadius:18"][style*="padding:\"19px\""]{
-  backdrop-filter:blur(20px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(20px) saturate(1.8)!important;
-  position:relative!important;
-  overflow:hidden!important;
+/* GET STARTED BUTTON — YELLOW / ORANGE GLOW */
+button[style*="borderRadius:18"][style*="padding:\"19px\""]{backdrop-filter:blur(20px) saturate(1.8)!important;-webkit-backdrop-filter:blur(20px) saturate(1.8)!important;}
+body.light-mode button[style*="borderRadius:18"][style*="padding:\"19px\""],body:not(.dark-mode) button[style*="borderRadius:18"][style*="padding:\"19px\""]{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.30),0 4px 14px rgba(220,140,50,0.22),0 0 36px rgba(255,190,70,0.28),0 0 64px rgba(255,170,40,0.20),0 0 100px rgba(255,160,30,0.10)!important;
 }
-/* Light mode: warm yellow/orange halo */
-body.light-mode button[style*="borderRadius:18"][style*="padding:\"19px\""],
-body:not(.dark-mode) button[style*="borderRadius:18"][style*="padding:\"19px\""]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.30),
-    0 4px 14px rgba(220,140,50,0.25),
-    0 8px 32px rgba(240,170,50,0.30),
-    0 0 44px rgba(255,190,70,0.25),
-    0 0 72px rgba(255,170,40,0.18),
-    0 0 110px rgba(255,160,30,0.10)!important;
-}
-/* Dark mode: intense orange/amber halo */
 body.dark-mode button[style*="borderRadius:18"][style*="padding:\"19px\""]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,220,150,0.20),
-    0 4px 14px rgba(255,160,40,0.28),
-    0 8px 32px rgba(255,150,30,0.35),
-    0 0 44px rgba(255,180,50,0.28),
-    0 0 72px rgba(255,160,30,0.20),
-    0 0 110px rgba(255,140,20,0.12)!important;
+  box-shadow:inset 0 1px 0 rgba(255,220,150,0.20),0 4px 14px rgba(255,160,40,0.28),0 0 44px rgba(255,180,50,0.28),0 0 72px rgba(255,160,30,0.18)!important;
 }
 
-/* ── Feature pills on welcome (Feeds & intake, Sleep tracking, etc) ── */
-div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{
-  backdrop-filter:blur(20px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(20px) saturate(1.8)!important;
-  position:relative!important;
-  overflow:hidden!important;
-}
-body.light-mode div[style*="borderRadius:99"][style*="padding:\"7px 13px\""],
-body:not(.dark-mode) div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{
-  background:
-    radial-gradient(ellipse 120% 160% at 50% 40%, rgba(240,180,240,0.18), transparent 60%),
-    radial-gradient(ellipse 80% 100% at 20% 80%, rgba(210,160,235,0.10), transparent 50%),
-    var(--card-bg-solid)!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.55),
-    0 2px 8px rgba(220,160,220,0.14),
-    0 0 18px rgba(240,180,240,0.12),
-    0 0 36px rgba(230,160,250,0.06)!important;
-  border-color:rgba(255,200,240,0.45)!important;
-}
-body.dark-mode div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{
-  background:
-    radial-gradient(ellipse 120% 160% at 50% 40%, rgba(255,175,55,0.08), transparent 60%),
-    var(--card-bg-solid)!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,200,130,0.07),
-    0 2px 8px rgba(0,0,0,0.25),
-    0 0 18px rgba(255,170,60,0.06)!important;
+/* Feature pills (Feeds & intake, Sleep tracking, etc) */
+div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{backdrop-filter:blur(18px) saturate(1.7)!important;-webkit-backdrop-filter:blur(18px) saturate(1.7)!important;}
+body.light-mode div[style*="borderRadius:99"][style*="padding:\"7px 13px\""],body:not(.dark-mode) div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{
+  background:radial-gradient(ellipse 120% 160% at 50% 40%,rgba(246,221,227,0.18),transparent 60%),radial-gradient(ellipse 80% 100% at 20% 80%,rgba(217,207,243,0.12),transparent 50%),var(--card-bg-solid)!important;
+  box-shadow:0 0 12px rgba(255,255,255,0.45),0 0 24px rgba(246,221,227,0.18),0 0 36px rgba(217,207,243,0.08),inset 0 1px 0 rgba(255,255,255,0.55)!important;
 }
 
-/* ── Onboarding step card container (borderRadius:22, padding "22px 18px") ── */
-div[style*="borderRadius:22"][style*="padding:\"22px 18px\""]{
-  backdrop-filter:blur(34px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(34px) saturate(2.0)!important;
-  position:relative!important;
-  overflow:hidden!important;
-}
-body.light-mode div[style*="borderRadius:22"][style*="padding:\"22px 18px\""],
-body:not(.dark-mode) div[style*="borderRadius:22"][style*="padding:\"22px 18px\""]{
-  background:
-    radial-gradient(ellipse 100% 60% at 50% 5%, rgba(240,180,240,0.20), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 50% 95%, rgba(210,160,235,0.12), transparent 50%),
-    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(230,170,240,0.08), transparent 40%),
-    var(--card-bg-solid)!important;
-  box-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,0.70),
-    0 4px 14px rgba(220,160,220,0.12),
-    0 12px 36px rgba(210,150,210,0.08),
-    0 0 28px rgba(240,180,240,0.16),
-    0 0 56px rgba(230,160,250,0.08)!important;
-  border-color:rgba(255,200,240,0.45)!important;
-}
-body.dark-mode div[style*="borderRadius:22"][style*="padding:\"22px 18px\""]{
-  background:
-    radial-gradient(ellipse 100% 60% at 50% 5%, rgba(255,180,60,0.10), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 50% 95%, rgba(255,150,40,0.06), transparent 50%),
-    var(--card-bg-solid)!important;
-  box-shadow:
-    inset 0 1.5px 0 rgba(255,200,130,0.10),
-    0 4px 14px rgba(0,0,0,0.25),
-    0 12px 36px rgba(0,0,0,0.18),
-    0 0 28px rgba(255,170,60,0.08)!important;
+/* Onboarding step card */
+div[style*="borderRadius:22"][style*="padding:\"22px 18px\""]{backdrop-filter:blur(32px) saturate(1.9)!important;-webkit-backdrop-filter:blur(32px) saturate(1.9)!important;}
+body.light-mode div[style*="borderRadius:22"][style*="padding:\"22px 18px\""],body:not(.dark-mode) div[style*="borderRadius:22"][style*="padding:\"22px 18px\""]{
+  background:radial-gradient(ellipse 100% 60% at 50% 5%,rgba(246,221,227,0.22),transparent 50%),radial-gradient(ellipse 80% 50% at 50% 95%,rgba(217,207,243,0.14),transparent 50%),var(--card-bg-solid)!important;
+  box-shadow:0 0 20px rgba(255,255,255,0.5),0 0 40px rgba(246,221,227,0.22),0 0 60px rgba(217,207,243,0.12),inset 0 1.5px 0 rgba(255,255,255,0.65)!important;
 }
 
-/* ── Auth screen — Sign In / Create Account toggle pill ── */
-div[style*="borderRadius:99"][style*="padding:4"]{
-  backdrop-filter:blur(22px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(22px) saturate(1.8)!important;
-}
-body.light-mode div[style*="borderRadius:99"][style*="padding:4"],
-body:not(.dark-mode) div[style*="borderRadius:99"][style*="padding:4"]{
-  background:
-    radial-gradient(ellipse 100% 150% at 50% 50%, rgba(235,175,240,0.14), transparent 60%),
-    var(--card-bg-alt)!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.45),
-    0 2px 10px rgba(220,160,220,0.12),
-    0 0 20px rgba(240,180,240,0.10)!important;
-}
-body.dark-mode div[style*="borderRadius:99"][style*="padding:4"]{
-  background:
-    radial-gradient(ellipse 100% 150% at 50% 50%, rgba(255,175,55,0.06), transparent 60%),
-    var(--card-bg-alt)!important;
+/* Auth toggle pill (Sign In / Create Account) */
+div[style*="borderRadius:99"][style*="padding:4"]{backdrop-filter:blur(20px) saturate(1.8)!important;-webkit-backdrop-filter:blur(20px) saturate(1.8)!important;}
+body.light-mode div[style*="borderRadius:99"][style*="padding:4"],body:not(.dark-mode) div[style*="borderRadius:99"][style*="padding:4"]{
+  background:radial-gradient(ellipse 100% 150% at 50% 50%,rgba(246,221,227,0.14),transparent 60%),var(--card-bg-alt)!important;
+  box-shadow:0 0 14px rgba(255,255,255,0.40),0 0 28px rgba(246,221,227,0.15)!important;
 }
 
-/* ── Auth/Login oliver image ── */
-img[style*="borderRadius:14"][style*="width:56"]{
-  box-shadow:
-    0 4px 16px rgba(220,160,220,0.20),
-    0 0 28px rgba(240,180,240,0.15),
-    0 0 48px rgba(230,160,250,0.08)!important;
-}
-body.dark-mode img[style*="borderRadius:14"][style*="width:56"]{
-  box-shadow:
-    0 4px 16px rgba(0,0,0,0.30),
-    0 0 28px rgba(255,170,60,0.08)!important;
+/* Onboarding choice buttons (Create new account / I already have an account) */
+button[style*="borderRadius:16"][style*="padding:\"18px\""]{backdrop-filter:blur(24px) saturate(1.8)!important;-webkit-backdrop-filter:blur(24px) saturate(1.8)!important;}
+body.light-mode button[style*="borderRadius:16"][style*="padding:\"18px\""],body:not(.dark-mode) button[style*="borderRadius:16"][style*="padding:\"18px\""]{
+  box-shadow:0 0 16px rgba(255,255,255,0.45),0 0 32px rgba(246,221,227,0.18),0 0 48px rgba(217,207,243,0.10),inset 0 1px 0 rgba(255,255,255,0.40)!important;
 }
 
-/* ── Onboarding back button (borderRadius:11) ── */
-button[style*="borderRadius:11"]{
-  backdrop-filter:blur(18px) saturate(1.7)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.7)!important;
-}
-body.light-mode button[style*="borderRadius:11"],
-body:not(.dark-mode) button[style*="borderRadius:11"]{
-  background:
-    radial-gradient(circle at 50% 40%, rgba(240,180,240,0.15), transparent 65%),
-    var(--card-bg-solid)!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.50),
-    0 2px 8px rgba(220,160,220,0.12),
-    0 0 14px rgba(240,180,240,0.10)!important;
-}
-body.dark-mode button[style*="borderRadius:11"]{
-  background:
-    radial-gradient(circle at 50% 40%, rgba(255,180,60,0.07), transparent 65%),
-    var(--card-bg-solid)!important;
-}
-
-/* ── Onboarding progress bar glow ── */
-div[style*="linear-gradient(90deg,#c9705a"]{
-  box-shadow:0 0 12px rgba(240,180,240,0.30), 0 0 24px rgba(230,160,250,0.15)!important;
-}
-body.dark-mode div[style*="linear-gradient(90deg,#c9705a"]{
-  box-shadow:0 0 12px rgba(255,170,60,0.20), 0 0 24px rgba(255,150,40,0.10)!important;
-}
-
-/* ── Onboarding "Welcome back or new here" choice buttons ── */
-button[style*="borderRadius:16"][style*="padding:\"18px\""]{
-  backdrop-filter:blur(24px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(24px) saturate(1.8)!important;
-  position:relative!important;
-  overflow:hidden!important;
-}
-body.light-mode button[style*="borderRadius:16"][style*="padding:\"18px\""],
-body:not(.dark-mode) button[style*="borderRadius:16"][style*="padding:\"18px\""]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.40),
-    0 4px 16px rgba(220,160,220,0.15),
-    0 0 24px rgba(240,180,240,0.12),
-    0 0 44px rgba(230,160,250,0.06)!important;
-}
-body.dark-mode button[style*="borderRadius:16"][style*="padding:\"18px\""]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,200,130,0.08),
-    0 4px 16px rgba(0,0,0,0.28),
-    0 0 24px rgba(255,170,60,0.08)!important;
-}
-/* The CTA "Create new account" one with gradient gets extra glow */
-button[style*="borderRadius:16"][style*="padding:\"18px\""][style*="linear-gradient"]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.30),
-    0 4px 16px rgba(220,160,220,0.20),
-    0 0 32px rgba(240,180,240,0.18),
-    0 0 56px rgba(230,160,250,0.10)!important;
-}
-
-/* ── PIN pad dots (the 4 circles showing entered digits) ── */
-div[style*="borderRadius:\"50%\""][style*="width:18"][style*="height:18"]{
-  box-shadow:0 0 10px rgba(240,180,240,0.25);
-}
-body.dark-mode div[style*="borderRadius:\"50%\""][style*="width:18"][style*="height:18"]{
-  box-shadow:0 0 10px rgba(255,170,60,0.15);
-}
-
-/* ── Username input on auth screen ── */
-input[style*="borderRadius:12"][style*="fontSize:16"]{
-  backdrop-filter:blur(18px) saturate(1.7)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.7)!important;
-}
-body.light-mode input[style*="borderRadius:12"],
-body:not(.dark-mode) input[style*="borderRadius:12"]{
-  box-shadow:
-    inset 0 1px 3px rgba(210,150,210,0.10),
-    0 0 14px rgba(240,180,240,0.10),
-    0 0 28px rgba(230,160,250,0.05)!important;
-}
-
-/* ── Child setup oliver image ── */
-img[style*="borderRadius:20"][style*="width:100"]{
-  box-shadow:
-    0 8px 24px rgba(220,160,220,0.22),
-    0 0 36px rgba(240,180,240,0.15),
-    0 0 60px rgba(230,160,250,0.08)!important;
-}
-body.dark-mode img[style*="borderRadius:20"][style*="width:100"]{
-  box-shadow:
-    0 8px 24px rgba(0,0,0,0.30),
-    0 0 36px rgba(255,170,60,0.10)!important;
-}
-
-/* ── Child setup gender buttons (Boy/Girl/Not set) ── */
-button[style*="borderRadius:14"][style*="flexDirection:\"column\""][style*="gap:4"]{
-  backdrop-filter:blur(18px) saturate(1.7)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.7)!important;
-}
-body.light-mode button[style*="borderRadius:14"][style*="flexDirection:\"column\""][style*="gap:4"],
-body:not(.dark-mode) button[style*="borderRadius:14"][style*="flexDirection:\"column\""][style*="gap:4"]{
-  background:
-    radial-gradient(circle at 50% 35%, rgba(240,180,240,0.14), transparent 60%),
-    white!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.55),
-    0 2px 10px rgba(220,160,220,0.12),
-    0 0 18px rgba(240,180,240,0.10)!important;
-}
-
-/* ── Born/Unborn toggle on child setup ── */
-button[style*="borderRadius:99"][style*="borderRadius:99"][style*="width:\"100%\""][style*="padding:\"11px\""]{
-  backdrop-filter:blur(18px) saturate(1.7)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.7)!important;
-}
-
-/* ── Child setup CTA ("Let's go!" / "Continue") ── */
-button[style*="borderRadius:99"][style*="padding:\"14px\""][style*="linear-gradient"]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.25),
-    0 4px 16px rgba(220,160,220,0.20),
-    0 0 32px rgba(240,180,240,0.18),
-    0 0 56px rgba(230,160,250,0.10)!important;
-}
-
-/* ── Link code input on child setup ── */
-input[style*="fontSize:28"][style*="letterSpacing"]{
-  backdrop-filter:blur(18px) saturate(1.7)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.7)!important;
-}
-body.light-mode input[style*="fontSize:28"],
-body:not(.dark-mode) input[style*="fontSize:28"]{
-  box-shadow:
-    inset 0 1px 3px rgba(210,150,210,0.08),
-    0 0 18px rgba(240,180,240,0.12),
-    0 0 36px rgba(230,160,250,0.06)!important;
-}
-
-/* ── "Link child" green CTA button ── */
-button[style*="linear-gradient(135deg,#50c878"]{
-  box-shadow:
-    0 4px 16px rgba(80,200,120,0.25),
-    0 0 28px rgba(80,200,120,0.15),
-    0 0 48px rgba(60,180,100,0.08)!important;
-}
-
-/* ── Terms checkbox area ── */
-div[style*="borderRadius:12"][style*="alignItems:\"flex-start\""][style*="gap:8"]{
-  backdrop-filter:blur(14px) saturate(1.5);
-  -webkit-backdrop-filter:blur(14px) saturate(1.5);
-}
-body.light-mode div[style*="borderRadius:12"][style*="alignItems:\"flex-start\""][style*="gap:8"],
-body:not(.dark-mode) div[style*="borderRadius:12"][style*="alignItems:\"flex-start\""][style*="gap:8"]{
-  background:
-    radial-gradient(ellipse 100% 100% at 50% 50%, rgba(235,175,240,0.08), transparent 55%),
-    var(--card-bg-alt)!important;
-}
-
-/* ── Tutorial overlay ── */
-div[style*="animation:\"tutPop"]{
-  backdrop-filter:blur(42px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(42px) saturate(2.0)!important;
-}
-body.light-mode div[style*="animation:\"tutPop"],
-body:not(.dark-mode) div[style*="animation:\"tutPop"]{
-  box-shadow:0 28px 72px rgba(220,160,230,0.30),inset 0 1.5px 0 rgba(255,255,255,0.65)!important;
-}
-body.dark-mode div[style*="animation:\"tutPop"]{
-  box-shadow:0 28px 72px rgba(0,0,0,0.50),inset 0 1.5px 0 rgba(255,200,130,0.08)!important;
-}
-
-/* ── Forgot PIN modal ── */
-div[style*="borderRadius:24"][style*="maxWidth:340"]{
-  backdrop-filter:blur(42px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(42px) saturate(2.0)!important;
-}
-body.light-mode div[style*="borderRadius:24"][style*="maxWidth:340"],
-body:not(.dark-mode) div[style*="borderRadius:24"][style*="maxWidth:340"]{
-  box-shadow:0 8px 40px rgba(220,160,230,0.22),inset 0 1px 0 rgba(255,255,255,0.60)!important;
-}
-
-/* ── Gender header glass ── */
-body.light-mode.girl header,body.girl:not(.dark-mode) header{
-  background:rgba(253,231,228,0.48)!important;
-  backdrop-filter:blur(38px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(38px) saturate(2.0)!important;
-}
-body.light-mode.boy header,body.boy:not(.dark-mode) header{
-  background:rgba(234,243,251,0.48)!important;
-  backdrop-filter:blur(38px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(38px) saturate(2.0)!important;
-}
-body.dark-mode.girl header{background:rgba(45,31,42,0.48)!important}
-body.dark-mode.boy header{background:rgba(26,42,61,0.48)!important}
-
-/* ── Collapsible sections ── */
-div[style*="borderRadius:\"0 0 16px 16px\""]{
-  backdrop-filter:blur(26px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(26px) saturate(1.8)!important;
-}
-
-/* ── Alert / insight cards ── */
-div[style*="borderLeft:\"4px solid\""],
-div[style*="borderLeft:\"3px solid\""]{
-  backdrop-filter:blur(22px) saturate(1.7)!important;
-  -webkit-backdrop-filter:blur(22px) saturate(1.7)!important;
-}
-
-/* ── Personal/NHS toggle ── */
-div[style*="display:\"inline-flex\""][style*="borderRadius:99"]{
-  backdrop-filter:blur(20px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(20px) saturate(1.8)!important;
-}
-
-/* ── Activity cards ── */
-div[style*="borderRadius:16"][style*="padding:\"14px\""]{
-  backdrop-filter:blur(24px) saturate(1.7)!important;
-  -webkit-backdrop-filter:blur(24px) saturate(1.7)!important;
-}
-
-/* ── Growth percentile banner ── */
-div[style*="borderRadius:20"][style*="overflow:\"hidden\""]{
-  backdrop-filter:blur(28px) saturate(1.8)!important;
-  -webkit-backdrop-filter:blur(28px) saturate(1.8)!important;
-}
-
-/* ── Family modal ── */
-div[style*="maxHeight:\"85vh\""][style*="overflowY"]{
-  backdrop-filter:blur(38px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(38px) saturate(2.0)!important;
-}
-
-/* ── Child settings sheet ── */
-div[style*="maxWidth:480"][style*="borderRadius:\"24px 24px 0 0\""]{
-  backdrop-filter:blur(40px) saturate(2.0)!important;
-  -webkit-backdrop-filter:blur(40px) saturate(2.0)!important;
-}
+/* Child setup oliver image */
+img[style*="borderRadius:20"][style*="width:100"]{box-shadow:0 0 20px rgba(255,255,255,0.5),0 0 40px rgba(246,221,227,0.25),0 8px 24px rgba(217,207,243,0.18)!important;}
 
 /* ═══════════════════════════════════════════════════════════
-   ✨ GRADIENT GLOW BACKGROUNDS
-   Soft colored halo behind every box/button/pill/entry
-   Light: Pink → Purple   |   Dark: Yellow → Orange
+   SMOOTH TRANSITIONS
    ═══════════════════════════════════════════════════════════ */
-
-/* ── GLASS CARDS — soft inner gradient glow ── */
-body.light-mode .glass-card,
-body:not(.dark-mode) .glass-card{
-  background:
-    radial-gradient(ellipse 120% 80% at 30% 20%, rgba(240,180,240,0.14), transparent 60%),
-    radial-gradient(ellipse 100% 90% at 70% 80%, rgba(200,150,230,0.10), transparent 55%),
-    var(--card-bg)!important;
-}
-body.dark-mode .glass-card{
-  background:
-    radial-gradient(ellipse 120% 80% at 30% 20%, rgba(255,180,60,0.08), transparent 60%),
-    radial-gradient(ellipse 100% 90% at 70% 80%, rgba(255,150,40,0.05), transparent 55%),
-    var(--card-bg)!important;
-}
-
-/* ── GLASS ENTRIES / LOG ROWS — colored edge glow ── */
-body.light-mode .glass-entry,
-body:not(.dark-mode) .glass-entry{
-  background:
-    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(230,170,240,0.12), transparent 50%),
-    radial-gradient(ellipse 60% 100% at 100% 50%, rgba(210,160,230,0.08), transparent 45%),
-    var(--card-bg)!important;
-}
-body.dark-mode .glass-entry{
-  background:
-    radial-gradient(ellipse 80% 100% at 0% 50%, rgba(255,170,60,0.06), transparent 50%),
-    radial-gradient(ellipse 60% 100% at 100% 50%, rgba(255,150,40,0.04), transparent 45%),
-    var(--card-bg)!important;
-}
-
-/* ── DATA ENTRY ROWS — gradient glow behind each row ── */
-body.light-mode div[data-entry-id],
-body:not(.dark-mode) div[data-entry-id]{
-  background:
-    radial-gradient(ellipse 70% 120% at 0% 50%, rgba(235,175,240,0.12), transparent 45%),
-    radial-gradient(ellipse 80% 100% at 100% 30%, rgba(210,160,235,0.08), transparent 50%),
-    var(--card-bg)!important;
-}
-body.dark-mode div[data-entry-id]{
-  background:
-    radial-gradient(ellipse 70% 120% at 0% 50%, rgba(255,175,55,0.06), transparent 45%),
-    radial-gradient(ellipse 80% 100% at 100% 30%, rgba(255,150,40,0.04), transparent 50%),
-    var(--card-bg)!important;
-}
-
-/* ── ACTION GRID BUTTONS (Feed, Nappy, Sleep, Notes, Pump, Wake) ── */
-body.light-mode button[style*="borderRadius:14"][style*="flexDirection"],
-body:not(.dark-mode) button[style*="borderRadius:14"][style*="flexDirection"]{
-  background:
-    radial-gradient(ellipse 100% 100% at 50% 30%, rgba(240,180,240,0.18), transparent 65%),
-    radial-gradient(ellipse 80% 80% at 50% 90%, rgba(200,150,230,0.10), transparent 55%),
-    var(--card-bg)!important;
-}
-body.dark-mode button[style*="borderRadius:14"][style*="flexDirection"]{
-  background:
-    radial-gradient(ellipse 100% 100% at 50% 30%, rgba(255,180,60,0.10), transparent 65%),
-    radial-gradient(ellipse 80% 80% at 50% 90%, rgba(255,150,40,0.06), transparent 55%),
-    var(--card-bg)!important;
-}
-
-/* ── PILL BUTTONS (borderRadius:99) ── */
-body.light-mode button[style*="borderRadius:99"],
-body:not(.dark-mode) button[style*="borderRadius:99"]{
-  background:
-    radial-gradient(ellipse 120% 150% at 50% 0%, rgba(240,180,240,0.16), transparent 60%),
-    radial-gradient(ellipse 100% 120% at 50% 100%, rgba(210,160,235,0.10), transparent 55%),
-    var(--chip-bg)!important;
-}
-body.dark-mode button[style*="borderRadius:99"]{
-  background:
-    radial-gradient(ellipse 120% 150% at 50% 0%, rgba(255,180,60,0.08), transparent 60%),
-    radial-gradient(ellipse 100% 120% at 50% 100%, rgba(255,150,40,0.05), transparent 55%),
-    var(--chip-bg)!important;
-}
-
-/* ── CTA GRADIENT BUTTONS — enhanced glow halo ── */
-body.light-mode button[style*="linear-gradient(135deg"],
-body:not(.dark-mode) button[style*="linear-gradient(135deg"]{
-  box-shadow:
-    0 4px 18px rgba(201,112,90,0.30),
-    0 0 32px rgba(240,180,230,0.22),
-    0 0 56px rgba(230,170,250,0.12),
-    0 0 80px rgba(220,160,240,0.06)!important;
-}
-body.dark-mode button[style*="linear-gradient(135deg"]{
-  box-shadow:
-    0 4px 18px rgba(217,139,114,0.34),
-    0 0 32px rgba(255,170,60,0.20),
-    0 0 56px rgba(255,150,40,0.10),
-    0 0 80px rgba(255,140,30,0.04)!important;
-}
-/* GET STARTED BUTTON — override generic CTA with YELLOW/ORANGE glow */
-body.light-mode button[style*="borderRadius:18"][style*="padding:\"19px\""],
-body:not(.dark-mode) button[style*="borderRadius:18"][style*="padding:\"19px\""]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.30),
-    0 4px 14px rgba(220,140,50,0.25),
-    0 8px 32px rgba(240,170,50,0.30),
-    0 0 44px rgba(255,190,70,0.25),
-    0 0 72px rgba(255,170,40,0.18),
-    0 0 110px rgba(255,160,30,0.10)!important;
-}
-body.dark-mode button[style*="borderRadius:18"][style*="padding:\"19px\""]{
-  box-shadow:
-    inset 0 1px 0 rgba(255,220,150,0.20),
-    0 4px 14px rgba(255,160,40,0.28),
-    0 8px 32px rgba(255,150,30,0.35),
-    0 0 44px rgba(255,180,50,0.28),
-    0 0 72px rgba(255,160,30,0.20),
-    0 0 110px rgba(255,140,20,0.12)!important;
-}
-
-/* ── STAT BOXES (the grid of 4 — Total Milk, Nappies, Naps, Nap Time) ── */
-body.light-mode div[style*="textAlign:\"center\""][style*="borderRadius:16"],
-body:not(.dark-mode) div[style*="textAlign:\"center\""][style*="borderRadius:16"]{
-  background:
-    radial-gradient(ellipse 100% 100% at 50% 25%, rgba(240,180,240,0.16), transparent 60%),
-    radial-gradient(ellipse 80% 80% at 50% 85%, rgba(210,160,235,0.10), transparent 50%),
-    var(--card-bg)!important;
-}
-body.dark-mode div[style*="textAlign:\"center\""][style*="borderRadius:16"]{
-  background:
-    radial-gradient(ellipse 100% 100% at 50% 25%, rgba(255,180,60,0.08), transparent 60%),
-    radial-gradient(ellipse 80% 80% at 50% 85%, rgba(255,150,40,0.05), transparent 50%),
-    var(--card-bg)!important;
-}
-
-/* ── QUICK LOG ROW (the horizontal quick-tap bar) ── */
-body.light-mode div[style*="borderRadius:18"][style*="gap:4"],
-body:not(.dark-mode) div[style*="borderRadius:18"][style*="gap:4"]{
-  background:
-    radial-gradient(ellipse 60% 100% at 15% 50%, rgba(240,180,240,0.12), transparent 50%),
-    radial-gradient(ellipse 60% 100% at 85% 50%, rgba(210,160,235,0.10), transparent 50%),
-    var(--card-bg)!important;
-}
-body.dark-mode div[style*="borderRadius:18"][style*="gap:4"]{
-  background:
-    radial-gradient(ellipse 60% 100% at 15% 50%, rgba(255,180,60,0.06), transparent 50%),
-    radial-gradient(ellipse 60% 100% at 85% 50%, rgba(255,150,40,0.05), transparent 50%),
-    var(--card-bg)!important;
-}
-
-/* ── CHIP / TAG PILLS ── */
-body.light-mode span[style*="borderRadius:99"][style*="padding"],
-body:not(.dark-mode) span[style*="borderRadius:99"][style*="padding"]{
-  background:
-    radial-gradient(ellipse 120% 150% at 50% 50%, rgba(235,180,240,0.14), transparent 65%),
-    var(--chip-bg)!important;
-}
-body.dark-mode span[style*="borderRadius:99"][style*="padding"]{
-  background:
-    radial-gradient(ellipse 120% 150% at 50% 50%, rgba(255,175,55,0.06), transparent 65%),
-    var(--chip-bg)!important;
-}
-
-/* ── DATE STRIP PILLS ── */
-body.light-mode div[style*="overflowX:\"auto\""] > div[style*="borderRadius:20"],
-body:not(.dark-mode) div[style*="overflowX:\"auto\""] > div[style*="borderRadius:20"]{
-  background:
-    radial-gradient(ellipse 100% 150% at 50% 30%, rgba(240,180,240,0.14), transparent 60%),
-    rgba(255,245,252,0.40)!important;
-}
-body.dark-mode div[style*="overflowX:\"auto\""] > div[style*="borderRadius:20"]{
-  background:
-    radial-gradient(ellipse 100% 150% at 50% 30%, rgba(255,180,60,0.07), transparent 60%),
-    rgba(20,28,48,0.45)!important;
-}
-
-/* ── NAVIGATION BAR — soft glow from center ── */
-body.light-mode div[style*="position:\"fixed\""][style*="bottom:0"],
-body:not(.dark-mode) div[style*="position:\"fixed\""][style*="bottom:0"]{
-  background:
-    radial-gradient(ellipse 50% 100% at 50% 0%, rgba(240,180,240,0.12), transparent 60%),
-    rgba(255,248,253,0.45)!important;
-}
-body.dark-mode div[style*="position:\"fixed\""][style*="bottom:0"]{
-  background:
-    radial-gradient(ellipse 50% 100% at 50% 0%, rgba(255,180,60,0.06), transparent 60%),
-    rgba(10,16,30,0.68)!important;
-}
-
-/* ── THEME TOGGLE — gradient glow ring ── */
-body.light-mode #theme-toggle,body:not(.dark-mode) #theme-toggle{
-  background:
-    radial-gradient(circle at 50% 40%, rgba(240,180,240,0.20), transparent 65%),
-    rgba(255,250,253,0.72)!important;
-}
-body.dark-mode #theme-toggle{
-  background:
-    radial-gradient(circle at 50% 40%, rgba(255,180,60,0.12), transparent 65%),
-    rgba(24,34,56,0.75)!important;
-}
-
-/* ── PIN PAD BUTTONS — soft colored center glow ── */
-body.light-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button,
-body:not(.dark-mode) div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
-  background:
-    radial-gradient(circle at 50% 40%, rgba(240,180,240,0.12), transparent 60%),
-    var(--card-bg-solid)!important;
-}
-body.dark-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
-  background:
-    radial-gradient(circle at 50% 40%, rgba(255,180,60,0.06), transparent 60%),
-    var(--card-bg-solid)!important;
-}
-
-/* ── SHEETS / MODALS — top glow ── */
-body.light-mode div[style*="borderRadius:\"24px 24px 0 0\""],
-body:not(.dark-mode) div[style*="borderRadius:\"24px 24px 0 0\""],
-body.light-mode div[style*="borderRadius:24px 24px 0 0"],
-body:not(.dark-mode) div[style*="borderRadius:24px 24px 0 0"]{
-  background:
-    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(240,180,240,0.14), transparent 55%),
-    rgba(252,246,253,0.90)!important;
-}
-body.dark-mode div[style*="borderRadius:\"24px 24px 0 0\""],
-body.dark-mode div[style*="borderRadius:24px 24px 0 0"]{
-  background:
-    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(255,180,60,0.07), transparent 55%),
-    rgba(14,22,42,0.92)!important;
-}
-
-/* ── ALERT / INSIGHT CARDS — left-edge colored glow ── */
-body.light-mode div[style*="borderLeft:\"4px solid\""],
-body:not(.dark-mode) div[style*="borderLeft:\"4px solid\""]{
-  background:
-    radial-gradient(ellipse 60% 100% at 0% 50%, rgba(235,175,240,0.12), transparent 45%),
-    var(--card-bg)!important;
-}
-body.dark-mode div[style*="borderLeft:\"4px solid\""]{
-  background:
-    radial-gradient(ellipse 60% 100% at 0% 50%, rgba(255,175,55,0.06), transparent 45%),
-    var(--card-bg)!important;
-}
-body.light-mode div[style*="borderLeft:\"3px solid\""],
-body:not(.dark-mode) div[style*="borderLeft:\"3px solid\""]{
-  background:
-    radial-gradient(ellipse 60% 100% at 0% 50%, rgba(235,175,240,0.10), transparent 40%),
-    var(--card-bg)!important;
-}
-body.dark-mode div[style*="borderLeft:\"3px solid\""]{
-  background:
-    radial-gradient(ellipse 60% 100% at 0% 50%, rgba(255,175,55,0.05), transparent 40%),
-    var(--card-bg)!important;
-}
-
-/* ── ONBOARDING FEATURE PILLS — pink/purple gradient glow ── */
-body.light-mode div[style*="borderRadius:99"][style*="padding:\"7px 13px\""],
-body:not(.dark-mode) div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{
-  background:
-    radial-gradient(ellipse 120% 160% at 50% 40%, rgba(240,180,240,0.18), transparent 60%),
-    radial-gradient(ellipse 80% 100% at 20% 80%, rgba(210,160,235,0.10), transparent 50%),
-    var(--card-bg-solid)!important;
-}
-body.dark-mode div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{
-  background:
-    radial-gradient(ellipse 120% 160% at 50% 40%, rgba(255,175,55,0.08), transparent 60%),
-    var(--card-bg-solid)!important;
-}
-
-/* ── ONBOARDING CARD CONTAINER — pink/purple halo top + bottom ── */
-body.light-mode div[style*="borderRadius:22"][style*="padding:\"22px 18px\""],
-body:not(.dark-mode) div[style*="borderRadius:22"][style*="padding:\"22px 18px\""]{
-  background:
-    radial-gradient(ellipse 100% 60% at 50% 5%, rgba(240,180,240,0.20), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 50% 95%, rgba(210,160,235,0.12), transparent 50%),
-    radial-gradient(ellipse 60% 80% at 10% 50%, rgba(230,170,240,0.08), transparent 40%),
-    var(--card-bg-solid)!important;
-}
-body.dark-mode div[style*="borderRadius:22"][style*="padding:\"22px 18px\""]{
-  background:
-    radial-gradient(ellipse 100% 60% at 50% 5%, rgba(255,180,60,0.10), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 50% 95%, rgba(255,150,40,0.06), transparent 50%),
-    var(--card-bg-solid)!important;
-}
-
-/* ── GET STARTED BUTTON — YELLOW/ORANGE gradient glow background ── */
-button[style*="borderRadius:18"][style*="padding:\"19px\""]{
-  background:
-    radial-gradient(ellipse 120% 150% at 50% 40%, rgba(255,200,80,0.18), transparent 55%),
-    radial-gradient(ellipse 100% 100% at 30% 80%, rgba(255,170,40,0.12), transparent 50%),
-    radial-gradient(ellipse 80% 120% at 70% 20%, rgba(255,190,60,0.10), transparent 50%),
-    linear-gradient(135deg,#c9705a 0%,#e0825f 100%)!important;
-}
-
-/* ── NIGHT WAKES PANEL ── */
-body.light-mode div[style*="borderRadius:\"24px 24px 0 0\""][style*="width:\"100%\""],
-body:not(.dark-mode) div[style*="borderRadius:\"24px 24px 0 0\""][style*="width:\"100%\""]{
-  background:
-    radial-gradient(ellipse 80% 35% at 50% 0%, rgba(240,180,240,0.14), transparent 50%),
-    var(--sheet-bg)!important;
-}
-
-/* ── COLLAPSIBLE SECTION BODIES ── */
-body.light-mode div[style*="borderRadius:\"0 0 16px 16px\""],
-body:not(.dark-mode) div[style*="borderRadius:\"0 0 16px 16px\""]{
-  background:
-    radial-gradient(ellipse 80% 40% at 50% 100%, rgba(230,170,240,0.10), transparent 50%),
-    var(--card-bg-solid)!important;
-}
-body.dark-mode div[style*="borderRadius:\"0 0 16px 16px\""]{
-  background:
-    radial-gradient(ellipse 80% 40% at 50% 100%, rgba(255,170,55,0.05), transparent 50%),
-    var(--card-bg-solid)!important;
-}
-
-/* ── Smooth transitions for glass elements ── */
-.glass-card,div[data-entry-id],#theme-toggle{
-  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1),
-    box-shadow 0.35s cubic-bezier(0.4,0,0.2,1),
-    background-color 0.25s ease,
-    border-color 0.25s ease!important;
+.glass-card,div[data-entry-id]{
+  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1),box-shadow 0.35s cubic-bezier(0.4,0,0.2,1),background-color 0.25s ease,border-color 0.25s ease!important;
 }

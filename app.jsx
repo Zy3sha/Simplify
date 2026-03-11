@@ -4995,7 +4995,7 @@ function App(){
               </div>
             </div>
             <div style={{padding:"28px 28px 40px"}}>
-              <button onClick={()=>setObStep(1)} style={{width:"100%",background:"linear-gradient(135deg,#c9705a 0%,#e0825f 100%)",border:_bN,borderRadius:18,padding:"19px",color:"white",fontSize:17,fontWeight:700,cursor:_cP,boxShadow:"0 8px 32px rgba(201,112,90,0.5)",letterSpacing:"0.01em",transition:"transform 0.12s",fontFamily:_fI}}>
+              <button onClick={()=>setObStep(1)} style={{width:"100%",background:"rgba(201,112,90,0.55)",backdropFilter:"blur(20px) saturate(1.8)",WebkitBackdropFilter:"blur(20px) saturate(1.8)",border:"1.5px solid rgba(255,200,180,0.40)",borderRadius:18,padding:"19px",color:"white",fontSize:17,fontWeight:700,cursor:_cP,boxShadow:"0 8px 32px rgba(201,112,90,0.3), 0 0 44px rgba(255,190,70,0.20), 0 0 72px rgba(255,170,40,0.12)",letterSpacing:"0.01em",transition:"transform 0.12s",fontFamily:_fI}}>
                 Get Started →
               </button>
               <div style={{textAlign:"center",marginTop:12,fontSize:12,color:C.lt,letterSpacing:"0.02em"}}>Free · No ads · Your data stays private</div>
@@ -5328,11 +5328,17 @@ function App(){
               display:"flex",alignItems:"center",justifyContent:"center"
             }}>+</button>
           </div>
-          <button onClick={e=>{e.stopPropagation();setTab("settings");}}
-            style={{background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:140}}>
-            <span style={{fontSize:14}}>👤</span>
-            <span style={{fontSize:11,fontFamily:_fM,fontWeight:700,color:C.mid,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{familyUsername||"Account"}</span>
-          </button>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <button onClick={e=>{e.stopPropagation();toggleTheme();}}
+              style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,fontSize:15,flexShrink:0}}>
+              {isDark?"☀️":"🌙"}
+            </button>
+            <button onClick={e=>{e.stopPropagation();setTab("settings");}}
+              style={{background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:140}}>
+              <span style={{fontSize:14}}>👤</span>
+              <span style={{fontSize:11,fontFamily:_fM,fontWeight:700,color:C.mid,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{familyUsername||"Account"}</span>
+            </button>
+          </div>
         </div>
         {!nameEdit ? (
           <div onClick={()=>{setNameIn(babyName);setNameEdit(true);}} style={{cursor:_cP,marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
@@ -5576,11 +5582,11 @@ function App(){
                 </div>
               )}
 
-              {/* ONE-TAP QUICK LOG ROW */}
+              {/* ONE-TAP LOG ROW */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:18,padding:"10px 14px",marginBottom:10,gap:4,boxShadow:"var(--card-shadow)"}}>
-                <span style={{fontSize:10,fontWeight:700,color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:_fM,whiteSpace:"nowrap",marginRight:6}}>Quick</span>
                 {[
                   {emoji:"🍼",label:"Feed",action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""})},
+                  {emoji:"🤱",label:"Breast",action:()=>startBreastTimer("L")},
                   {emoji:"💩",label:"Nappy",action:()=>quickAddLog("poop",{type:"poop",time:nowTime(),poopType:"wet",night:false,note:""})},
                   {emoji:"😴",label:napOn?"Stop":"Nap",action:()=>{
                     if(napOn){
@@ -5899,14 +5905,7 @@ function App(){
                   </div>
                 );
               })()}
-              <div style={{display:"flex",gap:8,marginTop:4}}>
-                <button onClick={copySummary} style={{flex:1,padding:"13px",borderRadius:14,border:`1.5px solid ${C.rose}`,background:"var(--card-bg-solid)",color:C.ter,fontSize:15,cursor:_cP,fontFamily:_fI,fontWeight:600,boxShadow:"0 2px 8px rgba(201,112,90,0.08)"}}>
-                  {copied?"✓ Copied!":"📋 Copy Day"}
-                </button>
-                <button onClick={()=>{setTab("insights");setInsightSection(p=>({...p,sleep:true}));}} style={{flex:1,padding:"13px",borderRadius:14,border:_bN,background:`linear-gradient(135deg,#c9705a,#a85a44)`,color:"white",fontSize:15,cursor:_cP,fontFamily:_fI,fontWeight:600,boxShadow:"0 4px 14px rgba(201,112,90,0.3)"}}>
-                  💡 Full Insights
-                </button>
-              </div>
+
             </div>
           )
         )}
