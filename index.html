@@ -2607,8 +2607,7 @@ function App() {
     return null;
   }
 
-  // ─── Drag reorder infrastructure ──────────────────────────────
-  const reorderRef = useRef(reorderEntry);
+  // ─── Drag reorder callback (reorderRef already declared above) ──
   useEffect(() => { reorderRef.current = reorderEntry; });
 
   const logListCallbackRef = useCallback((el) => {
