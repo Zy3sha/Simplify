@@ -2413,6 +2413,7 @@ function App(){
     if(!entries.length) return;
     const hasBed = entries.some(e=>e.type==="sleep"&&!e.night);
     if(!hasBed) return;
+    const prevD = (()=>{const dt=new Date(selDay+"T12:00:00");dt.setDate(dt.getDate()-1);return dt.toISOString().split("T")[0];})();
     const reclassified = autoClassifyNight([...entries]);
     let changed = false;
     for(let i=0;i<reclassified.length;i++){
@@ -4168,7 +4169,7 @@ function App(){
     }
     setDays(d => {
       const existing = d[date] || [];
-      return { ...d, [date]: autoClassifyNight(dedupEntries([...existing, ...parsedEntries.entries])) };
+      return { ...d, [date]: autoClassifyNight([...existing, ...parsedEntries.entries]) };
     });
     if (parsedEntries.detectedDate) setSelDay(parsedEntries.detectedDate);
     setModal(null); _setParsedEntries(null); setPasteText("");
@@ -4187,9 +4188,10 @@ function App(){
     const bedtimes = sorted.filter(e => e.type === "sleep" && !e.night);
     let bedtime = bedtimes.length ? bedtimes[bedtimes.length-1].time : null;
 
-    // Rule 1: No previous-day fallback. Night mode only from THIS day's bedtime.
+    // If still no bedtime, use a safe default of 19:00 for classification purposes
     if (!bedtime) {
       // Only reclassify entries that are clearly overnight (midnight–04:59)
+      // NEVER create phantom classifications for 5am+ entries
       return entries.map(e => {
         if (e.nightLocked) return e;
         if (e.type !== "wake" && e.type !== "feed") return e;
@@ -4496,8 +4498,7 @@ function App(){
   }, []);
 
 
-  // Rule 3: No auto next-day creation. Users create days manually.
-
+  // Rule 3: No auto next-day creation. Days are created manually only.
 
   useEffect(()=>{
     function ensureToday(){
@@ -5116,8 +5117,7 @@ function App(){
       {tutStep >= 0 && (()=>{
         const TUT_STEPS = [
           { icon:"👋", title:"Welcome to OBubba!", body:"A quick tour of how everything works — takes about 90 seconds. Tap anywhere or Next to continue.", location:null },
-          { icon:"⚡", title:"One-Tap Quick Logging", body:"The emoji row (🍼💩😴🫙☀️) below the age card is your best friend at 3am. One tap = instant log at the current time. Tap 😴 to start/stop the nap timer. You can always edit details later — just tap the entry in your log.", location:"Below age info card" },
-          { icon:"🍼", title:"Detailed Log Forms", body:"Below the one-tap row, the larger cards open detailed log forms. Tap Feed for bottle, breast or solids with amounts. Nappy for dirty nappy type. Sleep for naps or bedtime. Pump for pumping sessions. Wake Up for morning wake.", location:"Quick action cards" },
+          { icon:"🍼", title:"Log Feeds, Nappies & Sleep", body:"The buttons below the header are your main logging tools. Tap Feed for bottle, breast or solids. Pump for pumping sessions. Nappy for wet or dirty changes (dirty lets you pick poop type). Sleep for naps or bedtime. Wake Up to log the morning.", location:"Centre of screen" },
           { icon:"🕐", title:"Time Inputs", body:"When logging anything, tap the time field to open a popup where you can either type a time (like 7:30am or 14:00) or use the scroll wheel. Leave it empty and it logs as now — you can always edit later.", location:"Any log panel" },
           { icon:"⏱️", title:"Nap & Bedtime Countdown", body:"The countdown pill in the top right shows when the next nap is due — based on your baby's age and wake windows. Once all naps are done it switches to a bedtime countdown. Tap it to start a nap timer or log bedtime.", location:"Top right of screen" },
           { icon:"🤱", title:"Breastfeed & Pump Timers", body:"Tap 🤱 Start Feed in the header to begin a live breastfeed — switch sides and save when done. Tap 🫙 Pump in the log bar to record a pumping session with time, duration and amount. Both log automatically.", location:"Header & log bar" },
@@ -5555,18 +5555,18 @@ function App(){
                 </div>
               )}
 
-              {/* One-tap quick log — for tired parents */}
+              {/* Quick-tap row for tired parents */}
               <div style={{display:"flex",gap:6,marginBottom:10}}>
                 {[
-                  {emoji:"🍼",type:"feed",  data:{type:"feed",time:nowTime(),feedType:"milk",amount:0,note:"(quick log)"}},
-                  {emoji:"💩",type:"poop",  data:{type:"poop",time:nowTime(),poopType:"wet",note:""}},
-                  {emoji:"😴",type:"nap",   action:function(){ if(!napOn) startNap(); else endNap(); }},
-                  {emoji:"🫙",type:"pump",  data:{type:"feed",time:nowTime(),feedType:"pump",pumpL:0,pumpR:0,amount:0,note:"(quick log)"}},
-                  {emoji:"☀️",type:"wake",  data:{type:"wake",time:nowTime(),night:false,note:""}},
+                  {emoji:"🍼",type:"feed",data:{type:"feed",time:nowTime(),feedType:"milk",amount:0,note:"(quick log)"}},
+                  {emoji:"💩",type:"poop",data:{type:"poop",time:nowTime(),poopType:"wet",note:""}},
+                  {emoji:"😴",type:"nap",action:function(){if(!napOn)startNap();else endNap();}},
+                  {emoji:"🫙",type:"pump",data:{type:"feed",time:nowTime(),feedType:"pump",pumpL:0,pumpR:0,amount:0,note:"(quick log)"}},
+                  {emoji:"☀️",type:"wake",data:{type:"wake",time:nowTime(),night:false,note:""}},
                 ].map(function(item){return(
                   <button key={item.type} onClick={function(){
-                    if(item.action) { item.action(); return; }
-                    quickAddLog(item.type, {night:false,...item.data});
+                    if(item.action){item.action();return;}
+                    quickAddLog(item.type,{night:false,...item.data});
                   }}
                     style={{flex:1,padding:"8px 2px",borderRadius:12,border:"1.5px solid "+C.blush,background:"white",cursor:_cP,fontSize:20,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 4px rgba(201,112,90,0.06)"}}>
                     {item.emoji}
@@ -5775,24 +5775,23 @@ function App(){
                 {(()=>{
                   const sleepEv=dayE.find(e=>e.type==="sleep");
                   const bedMinsVal=sleepEv?timeVal(sleepEv):20*60;
-                  // Sort in chronological night order: evening first, then early morning
                   const nightSorted=[...nightE].sort((a,b)=>{
-                    const aM=timeVal(a), bM=timeVal(b);
-                    const aSort=aM>=bedMinsVal?aM:aM+1440;
-                    const bSort=bM>=bedMinsVal?bM:bM+1440;
-                    return aSort-bSort;
+                    const aM=timeVal(a),bM=timeVal(b);
+                    const aS=aM>=bedMinsVal?aM:aM+1440;
+                    const bS=bM>=bedMinsVal?bM:bM+1440;
+                    return aS-bS;
                   });
                   const pts=[];
                   if(sleepEv) pts.push({label:"Bedtime",time:sleepEv.time});
-                  nightSorted.forEach((e,i)=>pts.push({label:`Wake ${i+1}`,time:e.time,id:e.id,amount:e.amount,note:e.note}));
+                  nightSorted.forEach((e,i)=>pts.push({label:"Wake "+(i+1),time:e.time,id:e.id,amount:e.amount,note:e.note}));
                   return nightSorted.map((e,i)=>{
-                    // Stretch from previous point (bedtime or last wake) to this wake
-                    const prevPt=pts[i];const thisPt=pts[i+1];
+                    const prevPt=pts[i];
+                    const thisPt=pts[i+1];
                     let strMins=0;
                     if(prevPt&&thisPt){
-                      const prevM=timeVal(prevPt);const thisM=timeVal(thisPt);
-                      strMins=thisM>=prevM?thisM-prevM:(thisM+1440)-prevM;
-                      if(strMins>1440) strMins-=1440;
+                      const pM=timeVal(prevPt),tM=timeVal(thisPt);
+                      strMins=tM>=pM?tM-pM:(tM+1440)-pM;
+                      if(strMins>1440)strMins-=1440;
                     }
                     return(
                       <div key={e.id}>
