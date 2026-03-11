@@ -1144,8 +1144,8 @@ function RestoreDataForm({ restoreFromBackup, setShowFamilyModal, familyUsername
         <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:18}}>🔄</span>
           <div style={{flex:1}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#2a7a50",marginBottom:2}}>Data restores automatically</div>
-            <div style={{fontSize:13,color:"#4a9a70",lineHeight:1.4}}>
+            <div style={{fontSize:14,fontWeight:700,color:"var(--mint)",marginBottom:2}}>Data restores automatically</div>
+            <div style={{fontSize:13,color:"var(--mint)",lineHeight:1.4}}>
               {backupCode
                 ? <>Signed in as <strong>{familyUsername}</strong> — your data is linked to your account and restores automatically on any device when you sign in.</>
                 : <>Signed in as <strong>{familyUsername}</strong> — connecting to your backup… this takes a few seconds.</>
@@ -1154,7 +1154,7 @@ function RestoreDataForm({ restoreFromBackup, setShowFamilyModal, familyUsername
           </div>
         </div>
         {!restoreMode && (
-          <button onClick={()=>setRestoreMode(true)} style={{width:"100%",padding:"8px 16px",background:_bN,border:_bN,borderTop:"1px dashed #b0e8cc",textAlign:"left",cursor:_cP,fontSize:13,color:"#4a9a70",fontFamily:_fI}}>
+          <button onClick={()=>setRestoreMode(true)} style={{width:"100%",padding:"8px 16px",background:_bN,border:_bN,borderTop:"1px dashed #b0e8cc",textAlign:"left",cursor:_cP,fontSize:13,color:"var(--mint)",fontFamily:_fI}}>
             ↗ Restore from a different account instead…
           </button>
         )}
@@ -1224,22 +1224,22 @@ function LeapBanner({ l, ageWeeks, C }) {
             <span style={{fontSize:12,fontWeight:700,color:isActive?"#4a3cb5":"#7060c0",letterSpacing:"0.05em",textTransform:"uppercase"}}>Phase {l.phase}</span>
             <span style={{fontSize:13,fontWeight:600,color:isActive?"#2d2060":"#5040a0"}}>{l.name}</span>
             {isActive && <span style={{fontSize:10,background:"#7b68ee",color:"white",borderRadius:99,padding:"2px 7px",fontWeight:700}}>NOW</span>}
-            {!isActive && weeksAway > 0 && weeksAway <= 4 && <span style={{fontSize:10,background:"#e0dbf5",color:"#6050b0",borderRadius:99,padding:"2px 7px",fontWeight:700}}>in {weeksAway}w</span>}
+            {!isActive && weeksAway > 0 && weeksAway <= 4 && <span style={{fontSize:10,background:"var(--card-bg-alt)",color:"#6050b0",borderRadius:99,padding:"2px 7px",fontWeight:700}}>in {weeksAway}w</span>}
           </div>
-          <div style={{fontSize:11,color:"#9080c8",marginTop:1,fontFamily:_fM}}>{isActive?`wk ${l.windowStart}\u2013${l.windowEnd} \u00b7 happening now`:`around wk ${l.peakWeek}`}</div>
+          <div style={{fontSize:11,color:"var(--text-lt)",marginTop:1,fontFamily:_fM}}>{isActive?`wk ${l.windowStart}\u2013${l.windowEnd} \u00b7 happening now`:`around wk ${l.peakWeek}`}</div>
         </div>
-        <span style={{fontSize:12,color:"#9080c8"}}>{open?"\u25b2":"\u25bc"}</span>
+        <span style={{fontSize:12,color:"var(--text-lt)"}}>{open?"\u25b2":"\u25bc"}</span>
       </div>
       {open && (
         <div style={{padding:"0 14px 12px",borderTop:"1px solid #d8d2f0"}}>
-          <div style={{fontSize:13,color:"#5040a0",background:"rgba(123,104,238,0.08)",borderRadius:10,padding:"8px 11px",marginBottom:9,lineHeight:1.5,marginTop:2}}>
+          <div style={{fontSize:13,color:"var(--text-mid)",background:"var(--chip-bg)",borderRadius:10,padding:"8px 11px",marginBottom:9,lineHeight:1.5,marginTop:2}}>
             <span style={{fontWeight:700}}>What to expect: </span>{l.fussy}
           </div>
           <div style={{fontSize:12,color:"#4a3cb5",fontWeight:700,marginBottom:5}}>Skills that emerge</div>
           {l.skills.map((s,i)=>(
             <div key={i} style={{display:"flex",gap:7,marginBottom:4}}>
               <span style={{color:"#7b68ee",flexShrink:0,marginTop:1}}>{"\u2192"}</span>
-              <span style={{fontSize:13,color:"#5040a0",lineHeight:1.4}}>{s}</span>
+              <span style={{fontSize:13,color:"var(--text-mid)",lineHeight:1.4}}>{s}</span>
             </div>
           ))}
         </div>
@@ -5258,7 +5258,7 @@ function App(){
                 <div style={{width:158,height:158,borderRadius:36,overflow:"hidden",border:`1.5px solid ${C.blush}`,boxShadow:"0 24px 48px rgba(201,112,90,0.2), inset 0 1px 0 rgba(255,255,255,0.8)",animation:"obFloat 5s ease infinite",position:"relative"}}>
                   <img src="oliver.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";e.target.parentNode.style.background="#fdf0eb";e.target.parentNode.innerHTML="<div style='font-size:72px;line-height:158px'>👶</div>";}}/>
                 </div>
-                <div style={{position:"absolute",bottom:-6,right:-6,width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#50c878,#38b060)",border:"2.5px solid #faf6f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,boxShadow:"0 4px 14px rgba(80,200,120,0.45)"}}>✓</div>
+                <div style={{position:"absolute",bottom:-6,right:-6,width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#50c878,#38b060)",border:"2.5px solid var(--card-border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,boxShadow:"0 4px 14px rgba(80,200,120,0.45)"}}>✓</div>
               </div>
 
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:700,color:C.deep,lineHeight:1.18,marginBottom:14}}>
@@ -5370,9 +5370,9 @@ function App(){
 
           {obChildMode==="link" && (
             <div>
-              <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px 14px",marginBottom:14,border:"1px solid #b0e8cc",display:"flex",gap:10,alignItems:"flex-start",textAlign:"left"}}>
+              <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px 14px",marginBottom:14,border:"1px solid var(--card-border)",display:"flex",gap:10,alignItems:"flex-start",textAlign:"left"}}>
                 <span style={{fontSize:18,flexShrink:0}}>📲</span>
-                <div style={{fontSize:13,color:"#2a7a50",lineHeight:1.55}}>If another parent has already set up this baby, they can share a <strong>6-digit code</strong> from their Share menu. Enter it below to add the child to your app.</div>
+                <div style={{fontSize:13,color:"var(--mint)",lineHeight:1.55}}>If another parent has already set up this baby, they can share a <strong>6-digit code</strong> from their Share menu. Enter it below to add the child to your app.</div>
               </div>
               <input
                 value={obLinkCode}
@@ -5611,7 +5611,7 @@ function App(){
             }}>+</button>
           </div>
           <button onClick={e=>{e.stopPropagation();setTab("settings");}}
-            style={{background:"rgba(255,255,255,0.5)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:140}}>
+            style={{background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:140}}>
             <span style={{fontSize:14}}>👤</span>
             <span style={{fontSize:11,fontFamily:_fM,fontWeight:700,color:C.mid,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{familyUsername||"Account"}</span>
           </button>
@@ -5629,9 +5629,9 @@ function App(){
         ) : (
           <form onSubmit={e=>{e.preventDefault();setBabyName(nameIn.trim());setNameEdit(false);}} style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
             <input autoFocus value={nameIn} onChange={e=>setNameIn(e.target.value)} placeholder="e.g. Oliver"
-              style={{flex:1,fontSize:18,padding:"9px 13px",borderRadius:12,border:_bN,background:"rgba(255,255,255,0.7)",color:C.deep,outline:_oN,fontFamily:_fI}}/>
+              style={{flex:1,fontSize:18,padding:"9px 13px",borderRadius:12,border:_bN,background:"var(--card-bg)",color:C.deep,outline:_oN,fontFamily:_fI}}/>
             <button type="submit" style={{background:C.ter,border:_bN,borderRadius:10,color:"white",fontSize:14,padding:"9px 14px",cursor:_cP,fontWeight:700}}>Save</button>
-            {babyName&&<button type="button" onClick={()=>setNameEdit(false)} style={{background:"rgba(255,255,255,0.4)",border:_bN,borderRadius:10,color:C.mid,fontSize:14,padding:"9px 10px",cursor:_cP}}>✕</button>}
+            {babyName&&<button type="button" onClick={()=>setNameEdit(false)} style={{background:"var(--chip-bg)",border:_bN,borderRadius:10,color:C.mid,fontSize:14,padding:"9px 10px",cursor:_cP}}>✕</button>}
           </form>
         )}
         {}
@@ -5639,28 +5639,28 @@ function App(){
           {(()=>{
             if (!age && !babyUnborn) return (
               <div onClick={e=>{e.stopPropagation();setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsConfirmDelete(false);setShowChildSettings(true);}}
-                style={{fontSize:13,color:C.mid,cursor:_cP,background:"rgba(255,255,255,0.4)",borderRadius:99,padding:"5px 12px",fontFamily:_fM,display:"inline-block"}}>
+                style={{fontSize:13,color:C.mid,cursor:_cP,background:"var(--chip-bg)",borderRadius:99,padding:"5px 12px",fontFamily:_fM,display:"inline-block"}}>
                 ⚙️ Add date of birth
               </div>
             );
             if (babyUnborn && babyDob) {
               const daysUntil = Math.ceil((new Date(babyDob) - new Date()) / (1000*60*60*24));
-              return <div style={{background:"rgba(255,255,255,0.55)",borderRadius:99,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:5,fontSize:14,color:C.deep,fontWeight:700}}>🤰 {daysUntil > 0 ? `Due in ${daysUntil} days` : "Due any day!"}</div>;
+              return <div style={{background:"var(--card-bg)",borderRadius:99,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:5,fontSize:14,color:C.deep,fontWeight:700}}>🤰 {daysUntil > 0 ? `Due in ${daysUntil} days` : "Due any day!"}</div>;
             }
             if (!age) return null;
-            return <div style={{background:"rgba(255,255,255,0.55)",borderRadius:99,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:5,fontSize:14,color:C.deep,fontWeight:700}}>🎂 {fmtAge(age)} · {age.totalWeeks}wk</div>;
+            return <div style={{background:"var(--card-bg)",borderRadius:99,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:5,fontSize:14,color:C.deep,fontWeight:700}}>🎂 {fmtAge(age)} · {age.totalWeeks}wk</div>;
           })()}
         </div>
         {tab === "day" && (napOn || breastStartTime) && (
           <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
             {napOn && (
-              <div style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.85)",borderRadius:99,padding:"5px 6px 5px 12px",boxShadow:"0 2px 8px rgba(44,31,26,0.12)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,background:"var(--card-bg-solid)",borderRadius:99,padding:"5px 6px 5px 12px",boxShadow:"0 2px 8px rgba(44,31,26,0.12)"}}>
                 <span style={{fontSize:13,fontFamily:_fM,fontWeight:700,color:C.mint}}>😴 {fmtSec(napSec)}</span>
                 <button onClick={endNap} style={{background:C.mint,border:_bN,borderRadius:99,padding:"3px 10px",fontSize:12,color:"white",cursor:_cP,fontWeight:700}}>Save</button>
               </div>
             )}
             {breastStartTime && (
-              <div style={{background:"rgba(255,255,255,0.92)",borderRadius:14,padding:"7px 10px",boxShadow:"0 2px 8px rgba(44,31,26,0.12)",display:"flex",flexDirection:"column",gap:5}}>
+              <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"7px 10px",boxShadow:"0 2px 8px rgba(44,31,26,0.12)",display:"flex",flexDirection:"column",gap:5}}>
                 <div style={{display:"flex",gap:5}}>
                   {["L","R"].map(side=>(
                     <button key={side} onClick={()=>switchBreastSide(side)} style={{
@@ -5685,7 +5685,7 @@ function App(){
         )}
         {tab === "day" && !napOn && !breastStartTime && (
           <div style={{display:"flex",gap:8,marginBottom:10}}>
-            <button onClick={()=>startBreastTimer("L")} style={{background:"rgba(255,255,255,0.6)",border:_bN,borderRadius:99,padding:"5px 14px",fontSize:13,color:C.ter,cursor:_cP,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+            <button onClick={()=>startBreastTimer("L")} style={{background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"5px 14px",fontSize:13,color:C.ter,cursor:_cP,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
               🤱 Start Feed
             </button>
             {(()=>{
@@ -5711,7 +5711,7 @@ function App(){
               if(isNeutral) {
                 return (
                   <button onClick={()=>{setInlineWakeTime(nowTime());setShowWakeInline(v=>!v);}}
-                    style={{marginLeft:"auto",background:"rgba(255,255,255,0.6)",border:_bN,borderRadius:99,padding:"5px 11px",display:"flex",alignItems:"center",gap:5,cursor:_cP,fontFamily:_fI,transition:"all 0.15s"}}>
+                    style={{marginLeft:"auto",background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"5px 11px",display:"flex",alignItems:"center",gap:5,cursor:_cP,fontFamily:_fI,transition:"all 0.15s"}}>
                     <span style={{fontSize:13}}>☀️</span>
                     <div style={{textAlign:"left"}}>
                       <div style={{fontSize:9,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:"0.06em",lineHeight:1}}>Next Nap</div>
@@ -5791,7 +5791,7 @@ function App(){
         )}
         <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",paddingBottom:14}}>
           <div style={{flexShrink:0}}>
-            <button onClick={()=>{setNewDate(todayStr());setModal("addDay");}} style={{background:"rgba(255,255,255,0.5)",border:`1px dashed ${C.lt}`,borderRadius:20,padding:"5px 12px",color:C.mid,fontSize:13,fontWeight:600,cursor:_cP,whiteSpace:"nowrap"}}>+ Date</button>
+            <button onClick={()=>{setNewDate(todayStr());setModal("addDay");}} style={{background:"var(--card-bg)",border:`1px dashed ${C.lt}`,borderRadius:20,padding:"5px 12px",color:C.mid,fontSize:13,fontWeight:600,cursor:_cP,whiteSpace:"nowrap"}}>+ Date</button>
           </div>
           {displayDayKeys.map(d=>(
             <div key={d} style={{flexShrink:0,display:"flex",alignItems:"center",gap:2,background:d===selDay?"white":"rgba(255,255,255,0.35)",borderRadius:20,padding:"4px 4px 4px 11px",border:d===selDay?"none":`1px solid rgba(255,255,255,0.45)`}}>
@@ -5851,7 +5851,7 @@ function App(){
                     <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{ageStage.tip}</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:7}}>
                       {[{icon:"😴",val:ageStage.napGoal},{icon:"🍼",val:ageStage.feedGoal},{icon:"🌙",val:ageStage.nightNote}].map((x,i)=>(
-                        <span key={i} style={{fontSize:14,fontFamily:_fM,background:"rgba(201,112,90,0.1)",color:C.ter,padding:"2px 8px",borderRadius:99}}>{x.icon} {x.val}</span>
+                        <span key={i} style={{fontSize:14,fontFamily:_fM,background:"var(--chip-bg)",color:C.ter,padding:"2px 8px",borderRadius:99}}>{x.icon} {x.val}</span>
                       ))}
                     </div>
                   </div>
@@ -5932,7 +5932,7 @@ function App(){
                 if(hasBed) return null;
                 if(!pred && !suggestedBed) return null;
                 return (
-                  <div style={{background:"linear-gradient(135deg,#eaf6f3,#f0faf6)",border:`1px solid ${C.mint}44`,borderRadius:16,padding:"12px 14px",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                  <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.mint}44`,borderRadius:16,padding:"12px 14px",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
                     {pred ? (
                       <>
                         <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -6076,15 +6076,15 @@ function App(){
                   );
                 })}
               </div>
-              <div style={{background:"var(--card-bg)",borderRadius:20,padding:"14px 17px",marginBottom:18,border:"1px solid #d8d2f0"}}>
+              <div style={{background:"var(--card-bg)",borderRadius:20,padding:"14px 17px",marginBottom:18,border:"1px solid var(--card-border)"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <div style={{display:"flex",alignItems:"center",gap:7}}>
                     <div style={{width:3,height:18,background:"#7b68ee",borderRadius:99}}/>
-                    <span style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",color:"#5040a0",fontSize:16}}>Night Wakes</span>
+                    <span style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",color:"var(--text-mid)",fontSize:16}}>Night Wakes</span>
                   </div>
-                  <button onClick={()=>{setNwForm({time:"",ml:"",selfSettled:false,note:""});setShowNightWake(true);}} style={{background:"#e8e4ff",border:_bN,borderRadius:99,padding:"4px 11px",fontSize:15,color:"#7b68ee",cursor:_cP,fontWeight:600}}>+ add</button>
+                  <button onClick={()=>{setNwForm({time:"",ml:"",selfSettled:false,note:""});setShowNightWake(true);}} style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:99,padding:"4px 11px",fontSize:15,color:"#7b68ee",cursor:_cP,fontWeight:600}}>+ add</button>
                 </div>
-                {nightE.length===0&&<div style={{textAlign:"center",color:"#9080c8",fontSize:14,fontFamily:_fM,padding:"6px 0"}}>No night wakes logged</div>}
+                {nightE.length===0&&<div style={{textAlign:"center",color:"var(--text-lt)",fontSize:14,fontFamily:_fM,padding:"6px 0"}}>No night wakes logged</div>}
                 {(()=>{
                   const sleepEv=dayE.find(e=>e.type==="sleep");
                   const pts=[];
@@ -6098,26 +6098,26 @@ function App(){
                       <div key={e.id}>
                         {fromPt&&toPt&&strMins>0&&(
                           <div style={{display:"flex",alignItems:"center",gap:6,padding:"3px 4px 5px",opacity:0.7}}>
-                            <div style={{flex:1,height:1,background:"#d8d2f0"}}/>
+                            <div style={{flex:1,height:1,background:"var(--card-bg-alt)"}}/>
                             <span style={{fontSize:14,fontFamily:_fM,color:strMins>=180?"#6fa898":strMins>=120?"#d4a855":"#7b68ee"}}>{hm(strMins)}</span>
-                            <div style={{flex:1,height:1,background:"#d8d2f0"}}/>
+                            <div style={{flex:1,height:1,background:"var(--card-bg-alt)"}}/>
                           </div>
                         )}
-                        <div style={{padding:"7px 10px",background:"var(--card-bg-solid)",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
+                        <div style={{padding:"7px 10px",background:"var(--card-bg-solid)",borderRadius:10,border:"1px solid var(--card-border)",marginBottom:5}}>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                             <div>
-                              <span style={{color:"#5040a0",fontSize:15}}>🌟 {fmt12(e.time)} wake</span>
+                              <span style={{color:"var(--text-mid)",fontSize:15}}>🌟 {fmt12(e.time)} wake</span>
                               {e.selfSettled&&<div style={{fontSize:12,color:"#50c878",fontFamily:_fM,marginTop:2}}>Self settled</div>}
                               {e.assisted&&<div style={{fontSize:12,color:"#7b68ee",fontFamily:_fM,marginTop:2}}>
                                 Assisted soothing{e.assistedType==="milk"?" – milk":e.assistedNote?" – "+e.assistedNote:""}
                                 {e.assistedDuration?<span> · Duration: {e.assistedDuration}m</span>:null}
                               </div>}
-                              {!e.selfSettled&&!e.assisted&&e.note&&<div style={{fontSize:14,color:"#9080c8",fontStyle:"italic",marginTop:1}}>{e.note}</div>}
+                              {!e.selfSettled&&!e.assisted&&e.note&&<div style={{fontSize:14,color:"var(--text-lt)",fontStyle:"italic",marginTop:1}}>{e.note}</div>}
                             </div>
                             <div style={{display:"flex",alignItems:"center",gap:7}}>
-                              {e.amount>0&&<span style={{background:"rgba(212,168,85,0.2)",color:C.gold,fontFamily:_fM,fontSize:15,padding:"2px 7px",borderRadius:99}}>{e.amount} ml</span>}
-                              <button onClick={()=>openEdit(e)} style={{background:"#e8e4ff",border:_bN,borderRadius:"50%",width:21,height:21,color:"#7b68ee",cursor:_cP,fontSize:15}}>✎</button>
-                              <button onClick={()=>delEntry(e.id)} style={{background:"#e8e4ff",border:_bN,borderRadius:"50%",width:21,height:21,color:"#9080c8",cursor:_cP,fontSize:14}}>✕</button>
+                              {e.amount>0&&<span style={{background:"var(--chip-bg)",color:C.gold,fontFamily:_fM,fontSize:15,padding:"2px 7px",borderRadius:99}}>{e.amount} ml</span>}
+                              <button onClick={()=>openEdit(e)} style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:"50%",width:21,height:21,color:"#7b68ee",cursor:_cP,fontSize:15}}>✎</button>
+                              <button onClick={()=>delEntry(e.id)} style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:"50%",width:21,height:21,color:"var(--text-lt)",cursor:_cP,fontSize:14}}>✕</button>
                             </div>
                           </div>
                         </div>
@@ -6345,7 +6345,7 @@ function App(){
                         <div key={"w"+i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${C.blush}`}}>
                           <div style={{fontSize:13,color:C.deep}}>{fmtLong(w.date)}</div>
                           <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                            <span style={{background:"#f5e0d8",color:C.ter,fontFamily:_fM,fontSize:12,padding:"2px 8px",borderRadius:99}}>{w.kg}kg</span>
+                            <span style={{background:"var(--chip-bg)",color:C.ter,fontFamily:_fM,fontSize:12,padding:"2px 8px",borderRadius:99}}>{w.kg}kg</span>
                             <button onClick={()=>setWeights(ws=>ws.filter(x=>x.date!==w.date))} style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:"50%",width:20,height:20,color:C.lt,cursor:_cP,fontSize:12,lineHeight:"20px",padding:0}}>✕</button>
                           </div>
                         </div>
@@ -6354,7 +6354,7 @@ function App(){
                         <div key={"h"+i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${C.blush}`}}>
                           <div style={{fontSize:13,color:C.deep}}>{fmtLong(h.date)}</div>
                           <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                            <span style={{background:"#d5e7f2",color:C.sky,fontFamily:_fM,fontSize:12,padding:"2px 8px",borderRadius:99}}>{h.cm}cm</span>
+                            <span style={{background:"var(--chip-bg)",color:C.sky,fontFamily:_fM,fontSize:12,padding:"2px 8px",borderRadius:99}}>{h.cm}cm</span>
                             <button onClick={()=>setHeights(hs=>hs.filter(x=>x.date!==h.date))} style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:"50%",width:20,height:20,color:C.lt,cursor:_cP,fontSize:12,lineHeight:"20px",padding:0}}>✕</button>
                           </div>
                         </div>
@@ -6454,7 +6454,7 @@ function App(){
                   <div style={{background:fc.bg,border:`1px solid ${fc.color}30`,borderLeft:`4px solid ${fc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:14}}>
                     <div style={{fontSize:13,fontFamily:_fM,color:fc.color,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>{fc.isPastDay ? "Milk Intake" : "Today's Milk Intake"}</div>
                     <div style={{display:"flex",gap:10,marginBottom:10}}>
-                      <div style={{flex:1,background:"rgba(255,255,255,0.7)",borderRadius:12,padding:"10px 12px"}}>
+                      <div style={{flex:1,background:"var(--card-bg)",borderRadius:12,padding:"10px 12px"}}>
                         <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Daytime</div>
                         <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:fc.color,lineHeight:1}}>{fc.dayMl}ml</div>
                         <div style={{fontSize:11,color:fc.metMinimum?C.mint:fc.approachingBed?C.ter:C.lt,marginTop:2,fontWeight:fc.approachingBed&&!fc.metMinimum?600:400}}>
@@ -6462,14 +6462,14 @@ function App(){
                         </div>
                       </div>
                       {fc.nightMl > 0 && (
-                        <div style={{flex:1,background:"rgba(42,31,58,0.07)",borderRadius:12,padding:"10px 12px"}}>
+                        <div style={{flex:1,background:"var(--chip-bg)",borderRadius:12,padding:"10px 12px"}}>
                           <div style={{fontSize:11,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Night feeds</div>
                           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:"#7a6898",lineHeight:1}}>{fc.nightMl}ml</div>
                           <div style={{fontSize:11,color:"#9888b8",marginTop:2}}>total {fc.totalMl}ml</div>
                         </div>
                       )}
                       {fc.nightMl === 0 && (
-                        <div style={{flex:1,background:"rgba(255,255,255,0.5)",borderRadius:12,padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                        <div style={{flex:1,background:"var(--card-bg)",borderRadius:12,padding:"10px 12px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
                           <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>NHS range</div>
                           <div style={{fontSize:13,fontWeight:600,color:C.mid}}>{fc.totalLabel}</div>
                         </div>
@@ -6480,16 +6480,16 @@ function App(){
                       <div style={{fontSize:13,color:C.mid,lineHeight:1.5}}>{fc.statusMsg}</div>
                     </div>
                     {fc.sleepLink && (
-                      <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"#f0ecff",border:"1px solid #d4c8f8",borderRadius:10,padding:"9px 11px",marginBottom:fc.suggestions.length?6:0}}>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:10,padding:"9px 11px",marginBottom:fc.suggestions.length?6:0}}>
                         <span style={{fontSize:13,flexShrink:0}}>{fc.sleepLink.icon}</span>
                         <div>
                           {fc.sleepLink.title && <div style={{fontSize:12,fontWeight:700,color:"#6040c0",marginBottom:2}}>{fc.sleepLink.title}</div>}
-                          <div style={{fontSize:12,color:"#5030a0",lineHeight:1.5}}>{fc.sleepLink.body}</div>
+                          <div style={{fontSize:12,color:"var(--text-mid)",lineHeight:1.5}}>{fc.sleepLink.body}</div>
                         </div>
                       </div>
                     )}
                     {fc.suggestions.map((s,i)=>(
-                      <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,background:"rgba(255,255,255,0.6)",borderRadius:10,padding:"8px 11px",marginTop:5}}>
+                      <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg)",borderRadius:10,padding:"8px 11px",marginTop:5}}>
                         <span style={{fontSize:13,flexShrink:0}}>{s.icon}</span>
                         <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{s.body}</div>
                       </div>
@@ -6608,9 +6608,9 @@ function App(){
                             <div key={i} style={{padding:"8px 0",borderBottom:i<weekAvgs.length-1?`1px solid ${C.blush}`:"none"}}>
                               <div style={{fontSize:13,fontFamily:_fM,color:C.lt,marginBottom:4}}>{wk.label} · {wk.days} days</div>
                               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                                <span style={{background:"#f5e0d8",color:C.ter,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{wk.avgMl}ml/day</span>
-                                <span style={{background:"#d4ede6",color:C.mint,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{hm(wk.avgNap)} naps</span>
-                                <span style={{background:"#f5eccb",color:"#b88a20",fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{wk.avgNight} wakes</span>
+                                <span style={{background:"var(--chip-bg)",color:C.ter,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{wk.avgMl}ml/day</span>
+                                <span style={{background:"var(--chip-bg)",color:C.mint,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{hm(wk.avgNap)} naps</span>
+                                <span style={{background:"var(--chip-bg)",color:"#b88a20",fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{wk.avgNight} wakes</span>
                               </div>
                             </div>
                           ))}
@@ -6700,7 +6700,7 @@ function App(){
                               const lastNap2 = todayNaps3.length ? todayNaps3[todayNaps3.length-1] : null;
                               const lastNapDur = lastNap2 && lastNap2.start && lastNap2.end ? minDiff(lastNap2.start, lastNap2.end) : 0;
                               return (
-                                <div style={{background:"#edfaf4",border:"1px solid #a0ddc0",borderLeft:"4px solid #50a888",borderRadius:12,padding:"10px 12px",marginBottom:12}}>
+                                <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderLeft:"4px solid #50a888",borderRadius:12,padding:"10px 12px",marginBottom:12}}>
                                   <div style={{fontSize:13,fontWeight:700,color:"#2a7055",marginBottom:4}}>✅ Day sleep target met!</div>
                                   <div style={{fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:8}}>
                                     {lastNapDur >= 90
@@ -6709,23 +6709,23 @@ function App(){
                                   </div>
                                   <div style={{display:"flex",gap:7}}>
                                     <button onClick={()=>setBridgeNap(false)} style={{flex:1,background:"linear-gradient(135deg,#50a888,#3a8870)",border:"none",borderRadius:99,padding:"7px 0",fontSize:13,fontWeight:700,color:"white",cursor:"pointer"}}>Remove bridge nap</button>
-                                    <button onClick={()=>setBridgeNap(true)} style={{flex:1,background:"var(--card-bg)",border:"1px solid #a0ddc0",borderRadius:99,padding:"7px 0",fontSize:13,fontWeight:600,color:"#2a7055",cursor:"pointer"}}>Keep it in</button>
+                                    <button onClick={()=>setBridgeNap(true)} style={{flex:1,background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"7px 0",fontSize:13,fontWeight:600,color:"#2a7055",cursor:"pointer"}}>Keep it in</button>
                                   </div>
                                 </div>
                               );
                             }
                             if (ebr.suggestBridge) {
                               return (
-                                <div style={{background:"#fff8f0",border:"1px solid #f0d8b0",borderLeft:"4px solid #d4a855",borderRadius:12,padding:"10px 12px",marginBottom:12}}>
-                                  <div style={{fontSize:13,fontWeight:700,color:"#8a6020",marginBottom:3}}>🌉 Bridge Nap Suggested</div>
+                                <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderLeft:"4px solid var(--gold)",borderRadius:12,padding:"10px 12px",marginBottom:12}}>
+                                  <div style={{fontSize:13,fontWeight:700,color:"var(--gold)",marginBottom:3}}>🌉 Bridge Nap Suggested</div>
                                   <div style={{fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:bridgeNapScheduled?6:8}}>Today's naps were shorter than usual. A short bridge nap (15–30 min) may help.</div>
                                   {bridgeNapScheduled ? (
                                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                                       <div style={{display:"flex",alignItems:"center",gap:5}}>
                                         <span style={{fontSize:13}}>✅</span>
-                                        <span style={{fontSize:12,fontFamily:_fM,color:"#8a6020",fontWeight:700}}>Added to schedule</span>
+                                        <span style={{fontSize:12,fontFamily:_fM,color:"var(--gold)",fontWeight:700}}>Added to schedule</span>
                                       </div>
-                                      <button onClick={()=>setBridgeNap(false)} style={{background:"rgba(212,168,85,0.15)",border:"1px solid #d4a855",borderRadius:99,padding:"4px 11px",fontSize:12,fontWeight:600,color:"#8a6020",cursor:"pointer"}}>Remove</button>
+                                      <button onClick={()=>setBridgeNap(false)} style={{background:"var(--chip-bg)",border:"1px solid #d4a855",borderRadius:99,padding:"4px 11px",fontSize:12,fontWeight:600,color:"var(--gold)",cursor:"pointer"}}>Remove</button>
                                     </div>
                                   ) : (
                                     <button onClick={()=>setBridgeNap(true)} style={{width:"100%",background:"linear-gradient(135deg,#d4a855,#b8902a)",border:"none",borderRadius:99,padding:"8px 0",fontSize:13,fontWeight:700,color:"white",cursor:"pointer"}}>+ Add bridge nap to schedule</button>
@@ -6735,10 +6735,10 @@ function App(){
                             }
                             if (bridgeNapScheduled) {
                               return (
-                                <div style={{background:"#f8f5ee",border:"1px solid #e8d8a0",borderLeft:"4px solid #c8b060",borderRadius:12,padding:"10px 12px",marginBottom:12}}>
-                                  <div style={{fontSize:13,fontWeight:700,color:"#7a6010",marginBottom:3}}>🌉 Bridge nap scheduled</div>
+                                <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderLeft:"4px solid var(--gold)",borderRadius:12,padding:"10px 12px",marginBottom:12}}>
+                                  <div style={{fontSize:13,fontWeight:700,color:"var(--gold)",marginBottom:3}}>🌉 Bridge nap scheduled</div>
                                   <div style={{fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:6}}>Conditions have changed — bridge nap may no longer be necessary.</div>
-                                  <button onClick={()=>setBridgeNap(false)} style={{background:"rgba(200,176,96,0.15)",border:"1px solid #c8b060",borderRadius:99,padding:"5px 14px",fontSize:12,fontWeight:600,color:"#7a6010",cursor:"pointer"}}>Remove from schedule</button>
+                                  <button onClick={()=>setBridgeNap(false)} style={{background:"var(--chip-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"5px 14px",fontSize:12,fontWeight:600,color:"var(--gold)",cursor:"pointer"}}>Remove from schedule</button>
                                 </div>
                               );
                             }
@@ -6747,12 +6747,12 @@ function App(){
 
                           {/* Bedtime prediction */}
                           {actualBedEntry ? (
-                            <div style={{background:"linear-gradient(135deg,#ede8f5,#f5f0fa)",borderRadius:14,padding:"12px 14px"}}>
+                            <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"12px 14px"}}>
                               <div style={{fontSize:14,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Bedtime Logged 🌙</div>
-                              <div style={{fontSize:15,color:"#9080c8"}}>Sleep tight!</div>
+                              <div style={{fontSize:15,color:"var(--text-lt)"}}>Sleep tight!</div>
                             </div>
                           ) : pred ? (
-                            <div style={{background:"linear-gradient(135deg,#e8f5ef,#f0faf6)",borderRadius:14,padding:"12px 14px"}}>
+                            <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"12px 14px"}}>
                               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:adv||suggestedBed?8:0}}>
                                 <div>
                                   <div style={{fontSize:14,fontFamily:_fM,color:C.mint,textTransform:"uppercase",letterSpacing:_ls08}}>😴 Next Nap Window</div>
@@ -6781,14 +6781,14 @@ function App(){
                               )}
                             </div>
                           ) : adv ? (
-                            <div style={{background:"linear-gradient(135deg,#d5e7f2,#e8f3fa)",borderRadius:14,padding:"12px 14px",marginTop:4}}>
+                            <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"12px 14px",marginTop:4}}>
                               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                                 <div style={{fontSize:14,fontFamily:_fM,color:C.sky,textTransform:"uppercase",letterSpacing:_ls08}}>Predicted Bedtime</div>
                                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.sky}}>{fmt12((() => { const m=adv.combined; return `${String(Math.floor(m/60)%24).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`; })())}</div>
                               </div>
                             </div>
                           ) : suggestedBed ? (
-                            <div style={{background:"linear-gradient(135deg,#d5e7f2,#e8f3fa)",borderRadius:14,padding:"12px 14px",marginTop:4}}>
+                            <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"12px 14px",marginTop:4}}>
                               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                                 <div style={{fontSize:14,fontFamily:_fM,color:C.sky,textTransform:"uppercase",letterSpacing:_ls08}}>{suggestedBed.bedSource==="avg"?"Predicted Bedtime":"Suggested Bedtime"}</div>
                                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.sky}}>{fmt12(suggestedBed.time)}</div>
@@ -6799,15 +6799,15 @@ function App(){
 
                         {/* Circadian rhythm alert */}
                         {circ && circ.isDrifted && (
-                          <div style={{background:"#fff8f0",border:"1px solid #f0d8b0",borderLeft:"4px solid #d4a855",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
+                          <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderLeft:"4px solid var(--gold)",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
                             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
                               <span style={{fontSize:16}}>🌅</span>
-                              <div style={{fontSize:13,fontWeight:700,color:"#8a6020"}}>Circadian Rhythm Running Later</div>
+                              <div style={{fontSize:13,fontWeight:700,color:"var(--gold)"}}>Circadian Rhythm Running Later</div>
                             </div>
                             <div style={{fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:8}}>Morning rhythm running later than typical (avg wake {fmt12(circ.avgWakeStr)}). Gradually shifting wake time earlier may help.</div>
                             <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                               {circ.adjustment.slice(0,5).map((a,i)=>(
-                                <div key={i} style={{background:"#fdf4e0",border:"1px solid #e8d090",borderRadius:8,padding:"3px 8px",fontSize:12,color:"#7a5010",fontFamily:_fM}}>
+                                <div key={i} style={{background:"var(--chip-bg)",border:"1px solid var(--card-border)",borderRadius:8,padding:"3px 8px",fontSize:12,color:"var(--gold)",fontFamily:_fM}}>
                                   Day {a.day}: {fmt12(a.time)}
                                 </div>
                               ))}
@@ -6817,7 +6817,7 @@ function App(){
 
                         {/* Early wake anchor */}
                         {anchor && anchor.earlyWake && (
-                          <div style={{background:"#f5f8ff",border:"1px solid #c8d8f0",borderLeft:"4px solid #7090d0",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
+                          <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderLeft:"4px solid var(--sky)",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
                             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                               <span style={{fontSize:14}}>⏰</span>
                               <div style={{fontSize:13,fontWeight:700,color:"#4060a0"}}>Early Morning Waking Detected</div>
@@ -6831,7 +6831,7 @@ function App(){
                           const dns = dynamicNapStructure();
                           if (!dns || !dns.recommendation) return null;
                           return (
-                            <div style={{background:"#fff8f5",border:"1px solid #f0d0c0",borderLeft:"4px solid "+C.ter,borderRadius:14,padding:"12px 14px",marginBottom:12}}>
+                            <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderLeft:"4px solid var(--ter)",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
                               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                                 <span style={{fontSize:14}}>📋</span>
                                 <div style={{fontSize:13,fontWeight:700,color:C.ter}}>Nap Structure Note</div>
@@ -6846,10 +6846,10 @@ function App(){
                           const alerts = regressionCheck();
                           if (!alerts) return null;
                           return alerts.map((a,i)=>(
-                            <div key={i} style={{background:"#fff8f0",border:"1px solid #f0d8b0",borderLeft:"4px solid #d4a855",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
+                            <div key={i} style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderLeft:"4px solid var(--gold)",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
                               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                                 <span style={{fontSize:16}}>{a.icon}</span>
-                                <div style={{fontSize:13,fontWeight:700,color:"#8a6020"}}>Pattern Shift</div>
+                                <div style={{fontSize:13,fontWeight:700,color:"var(--gold)"}}>Pattern Shift</div>
                               </div>
                               <div style={{fontSize:13,fontWeight:600,color:C.mid,marginBottom:3}}>{a.title}</div>
                               <div style={{fontSize:13,color:C.mid,lineHeight:1.5}}>{a.body}</div>
@@ -6883,7 +6883,7 @@ function App(){
                                   <div style={{fontSize:11,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4}}>Night Stretches</div>
                                   <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                                     {nightWins.map((w,i)=>(
-                                      <div key={i} style={{background:"#e8e4ff",borderRadius:8,padding:"4px 8px",fontSize:13,color:"#5040a0",fontFamily:_fM}}>
+                                      <div key={i} style={{background:"var(--card-bg-alt)",borderRadius:8,padding:"4px 8px",fontSize:13,color:"var(--text-mid)",fontFamily:_fM}}>
                                         {fmt12(w.from)} → {fmt12(w.to)} <strong>{hm(w.mins)}</strong>
                                       </div>
                                     ))}
@@ -7051,11 +7051,11 @@ function App(){
                             </div>
                           ))}
                         </div>
-                        <div style={{background:"var(--card-bg)",borderRadius:12,padding:"10px",marginBottom:8,border:"1px solid #d8d2f0"}}>
+                        <div style={{background:"var(--card-bg)",borderRadius:12,padding:"10px",marginBottom:8,border:"1px solid var(--card-border)"}}>
                           <div style={{fontSize:13,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🌟 Night Wakes</div>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                            <span style={{fontSize:14,color:"#5040a0"}}>{rNightE.length} wake{rNightE.length!==1?"s":""}</span>
-                            {nightFeedMl>0&&<span style={{background:"rgba(212,168,85,0.2)",color:C.gold,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>{nightFeedMl}ml</span>}
+                            <span style={{fontSize:14,color:"var(--text-mid)"}}>{rNightE.length} wake{rNightE.length!==1?"s":""}</span>
+                            {nightFeedMl>0&&<span style={{background:"var(--chip-bg)",color:C.gold,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>{nightFeedMl}ml</span>}
                           </div>
                         </div>
                         {/* Sleep & Feed Insights from analyseTrends */}
@@ -7213,19 +7213,19 @@ function App(){
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:14,fontWeight:done?600:400,color:done?C.mint:C.deep,lineHeight:1.3}}>{m.label}</div>
                     <div style={{fontSize:11,color:C.lt,marginTop:2,display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
-                      <span style={{background:"#f5f0eb",borderRadius:99,padding:"1px 6px"}}>{catInfo?.icon} {catInfo?.label}</span>
+                      <span style={{background:"var(--chip-bg)",borderRadius:99,padding:"1px 6px"}}>{catInfo?.icon} {catInfo?.label}</span>
                       {done ? <span style={{color:C.mint}}>✓ {fmtLong(milestones[m.id].date)}</span>
                             : <span style={{fontFamily:_fM}}>typical wk {m.weeks[1]}</span>}
                     </div>
                   </div>
                   <div style={{flexShrink:0,paddingTop:2}}>
                     {!done && isNow  && <span style={{fontSize:11,background:"var(--chip-bg-active)",color:C.ter,borderRadius:99,padding:"3px 8px",fontWeight:700}}>Now</span>}
-                    {!done && isPast && <span style={{fontSize:11,background:"#f0f8f0",color:C.mint,borderRadius:99,padding:"3px 8px",cursor:_cP}}>Log it</span>}
+                    {!done && isPast && <span style={{fontSize:11,background:"var(--chip-bg)",color:C.mint,borderRadius:99,padding:"3px 8px",cursor:_cP}}>Log it</span>}
                     {!done && isFuture && <span style={{fontSize:11,color:"#bbb",fontFamily:_fM}}>wk {m.weeks[0]}</span>}
                   </div>
                 </div>
                 {exerciseTip && (
-                  <div style={{background:"#f8f4ff",border:"1px solid #d8c8f0",borderRadius:12,padding:"9px 11px",marginBottom:10,marginLeft:32}}>
+                  <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:12,padding:"9px 11px",marginBottom:10,marginLeft:32}}>
                     <div style={{fontSize:11,fontWeight:700,color:"#7a50b8",marginBottom:3}}>💡 Try this to help</div>
                     <div style={{fontSize:13,color:"#5a3880",lineHeight:1.55}}>{exerciseTip}</div>
                   </div>
@@ -7239,7 +7239,7 @@ function App(){
               <button onClick={toggle} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 14px",background:open?"#fdf4f0":C.warm,border:`1px solid ${open?C.blush:"#e8e0da"}`,borderRadius:open?"12px 12px 0 0":12,cursor:_cP,fontFamily:_fI}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <span style={{fontSize:13,fontWeight:700,color:accent||C.mid}}>{label}</span>
-                  <span style={{fontSize:11,background:"#ede8e2",borderRadius:99,padding:"1px 7px",color:C.lt,fontFamily:_fM}}>{count}</span>
+                  <span style={{fontSize:11,background:"var(--chip-bg)",borderRadius:99,padding:"1px 7px",color:C.lt,fontFamily:_fM}}>{count}</span>
                 </div>
                 <span style={{fontSize:11,color:C.lt,display:"inline-block",transform:open?"rotate(180deg)":"rotate(0)"}} >▼</span>
               </button>
@@ -7253,7 +7253,7 @@ function App(){
 
           return (
             <div>
-              <div style={{...card,background:"linear-gradient(135deg,#fdf4f0,#fff8f4)",marginBottom:12,padding:"12px 16px"}}>
+              <div style={{...card,background:"var(--card-bg)",marginBottom:12,padding:"12px 16px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <div>
                     <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:2}}>{possessive(name)} age</div>
@@ -7336,7 +7336,7 @@ function App(){
                   )}
                 </Accordion>
               )}
-              <div style={{background:"#f8f5f0",border:"1px solid #e8dfd4",borderRadius:12,padding:"12px 14px",marginTop:6,marginBottom:4}}>
+              <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:12,padding:"12px 14px",marginTop:6,marginBottom:4}}>
                 <div style={{fontSize:11,color:C.mid,lineHeight:1.7}}>
                   <span style={{fontWeight:700,color:C.deep}}>ℹ️ A note on milestones</span><br/>
                   Every baby develops at their own pace — these ranges are general guidelines, not a fixed schedule. Some babies reach milestones earlier, others later, and both are perfectly normal.<br/><br/>
@@ -7431,22 +7431,22 @@ function App(){
                     {isPrePhase && heroPhase && (()=>{
                       const sd=fmtD2(wkToDate2(heroPhase.windowStart)), pd=fmtD2(wkToDate2(heroPhase.peakWeek)), ed=fmtD2(wkToDate2(heroPhase.windowEnd));
                       return (
-                        <div style={{background:"linear-gradient(135deg,#fffbec,#fff5cc)",border:"1px solid #f0d060",borderRadius:18,padding:"16px",marginBottom:14}}>
+                        <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:18,padding:"16px",marginBottom:14}}>
                           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                             <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#f5c840,#e8a820)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>⛈</div>
                             <div>
-                              <div style={{fontSize:10,fontFamily:_fM,color:"#8a6808",textTransform:"uppercase",letterSpacing:_ls1}}>Approaching · Phase {heroPhase.phase}</div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:"var(--gold)",textTransform:"uppercase",letterSpacing:_ls1}}>Approaching · Phase {heroPhase.phase}</div>
                               <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:"#5a3800"}}>{heroPhase.name}</div>
                             </div>
                           </div>
                           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
                             {[["Unsettled period",`${sd} – ${pd}`],["New skills",`${pd} – ${ed}`]].map(([lbl,val])=>(
-                              <div key={lbl} style={{background:"rgba(245,200,64,0.18)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
-                                <span style={{color:"#8a6808",fontWeight:600}}>{lbl} </span><span style={{color:"#6a4808",fontFamily:_fM}}>{val}</span>
+                              <div key={lbl} style={{background:"var(--chip-bg)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
+                                <span style={{color:"var(--gold)",fontWeight:600}}>{lbl} </span><span style={{color:"var(--gold)",fontFamily:_fM}}>{val}</span>
                               </div>
                             ))}
                           </div>
-                          <div style={{fontSize:13,color:"#6a4808",lineHeight:1.55,marginBottom:9}}>{heroPhase.fussy}</div>
+                          <div style={{fontSize:13,color:"var(--gold)",lineHeight:1.55,marginBottom:9}}>{heroPhase.fussy}</div>
                           <div style={{fontSize:12,fontWeight:700,color:"#6a4000",marginBottom:5}}>Skills coming with this phase</div>
                           {heroPhase.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#d4a010",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"#5a3808"}}>{s}</span></div>))}
                         </div>
@@ -7456,23 +7456,23 @@ function App(){
                     {isFussy2 && heroPhase && (()=>{
                       const pd=fmtD2(wkToDate2(heroPhase.peakWeek)), ed=fmtD2(wkToDate2(heroPhase.windowEnd));
                       return (
-                        <div style={{background:"linear-gradient(135deg,#f0ebff,#e4d8ff)",border:"1px solid #b8a4f8",borderRadius:18,padding:"16px",marginBottom:14}}>
+                        <div style={{background:"var(--card-bg-alt)",border:"1px solid #b8a4f8",borderRadius:18,padding:"16px",marginBottom:14}}>
                           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                             <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#8848e0,#6030c0)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🌀</div>
                             <div>
-                              <div style={{fontSize:10,fontFamily:_fM,color:"#5030a0",textTransform:"uppercase",letterSpacing:_ls1}}>Phase {heroPhase.phase} · Unsettled period</div>
+                              <div style={{fontSize:10,fontFamily:_fM,color:"var(--text-mid)",textTransform:"uppercase",letterSpacing:_ls1}}>Phase {heroPhase.phase} · Unsettled period</div>
                               <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:"#2e1070"}}>{heroPhase.name}</div>
                             </div>
                           </div>
                           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>
                             {[["Unsettled period","now → "+pd],["New skills",pd+" → "+ed]].map(([lbl,val])=>(
-                              <div key={lbl} style={{background:"rgba(136,72,224,0.12)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
-                                <span style={{color:"#5030a0",fontWeight:600}}>{lbl} </span><span style={{color:"#3a1880",fontFamily:_fM}}>{val}</span>
+                              <div key={lbl} style={{background:"var(--chip-bg)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
+                                <span style={{color:"var(--text-mid)",fontWeight:600}}>{lbl} </span><span style={{color:"var(--text-mid)",fontFamily:_fM}}>{val}</span>
                               </div>
                             ))}
                           </div>
-                          <div style={{fontSize:13,color:"#3a1880",lineHeight:1.55,marginBottom:9}}>{heroPhase.fussy} New skills start emerging around {pd}.</div>
-                          <div style={{fontSize:12,fontWeight:700,color:"#3a1880",marginBottom:5}}>Skills unlocking soon</div>
+                          <div style={{fontSize:13,color:"var(--text-mid)",lineHeight:1.55,marginBottom:9}}>{heroPhase.fussy} New skills start emerging around {pd}.</div>
+                          <div style={{fontSize:12,fontWeight:700,color:"var(--text-mid)",marginBottom:5}}>Skills unlocking soon</div>
                           {heroPhase.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#8848e0",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"#2e1070"}}>{s}</span></div>))}
                         </div>
                       );
@@ -7481,7 +7481,7 @@ function App(){
                     {isBloom2 && heroPhase && (()=>{
                       const ed=fmtD2(wkToDate2(heroPhase.windowEnd));
                       return (
-                        <div style={{background:"linear-gradient(135deg,#e8f8ee,#d0f0e0)",border:"1px solid #70d098",borderRadius:18,padding:"16px",marginBottom:14}}>
+                        <div style={{background:"var(--card-bg-alt)",border:"1px solid #70d098",borderRadius:18,padding:"16px",marginBottom:14}}>
                           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
                             <div style={{width:40,height:40,borderRadius:"50%",background:"linear-gradient(135deg,#38c870,#20a050)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🌱</div>
                             <div>
@@ -7499,7 +7499,7 @@ function App(){
                     {!activePhase && !isPrePhase && nextPhase2 && (nextPhase2.windowStart - ageWeeks) <= 8 && (()=>{
                       const wksAway=nextPhase2.windowStart-ageWeeks, sd=fmtD2(wkToDate2(nextPhase2.windowStart)), pd=fmtD2(wkToDate2(nextPhase2.peakWeek)), ed=fmtD2(wkToDate2(nextPhase2.windowEnd));
                       return (
-                        <div style={{background:"#f8f4ff",border:"1px solid #d8cef8",borderRadius:18,padding:"14px 16px 12px",marginBottom:14}}>
+                        <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:18,padding:"14px 16px 12px",marginBottom:14}}>
                           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:9}}>
                             <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#c0a8f0,#a080d8)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>🔭</div>
                             <div>
@@ -7509,14 +7509,14 @@ function App(){
                           </div>
                           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:9}}>
                             {[["Unsettled period",`${sd} – ${pd}`],["New skills",`${pd} – ${ed}`]].map(([lbl,val])=>(
-                              <div key={lbl} style={{background:"rgba(160,128,216,0.12)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
-                                <span style={{color:"#5040a0",fontWeight:600}}>{lbl} </span><span style={{color:"#3a2880",fontFamily:_fM}}>{val}</span>
+                              <div key={lbl} style={{background:"var(--chip-bg)",borderRadius:99,padding:"3px 10px",fontSize:11}}>
+                                <span style={{color:"var(--text-mid)",fontWeight:600}}>{lbl} </span><span style={{color:"var(--text-mid)",fontFamily:_fM}}>{val}</span>
                               </div>
                             ))}
                           </div>
-                          <div style={{fontSize:13,color:"#3a2880",lineHeight:1.55,marginBottom:7}}>{nextPhase2.fussy}</div>
-                          <div style={{fontSize:12,fontWeight:700,color:"#5040a0",marginBottom:5}}>Skills coming with this phase</div>
-                          {nextPhase2.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#a080d8",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"#3a2880"}}>{s}</span></div>))}
+                          <div style={{fontSize:13,color:"var(--text-mid)",lineHeight:1.55,marginBottom:7}}>{nextPhase2.fussy}</div>
+                          <div style={{fontSize:12,fontWeight:700,color:"var(--text-mid)",marginBottom:5}}>Skills coming with this phase</div>
+                          {nextPhase2.skills.map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}><span style={{color:"#a080d8",fontSize:13,flexShrink:0}}>✦</span><span style={{fontSize:13,color:"var(--text-mid)"}}>{s}</span></div>))}
                         </div>
                       );
                     })()}
@@ -7563,8 +7563,8 @@ function App(){
                           <div style={{flex:1}}>
                             <div style={{fontSize:15,fontWeight:700,color:C.deep,lineHeight:1.2}}>{a.title}</div>
                             <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}>
-                              <span style={{fontSize:11,background:"#f5f0eb",borderRadius:99,padding:"2px 8px",color:C.mid}}>{catInfo?.icon} {catInfo?.label}</span>
-                              <span style={{fontSize:11,fontFamily:_fM,background:"#eaf6f3",borderRadius:99,padding:"2px 8px",color:C.mint}}>wk {a.weeks[0]}–{a.weeks[1]}</span>
+                              <span style={{fontSize:11,background:"var(--chip-bg)",borderRadius:99,padding:"2px 8px",color:C.mid}}>{catInfo?.icon} {catInfo?.label}</span>
+                              <span style={{fontSize:11,fontFamily:_fM,background:"var(--card-bg-alt)",borderRadius:99,padding:"2px 8px",color:C.mint}}>wk {a.weeks[0]}–{a.weeks[1]}</span>
                             </div>
                           </div>
                         </div>
@@ -7588,7 +7588,7 @@ function App(){
                 ) : (
                   devAdvice.map((item, i) => (
                     <div key={i} style={{display:"flex",gap:12,padding:"12px 0",borderBottom:i<devAdvice.length-1?`1px solid ${C.blush}`:"none"}}>
-                      <div style={{width:36,height:36,borderRadius:12,background:"var(--card-bg)",border:"1px solid #c0e8d0",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}}>
+                      <div style={{width:36,height:36,borderRadius:12,background:"var(--card-bg)",border:"1px solid var(--card-border)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}}>
                         {item.icon}
                       </div>
                       <div style={{flex:1}}>
@@ -7599,7 +7599,7 @@ function App(){
                   ))
                 )}
               </div>
-              <div style={{background:"#f8f5f0",border:"1px solid #e8dfd4",borderRadius:12,padding:"12px 14px",marginBottom:4}}>
+              <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:12,padding:"12px 14px",marginBottom:4}}>
                 <div style={{fontSize:11,color:C.mid,lineHeight:1.7}}>
                   <span style={{fontWeight:700,color:C.deep}}>ℹ️ About this guidance</span><br/>
                   Activities and advice are based on NHS Start4Life and WHO Child Development guidelines, as well as Kinedu-style developmental play principles. Every baby develops at their own pace — use these as inspiration, not a checklist. If you have concerns about development, speak to your health visitor or GP.
@@ -7681,7 +7681,7 @@ function App(){
               quickAddLog("wake",{type:"wake",time:timerEndPrompt.end,night:true,note:""});
               setTimerEndPrompt(null);
               setShowNightWake(true);
-            }} style={{padding:"14px",borderRadius:14,border:"1.5px solid #c5bef5",background:"linear-gradient(135deg,#f0eeff,#e8e4ff)",cursor:_cP,fontFamily:_fI,display:"flex",alignItems:"center",gap:12}}>
+            }} style={{padding:"14px",borderRadius:14,border:"1.5px solid #c5bef5",background:"var(--card-bg-alt)",cursor:_cP,fontFamily:_fI,display:"flex",alignItems:"center",gap:12}}>
               <span style={{fontSize:24}}>🌙</span>
               <div style={{textAlign:"left"}}>
                 <div style={{fontSize:15,fontWeight:700,color:"#4a3cb5"}}>Night Wake</div>
@@ -7705,7 +7705,7 @@ function App(){
                 quickAddLog("wake",{type:"wake",time:timerEndPrompt.end,night:false,note:""});
               }
               setTimerEndPrompt(null);
-            }} style={{padding:"14px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:"linear-gradient(135deg,#fdf8f0,#fff4e8)",cursor:_cP,fontFamily:_fI,display:"flex",alignItems:"center",gap:12}}>
+            }} style={{padding:"14px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",cursor:_cP,fontFamily:_fI,display:"flex",alignItems:"center",gap:12}}>
               <span style={{fontSize:24}}>☀️</span>
               <div style={{textAlign:"left"}}>
                 <div style={{fontSize:15,fontWeight:700,color:C.gold}}>Morning Wake Up</div>
@@ -8042,13 +8042,13 @@ function App(){
           ) : (
             <>
               {parsedEntries.yearWarning&&parsedEntries.yearWarning.type==="future"&&(
-                <div style={{fontSize:14,color:"#c04040",background:"#fff0f0",borderRadius:10,padding:"10px 12px",marginBottom:12,border:"1px solid #f8c8c8"}}>
+                <div style={{fontSize:14,color:"#c04040",background:"var(--card-bg-alt)",borderRadius:10,padding:"10px 12px",marginBottom:12,border:"1px solid var(--card-border)"}}>
                   ⚠️ Future year ({parsedEntries.yearWarning.parsed}) detected — automatically changed to {parsedEntries.yearWarning.corrected}.
                 </div>
               )}
               {parsedEntries.yearWarning&&parsedEntries.yearWarning.type==="past"&&(
-                <div style={{fontSize:14,color:C.mid,background:"#fffbf0",borderRadius:10,padding:"10px 12px",marginBottom:12,border:"1px solid #f0d890"}}>
-                  <div style={{fontWeight:700,marginBottom:6,color:"#8a6a10"}}>⚠️ Year {parsedEntries.yearWarning.parsed} detected — did you mean {parsedEntries.yearWarning.corrected}?</div>
+                <div style={{fontSize:14,color:C.mid,background:"var(--card-bg-alt)",borderRadius:10,padding:"10px 12px",marginBottom:12,border:"1px solid var(--card-border)"}}>
+                  <div style={{fontWeight:700,marginBottom:6,color:"var(--gold)"}}>⚠️ Year {parsedEntries.yearWarning.parsed} detected — did you mean {parsedEntries.yearWarning.corrected}?</div>
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>{
                       // Use ref to get fresh state — avoids stale closure saving wrong year
@@ -8108,7 +8108,7 @@ function App(){
                 <div style={{marginBottom:12}}>
                   <div style={{fontSize:15,fontFamily:_fM,color:C.gold,marginBottom:5}}>⚠️ Couldn't parse {parsedEntries.warnings.length} line{parsedEntries.warnings.length>1?"s":""}:</div>
                   {parsedEntries.warnings.map((w,i)=>(
-                    <div key={i} style={{fontSize:15,color:C.mid,fontFamily:_fM,padding:"4px 8px",background:"#fffbf0",borderRadius:8,marginBottom:3}}>{w}</div>
+                    <div key={i} style={{fontSize:15,color:C.mid,fontFamily:_fM,padding:"4px 8px",background:"var(--card-bg-alt)",borderRadius:8,marginBottom:3}}>{w}</div>
                   ))}
                 </div>
               )}
@@ -8204,27 +8204,27 @@ function App(){
                 </div>
               ))}
             </div>
-            <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px",marginBottom:10,border:"1px solid #d8d2f0"}}>
+            <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px",marginBottom:10,border:"1px solid var(--card-border)"}}>
               <div style={{fontSize:15,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:8}}>🌟 Night Wakes</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:stretches.length?10:0}}>
-                <span style={{fontSize:15,color:"#5040a0"}}>{nEs.length} wake{nEs.length!==1?"s":""}</span>
-                {nightFeedMl>0&&<span style={{background:"rgba(212,168,85,0.2)",color:C.gold,fontFamily:_fM,fontSize:14,padding:"2px 8px",borderRadius:99}}>{nightFeedMl}ml total</span>}
+                <span style={{fontSize:15,color:"var(--text-mid)"}}>{nEs.length} wake{nEs.length!==1?"s":""}</span>
+                {nightFeedMl>0&&<span style={{background:"var(--chip-bg)",color:C.gold,fontFamily:_fM,fontSize:14,padding:"2px 8px",borderRadius:99}}>{nightFeedMl}ml total</span>}
               </div>
               {stretches.length>0&&(
                 <>
                   <div style={{fontSize:14,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Stretches between wakes</div>
                   {stretches.map((s,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"var(--card-bg-solid)",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
+                    <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"var(--card-bg-solid)",borderRadius:10,border:"1px solid var(--card-border)",marginBottom:5}}>
                       <div>
-                        <div style={{fontSize:14,color:"#5040a0"}}>{s.from} → {s.to}</div>
-                        <div style={{fontSize:14,fontFamily:_fM,color:"#9080c8",marginTop:2}}>{fmt12(s.toTime)}{s.feed?` · ${s.feed}ml`:""}</div>
+                        <div style={{fontSize:14,color:"var(--text-mid)"}}>{s.from} → {s.to}</div>
+                        <div style={{fontSize:14,fontFamily:_fM,color:"var(--text-lt)",marginTop:2}}>{fmt12(s.toTime)}{s.feed?` · ${s.feed}ml`:""}</div>
                       </div>
                       <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:s.mins>=180?"#6fa898":s.mins>=120?"#d4a855":"#c9705a",fontWeight:700}}>{hm(s.mins)}</span>
                     </div>
                   ))}
                 </>
               )}
-              {stretches.length===0&&nEs.length===0&&<div style={{fontSize:14,color:"#9080c8",fontFamily:_fM,textAlign:"center",padding:"4px 0"}}>No night wakes logged</div>}
+              {stretches.length===0&&nEs.length===0&&<div style={{fontSize:14,color:"var(--text-lt)",fontFamily:_fM,textAlign:"center",padding:"4px 0"}}>No night wakes logged</div>}
             </div>
             {/* ── Sleep & Feed Insights ── */}
             {(()=>{
@@ -8339,7 +8339,7 @@ function App(){
 
             {/* Assisted soothing details */}
             {nwForm.assisted&&(
-              <div style={{background:"rgba(123,104,238,0.06)",borderRadius:14,padding:"14px",marginBottom:16,border:"1px solid #d8d2f0"}}>
+              <div style={{background:"var(--chip-bg)",borderRadius:14,padding:"14px",marginBottom:16,border:"1px solid var(--card-border)"}}>
                 <div style={{fontSize:13,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:8}}>Type</div>
                 <div style={{display:"flex",gap:8,marginBottom:12}}>
                   {[["milk","🍼 Milk"],["other","💬 Other"]].map(([v,l])=>(
@@ -8452,19 +8452,19 @@ function App(){
       {showAddChild && (
         <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.5)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowAddChild(false)}>
           <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%"}}>
-            <div style={{width:40,height:4,background:"#f2d9cc",borderRadius:99,margin:"0 auto 20px"}}/>
+            <div style={{width:40,height:4,background:"var(--blush)",borderRadius:99,margin:"0 auto 20px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:"var(--text-deep)",marginBottom:20}}>Add a child</div>
 
-            <div style={{fontSize:14,color:"#b89890",marginBottom:6,fontWeight:600}}>Name</div>
+            <div style={{fontSize:14,color:"var(--text-lt)",marginBottom:6,fontWeight:600}}>Name</div>
             <input value={newChildName} onChange={e=>setNewChildName(e.target.value)}
               placeholder="Baby's name" autoFocus
-              style={{width:"100%",fontSize:18,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"var(--card-bg-solid)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
+              style={{width:"100%",fontSize:18,padding:"12px 14px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--card-bg-solid)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
 
-            <div style={{fontSize:14,color:"#b89890",marginBottom:6,fontWeight:600}}>
+            <div style={{fontSize:14,color:"var(--text-lt)",marginBottom:6,fontWeight:600}}>
               {newChildUnborn ? "Due date" : "Date of birth"}
             </div>
             <input type="date" value={newChildDob} onChange={e=>setNewChildDob(e.target.value)}
-              style={{width:"100%",fontSize:16,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"var(--card-bg-solid)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
+              style={{width:"100%",fontSize:16,padding:"12px 14px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--card-bg-solid)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
 
             <div style={{display:"flex",gap:8,marginBottom:14}}>
               {["","girl","boy"].map(s=>(
@@ -8477,7 +8477,7 @@ function App(){
             </div>
 
             <button onClick={()=>setNewChildUnborn(v=>!v)} style={{
-              width:"100%",padding:"11px",borderRadius:99,border:"1.5px solid #f2d9cc",
+              width:"100%",padding:"11px",borderRadius:99,border:"1.5px solid var(--card-border)",
               background: newChildUnborn?"#fff3f0":"white",color:"#7a5c52",fontSize:14,
               cursor:_cP,fontFamily:_fI,fontWeight:600,marginBottom:16
             }}>{newChildUnborn ? "🤰 Not born yet" : "🎂 Already born"}</button>
@@ -8536,7 +8536,7 @@ function App(){
               </button>
             )}
             {csConfirmDelete && (
-              <div style={{background:"#fff4f2",border:`2px solid ${C.ter}`,borderRadius:16,padding:"16px",textAlign:"center"}}>
+              <div style={{background:"var(--card-bg-alt)",border:`2px solid ${C.ter}`,borderRadius:16,padding:"16px",textAlign:"center"}}>
                 <div style={{fontSize:15,fontWeight:600,color:C.deep,marginBottom:12}}>Delete {csName||"this child"}? This cannot be undone.</div>
                 <div style={{display:"flex",gap:8}}>
                   <button onClick={()=>setCsConfirmDelete(false)} style={{flex:1,padding:"11px",borderRadius:99,border:`2px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>Cancel</button>
@@ -8564,9 +8564,9 @@ function App(){
               </div>
             </div>
             {backupCode && (
-              <div style={{background:"var(--card-bg)",borderRadius:12,padding:"10px 14px",marginBottom:8,border:"1px solid #b0e8cc",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{background:"var(--card-bg)",borderRadius:12,padding:"10px 14px",marginBottom:8,border:"1px solid var(--card-border)",display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:16}}>☁️</span>
-                <div style={{fontSize:13,color:"#2a7a50",lineHeight:1.4}}>Auto-backup active — your data saves to the cloud and restores when you sign in on any device.</div>
+                <div style={{fontSize:13,color:"var(--mint)",lineHeight:1.4}}>Auto-backup active — your data saves to the cloud and restores when you sign in on any device.</div>
               </div>
             )}
             {familyUsername && (
@@ -8596,7 +8596,7 @@ function App(){
                     {recoveryWordSaving?"⏳ Saving…":"Save word"}
                   </button>
                 </div>
-                {recoveryWordStatus==="saved"&&<div style={{fontSize:12,color:"#2a7a50",marginTop:6,fontWeight:600}}>✓ Recovery word saved — don't forget it!</div>}
+                {recoveryWordStatus==="saved"&&<div style={{fontSize:12,color:"var(--mint)",marginTop:6,fontWeight:600}}>✓ Recovery word saved — don't forget it!</div>}
                 {recoveryWordStatus==="error"&&<div style={{fontSize:12,color:C.ter,marginTop:6}}>Something went wrong — try again</div>}
                 {recoveryWordStatus==="short"&&<div style={{fontSize:12,color:C.ter,marginTop:6}}>Word must be at least 3 characters</div>}
               </div>
@@ -8610,8 +8610,8 @@ function App(){
                 <span style={{fontSize:22}}>👨‍👩‍👧</span>
               </div>
             ) : (
-              <div style={{background:"#fff8e8",borderRadius:12,padding:"12px 14px",marginBottom:16,border:"1px solid #f0d890"}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#8a6a10",marginBottom:4}}>No username set</div>
+              <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"12px 14px",marginBottom:16,border:"1px solid var(--card-border)"}}>
+                <div style={{fontSize:13,fontWeight:700,color:"var(--gold)",marginBottom:4}}>No username set</div>
                 <div style={{fontSize:13,color:"#9a7a20",marginBottom:8}}>Set a username so your partner can find and sync with you.</div>
                 <UsernameSetForm normaliseUsername={normaliseUsername} reserveUsername={reserveUsername} C={C} />
               </div>
@@ -8641,7 +8641,7 @@ function App(){
                     </div>
                     {isShared && (
                       <>
-                        <div style={{background:"var(--card-bg)",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,border:"1px solid #b0e8cc"}}>
+                        <div style={{background:"var(--card-bg)",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,border:"1px solid var(--card-border)"}}>
                           <div>
                             <div style={{fontSize:11,fontFamily:_fM,color:"#4a8a6a",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Sync code</div>
                             <div style={{fontFamily:_fM,fontSize:24,fontWeight:700,color:C.ter,letterSpacing:"0.18em"}}>{code}</div>
