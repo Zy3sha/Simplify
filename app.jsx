@@ -180,22 +180,31 @@ function getC(){
   const s=getComputedStyle(document.body);
   const v=n=>s.getPropertyValue(n).trim();
   return{
-    ter:v('--ter')||"#c9705a",
-    mid:v('--text-mid')||"#7a5c52",
-    lt:v('--text-lt')||"#b89890",
-    blush:v('--blush')||"#f2d9cc",
-    rose:v('--rose')||"#e8b4a0",
-    cream:v('--cream')||"#faf6f0",
-    warm:v('--warm')||"#fff9f2",
+    ter:v('--ter')||"#C07088",
+    mid:v('--text-mid')||"#7A6B7E",
+    lt:v('--text-lt')||"#A898AC",
+    blush:v('--blush')||"#F3D3DA",
+    rose:v('--rose')||"#E8B4C0",
+    cream:v('--cream')||"#FFF6F0",
+    warm:v('--warm')||"#FFFAF6",
     mint:v('--mint')||"#6fa898",
     sky:v('--sky')||"#7aabc4",
     gold:v('--gold')||"#d4a855",
-    deep:v('--text-deep')||"#2c1f1a"
+    deep:v('--text-deep')||"#5B4F5F"
   };
 }
 let C=getC();
+// Theme re-render trigger — called by React App on mount
+let _themeCallback = null;
 const _origToggle=window.toggleTheme;
-window.toggleTheme=function(){_origToggle();setTimeout(()=>{C=getC();},80);};
+window.toggleTheme=function(){
+  _origToggle();
+  // Force synchronous layout so CSS vars are applied NOW
+  void document.body.offsetHeight;
+  C=getC();
+  // Trigger React re-render immediately
+  if(_themeCallback) _themeCallback();
+};
 const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em",_ls08="0.08em",_bN="none",_oN="none";
 
 
@@ -1107,15 +1116,23 @@ function LeapBanner({ l, ageWeeks, C }) {
 function App(){
   const timerRef = React.useRef(null);
   const[isDark,setIsDark]=useState(()=>document.body.classList.contains('dark-mode'));
+  const[themeKey,setThemeKey]=useState(0);
   useEffect(()=>{
+    // Register callback so toggleTheme can trigger instant re-render
+    _themeCallback = ()=>{
+      void document.body.offsetHeight; // force layout
+      C=getC();
+      setIsDark(document.body.classList.contains('dark-mode'));
+      setThemeKey(k=>k+1);
+    };
     const obs=new MutationObserver(()=>{
-      const dark=document.body.classList.contains('dark-mode');
-      setIsDark(dark);
-      // Delay so CSS variable values settle after class change
-      requestAnimationFrame(()=>{ C=getC(); });
+      void document.body.offsetHeight;
+      C=getC();
+      setIsDark(document.body.classList.contains('dark-mode'));
+      setThemeKey(k=>k+1);
     });
     obs.observe(document.body,{attributes:true,attributeFilter:['class']});
-    return()=>obs.disconnect();
+    return()=>{obs.disconnect();_themeCallback=null;};
   },[]);
 
 
@@ -1261,15 +1278,15 @@ function App(){
     if(!file)return;
     const reader=new FileReader();
     reader.onload=function(ev){
-      // Resize to max 400px for storage
+      // Resize to max 300px and compress to 50% quality for storage
       const img=new Image();
       img.onload=function(){
-        const max=400;
+        const max=300;
         let w=img.width,h=img.height;
         if(w>max||h>max){const r=Math.min(max/w,max/h);w*=r;h*=r;}
         const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
         const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0,w,h);
-        const dataUrl=canvas.toDataURL("image/jpeg",0.7);
+        const dataUrl=canvas.toDataURL("image/jpeg",0.5);
         const milestoneId=photoInputRef.current._forMilestone;
         if(milestoneId){
           // Attach to milestone
@@ -1531,6 +1548,8 @@ function App(){
 
   const childSubsRef = React.useRef({});
   const[backupCode,setBackupCode]=useState(()=>{try{return localStorage.getItem("backup_code")||null;}catch{return null;}});
+  const backupCodeRef = useRef(backupCode);
+  useEffect(()=>{backupCodeRef.current=backupCode;},[backupCode]);
   const[syncStatus,setSyncStatus]=useState("idle");
   const[showFamilyModal,setShowFamilyModal]=useState(false);
   const[recoveryWordInput,setRecoveryWordInput]=useState("");
@@ -1556,7 +1575,11 @@ function App(){
   useEffect(()=>{
     clearTimeout(lsRef.current);
     lsRef.current = setTimeout(()=>{
-      try{localStorage.setItem("children_v1",JSON.stringify(children));}catch{}
+      try{localStorage.setItem("children_v1",JSON.stringify(children));}catch(e){
+        if(e.name==="QuotaExceededError"||e.code===22){
+          console.warn("OBubba: localStorage quota exceeded — photos may be too large. Data is backed up to cloud.");
+        }
+      }
       try{localStorage.setItem("child_sync_codes_v1",JSON.stringify(childSyncCodes));}catch{}
       if(resolvedActiveId)try{localStorage.setItem("active_child",resolvedActiveId);}catch{}
       if(onboarded)try{localStorage.setItem("onboarded_v2","1");}catch{}
@@ -2251,10 +2274,25 @@ function App(){
         const remoteWeights = child.weights || [];
         const seenW = new Set(mergedWeights.map(w=>w.date+w.kg));
         remoteWeights.forEach(w=>{ if(!seenW.has(w.date+w.kg)) mergedWeights.push(w); });
+
+        // Merge heights
+        const mergedHeights = [...(merged[id].heights||[])];
+        const remoteHeights = child.heights || [];
+        const seenH = new Set(mergedHeights.map(h=>h.date+h.cm));
+        remoteHeights.forEach(h=>{ if(!seenH.has(h.date+h.cm)) mergedHeights.push(h); });
+
+        // Merge photos (dedup by id)
+        const mergedPhotos = [...(merged[id].photos||[])];
+        const remotePhotos = child.photos || [];
+        const seenP = new Set(mergedPhotos.map(p=>p.id));
+        remotePhotos.forEach(p=>{ if(p.id && !seenP.has(p.id)) mergedPhotos.push(p); });
+
         merged[id] = {
           ...child,
           days: mergedDays,
           weights: mergedWeights,
+          heights: mergedHeights,
+          photos: mergedPhotos,
           milestones: {...(merged[id].milestones||{}), ...(child.milestones||{})}
         };
       }
@@ -2594,17 +2632,15 @@ function App(){
     }
 
     tick();
-    // Perf fix: recalculate predictions every 30s; just decrement cached values each second in between
-    let ticksSinceRecalc = 0;
+    // Store target timestamps for drift-free countdown
+    let napTarget = null, bedTarget = null;
+    const storeTargets = () => {
+      const now = Date.now();
+      // Capture current countdown values as absolute targets
+      // This way, even after screen lock, we calculate correctly from Date.now()
+    };
     countdownRef.current = setInterval(()=>{
-      ticksSinceRecalc++;
-      if(ticksSinceRecalc >= 30){
-        ticksSinceRecalc = 0;
-        tick();
-      } else {
-        setNapCountdown(v => (v !== null && v > 0) ? v - 1 : v);
-        setBedCountdown(v => (v !== null && v > 0) ? v - 1 : v);
-      }
+      tick(); // Full recalculation every second — uses Date.now() internally so no drift
     }, 1000);
     return()=>clearInterval(countdownRef.current);
   },[selDay, days, age, timerMode]);
@@ -4509,11 +4545,17 @@ function App(){
       return {...d,[dayForEntry]:autoClassifyNight(updated, prevD2 ? d[prevD2] : null)};
     });
 
-    setTimeout(()=>{ if(backupCode) pushToCloud(backupCode, childrenRef.current); }, 600);
+    setTimeout(()=>{ if(backupCodeRef.current) pushToCloud(backupCodeRef.current, childrenRef.current); }, 600);
   }
 
   const lastLogRef = React.useRef({time:0, key:""});
   const[quickFlash,setQuickFlash]=useState(null);
+  const[mascotPopup,setMascotPopup]=useState(null); // {type:'celebration'|'thinking'|'loading', message:'...'}
+
+  function showMascot(type, message, duration=3000){
+    setMascotPopup({type, message});
+    if(duration > 0) setTimeout(()=>setMascotPopup(null), duration);
+  }
   function quickAddLog(type, data){
 
     const key = type + JSON.stringify(data);
@@ -4862,7 +4904,7 @@ function App(){
     });
     setConfirmDeleteDay(false);
     setModal(null);
-    setTimeout(()=>{ if(backupCode) pushToCloud(backupCode, childrenRef.current); }, 600);
+    setTimeout(()=>{ if(backupCodeRef.current) pushToCloud(backupCodeRef.current, childrenRef.current); }, 600);
   }
   function addWeight(){
     if(!wForm.kg)return;
@@ -4917,7 +4959,7 @@ function App(){
     return (
       <div style={{height:"100vh",background:"var(--bg-grad)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",overflowY:"auto",padding:"0 24px 24px",fontFamily:"'DM Sans',sans-serif"}}>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"24px 0 16px"}}>
-          <img src="oliver.png" style={{width:56,height:56,borderRadius:14,marginBottom:10,boxShadow:"0 4px 16px rgba(0,0,0,0.1)"}}/>
+          <img src="obubba-happy.png" style={{width:56,height:56,borderRadius:14,marginBottom:10,boxShadow:"0 4px 16px rgba(0,0,0,0.1)"}}/>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:C.deep,marginBottom:3}}>OBubba</div>
           <div style={{fontSize:14,color:C.lt}}>{isLogin?"Welcome back":"Create your account"}</div>
         </div>
@@ -5243,7 +5285,7 @@ function App(){
           <div style={{width:"100%",maxWidth:430,minHeight:"100vh",display:"flex",flexDirection:"column",padding:"env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)"}}>
             <div style={{padding:"48px 28px 0",display:"flex",alignItems:"center",gap:12}}>
               <div style={{width:44,height:44,borderRadius:13,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,boxShadow:"0 4px 16px rgba(201,112,90,0.15)"}}>
-                <img src="icon.png" alt="OBubba" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";e.target.parentNode.innerHTML="🍼";}}/>
+                <img src="obubba-happy.png" alt="OBubba" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";e.target.parentNode.textContent="🍼";}}/>
               </div>
               <div>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,fontWeight:700,color:C.deep,lineHeight:1,letterSpacing:"0.01em"}}>OBubba</div>
@@ -5254,7 +5296,7 @@ function App(){
               <div style={{position:"relative",marginBottom:28}}>
                 <div style={{position:"absolute",inset:-16,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(201,112,90,0.25) 0%,transparent 70%)",animation:"obGlow 3s ease infinite"}}/>
                 <div style={{width:158,height:158,borderRadius:36,overflow:"hidden",border:`1.5px solid ${C.blush}`,boxShadow:"0 24px 48px rgba(201,112,90,0.2), inset 0 1px 0 rgba(255,255,255,0.8)",animation:"obFloat 5s ease infinite",position:"relative"}}>
-                  <img src="oliver.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";e.target.parentNode.style.background="var(--chip-bg-active)";e.target.parentNode.innerHTML="<div style='font-size:72px;line-height:158px'>👶</div>";}}/>
+                  <img src="obubba-happy.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";e.target.parentNode.style.background="var(--chip-bg-active)";e.target.parentNode.textContent="👶";e.target.parentNode.style.fontSize="72px";e.target.parentNode.style.lineHeight="158px";}}/>
                 </div>
                 <div style={{position:"absolute",bottom:-6,right:-6,width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#50c878,#38b060)",border:"2.5px solid var(--card-border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,boxShadow:"0 4px 14px rgba(80,200,120,0.45)"}}>✓</div>
               </div>
@@ -5311,6 +5353,7 @@ function App(){
     const finishChildSetup = async (childData) => {
       if (childData) {
         updateChild({ name: (childData.name||"").trim(), dob: childData.dob||"", sex: childData.sex||"" });
+        showMascot("celebration", `${(childData.name||"Baby").trim()}'s tracker is ready! 🎉`, 3000);
       }
       setNeedsChildSetup(false);
     };
@@ -5318,7 +5361,7 @@ function App(){
       <div style={{minHeight:"100vh",background:"var(--bg-grad)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"env(safe-area-inset-top,30px) 24px 40px",fontFamily:"'DM Sans',sans-serif",boxSizing:_bBB,overflowY:"auto"}}>
         <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}`}</style>
         <div key="child-setup" style={{animation:"fadeUp 0.4s ease",textAlign:"center",width:"100%",maxWidth:360}}>
-          <img src="oliver.png" style={{width:100,height:100,borderRadius:20,marginBottom:16,boxShadow:"0 8px 24px rgba(0,0,0,0.1)"}}/>
+          <img src="obubba-happy.png" style={{width:100,height:100,borderRadius:20,marginBottom:16,boxShadow:"0 8px 24px rgba(0,0,0,0.1)"}}/>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.deep,lineHeight:1.25,marginBottom:6}}>Now let's add your baby ✨</div>
           <div style={{fontSize:13,color:C.lt,lineHeight:1.6,marginBottom:20}}>OBubba uses your baby's details to personalise nap predictions, feeding recommendations, milestones and growth charts.</div>
           <div style={{display:"flex",background:"var(--card-bg-alt)",borderRadius:99,padding:3,marginBottom:18,gap:3}}>
@@ -5554,6 +5597,7 @@ function App(){
         const dismissTutorial = () => {
           try{localStorage.setItem("tut_v2","1");}catch{}
           setTutStep(-1);
+          showMascot("celebration", "Tutorial complete! You're ready to go! 🎉", 3000);
         };
         const nextStep = () => {
           if (tutStep >= TUT_STEPS.length - 1) { dismissTutorial(); return; }
@@ -5675,8 +5719,8 @@ function App(){
         {!nameEdit ? (
           <div onClick={()=>{setNameIn(babyName);setNameEdit(true);}} style={{cursor:_cP,marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
             <div style={{width:34,height:34,borderRadius:9,overflow:"hidden",flexShrink:0,border:"1.5px solid rgba(255,255,255,0.75)",boxShadow:"0 2px 8px rgba(0,0,0,0.12)"}}>
-              <img src="icon.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
-                onError={e=>{e.target.style.display="none";e.target.parentNode.style.background=C.ter;e.target.parentNode.style.display="flex";e.target.parentNode.style.alignItems="center";e.target.parentNode.style.justifyContent="center";e.target.parentNode.innerHTML="🍼";}}/>
+              <img src="obubba-happy.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                onError={e=>{e.target.style.display="none";e.target.parentNode.style.background=C.ter;e.target.parentNode.style.display="flex";e.target.parentNode.style.alignItems="center";e.target.parentNode.style.justifyContent="center";e.target.parentNode.textContent="🍼";}}/>
             </div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:C.deep,fontWeight:700,lineHeight:1.1}}>
               {babyName ? `${possessive(babyName)} Tracker` : "Baby Tracker"}
@@ -5825,9 +5869,10 @@ function App(){
       <div style={{padding:"16px 14px 20px",maxWidth:520,margin:"0 auto",animation:"fadeIn 0.3s ease"}}>
         {tab==="day"&&(
           !selDay||!days[selDay]?(
-            <div style={{textAlign:"center",padding:"60px 20px",color:C.lt}}>
+            <div style={{textAlign:"center",padding:"40px 20px",color:C.lt}}>
+              <img src="obubba-thinking.png" alt="" style={{width:120,height:120,objectFit:"contain",marginBottom:12,opacity:0.8,filter:"drop-shadow(0 8px 20px rgba(217,207,243,0.25))"}}/>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:C.mid,marginBottom:8}}>No day selected</div>
-              <div style={{fontSize:15,fontFamily:_fM}}>Tap + Day to get started</div>
+              <div style={{fontSize:15,fontFamily:_fM}}>Tap + Date to get started</div>
             </div>
           ):( 
             <div>
@@ -6410,15 +6455,23 @@ function App(){
                       <Inp label="Height (cm)" type="number" step="0.1" placeholder="e.g. 62" value={heightForm.cm} onChange={e=>setHeightForm(f=>({...f,cm:e.target.value}))} style={{marginBottom:0}}/>
                     </div>
                     <PBtn onClick={()=>{
+                      let saved = false;
                       if(growthForm.kg){
-                        const updated=[...weights.filter(x=>x.date!==growthForm.date),{date:growthForm.date,kg:parseFloat(growthForm.kg)}].sort((a,b)=>a.date.localeCompare(b.date));
-                        setWeights(updated);
+                        const kg = parseFloat(growthForm.kg);
+                        if(kg < 0.3 || kg > 35){ alert("Weight should be between 0.3kg and 35kg. Please check your entry."); return; }
+                        const updated=[...weights.filter(x=>x.date!==growthForm.date),{date:growthForm.date,kg}].sort((a,b)=>a.date.localeCompare(b.date));
+                        setWeights(updated); saved = true;
                       }
                       if(heightForm.cm){
-                        const updated=[...heights.filter(x=>x.date!==heightForm.date),{date:heightForm.date,cm:parseFloat(heightForm.cm)}].sort((a,b)=>a.date.localeCompare(b.date));
-                        setHeights(updated);
+                        const cm = parseFloat(heightForm.cm);
+                        if(cm < 25 || cm > 140){ alert("Height should be between 25cm and 140cm. Please check your entry."); return; }
+                        const updated=[...heights.filter(x=>x.date!==heightForm.date),{date:heightForm.date,cm}].sort((a,b)=>a.date.localeCompare(b.date));
+                        setHeights(updated); saved = true;
                       }
-                      setGrowthForm({date:todayStr(),kg:""});setHeightForm({date:todayStr(),cm:""});
+                      if(saved){
+                        setGrowthForm({date:todayStr(),kg:""});setHeightForm({date:todayStr(),cm:""});
+                        try{navigator.vibrate&&navigator.vibrate([30,20,30]);}catch{}
+                      }
                     }} style={{marginTop:2}}>Save Measurements</PBtn>
                   </div>
 
@@ -7336,7 +7389,21 @@ function App(){
                 <div onClick={()=>{
                   if(isFuture) return;
                   if(done){ if(window.confirm(`Remove "${m.label}"?`)) setMilestones(ms=>({...ms,[m.id]:{}}))}
-                  else setMilestones(ms=>({...ms,[m.id]:{date:todayStr()}}));
+                  else {
+                    setMilestones(ms=>{
+                      const updated = {...ms,[m.id]:{date:todayStr()}};
+                      setTimeout(()=>{
+                        const catMs = MILESTONES.filter(mi=>mi.cat===m.cat && age && age.totalWeeks >= mi.weeks[0] && age.totalWeeks <= mi.weeks[2]);
+                        const allDone = catMs.length >= 3 && catMs.every(mi=>updated[mi.id]?.date);
+                        if(allDone){
+                          const catLabel = MILESTONE_CATS.find(c=>c.key===m.cat)?.label || m.cat;
+                          showMascot("celebration", `All ${catLabel} milestones hit! 🎉`, 3500);
+                        }
+                      }, 100);
+                      return updated;
+                    });
+                    try{navigator.vibrate&&navigator.vibrate([30,20,30]);}catch{}
+                  }
                 }} style={{display:"flex",alignItems:"flex-start",gap:11,padding:"10px 0",cursor:isFuture?"default":"pointer",opacity:isFuture?0.45:1}}>
                   <div style={{width:21,height:21,borderRadius:"50%",border:`2px solid ${tick}`,background:done?C.mint:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2}}>
                     {done && <span style={{color:"white",fontSize:11,fontWeight:700}}>✓</span>}
@@ -8949,8 +9016,69 @@ function App(){
         </div>
       )}
 
+      {/* ═══ Mascot Popup Overlay ═══ */}
+      {mascotPopup && (
+        <div style={{position:"fixed",inset:0,zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+          <div style={{pointerEvents:"auto",textAlign:"center",animation:"mascotPop 0.4s cubic-bezier(0.34,1.56,0.64,1)"}}>
+            <style>{`
+              @keyframes mascotPop{from{opacity:0;transform:scale(0.5) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+              @keyframes mascotConfetti{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(-40px) rotate(180deg)}}
+              @keyframes mascotBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+            `}</style>
+            <img
+              src={mascotPopup.type==="celebration"?"obubba-celebration.png":mascotPopup.type==="loading"?"obubba-loading.png":"obubba-thinking.png"}
+              alt=""
+              style={{width:140,height:140,objectFit:"contain",animation:"mascotBounce 1.5s ease-in-out infinite",filter:"drop-shadow(0 12px 28px rgba(217,207,243,0.35))"}}
+            />
+            <div style={{marginTop:10,background:"rgba(255,255,255,0.85)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderRadius:99,padding:"10px 24px",boxShadow:"0 0 24px rgba(246,221,227,0.40), 0 4px 16px rgba(217,207,243,0.20)",display:"inline-block"}}>
+              <div style={{fontSize:15,fontWeight:700,color:"#5B4F5F",fontFamily:"'DM Sans',sans-serif"}}>{mascotPopup.message}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+class ErrorBoundary extends React.Component{
+  constructor(props){super(props);this.state={hasError:false,error:null};}
+  static getDerivedStateFromError(error){return{hasError:true,error};}
+  componentDidCatch(error,info){console.error("OBubba error boundary:",error,info);}
+  render(){
+    if(this.state.hasError){
+      return React.createElement("div",{style:{minHeight:"100vh",background:"linear-gradient(135deg,#FFF6F0 0%,#F6DDE3 40%,#E8E0FF 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 24px",fontFamily:"'DM Sans',sans-serif",textAlign:"center",position:"relative",overflow:"hidden"}},
+        // Soft background orbs
+        React.createElement("div",{style:{position:"absolute",top:"-10%",left:"10%",width:300,height:300,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(246,221,227,0.40),transparent 70%)",pointerEvents:"none"}}),
+        React.createElement("div",{style:{position:"absolute",bottom:"5%",right:"5%",width:250,height:250,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(217,207,243,0.35),transparent 70%)",pointerEvents:"none"}}),
+        // Animated CSS
+        React.createElement("style",null,`
+          @keyframes babyBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.008)}}
+          @keyframes zzz1{0%{opacity:0;transform:translate(0,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(15px,-60px) scale(1.2)}}
+          @keyframes zzz2{0%{opacity:0;transform:translate(0,0) scale(0.5)}35%{opacity:1}100%{opacity:0;transform:translate(25px,-75px) scale(1.1)}}
+          @keyframes zzz3{0%{opacity:0;transform:translate(0,0) scale(0.4)}40%{opacity:1}100%{opacity:0;transform:translate(10px,-90px) scale(1)}}
+          @keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+          .zzz{position:absolute;font-weight:700;color:#D9CFF3;font-family:'Playfair Display',serif;font-style:italic}
+        `),
+        // Baby image with breathing
+        React.createElement("div",{style:{position:"relative",marginBottom:28}},
+          React.createElement("img",{src:"sleep-baby.png",alt:"Sleeping baby",style:{width:200,height:200,objectFit:"contain",animation:"babyBreathe 3.5s ease-in-out infinite",filter:"drop-shadow(0 16px 32px rgba(217,207,243,0.35))"}}),
+          // Floating Zzz's
+          React.createElement("span",{className:"zzz",style:{top:8,right:-5,fontSize:18,animation:"zzz1 2.8s ease-in-out infinite"}},"z"),
+          React.createElement("span",{className:"zzz",style:{top:-8,right:12,fontSize:24,animation:"zzz2 2.8s ease-in-out 0.5s infinite"}},"z"),
+          React.createElement("span",{className:"zzz",style:{top:-28,right:28,fontSize:16,animation:"zzz3 2.8s ease-in-out 1s infinite"}},"z")
+        ),
+        // Text
+        React.createElement("div",{style:{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:"#5B4F5F",lineHeight:1.25,marginBottom:10}},"Uh oh!"),
+        React.createElement("div",{style:{fontSize:15,color:"#7A6B7E",lineHeight:1.65,maxWidth:300,marginBottom:6}},"Looks like OBubba fell asleep..."),
+        React.createElement("div",{style:{fontSize:14,color:"#A898AC",lineHeight:1.5,maxWidth:280,marginBottom:28}},"Hold tight — we'll be back from our nap ASAP. Your data is safe."),
+        // Refresh button
+        React.createElement("button",{onClick:()=>window.location.reload(),style:{padding:"14px 36px",borderRadius:99,border:"none",background:"rgba(192,112,136,0.55)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",color:"white",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",boxShadow:"0 0 24px rgba(246,221,227,0.40), 0 0 48px rgba(217,207,243,0.25), 0 4px 16px rgba(192,112,136,0.20)",animation:"floatUp 3s ease-in-out infinite",letterSpacing:"0.01em"}},"Wake Up & Refresh"),
+        // Tiny error detail
+        React.createElement("div",{style:{fontSize:10,color:"#C8B8C0",marginTop:24,fontFamily:"monospace",maxWidth:300,wordBreak:"break-all"}},String(this.state.error))
+      );
+    }
+    return this.props.children;
+  }
+}
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary,null,React.createElement(App)));

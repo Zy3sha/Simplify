@@ -1,6 +1,25 @@
 // ── Global error handler ──
 window.onerror = function(msg, src, line, col, err) {
-  document.getElementById('root').innerHTML = '<div style="padding:30px;font-family:monospace;font-size:13px;background:#fff;color:#333;word-break:break-all"><b>Error:</b> ' + msg + '<br><b>Line:</b> ' + line + '<br><b>Detail:</b> ' + (err&&err.stack?err.stack:'') + '</div>';
+  document.getElementById('root').innerHTML = '<div style="min-height:100vh;background:linear-gradient(135deg,#FFF6F0 0%,#F6DDE3 40%,#E8E0FF 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;font-family:DM Sans,sans-serif;text-align:center;position:relative;overflow:hidden">'
+    + '<style>'
+    + '@keyframes babyBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.008)}}'
+    + '@keyframes zzz1{0%{opacity:0;transform:translate(0,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(15px,-60px) scale(1.2)}}'
+    + '@keyframes zzz2{0%{opacity:0;transform:translate(0,0) scale(0.5)}35%{opacity:1}100%{opacity:0;transform:translate(25px,-75px) scale(1.1)}}'
+    + '@keyframes zzz3{0%{opacity:0;transform:translate(0,0) scale(0.4)}40%{opacity:1}100%{opacity:0;transform:translate(10px,-90px) scale(1)}}'
+    + '@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}'
+    + '</style>'
+    + '<div style="position:relative;margin-bottom:28px">'
+    + '<img src="sleep-baby.png" alt="" style="width:200px;height:200px;object-fit:contain;animation:babyBreathe 3.5s ease-in-out infinite;filter:drop-shadow(0 16px 32px rgba(217,207,243,0.35))">'
+    + '<span style="position:absolute;top:8px;right:-5px;font-size:18px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz1 2.8s ease-in-out infinite">z</span>'
+    + '<span style="position:absolute;top:-8px;right:12px;font-size:24px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz2 2.8s ease-in-out 0.5s infinite">z</span>'
+    + '<span style="position:absolute;top:-28px;right:28px;font-size:16px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz3 2.8s ease-in-out 1s infinite">z</span>'
+    + '</div>'
+    + '<div style="font-family:Playfair Display,serif;font-size:26px;font-weight:700;color:#5B4F5F;margin-bottom:10px">Uh oh!</div>'
+    + '<div style="font-size:15px;color:#7A6B7E;line-height:1.65;max-width:300px;margin-bottom:6px">Looks like OBubba fell asleep...</div>'
+    + '<div style="font-size:14px;color:#A898AC;line-height:1.5;max-width:280px;margin-bottom:28px">Hold tight — we\'ll be back from our nap ASAP. Your data is safe.</div>'
+    + '<button onclick="window.location.reload()" style="padding:14px 36px;border-radius:99px;border:none;background:rgba(192,112,136,0.55);backdrop-filter:blur(16px);color:white;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 0 24px rgba(246,221,227,0.40),0 0 48px rgba(217,207,243,0.25);animation:floatUp 3s ease-in-out infinite">Wake Up & Refresh</button>'
+    + '<div style="font-size:10px;color:#C8B8C0;margin-top:24px;font-family:monospace;max-width:300px;word-break:break-all">' + msg + ' (line ' + line + ')</div>'
+    + '</div>';
 };
 
 // ── Load and compile JSX from external file ──
@@ -18,7 +37,14 @@ window.onerror = function(msg, src, line, col, err) {
       s.onerror = function(e) { console.error('JSX load error', e); };
       document.body.appendChild(s);
     } catch(e) {
-      document.getElementById('root').innerHTML = '<div style="padding:30px;font-family:monospace;font-size:13px;background:#fff;color:#333;word-break:break-all"><b>Loader error:</b> ' + e.message + '<br>' + e.stack + '</div>';
+      document.getElementById('root').innerHTML = '<div style="min-height:100vh;background:linear-gradient(135deg,#FFF6F0 0%,#F6DDE3 40%,#E8E0FF 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;font-family:DM Sans,sans-serif;text-align:center">'
+        + '<style>@keyframes babyBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.008)}}@keyframes zzz1{0%{opacity:0;transform:translate(0,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(15px,-60px) scale(1.2)}}@keyframes zzz2{0%{opacity:0;transform:translate(0,0) scale(0.5)}35%{opacity:1}100%{opacity:0;transform:translate(25px,-75px) scale(1.1)}}@keyframes zzz3{0%{opacity:0;transform:translate(0,0) scale(0.4)}40%{opacity:1}100%{opacity:0;transform:translate(10px,-90px) scale(1)}}@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}</style>'
+        + '<div style="position:relative;margin-bottom:28px"><img src="sleep-baby.png" alt="" style="width:200px;height:200px;object-fit:contain;animation:babyBreathe 3.5s ease-in-out infinite;filter:drop-shadow(0 16px 32px rgba(217,207,243,0.35))"><span style="position:absolute;top:8px;right:-5px;font-size:18px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz1 2.8s ease-in-out infinite">z</span><span style="position:absolute;top:-8px;right:12px;font-size:24px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz2 2.8s ease-in-out 0.5s infinite">z</span><span style="position:absolute;top:-28px;right:28px;font-size:16px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz3 2.8s ease-in-out 1s infinite">z</span></div>'
+        + '<div style="font-family:Playfair Display,serif;font-size:26px;font-weight:700;color:#5B4F5F;margin-bottom:10px">Uh oh!</div>'
+        + '<div style="font-size:15px;color:#7A6B7E;line-height:1.65;max-width:300px;margin-bottom:6px">Looks like OBubba fell asleep...</div>'
+        + '<div style="font-size:14px;color:#A898AC;line-height:1.5;max-width:280px;margin-bottom:28px">Hold tight — we\'ll be back from our nap ASAP. Your data is safe.</div>'
+        + '<button onclick="window.location.reload()" style="padding:14px 36px;border-radius:99px;border:none;background:rgba(192,112,136,0.55);backdrop-filter:blur(16px);color:white;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 0 24px rgba(246,221,227,0.40);animation:floatUp 3s ease-in-out infinite">Wake Up & Refresh</button>'
+        + '</div>';
     }
   }
 
@@ -33,70 +59,105 @@ window.onerror = function(msg, src, line, col, err) {
       if (embedded) {
         compile(embedded.textContent);
       } else {
-        document.getElementById('root').innerHTML = '<div style="padding:30px;font-family:monospace;font-size:13px;background:#fff;color:#333;word-break:break-all"><b>Load error:</b> ' + err.message + '</div>';
+        document.getElementById('root').innerHTML = '<div style="min-height:100vh;background:linear-gradient(135deg,#FFF6F0 0%,#F6DDE3 40%,#E8E0FF 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;font-family:DM Sans,sans-serif;text-align:center">'
+          + '<style>@keyframes babyBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.008)}}@keyframes zzz1{0%{opacity:0;transform:translate(0,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(15px,-60px) scale(1.2)}}@keyframes zzz2{0%{opacity:0;transform:translate(0,0) scale(0.5)}35%{opacity:1}100%{opacity:0;transform:translate(25px,-75px) scale(1.1)}}@keyframes zzz3{0%{opacity:0;transform:translate(0,0) scale(0.4)}40%{opacity:1}100%{opacity:0;transform:translate(10px,-90px) scale(1)}}@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}</style>'
+          + '<div style="position:relative;margin-bottom:28px"><img src="sleep-baby.png" alt="" style="width:200px;height:200px;object-fit:contain;animation:babyBreathe 3.5s ease-in-out infinite;filter:drop-shadow(0 16px 32px rgba(217,207,243,0.35))"><span style="position:absolute;top:8px;right:-5px;font-size:18px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz1 2.8s ease-in-out infinite">z</span><span style="position:absolute;top:-8px;right:12px;font-size:24px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz2 2.8s ease-in-out 0.5s infinite">z</span><span style="position:absolute;top:-28px;right:28px;font-size:16px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz3 2.8s ease-in-out 1s infinite">z</span></div>'
+          + '<div style="font-family:Playfair Display,serif;font-size:26px;font-weight:700;color:#5B4F5F;margin-bottom:10px">Uh oh!</div>'
+          + '<div style="font-size:15px;color:#7A6B7E;line-height:1.65;max-width:300px;margin-bottom:6px">Looks like OBubba fell asleep...</div>'
+          + '<div style="font-size:14px;color:#A898AC;line-height:1.5;max-width:280px;margin-bottom:28px">Hold tight — we\'ll be back from our nap ASAP. Your data is safe.</div>'
+          + '<button onclick="window.location.reload()" style="padding:14px 36px;border-radius:99px;border:none;background:rgba(192,112,136,0.55);backdrop-filter:blur(16px);color:white;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 0 24px rgba(246,221,227,0.40);animation:floatUp 3s ease-in-out infinite">Wake Up & Refresh</button>'
+          + '</div>';
       }
     });
 })();
 
 // ══════════════════════════════════════════════════════════
-// AUTO-GLASS — Apply Liquid Glass to ALL card-like elements
-// Catches: cards, log rows, headers, night wakes, tiles, etc.
+// AUTO-GLASS — Optimized: tracks processed elements,
+// skips re-scanning on theme change, uses requestAnimationFrame
 // ══════════════════════════════════════════════════════════
 (function(){
-  function applyGlass(){
-    var root=document.getElementById('root');
-    if(!root)return;
-    var divs=root.querySelectorAll('div');
-    for(var i=0;i<divs.length;i++){
-      var d=divs[i];
-      var s=d.style;
-      var br=parseInt(s.borderRadius)||0;
-      var bg=s.background||'';
-      var bdFilter=s.backdropFilter||s.webkitBackdropFilter||'';
-      var border=s.borderLeft||'';
-      var hasBg=bg.indexOf('var(--card-bg')>=0||bg.indexOf('var(--chip-bg')>=0;
-      var hasBlur=bdFilter.indexOf('blur')>=0;
+  var processed = new WeakSet();
 
-      // LARGE CARDS (borderRadius >= 16 + card-bg variable)
-      if(br>=16 && hasBg && !d.classList.contains('glass-card')){
-        d.classList.add('glass-card');
-        continue;
-      }
+  function classifyElement(d) {
+    if (processed.has(d)) return;
+    var s = d.style;
+    var br = parseInt(s.borderRadius) || 0;
+    var bg = s.background || '';
+    var bdFilter = s.backdropFilter || s.webkitBackdropFilter || '';
+    var border = s.borderLeft || '';
+    var hasBg = bg.indexOf('var(--card-bg') >= 0 || bg.indexOf('var(--chip-bg') >= 0;
+    var hasBlur = bdFilter.indexOf('blur') >= 0;
 
-      // CARDS with inline backdrop-filter already set
-      if(br>=12 && hasBlur && bg && !d.classList.contains('glass-card') && !d.classList.contains('glass-entry')){
-        d.classList.add('glass-card');
-        continue;
-      }
+    // LARGE CARDS (borderRadius >= 16 + card-bg variable)
+    if (br >= 16 && hasBg) {
+      d.classList.add('glass-card');
+      processed.add(d);
+      return;
+    }
 
-      // LOG ENTRY ROWS — have borderLeft (colored left edge) + borderRadius 10-16
-      // These are the nappy/feed/nap/bedtime/night-wake rows
-      if(br>=8 && br<=18 && border && bg && !d.classList.contains('glass-entry') && !d.classList.contains('glass-card')){
-        d.classList.add('glass-entry');
-        continue;
-      }
+    // CARDS with inline backdrop-filter
+    if (br >= 12 && hasBlur && bg) {
+      d.classList.add('glass-card');
+      processed.add(d);
+      return;
+    }
 
-      // SMALLER ROUNDED ELEMENTS with any card-bg
-      if(br>=10 && br<16 && hasBg && !d.classList.contains('glass-entry') && !d.classList.contains('glass-card')){
-        d.classList.add('glass-entry');
-        continue;
-      }
+    // LOG ENTRY ROWS — borderLeft + borderRadius 8-18
+    if (br >= 8 && br <= 18 && border && bg) {
+      d.classList.add('glass-entry');
+      processed.add(d);
+      return;
+    }
+
+    // SMALLER ROUNDED ELEMENTS with card-bg
+    if (br >= 10 && br < 16 && hasBg) {
+      d.classList.add('glass-entry');
+      processed.add(d);
+      return;
     }
   }
 
-  var timer;
-  var obs=new MutationObserver(function(){clearTimeout(timer);timer=setTimeout(applyGlass,80);});
+  function applyGlass() {
+    var root = document.getElementById('root');
+    if (!root) return;
+    var divs = root.querySelectorAll('div');
+    for (var i = 0; i < divs.length; i++) {
+      classifyElement(divs[i]);
+    }
+  }
 
-  function init(){
-    var root=document.getElementById('root');
-    if(root){
-      obs.observe(root,{childList:true,subtree:true});
-      // Multiple passes to catch React renders
-      setTimeout(applyGlass,300);
-      setTimeout(applyGlass,800);
-      setTimeout(applyGlass,2000);
-    }else{
-      setTimeout(init,150);
+  var pending = false;
+  function scheduleGlass() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function() {
+      applyGlass();
+      pending = false;
+    });
+  }
+
+  var obs = new MutationObserver(function(mutations) {
+    // Only process if actual DOM nodes were added (not just attribute/class changes)
+    var hasNewNodes = false;
+    for (var i = 0; i < mutations.length; i++) {
+      if (mutations[i].addedNodes.length > 0) {
+        hasNewNodes = true;
+        break;
+      }
+    }
+    if (hasNewNodes) scheduleGlass();
+  });
+
+  function init() {
+    var root = document.getElementById('root');
+    if (root) {
+      // Only watch for childList changes, NOT attributes
+      obs.observe(root, { childList: true, subtree: true });
+      // Initial passes
+      setTimeout(applyGlass, 200);
+      setTimeout(applyGlass, 600);
+    } else {
+      setTimeout(init, 150);
     }
   }
   init();
