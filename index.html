@@ -52,7 +52,6 @@
 html,body{height:100%;overscroll-behavior:none;}
 body{
   font-family:'DM Sans',-apple-system,'SF Pro Display','Inter',system-ui,sans-serif;
-  transition:background 0.5s ease,color 0.5s ease;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }
@@ -70,12 +69,14 @@ input::placeholder{opacity:1;}
   --card-border:rgba(255,255,255,0.7);
   --card-shadow:
     0 0 0 0.5px rgba(255,255,255,0.85) inset,
-    0 8px 32px rgba(160,100,70,0.10),
-    0 2px 8px rgba(160,100,70,0.06);
+    0 4px 12px rgba(160,100,70,0.06),
+    0 12px 36px rgba(160,100,70,0.09),
+    0 24px 64px rgba(160,100,70,0.06);
   --card-shadow-elevated:
     0 0 0 0.5px rgba(255,255,255,0.9) inset,
-    0 14px 44px rgba(160,100,70,0.12),
-    0 4px 14px rgba(160,100,70,0.08);
+    0 6px 18px rgba(160,100,70,0.07),
+    0 18px 52px rgba(160,100,70,0.11),
+    0 36px 80px rgba(160,100,70,0.07);
   --text-deep:#2c1f1a;
   --text-mid:#7a5c52;
   --text-lt:#b89890;
@@ -116,12 +117,16 @@ body.dark-mode{
   --card-border:rgba(200,160,110,0.2);
   --card-shadow:
     0 0 0 0.5px rgba(200,160,110,0.12) inset,
-    0 10px 40px rgba(0,0,0,0.5),
-    0 0 18px rgba(200,160,110,0.06);
+    0 4px 12px rgba(0,0,0,0.3),
+    0 12px 40px rgba(0,0,0,0.45),
+    0 24px 64px rgba(0,0,0,0.2),
+    0 0 22px rgba(200,160,110,0.05);
   --card-shadow-elevated:
     0 0 0 0.5px rgba(200,160,110,0.16) inset,
-    0 16px 52px rgba(0,0,0,0.55),
-    0 0 28px rgba(200,160,110,0.08);
+    0 6px 18px rgba(0,0,0,0.35),
+    0 18px 52px rgba(0,0,0,0.5),
+    0 36px 80px rgba(0,0,0,0.25),
+    0 0 32px rgba(200,160,110,0.07);
   --text-deep:#F0F2F5;
   --text-mid:#B0BEC9;
   --text-lt:#7E8FA0;
@@ -266,14 +271,6 @@ body.dark-mode .glass-card::before{
 /* Content above pseudo-elements */
 .glass-card>*{position:relative;z-index:2;}
 
-/* Desktop hover */
-@media(hover:hover){
-  .glass-card:hover{
-    transform:translateY(-2px);
-    box-shadow:var(--card-shadow-elevated);
-  }
-}
-
 /* Dark mode input fixes */
 body.dark-mode input,body.dark-mode select,body.dark-mode textarea{
   background:var(--input-bg)!important;color:var(--text-deep)!important;border-color:var(--card-border)!important;
@@ -306,6 +303,52 @@ button:active{transform:scale(0.95)!important;}
 /* ══════ SELECTION ══════ */
 ::selection{background:var(--ter);color:white;}
 body.dark-mode ::selection{background:rgba(217,139,114,0.4);color:white;}
+
+/* ══════ BUTTON GLOW — warm candlelight glass ══════ */
+/* Primary colored buttons glow like warm glass in candlelight */
+button[style*="linear-gradient(135deg"]{
+  box-shadow:0 4px 18px rgba(201,112,90,0.25),0 0 32px rgba(240,180,140,0.15)!important;
+}
+body.dark-mode button[style*="linear-gradient(135deg"]{
+  box-shadow:0 4px 18px rgba(217,139,114,0.3),0 0 28px rgba(220,170,120,0.12)!important;
+}
+/* Pill-shaped buttons get a subtle glow halo */
+button[style*="borderRadius:99"]{
+  box-shadow:0 2px 12px rgba(201,112,90,0.1),0 0 18px rgba(240,180,140,0.07)!important;
+}
+body.dark-mode button[style*="borderRadius:99"]{
+  box-shadow:0 2px 12px rgba(217,139,114,0.12),0 0 18px rgba(220,170,120,0.07)!important;
+}
+
+/* ══════ TEXT VISIBILITY — ensure readable on glass ══════ */
+/* Boost dark text contrast on light glass */
+body.light-mode [style*="card-bg-solid"]{
+  color:#2c1f1a;
+}
+/* Ensure secondary text is bright enough in dark mode */
+body.dark-mode [style*="color:var(--text-lt)"]{
+  opacity:1;
+}
+
+/* ══════ TINTED GLASS — day mode cards absorb surrounding theme colors ══════ */
+/* Purple-themed sections get subtle purple-tinted glass in day mode */
+body.light-mode div[style*="#c0a8f0"],
+body.light-mode div[style*="#a080d8"]{
+  background:linear-gradient(135deg,rgba(192,168,240,0.12),rgba(160,128,216,0.06))!important;
+}
+/* Gold/amber themed sections get warm gold tint in day mode */
+body.light-mode div[style*="#f5c840"],
+body.light-mode div[style*="#e8a820"]{
+  background:linear-gradient(135deg,rgba(245,200,64,0.12),rgba(232,168,32,0.06))!important;
+}
+
+/* ══════ FLOATING DEPTH — hover lift on all interactive glass ══════ */
+@media(hover:hover){
+  .glass-card:hover{
+    transform:translateY(-3px);
+    box-shadow:var(--card-shadow-elevated);
+  }
+}
 </style>
 </head>
 <body>
@@ -3818,27 +3861,27 @@ function App(){
 
     if (isPastDay) {
       if (totalHigh) {
-        status="high"; color="#b88a20"; bg="#fffbf0"; icon="📈";
+        status="high"; color="#b88a20"; bg="var(--card-bg)"; icon="📈";
         statusMsg=`Total intake was above average at ${totalMl}ml — common during growth spurts.`;
       } else if (metMinimum) {
-        status="ok"; color=C.mint; bg="#f0faf6"; icon="✓";
+        status="ok"; color=C.mint; bg="var(--card-bg)"; icon="✓";
         statusMsg=`Good day — ${totalMl}ml total, meeting the minimum recommended intake of ${totalMin}ml. Day feeds: ${dayMl}ml, night feeds: ${nightMl}ml.`;
       } else {
-        status="low"; color=C.ter; bg="#fff3f0"; icon="⚠️";
+        status="low"; color=C.ter; bg="var(--card-bg)"; icon="⚠️";
         statusMsg=`Total intake was ${totalMl}ml — ${dayShortfall}ml a little under the recommended ${totalMin}ml. Day feeds: ${dayMl}ml, night feeds: ${nightMl}ml. One low day is nothing to worry about.`;
       }
 
 
     } else if (bedLogged) {
       if (totalHigh) {
-        status="high"; color="#b88a20"; bg="#fffbf0"; icon="📈";
+        status="high"; color="#b88a20"; bg="var(--card-bg)"; icon="📈";
         statusMsg=`Total intake was above average at ${totalMl}ml — common during growth spurts.`;
       } else if (metMinimum) {
-        status="ok"; color=C.mint; bg="#f0faf6"; icon="✓";
+        status="ok"; color=C.mint; bg="var(--card-bg)"; icon="✓";
         statusMsg=`Great job — ${totalMl}ml total today, meeting the minimum of ${totalMin}ml. Day: ${dayMl}ml, night feeds: ${nightMl}ml.`;
       } else {
 
-        status="low"; color=C.ter; bg="#fff3f0"; icon="⚠️";
+        status="low"; color=C.ter; bg="var(--card-bg)"; icon="⚠️";
         statusMsg=`Total milk today was ${totalMl}ml — ${dayShortfall}ml below the recommended minimum of ${totalMin}ml.`;
         sleepLink = {
           icon:"🌙",
@@ -3850,16 +3893,16 @@ function App(){
 
     } else if (approachingBed) {
       if (totalHigh) {
-        status="high"; color="#b88a20"; bg="#fffbf0"; icon="📈";
+        status="high"; color="#b88a20"; bg="var(--card-bg)"; icon="📈";
         statusMsg=`Intake is above average at ${totalMl}ml — looking good.`;
       } else if (metMinimum) {
-        status="ok"; color=C.mint; bg="#f0faf6"; icon="✓";
+        status="ok"; color=C.mint; bg="var(--card-bg)"; icon="✓";
         statusMsg=`Minimum intake reached (${totalMl}ml) — great work. Bedtime is about ${Math.round(remainingMins/60*10)/10 < 1 ? remainingMins+"m" : Math.round(remainingMins/60)+"h"} away.`;
       } else {
 
         const feedsLeft = Math.max(remainingFeeds, 1);
         const topUpEach = Math.round(dayShortfall / feedsLeft / 10) * 10;
-        status="low"; color=C.ter; bg="#fff3f0"; icon="⏳";
+        status="low"; color=C.ter; bg="var(--card-bg)"; icon="⏳";
         statusMsg=`${dayShortfall}ml still needed to reach the minimum (${totalMin}ml) — bedtime is ~${remainingMins < 60 ? remainingMins+"m" : Math.round(remainingMins/60)+"h"} away.`;
         sleepLink = {
           icon:"🍼",
@@ -3871,13 +3914,13 @@ function App(){
 
     } else {
       if (dayFraction < 0.2) {
-        status="early"; color=C.mint; bg="#f0faf6"; icon="☀️";
+        status="early"; color=C.mint; bg="var(--card-bg)"; icon="☀️";
         statusMsg=`${totalMl}ml so far — the day is just getting started. Goal: reach ${totalMin}ml before bedtime.`;
       } else if (totalHigh) {
-        status="high"; color="#b88a20"; bg="#fffbf0"; icon="📈";
+        status="high"; color="#b88a20"; bg="var(--card-bg)"; icon="📈";
         statusMsg=`Intake is above average at ${totalMl}ml — common during growth spurts.`;
       } else if (metMinimum) {
-        status="ok"; color=C.mint; bg="#f0faf6"; icon="✓";
+        status="ok"; color=C.mint; bg="var(--card-bg)"; icon="✓";
         statusMsg=`Minimum intake reached — ${totalMl}ml so far today. Keep it up through bedtime.`;
       } else {
 
@@ -3893,18 +3936,18 @@ function App(){
         const currentMin = new Date().getMinutes();
         if (!isPastDay && (currentHour < 12 || (currentHour === 12 && currentMin === 0))) {
           // Before noon — way too early to flag low intake
-          status="ontrack"; color=C.mint; bg="#f0faf6"; icon="☀️";
+          status="ontrack"; color=C.mint; bg="var(--card-bg)"; icon="☀️";
           statusMsg=`${totalMl}ml so far — the day is just getting started. Goal: reach ${totalMin}ml before bedtime.`;
         } else if (!isPastDay && currentHour < 13) {
           // Before 1pm — too early to flag low intake
-          status="ontrack"; color=C.mint; bg="#f0faf6"; icon="☀️";
+          status="ontrack"; color=C.mint; bg="var(--card-bg)"; icon="☀️";
           statusMsg=`${totalMl}ml so far — the day is still young. Goal: reach ${totalMin}ml before bedtime.`;
         } else if (maxPossibleIntake >= totalMin) {
           // Still achievable — show as "on track" not "low"
-          status="ontrack"; color=C.mint; bg="#f0faf6"; icon="☀️";
+          status="ontrack"; color=C.mint; bg="var(--card-bg)"; icon="☀️";
           statusMsg=`${totalMl}ml so far — ${dayShortfall}ml to go. Plenty of time to reach the minimum of ${totalMin}ml.`;
         } else {
-          status="low"; color=C.ter; bg="#fff3f0"; icon="⚠️";
+          status="low"; color=C.ter; bg="var(--card-bg)"; icon="⚠️";
           statusMsg=`${totalMl}ml so far — ${dayShortfall}ml to go to reach the minimum of ${totalMin}ml before bedtime.`;
         }
         if (hasFrequentNightWakes) {
@@ -6522,7 +6565,7 @@ function App(){
                 const fc = feedCard();
                 if (!fc) return null;
                 return (
-                  <div style={{background:fc.bg,border:`1px solid ${fc.color}30`,borderLeft:`4px solid ${fc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:14}}>
+                  <div style={{background:fc.bg,backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:`1px solid ${fc.color}30`,borderLeft:`4px solid ${fc.color}`,borderRadius:16,padding:"14px 16px",marginBottom:14,boxShadow:"var(--card-shadow)"}}>
                     <div style={{fontSize:13,fontFamily:_fM,color:fc.color,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>{fc.isPastDay ? "Milk Intake" : "Today's Milk Intake"}</div>
                     <div style={{display:"flex",gap:10,marginBottom:10}}>
                       <div style={{flex:1,background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:12,padding:"10px 12px"}}>
@@ -8789,7 +8832,12 @@ window.onerror = function(msg, src, line, col, err) {
       var s=d.style;
       var br=parseInt(s.borderRadius)||0;
       var bg=s.background||'';
-      if(br>=16 && (bg.indexOf('var(--card-bg')>=0 || bg.indexOf('var(--chip-bg')>=0)){
+      // Match card-like elements: border-radius and card-bg or chip-bg variable bg
+      if(br>=14 && (bg.indexOf('var(--card-bg')>=0 || bg.indexOf('var(--chip-bg')>=0)){
+        d.classList.add('glass-card');
+      }
+      // Also catch elements with backdrop-filter set inline (like milk card)
+      if(br>=12 && (s.backdropFilter || s.webkitBackdropFilter) && bg){
         d.classList.add('glass-card');
       }
     }
