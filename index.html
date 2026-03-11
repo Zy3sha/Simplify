@@ -7,12 +7,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="OBubba"/>
   <meta name="application-name" content="OBubba"/>
-  <meta name="theme-color" content="#f0ddd6"/>
+  <meta name="theme-color" content="#f6efe9"/>
   <title>OBubba</title>
   <link rel="manifest" href="manifest.json"/>
   <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
@@ -50,171 +50,233 @@
 /* ══════ BASE RESET ══════ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overscroll-behavior:none;}
-body{font-family:'DM Sans',sans-serif;transition:background 0.5s ease,color 0.5s ease;}
+body{
+  font-family:-apple-system,'SF Pro Display','SF Pro Text','Inter',system-ui,'Segoe UI',sans-serif;
+  transition:background 0.6s cubic-bezier(.4,0,.2,1),color 0.5s ease;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  letter-spacing:-0.01em;
+}
 ::-webkit-scrollbar{display:none;}
 input,select,button{font-family:inherit;}
 input::placeholder{opacity:1;}
 
-/* ══════ CSS CUSTOM PROPERTIES — LIGHT MODE ══════ */
-/* Ref: warm peachy-pink background, frosted white glass cards, sparkle particles */
+/* ══════ CSS CUSTOM PROPERTIES — DAY MODE (soft warm pastel glass) ══════ */
 :root,body,body.light-mode{
-  --bg-grad:linear-gradient(170deg,#f5ebe4 0%,#f0ddd6 35%,#ede0db 55%,#f2e4df 100%);
-  --bg-solid:#f0ddd6;
-  --card-bg:rgba(255,255,255,0.45);
-  --card-bg-solid:rgba(255,255,255,0.65);
-  --card-bg-alt:rgba(255,250,246,0.5);
-  --card-border:rgba(255,255,255,0.6);
+  --bg-main:#f6efe9;
+  --bg-secondary:#f3e4da;
+  --bg-grad:linear-gradient(180deg,#f7efe9 0%,#f3e4da 50%,#f0ddd4 100%);
+  --bg-solid:#f6efe9;
+  --card-bg:rgba(255,255,255,0.55);
+  --card-bg-solid:rgba(255,255,255,0.72);
+  --card-bg-alt:rgba(255,250,246,0.55);
+  --card-border:rgba(255,255,255,0.8);
   --card-shadow:
-    0 0 0 0.5px rgba(255,255,255,0.8) inset,
-    0 8px 32px rgba(160,100,70,0.1),
-    0 2px 8px rgba(160,100,70,0.06);
-  --text-deep:#2c1f1a;
-  --text-mid:#7a5c52;
-  --text-lt:#b89890;
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 10px 30px rgba(0,0,0,0.06),
+    0 2px 8px rgba(160,100,70,0.05);
+  --card-shadow-elevated:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 16px 48px rgba(0,0,0,0.08),
+    0 4px 16px rgba(160,100,70,0.06);
+  --card-shadow-active:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 20px 60px rgba(0,0,0,0.1),
+    0 6px 20px rgba(160,100,70,0.08);
+  --text-deep:#3a2f2a;
+  --text-mid:#7a6860;
+  --text-lt:#b09890;
   --blush:#f2d9cc;
   --rose:#e8b4a0;
   --cream:#faf6f0;
   --warm:#fff9f2;
-  --ter:#c9705a;
-  --mint:#6fa898;
-  --sky:#7aabc4;
-  --gold:#d4a855;
-  --placeholder:#c8beb8;
-  --sheet-bg:rgba(250,246,240,0.95);
-  --sheet-overlay:rgba(44,31,26,0.45);
-  --nav-bg:rgba(255,255,255,0.65);
-  --nav-border:rgba(255,255,255,0.5);
-  --nav-shadow:0 -2px 24px rgba(160,100,70,0.08);
-  --chip-bg:rgba(255,255,255,0.5);
-  --chip-bg-active:rgba(255,235,225,0.7);
-  --chip-shadow:0 2px 8px rgba(160,100,70,0.06);
-  --chip-shadow-active:0 0 12px rgba(240,180,140,0.3);
-  --input-bg:rgba(255,252,248,0.6);
-  --picker-bg:rgba(255,255,255,0.92);
-  --glass-blur:20px;
-  --sparkle-opacity:0.45;
+  --ter:#c46a54;
+  --mint:#5daa96;
+  --sky:#6da3be;
+  --gold:#cc9e42;
+  --placeholder:#c4b8b2;
+  --glow-primary:rgba(255,190,140,0.45);
+  --glow-secondary:rgba(255,160,120,0.25);
+  --glow-accent:rgba(196,106,84,0.35);
+  --sheet-bg:rgba(250,246,240,0.96);
+  --sheet-overlay:rgba(58,47,42,0.35);
+  --nav-bg:rgba(255,255,255,0.72);
+  --nav-border:rgba(255,255,255,0.6);
+  --nav-shadow:0 -1px 24px rgba(160,100,70,0.06);
+  --chip-bg:rgba(255,255,255,0.55);
+  --chip-bg-active:rgba(255,235,225,0.75);
+  --chip-shadow:0 2px 8px rgba(160,100,70,0.05);
+  --chip-shadow-active:0 0 16px rgba(255,190,140,0.35);
+  --input-bg:rgba(255,252,248,0.65);
+  --picker-bg:rgba(255,255,255,0.94);
+  --glass-blur:24px;
+  --sparkle-opacity:0.35;
+  --tile-gradient:linear-gradient(180deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08));
+  --tile-shadow:0 6px 20px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.4);
+  --highlight-edge:rgba(255,255,255,0.45);
+  --highlight-edge-dark:rgba(255,255,255,0.15);
   color-scheme:light;
 }
 
-/* ══════ DARK / NIGHT MODE ══════ */
-/* Ref: deep navy bg, warm amber/gold glowing card borders, frosted dark glass */
+/* ══════ NIGHT MODE (deep calming sleep aesthetic) ══════ */
 body.dark-mode{
-  --bg-grad:linear-gradient(170deg,#0a1020 0%,#0e1628 35%,#111b30 55%,#0e1628 100%);
-  --bg-solid:#0a1020;
-  --card-bg:rgba(22,34,56,0.55);
-  --card-bg-solid:rgba(24,38,60,0.72);
-  --card-bg-alt:rgba(28,44,66,0.5);
-  --card-border:rgba(200,160,110,0.22);
+  --bg-main:#0e1424;
+  --bg-secondary:#1e2b48;
+  --bg-grad:radial-gradient(ellipse 120% 80% at 50% 0%,#1e2b48,#0e1424 70%);
+  --bg-solid:#0e1424;
+  --card-bg:rgba(255,255,255,0.08);
+  --card-bg-solid:rgba(255,255,255,0.12);
+  --card-bg-alt:rgba(255,255,255,0.06);
+  --card-border:rgba(255,255,255,0.18);
   --card-shadow:
-    0 0 0 0.5px rgba(200,160,110,0.15) inset,
-    0 10px 40px rgba(0,0,0,0.55),
-    0 0 20px rgba(220,170,120,0.08);
-  --text-deep:#F0F2F5;
-  --text-mid:#B0BEC9;
-  --text-lt:#7E8FA0;
-  --blush:rgba(200,160,110,0.2);
-  --rose:rgba(200,160,110,0.15);
-  --cream:#0a1020;
-  --warm:#162236;
-  --ter:#d98b72;
-  --mint:#7bc4ad;
-  --sky:#8dbdd5;
-  --gold:#e0b86a;
-  --placeholder:#4a5a72;
-  --sheet-bg:rgba(18,28,48,0.96);
-  --sheet-overlay:rgba(0,0,0,0.65);
-  --nav-bg:rgba(10,16,32,0.8);
-  --nav-border:rgba(200,160,110,0.12);
-  --nav-shadow:0 -2px 24px rgba(0,0,0,0.4),0 0 16px rgba(200,160,110,0.04);
-  --chip-bg:rgba(22,34,56,0.6);
-  --chip-bg-active:rgba(60,45,30,0.5);
+    0 1px 0 rgba(255,255,255,0.08) inset,
+    0 10px 30px rgba(0,0,0,0.35),
+    0 2px 8px rgba(0,0,0,0.2);
+  --card-shadow-elevated:
+    0 1px 0 rgba(255,255,255,0.1) inset,
+    0 16px 48px rgba(0,0,0,0.45),
+    0 4px 16px rgba(0,0,0,0.25);
+  --card-shadow-active:
+    0 1px 0 rgba(255,255,255,0.12) inset,
+    0 20px 60px rgba(0,0,0,0.5),
+    0 0 30px rgba(120,255,210,0.08);
+  --text-deep:#ffffff;
+  --text-mid:rgba(255,255,255,0.75);
+  --text-lt:rgba(255,255,255,0.45);
+  --blush:rgba(120,255,210,0.12);
+  --rose:rgba(120,255,210,0.08);
+  --cream:#0e1424;
+  --warm:#1a2840;
+  --ter:#78ffd2;
+  --mint:#78ffd2;
+  --sky:#8dc8e8;
+  --gold:#ffd278;
+  --placeholder:rgba(255,255,255,0.28);
+  --glow-primary:rgba(120,255,210,0.45);
+  --glow-secondary:rgba(120,255,210,0.2);
+  --glow-accent:rgba(120,255,210,0.6);
+  --sheet-bg:rgba(14,20,36,0.96);
+  --sheet-overlay:rgba(0,0,0,0.6);
+  --nav-bg:rgba(14,20,36,0.85);
+  --nav-border:rgba(255,255,255,0.1);
+  --nav-shadow:0 -1px 24px rgba(0,0,0,0.4),0 0 20px rgba(120,255,210,0.03);
+  --chip-bg:rgba(255,255,255,0.08);
+  --chip-bg-active:rgba(120,255,210,0.12);
   --chip-shadow:0 2px 8px rgba(0,0,0,0.25);
-  --chip-shadow-active:0 0 14px rgba(220,170,120,0.3);
-  --input-bg:rgba(28,44,66,0.7);
-  --picker-bg:rgba(18,28,48,0.96);
-  --glass-blur:24px;
-  --sparkle-opacity:0.18;
+  --chip-shadow-active:0 0 18px rgba(120,255,210,0.25);
+  --input-bg:rgba(255,255,255,0.08);
+  --picker-bg:rgba(14,20,36,0.96);
+  --glass-blur:28px;
+  --sparkle-opacity:0.22;
+  --tile-gradient:linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04));
+  --tile-shadow:0 6px 20px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.1);
+  --highlight-edge:rgba(255,255,255,0.12);
+  --highlight-edge-dark:rgba(120,255,210,0.08);
   color-scheme:dark;
 }
 
 /* ══════ BACKGROUND ══════ */
-body{background:var(--bg-grad);color:var(--text-deep);position:relative;}
+body{background:var(--bg-grad);background-attachment:fixed;color:var(--text-deep);position:relative;min-height:100vh;}
 
-/* Warm ambient glow overlay */
+/* Ambient glow overlay — Day */
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(ellipse 90% 60% at 25% 15%,rgba(255,195,165,0.2),transparent),
-    radial-gradient(ellipse 70% 50% at 75% 55%,rgba(235,180,210,0.14),transparent),
-    radial-gradient(ellipse 60% 55% at 50% 0%,rgba(255,210,180,0.28),transparent 70%),
-    radial-gradient(ellipse 50% 40% at 50% 100%,rgba(255,200,170,0.1),transparent 60%);
-  transition:opacity 0.5s;
+    radial-gradient(ellipse 80% 50% at 30% 10%,rgba(255,200,170,0.18),transparent),
+    radial-gradient(ellipse 60% 40% at 70% 60%,rgba(240,190,220,0.12),transparent),
+    radial-gradient(ellipse 70% 50% at 50% 0%,rgba(255,220,190,0.22),transparent 65%),
+    radial-gradient(ellipse 40% 30% at 50% 100%,rgba(255,200,170,0.08),transparent 60%);
+  transition:background 0.6s cubic-bezier(.4,0,.2,1);
 }
+/* Ambient glow overlay — Night */
 body.dark-mode::before{
   background:
-    radial-gradient(ellipse 80% 50% at 20% 20%,rgba(200,160,110,0.06),transparent),
-    radial-gradient(ellipse 60% 40% at 80% 60%,rgba(140,100,170,0.04),transparent),
-    radial-gradient(ellipse 50% 50% at 50% 0%,rgba(200,160,110,0.08),transparent 65%);
+    radial-gradient(ellipse 100% 70% at 50% -10%,rgba(30,43,72,0.8),transparent),
+    radial-gradient(ellipse 60% 40% at 20% 30%,rgba(120,255,210,0.04),transparent),
+    radial-gradient(ellipse 50% 35% at 80% 70%,rgba(100,140,255,0.03),transparent),
+    radial-gradient(ellipse 40% 30% at 50% 50%,rgba(120,255,210,0.02),transparent);
 }
 
-/* Sparkle particle texture */
+/* Sparkle particles — subtle floating speckles */
 body::after{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   opacity:var(--sparkle-opacity);
   background-image:
-    radial-gradient(1.2px 1.2px at 8% 12%,rgba(255,255,255,0.8),transparent),
-    radial-gradient(1px 1px at 18% 28%,rgba(255,220,190,0.7),transparent),
-    radial-gradient(1.8px 1.8px at 32% 8%,rgba(255,255,255,0.6),transparent),
-    radial-gradient(1px 1px at 45% 42%,rgba(255,200,170,0.6),transparent),
-    radial-gradient(1.3px 1.3px at 58% 18%,rgba(255,255,255,0.7),transparent),
-    radial-gradient(1.8px 1.8px at 72% 52%,rgba(255,220,190,0.5),transparent),
-    radial-gradient(1px 1px at 12% 65%,rgba(255,255,255,0.6),transparent),
-    radial-gradient(1.2px 1.2px at 28% 78%,rgba(255,200,170,0.5),transparent),
-    radial-gradient(1.8px 1.8px at 52% 72%,rgba(255,255,255,0.6),transparent),
-    radial-gradient(1px 1px at 78% 82%,rgba(255,220,190,0.5),transparent),
-    radial-gradient(1.3px 1.3px at 88% 25%,rgba(255,255,255,0.6),transparent),
-    radial-gradient(1px 1px at 4% 48%,rgba(255,220,190,0.5),transparent),
-    radial-gradient(2px 2px at 42% 50%,rgba(255,255,255,0.35),transparent),
-    radial-gradient(1px 1px at 68% 38%,rgba(255,200,170,0.4),transparent),
-    radial-gradient(1.5px 1.5px at 95% 62%,rgba(255,255,255,0.4),transparent),
-    radial-gradient(1px 1px at 22% 92%,rgba(255,210,180,0.4),transparent),
-    radial-gradient(1.8px 1.8px at 62% 5%,rgba(255,255,255,0.5),transparent),
-    radial-gradient(1px 1px at 85% 90%,rgba(255,220,190,0.35),transparent);
+    radial-gradient(1px 1px at 8% 12%,rgba(255,255,255,0.9),transparent),
+    radial-gradient(0.8px 0.8px at 18% 28%,rgba(255,230,200,0.7),transparent),
+    radial-gradient(1.2px 1.2px at 32% 8%,rgba(255,255,255,0.6),transparent),
+    radial-gradient(0.8px 0.8px at 45% 42%,rgba(255,210,180,0.6),transparent),
+    radial-gradient(1px 1px at 58% 18%,rgba(255,255,255,0.7),transparent),
+    radial-gradient(1.2px 1.2px at 72% 52%,rgba(255,230,200,0.5),transparent),
+    radial-gradient(0.8px 0.8px at 12% 65%,rgba(255,255,255,0.5),transparent),
+    radial-gradient(1px 1px at 28% 78%,rgba(255,210,180,0.45),transparent),
+    radial-gradient(1.2px 1.2px at 52% 72%,rgba(255,255,255,0.5),transparent),
+    radial-gradient(0.8px 0.8px at 78% 82%,rgba(255,230,200,0.45),transparent),
+    radial-gradient(1px 1px at 88% 25%,rgba(255,255,255,0.5),transparent),
+    radial-gradient(0.8px 0.8px at 4% 48%,rgba(255,230,200,0.4),transparent),
+    radial-gradient(1.5px 1.5px at 42% 50%,rgba(255,255,255,0.3),transparent),
+    radial-gradient(0.8px 0.8px at 68% 38%,rgba(255,210,180,0.35),transparent),
+    radial-gradient(1px 1px at 95% 62%,rgba(255,255,255,0.35),transparent),
+    radial-gradient(0.8px 0.8px at 22% 92%,rgba(255,220,190,0.35),transparent),
+    radial-gradient(1.2px 1.2px at 62% 5%,rgba(255,255,255,0.4),transparent),
+    radial-gradient(0.8px 0.8px at 85% 90%,rgba(255,230,200,0.3),transparent);
   background-size:100% 100%;
-  animation:sparkleShift 18s ease-in-out infinite alternate;
+  animation:sparkleFloat 22s ease-in-out infinite alternate;
 }
-@keyframes sparkleShift{
+body.dark-mode::after{
+  background-image:
+    radial-gradient(1px 1px at 8% 12%,rgba(120,255,210,0.5),transparent),
+    radial-gradient(0.8px 0.8px at 18% 28%,rgba(255,255,255,0.3),transparent),
+    radial-gradient(1.2px 1.2px at 32% 8%,rgba(120,255,210,0.35),transparent),
+    radial-gradient(0.8px 0.8px at 45% 42%,rgba(255,255,255,0.25),transparent),
+    radial-gradient(1px 1px at 58% 18%,rgba(120,255,210,0.4),transparent),
+    radial-gradient(1.2px 1.2px at 72% 52%,rgba(255,255,255,0.25),transparent),
+    radial-gradient(0.8px 0.8px at 12% 65%,rgba(120,255,210,0.3),transparent),
+    radial-gradient(1px 1px at 28% 78%,rgba(255,255,255,0.2),transparent),
+    radial-gradient(1.2px 1.2px at 52% 72%,rgba(120,255,210,0.3),transparent),
+    radial-gradient(0.8px 0.8px at 78% 82%,rgba(255,255,255,0.2),transparent),
+    radial-gradient(1px 1px at 88% 25%,rgba(120,255,210,0.3),transparent),
+    radial-gradient(0.8px 0.8px at 4% 48%,rgba(255,255,255,0.2),transparent),
+    radial-gradient(1.5px 1.5px at 42% 50%,rgba(120,255,210,0.2),transparent),
+    radial-gradient(0.8px 0.8px at 68% 38%,rgba(255,255,255,0.15),transparent),
+    radial-gradient(1px 1px at 95% 62%,rgba(120,255,210,0.25),transparent),
+    radial-gradient(0.8px 0.8px at 22% 92%,rgba(255,255,255,0.15),transparent),
+    radial-gradient(1.2px 1.2px at 62% 5%,rgba(120,255,210,0.3),transparent),
+    radial-gradient(0.8px 0.8px at 85% 90%,rgba(255,255,255,0.15),transparent);
+}
+@keyframes sparkleFloat{
   0%{transform:translateY(0) scale(1);opacity:var(--sparkle-opacity);}
-  50%{transform:translateY(-3px) scale(1.01);opacity:calc(var(--sparkle-opacity) * 1.15);}
-  100%{transform:translateY(1px) scale(0.99);opacity:var(--sparkle-opacity);}
+  33%{transform:translateY(-2px) scale(1.005);opacity:calc(var(--sparkle-opacity) * 1.1);}
+  66%{transform:translateY(1px) scale(0.998);opacity:calc(var(--sparkle-opacity) * 0.95);}
+  100%{transform:translateY(-1px) scale(1.002);opacity:var(--sparkle-opacity);}
 }
 #root{position:relative;z-index:1;}
 
 /* Gender overrides */
-body.boy header,body.boy .gender-accent{background:#eaf3fb!important;}
-body.girl header,body.girl .gender-accent{background:#fde7e4!important;}
-body.dark-mode.boy header,body.dark-mode.boy .gender-accent{background:rgba(26,42,61,0.8)!important;}
-body.dark-mode.girl header,body.dark-mode.girl .gender-accent{background:rgba(45,31,42,0.8)!important;}
+body.boy header,body.boy .gender-accent{background:rgba(109,163,190,0.1)!important;}
+body.girl header,body.girl .gender-accent{background:rgba(242,217,204,0.3)!important;}
+body.dark-mode.boy header,body.dark-mode.boy .gender-accent{background:rgba(100,140,255,0.08)!important;}
+body.dark-mode.girl header,body.dark-mode.girl .gender-accent{background:rgba(255,180,200,0.06)!important;}
 
-/* ══════ GLASS CARD CSS CLASS (for elements using className) ══════ */
+/* ══════ GLASS CARD — Premium Glassmorphism ══════ */
 .glass-card{
   position:relative;
   overflow:hidden;
   background:var(--card-bg);
-  backdrop-filter:blur(var(--glass-blur));
-  -webkit-backdrop-filter:blur(var(--glass-blur));
+  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
   border:1px solid var(--card-border);
-  border-radius:20px;
+  border-radius:22px;
   box-shadow:var(--card-shadow);
-  transition:transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.25s ease;
+  transition:transform 0.25s cubic-bezier(.23,1,.32,1),box-shadow 0.3s ease;
 }
-/* Inner top highlight edge */
+/* Inner highlight edge — top */
 .glass-card::before{
   content:"";position:absolute;top:0;left:0;right:0;height:1px;pointer-events:none;z-index:1;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3) 20%,rgba(255,255,255,0.3) 80%,transparent);
+  background:linear-gradient(90deg,transparent 5%,var(--highlight-edge) 30%,var(--highlight-edge) 70%,transparent 95%);
 }
 body.dark-mode .glass-card::before{
-  background:linear-gradient(90deg,transparent,rgba(200,160,110,0.15) 20%,rgba(200,160,110,0.15) 80%,transparent);
+  background:linear-gradient(90deg,transparent 5%,var(--highlight-edge-dark) 30%,var(--highlight-edge-dark) 70%,transparent 95%);
 }
 /* Content above pseudo-elements */
 .glass-card>*{position:relative;z-index:2;}
@@ -223,36 +285,67 @@ body.dark-mode .glass-card::before{
 @media(hover:hover){
   .glass-card:hover{
     transform:translateY(-2px);
+    box-shadow:var(--card-shadow-elevated);
   }
 }
 
 /* Dark mode input fixes */
 body.dark-mode input,body.dark-mode select,body.dark-mode textarea{
-  background:var(--input-bg)!important;color:var(--text-deep)!important;border-color:var(--card-border)!important;
+  background:var(--input-bg)!important;
+  color:var(--text-deep)!important;
+  border-color:var(--card-border)!important;
+  caret-color:var(--ter);
 }
 body.dark-mode input::placeholder{color:var(--placeholder)!important;}
+/* Day mode inputs */
+body.light-mode input,body.light-mode select,body.light-mode textarea{
+  caret-color:var(--ter);
+}
 
 /* ══════ GLOBAL TRANSITIONS ══════ */
 button,a,[role="button"]{
-  transition:transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.2s ease,background-color 0.25s ease,border-color 0.25s ease,opacity 0.2s ease!important;
+  transition:transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.25s ease,background-color 0.3s ease,border-color 0.3s ease,opacity 0.2s ease!important;
   -webkit-user-select:none;user-select:none;
 }
-/* Squish press */
-button:active{transform:scale(0.94)!important;}
-@media(hover:hover){button:hover{opacity:0.88;}}
+/* Tactile press — squish */
+button:active{transform:scale(0.96)!important;}
+@media(hover:hover){button:hover{opacity:0.92;}}
+
+/* ══════ GLOW SYSTEM for action buttons ══════ */
+/* Apply via inline style or className in React where needed */
+/* The glow variables are available for any element */
+
+/* ══════ DEPTH SYSTEM ══════ */
+/* Level 1: background (body) */
+/* Level 2: cards — var(--card-shadow) */
+/* Level 3: highlighted/active — var(--card-shadow-active) */
 
 /* ══════ NIGHT MODE TOGGLE ══════ */
 #theme-toggle{
   position:fixed;top:12px;right:12px;z-index:100;
-  width:40px;height:40px;border-radius:50%;border:none;
+  width:42px;height:42px;border-radius:50%;border:1px solid var(--card-border);
   background:var(--card-bg);
-  backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
+  backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.4);
   box-shadow:var(--card-shadow);
   cursor:pointer;font-size:18px;
   display:flex;align-items:center;justify-content:center;
-  transition:transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.2s ease,background 0.3s ease!important;
+  transition:transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.25s ease,background 0.3s ease!important;
 }
 #theme-toggle:active{transform:scale(0.85)!important;}
+@media(hover:hover){
+  #theme-toggle:hover{
+    box-shadow:var(--card-shadow-elevated);
+    transform:translateY(-1px);
+  }
+}
+
+/* ══════ TYPOGRAPHY REFINEMENTS ══════ */
+h1,h2,h3,h4,h5,h6{font-weight:600;letter-spacing:-0.02em;}
+
+/* ══════ SELECTION COLOR ══════ */
+::selection{background:var(--ter);color:white;}
+body.dark-mode ::selection{background:rgba(120,255,210,0.3);color:white;}
 </style>
 </head>
 <body>
@@ -277,7 +370,7 @@ function applyTheme(mode){
   else if(saved==='dark') btn.textContent='☀️';
   else btn.textContent='🌙';
   btn.title=saved==='auto'?'Auto (following device · tap to lock light)':saved==='light'?'Light mode · tap to switch to dark':'Dark mode · tap to switch to auto';
-  if(meta) meta.content=dark?'#0c1322':'#f0ddd6';
+  if(meta) meta.content=dark?'#0e1424':'#f6efe9';
 }
 function getThemePref(){
   try{return localStorage.getItem('theme')||'auto';}catch(e){return 'auto';}
