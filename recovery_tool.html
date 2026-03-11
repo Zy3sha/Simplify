@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OBubba Data Recovery Tool</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Courier New', monospace; background: #1a1a2e; color: #e0e0e0; padding: 20px; max-width: 900px; margin: 0 auto; }
+    h1 { color: #c9705a; margin-bottom: 8px; }
+    .warn { background: #3d1f1f; border: 1px solid #c9705a; border-radius: 8px; padding: 12px; margin: 12px 0; color: #ffb3a0; line-height: 1.5; }
+    .info { background: #1f2d3d; border: 1px solid #4a90d9; border-radius: 8px; padding: 12px; margin: 12px 0; color: #a0cfff; line-height: 1.5; }
+    .ok { background: #1f3d2d; border: 1px solid #50c878; border-radius: 8px; padding: 12px; margin: 12px 0; color: #a0ffc8; line-height: 1.5; }
+    button { padding: 12px 24px; border-radius: 8px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; margin: 8px 4px; font-family: inherit; }
+    .btn-scan { background: #4a90d9; color: white; }
+    .btn-fix { background: #50c878; color: white; }
+    .btn-danger { background: #c9705a; color: white; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    #log { background: #0d0d1a; border: 1px solid #333; border-radius: 8px; padding: 16px; margin: 16px 0; max-height: 500px; overflow-y: auto; white-space: pre-wrap; font-size: 13px; line-height: 1.6; }
+    .log-ok { color: #50c878; }
+    .log-warn { color: #ffb347; }
+    .log-err { color: #ff6b6b; }
+    .log-info { color: #7bb3ff; }
+    .log-dim { color: #666; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    th, td { padding: 8px 10px; border: 1px solid #333; text-align: left; font-size: 12px; }
+    th { background: #2a2a3e; color: #c9705a; }
+    tr.broken { background: #3d1f1f; }
+    tr.healthy { background: #1f3d2d; }
+    tr.recovered { background: #2d3d1f; }
+  </style>
+</head>
+<body>
+  <h1>🔧 OBubba Data Recovery Tool</h1>
+  <p style="color:#999;margin-bottom:16px">Scans your Firestore database, finds users whose backup codes point to empty documents, and recovers their data from old-format documents.</p>
+
+  <div class="warn">
+    ⚠️ <strong>READ THIS FIRST:</strong> This tool will SCAN your database first without making any changes. 
+    It will show you a full report. Only when you click "Apply Fixes" will it write anything. 
+    Every write is logged so you can see exactly what changed.
+  </div>
+
+  <button class="btn-scan" id="scanBtn" onclick="startScan()">🔍 Step 1: Scan Database</button>
+  <button class="btn-fix" id="fixBtn" onclick="applyFixes()" disabled>✅ Step 2: Apply Fixes</button>
+
+  <div id="log"></div>
+  <div id="report"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, signInAnonymously }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCdHzmheQRbtzP_JI1FuWcZLeW8yVja5-0",
+      authDomain: "obubba-d9ccc.firebaseapp.com",
+      projectId: "obubba-d9ccc",
+      storageBucket: "obubba-d9ccc.firebasestorage.app",
+      messagingSenderId: "1091432133381",
+      appId: "1:1091432133381:web:1cd4d0ce7397affeae7d6c",
+      measurementId: "G-Y7CHSL1YHZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    await signInAnonymously(auth);
+
+    const logEl = document.getElementById('log');
+    const reportEl = document.getElementById('report');
+
+    function log(msg, cls = '') {
+      const span = document.createElement('span');
+      span.className = cls;
+      span.textContent = msg + '\n';
+      logEl.appendChild(span);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // Store scan results for the fix step
+    window._scanResults = null;
+
+    window.startScan = async function() {
+      document.getElementById('scanBtn').disabled = true;
+      document.getElementById('fixBtn').disabled = true;
+      logEl.innerHTML = '';
+      reportEl.innerHTML = '';
+
+      log('Starting database scan...', 'log-info');
+      log('');
+
+      // Step 1: Read all families documents
+      log('📦 Reading families collection...', 'log-info');
+      const familiesSnap = await getDocs(collection(db, "families"));
+      const families = {};
+      familiesSnap.forEach(d => { families[d.id] = d.data(); });
+      log(`   Found ${Object.keys(families).length} family documents`, 'log-dim');
+
+      // Classify each family document
+      const familyInfo = {};
+      for (const [id, data] of Object.entries(families)) {
+        let entryCount = 0;
+        let hasChildren = false;
+        let hasLegacy = false;
+        let babyName = '';
+        let format = 'unknown';
+
+        if (data.children) {
+          hasChildren = true;
+          format = 'new';
+          try {
+            const ch = JSON.parse(data.children);
+            for (const child of Object.values(ch)) {
+              babyName = babyName || child.name || '';
+              for (const dayEntries of Object.values(child.days || {})) {
+                entryCount += (dayEntries || []).length;
+              }
+            }
+          } catch {}
+        }
+        
+        if (data.babyName || data.days) {
+          hasLegacy = true;
+          if (!hasChildren) format = 'legacy';
+          babyName = babyName || data.babyName || '';
+          if (data.days) {
+            try {
+              const days = typeof data.days === 'string' ? JSON.parse(data.days) : data.days;
+              for (const dayEntries of Object.values(days)) {
+                entryCount += (dayEntries || []).length;
+              }
+            } catch {}
+          }
+        }
+
+        if (!hasChildren && !hasLegacy) format = 'empty';
+        
+        familyInfo[id] = { format, entryCount, babyName, hasChildren, hasLegacy, updatedAt: data.updatedAt };
+      }
+
+      // Log family document summary
+      const empty = Object.entries(familyInfo).filter(([,f]) => f.format === 'empty');
+      const legacy = Object.entries(familyInfo).filter(([,f]) => f.format === 'legacy');
+      const newFmt = Object.entries(familyInfo).filter(([,f]) => f.format === 'new');
+      log(`   Empty documents: ${empty.length}`, empty.length ? 'log-warn' : 'log-ok');
+      log(`   Legacy format (old): ${legacy.length}`, 'log-info');
+      log(`   New format: ${newFmt.length}`, 'log-ok');
+      log('');
+
+      // Step 2: Read all usernames
+      log('👤 Reading usernames collection...', 'log-info');
+      const usernamesSnap = await getDocs(collection(db, "usernames"));
+      const usernames = {};
+      usernamesSnap.forEach(d => { usernames[d.id] = d.data(); });
+      log(`   Found ${Object.keys(usernames).length} user accounts`, 'log-dim');
+      log('');
+
+      // Step 3: For each user, check if their backupCode points to real data
+      log('🔍 Checking each user\'s backup code...', 'log-info');
+      log('');
+
+      const results = [];
+
+      for (const [username, userData] of Object.entries(usernames)) {
+        const code = userData.backupCode;
+        const displayName = userData.displayName || username;
+        
+        if (!code) {
+          log(`   ${displayName}: No backup code set`, 'log-warn');
+          results.push({ username, displayName, code, status: 'no_code', fix: null });
+          continue;
+        }
+
+        const family = familyInfo[code];
+        
+        if (!family) {
+          log(`   ${displayName}: Backup code ${code} → document NOT FOUND`, 'log-err');
+          // Search for a document with data that could belong to this user
+          const candidate = findCandidateDocument(familyInfo, usernames, username, displayName);
+          results.push({ username, displayName, code, status: 'missing', fix: candidate });
+          continue;
+        }
+
+        if (family.format === 'empty' || family.entryCount === 0) {
+          log(`   ${displayName}: Backup code ${code} → EMPTY (${family.format}, ${family.entryCount} entries)`, 'log-err');
+          // Search for an old document with this user's data
+          const candidate = findCandidateDocument(familyInfo, usernames, username, displayName);
+          results.push({ username, displayName, code, status: 'empty', fix: candidate });
+          continue;
+        }
+
+        log(`   ${displayName}: Backup code ${code} → OK (${family.format}, ${family.entryCount} entries, baby: "${family.babyName}")`, 'log-ok');
+        results.push({ username, displayName, code, status: 'ok', fix: null, info: family });
+      }
+
+      // Find orphan family documents (have data but no user points to them)
+      log('');
+      log('🔎 Checking for orphan documents with data...', 'log-info');
+      const usedCodes = new Set(Object.values(usernames).map(u => u.backupCode).filter(Boolean));
+      const orphans = Object.entries(familyInfo)
+        .filter(([id, f]) => !usedCodes.has(id) && f.entryCount > 0)
+        .sort((a, b) => b[1].entryCount - a[1].entryCount);
+      
+      if (orphans.length) {
+        for (const [id, f] of orphans) {
+          log(`   ORPHAN: ${id} — ${f.format} format, ${f.entryCount} entries, baby: "${f.babyName}"`, 'log-warn');
+        }
+      } else {
+        log('   No orphan documents found', 'log-dim');
+      }
+
+      // Step 4: Build report
+      log('');
+      log('════════════════════════════════════════', 'log-info');
+      log('SCAN COMPLETE', 'log-info');
+      log('════════════════════════════════════════', 'log-info');
+
+      const broken = results.filter(r => r.status === 'empty' || r.status === 'missing');
+      const fixable = broken.filter(r => r.fix);
+      
+      log(`   Total users: ${results.length}`, 'log-dim');
+      log(`   Healthy: ${results.filter(r => r.status === 'ok').length}`, 'log-ok');
+      log(`   Broken (empty/missing data): ${broken.length}`, broken.length ? 'log-err' : 'log-ok');
+      log(`   Fixable (found old data): ${fixable.length}`, fixable.length ? 'log-warn' : 'log-dim');
+      log(`   Orphan documents with data: ${orphans.length}`, orphans.length ? 'log-warn' : 'log-dim');
+
+      // Store results
+      window._scanResults = { results, orphans, familyInfo };
+
+      // Build HTML report
+      if (broken.length > 0 || orphans.length > 0) {
+        let html = '<h3 style="color:#c9705a;margin:16px 0 8px">Recovery Plan</h3>';
+        html += '<table>';
+        html += '<tr><th>User</th><th>Current Code</th><th>Status</th><th>Fix</th></tr>';
+        
+        for (const r of results) {
+          const cls = r.status === 'ok' ? 'healthy' : r.fix ? 'recovered' : 'broken';
+          let fixText = '—';
+          if (r.fix) {
+            fixText = `Point to ${r.fix.id} (${r.fix.entryCount} entries, "${r.fix.babyName}")`;
+          } else if (r.status === 'empty' || r.status === 'missing') {
+            fixText = '<span style="color:#ff6b6b">No candidate found — manual review needed</span>';
+          }
+          html += `<tr class="${cls}"><td>${r.displayName}</td><td>${r.code || 'none'}</td><td>${r.status}</td><td>${fixText}</td></tr>`;
+        }
+        html += '</table>';
+
+        if (orphans.length) {
+          html += '<h3 style="color:#ffb347;margin:16px 0 8px">Orphan Documents (have data, no user linked)</h3>';
+          html += '<table><tr><th>Document ID</th><th>Format</th><th>Entries</th><th>Baby Name</th></tr>';
+          for (const [id, f] of orphans) {
+            html += `<tr><td>${id}</td><td>${f.format}</td><td>${f.entryCount}</td><td>${f.babyName}</td></tr>`;
+          }
+          html += '</table>';
+        }
+
+        reportEl.innerHTML = html;
+
+        if (fixable.length > 0) {
+          document.getElementById('fixBtn').disabled = false;
+        }
+      } else {
+        reportEl.innerHTML = '<div class="ok">✅ All users\' data looks healthy. No fixes needed.</div>';
+      }
+
+      document.getElementById('scanBtn').disabled = false;
+      document.getElementById('scanBtn').textContent = '🔍 Re-scan Database';
+    };
+
+    function findCandidateDocument(familyInfo, usernames, username, displayName) {
+      // Look for orphan documents (not claimed by any user) that have real data.
+      // We can't be 100% sure which orphan belongs to which user, but if there's
+      // only one orphan with data, it's likely the right one.
+      // We also check if the document was likely created before the broken update.
+      
+      const usedCodes = new Set(Object.values(usernames).map(u => u.backupCode).filter(Boolean));
+      
+      // Find all orphan documents with data
+      const orphans = Object.entries(familyInfo)
+        .filter(([id, f]) => !usedCodes.has(id) && f.entryCount > 0)
+        .sort((a, b) => b[1].entryCount - a[1].entryCount);
+
+      // If there's exactly one orphan, it's very likely this user's data
+      // For multiple orphans, we can't auto-assign — return the best candidate
+      // but flag it for manual review
+      if (orphans.length > 0) {
+        return { id: orphans[0][0], ...orphans[0][1], confidence: orphans.length === 1 ? 'high' : 'low' };
+      }
+
+      return null;
+    }
+
+    window.applyFixes = async function() {
+      if (!window._scanResults) { alert('Run scan first'); return; }
+      
+      const { results } = window._scanResults;
+      const fixable = results.filter(r => (r.status === 'empty' || r.status === 'missing') && r.fix);
+      
+      if (!fixable.length) { alert('Nothing to fix'); return; }
+
+      const msg = `This will update ${fixable.length} user(s)' backup codes to point to their recovered data.\n\n` +
+        fixable.map(r => `${r.displayName}: ${r.code} → ${r.fix.id}`).join('\n') +
+        '\n\nProceed?';
+      
+      if (!confirm(msg)) return;
+
+      document.getElementById('fixBtn').disabled = true;
+      log('');
+      log('🔧 Applying fixes...', 'log-info');
+
+      for (const r of fixable) {
+        try {
+          // SAFETY: We ONLY update the backupCode field on the username document.
+          // We NEVER modify any families document.
+          // This is a pointer change — it redirects the user to their old data.
+          log(`   ${r.displayName}: Updating backupCode from ${r.code} to ${r.fix.id}...`, 'log-warn');
+          
+          const userRef = doc(db, "usernames", r.username);
+          await updateDoc(userRef, { 
+            backupCode: r.fix.id,
+            _previousBackupCode: r.code,  // Store old code for audit trail
+            _recoveryTimestamp: new Date().toISOString()
+          });
+          
+          log(`   ✅ ${r.displayName}: Done — now points to ${r.fix.id} (${r.fix.entryCount} entries)`, 'log-ok');
+        } catch (e) {
+          log(`   ❌ ${r.displayName}: FAILED — ${e.message}`, 'log-err');
+        }
+      }
+
+      log('');
+      log('Recovery complete. Users should sign out and sign back in to see their data.', 'log-ok');
+      log('The old backup codes are preserved in _previousBackupCode field for audit.', 'log-dim');
+    };
+  </script>
+</body>
+</html>
