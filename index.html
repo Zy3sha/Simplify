@@ -49,19 +49,30 @@
   <style>
 /* ══════ BASE RESET ══════ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html{color-scheme:light;}
 html,body{height:100%;overscroll-behavior:none;}
-body{font-family:'DM Sans',sans-serif;transition:background-color 0.4s ease,color 0.4s ease;}
+body{font-family:'DM Sans',sans-serif;transition:background 0.5s ease,color 0.5s ease;}
 ::-webkit-scrollbar{display:none;}
 input,select,button{font-family:inherit;}
-input::placeholder{color:var(--placeholder);opacity:1;}
+input::placeholder{opacity:1;}
 
-/* ══════ CSS CUSTOM PROPERTIES — LIGHT MODE (default) ══════ */
-:root,body,.light-mode{
-  --bg:#faf6f0;
-  --card-bg:white;
-  --card-bg-alt:#fff9f2;
-  --card-border:rgba(242,217,204,0.7);
+/* ══════ LIGHT MODE (default) — dreamy peach glassmorphism ══════ */
+:root,body,body.light-mode{
+  --bg:linear-gradient(170deg,#faf6f0 0%,#f5e6de 30%,#f0ddd6 50%,#ede0dc 70%,#f2e4df 100%);
+  --bg-solid:#f5e6de;
+  --card-bg:rgba(255,255,255,0.55);
+  --card-bg-solid:rgba(255,252,250,0.7);
+  --card-bg-alt:rgba(255,248,244,0.6);
+  --card-border:rgba(255,255,255,0.7);
+  --card-shadow:
+    0 0 0 0.5px rgba(255,255,255,0.8) inset,
+    0 1px 0 0 rgba(255,255,255,0.9) inset,
+    0 8px 24px rgba(180,120,90,0.12),
+    0 2px 8px rgba(180,120,90,0.08);
+  --card-shadow-hover:
+    0 0 0 0.5px rgba(255,255,255,0.9) inset,
+    0 1px 0 0 rgba(255,255,255,1) inset,
+    0 12px 32px rgba(180,120,90,0.18),
+    0 4px 12px rgba(180,120,90,0.1);
   --text-deep:#2c1f1a;
   --text-mid:#7a5c52;
   --text-lt:#b89890;
@@ -74,34 +85,47 @@ input::placeholder{color:var(--placeholder);opacity:1;}
   --sky:#7aabc4;
   --gold:#d4a855;
   --placeholder:#c8beb8;
-  --sheet-bg:#faf6f0;
-  --sheet-overlay:rgba(44,31,26,0.55);
-  --shadow-card:0 0 0 1px rgba(255,255,255,0.5) inset, 0 10px 30px rgba(230,170,140,0.18);
-  --shadow-card-hover:0 0 0 1px rgba(255,255,255,0.6) inset, 0 14px 32px rgba(230,170,140,0.25), 0 4px 8px rgba(0,0,0,0.04);
-  --shadow-nav:0 -4px 25px rgba(44,31,26,0.08);
-  --nav-bg:rgba(255,255,255,0.88);
-  --nav-border:rgba(242,217,204,0.5);
-  --glow-accent:rgba(240,180,140,0.25);
-  --glow-subtle:rgba(255,220,190,0.25);
-  --chip-shadow:0 2px 6px rgba(0,0,0,0.04);
-  --chip-active-shadow:0 0 10px rgba(240,180,140,0.35);
-  --glass-bg:rgba(255,255,255,0.65);
-  --warning-border:rgba(220,150,120,0.4);
-  --warning-glow:0 0 18px rgba(240,180,140,0.15);
-  --input-bg:#fff9f2;
-  --picker-bg:white;
+  --sheet-bg:rgba(250,246,240,0.95);
+  --sheet-overlay:rgba(44,31,26,0.45);
+  --nav-bg:rgba(255,255,255,0.72);
+  --nav-border:rgba(255,255,255,0.6);
+  --nav-shadow:0 -2px 20px rgba(180,120,90,0.1),0 0 0 0.5px rgba(255,255,255,0.5) inset;
+  --glow-accent:rgba(240,180,140,0.3);
+  --chip-bg:rgba(255,255,255,0.6);
+  --chip-bg-active:rgba(255,238,228,0.8);
+  --chip-shadow:0 2px 8px rgba(180,120,90,0.08),0 0 0 0.5px rgba(255,255,255,0.6) inset;
+  --chip-shadow-active:0 0 12px rgba(240,180,140,0.35),0 2px 8px rgba(180,120,90,0.1),0 0 0 0.5px rgba(255,255,255,0.7) inset;
+  --input-bg:rgba(255,252,248,0.7);
+  --picker-bg:rgba(255,255,255,0.9);
+  --glass-blur:blur(16px);
+  --sparkle-opacity:0.35;
+  --warning-border:rgba(220,150,120,0.35);
+  --warning-glow:0 0 18px rgba(240,180,140,0.12);
+  color-scheme:light;
 }
 
-/* ══════ DARK / NIGHT MODE ══════ */
+/* ══════ DARK / NIGHT MODE — deep navy with warm amber glows ══════ */
 body.dark-mode{
-  --bg:#0F172A;
-  --card-bg:#1E293B;
-  --card-bg-alt:#243449;
-  --card-border:rgba(51,65,85,0.7);
+  --bg:linear-gradient(170deg,#0F172A 0%,#131d33 30%,#162038 50%,#131d33 70%,#0F172A 100%);
+  --bg-solid:#0F172A;
+  --card-bg:rgba(30,41,59,0.65);
+  --card-bg-solid:rgba(30,41,59,0.8);
+  --card-bg-alt:rgba(36,52,73,0.6);
+  --card-border:rgba(240,180,140,0.1);
+  --card-shadow:
+    0 0 0 0.5px rgba(240,180,140,0.08) inset,
+    0 1px 0 0 rgba(255,255,255,0.04) inset,
+    0 10px 30px rgba(0,0,0,0.4),
+    0 0 15px rgba(240,180,140,0.06);
+  --card-shadow-hover:
+    0 0 0 0.5px rgba(240,180,140,0.12) inset,
+    0 1px 0 0 rgba(255,255,255,0.06) inset,
+    0 14px 36px rgba(0,0,0,0.5),
+    0 0 20px rgba(240,180,140,0.1);
   --text-deep:#E5E7EB;
   --text-mid:#94A3B8;
   --text-lt:#64748B;
-  --blush:#334155;
+  --blush:rgba(51,65,85,0.6);
   --rose:#475569;
   --cream:#0F172A;
   --warm:#1E293B;
@@ -110,97 +134,106 @@ body.dark-mode{
   --sky:#8dbdd5;
   --gold:#e0b86a;
   --placeholder:#475569;
-  --sheet-bg:#1E293B;
-  --sheet-overlay:rgba(0,0,0,0.65);
-  --shadow-card:0 0 0 1px rgba(240,180,140,0.08) inset, 0 10px 30px rgba(0,0,0,0.45), 0 0 12px rgba(240,180,140,0.1);
-  --shadow-card-hover:0 0 0 1px rgba(240,180,140,0.12) inset, 0 14px 35px rgba(0,0,0,0.5), 0 0 16px rgba(240,180,140,0.15);
-  --shadow-nav:0 -4px 25px rgba(0,0,0,0.4);
-  --nav-bg:rgba(30,41,59,0.92);
-  --nav-border:rgba(51,65,85,0.5);
+  --sheet-bg:rgba(30,41,59,0.95);
+  --sheet-overlay:rgba(0,0,0,0.6);
+  --nav-bg:rgba(15,23,42,0.82);
+  --nav-border:rgba(240,180,140,0.08);
+  --nav-shadow:0 -2px 20px rgba(0,0,0,0.3),0 0 12px rgba(240,180,140,0.04),0 0 0 0.5px rgba(240,180,140,0.06) inset;
   --glow-accent:rgba(240,180,140,0.2);
-  --glow-subtle:rgba(240,180,140,0.06);
-  --chip-shadow:0 2px 6px rgba(0,0,0,0.2);
-  --chip-active-shadow:0 0 10px rgba(240,180,140,0.3);
-  --glass-bg:rgba(30,41,59,0.7);
-  --warning-border:rgba(212,131,110,0.4);
-  --warning-glow:0 0 18px rgba(240,180,140,0.12);
-  --input-bg:#243449;
-  --picker-bg:#1E293B;
+  --chip-bg:rgba(30,41,59,0.6);
+  --chip-bg-active:rgba(50,38,30,0.5);
+  --chip-shadow:0 2px 8px rgba(0,0,0,0.2),0 0 0 0.5px rgba(240,180,140,0.06) inset;
+  --chip-shadow-active:0 0 12px rgba(240,180,140,0.25),0 2px 8px rgba(0,0,0,0.2),0 0 0 0.5px rgba(240,180,140,0.1) inset;
+  --input-bg:rgba(36,52,73,0.7);
+  --picker-bg:rgba(30,41,59,0.95);
+  --glass-blur:blur(20px);
+  --sparkle-opacity:0.15;
+  --warning-border:rgba(212,131,110,0.3);
+  --warning-glow:0 0 18px rgba(240,180,140,0.08);
   color-scheme:dark;
 }
 
-body{background:var(--bg);color:var(--text-deep);}
+/* ══════ BACKGROUND ══════ */
+body{background:var(--bg);color:var(--text-deep);position:relative;}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%,rgba(255,200,170,0.15),transparent),
+    radial-gradient(ellipse 60% 40% at 80% 60%,rgba(230,180,200,0.1),transparent),
+    radial-gradient(ellipse 50% 50% at 50% 0%,var(--glow-accent),transparent 70%);
+  transition:opacity 0.5s;
+}
+body.dark-mode::before{
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%,rgba(240,180,140,0.04),transparent),
+    radial-gradient(ellipse 60% 40% at 80% 60%,rgba(100,80,140,0.04),transparent),
+    radial-gradient(ellipse 50% 50% at 50% 0%,rgba(240,180,140,0.06),transparent 70%);
+}
 
-/* Gender accent overrides (still work in both modes) */
-body.boy header,body.boy .gender-accent{background:#eaf3fb!important;}
-body.girl header,body.girl .gender-accent{background:#fde7e4!important;}
-body.dark-mode.boy header,body.dark-mode.boy .gender-accent{background:#1a2a3d!important;}
-body.dark-mode.girl header,body.dark-mode.girl .gender-accent{background:#2d1f2a!important;}
-
-/* ══════ AMBIENT GLOW BEHIND CONTENT ══════ */
-#root::before{
-  content:'';
-  position:fixed;
-  top:0;left:0;right:0;
-  height:50vh;
-  background:radial-gradient(circle at 50% 0%,var(--glow-subtle),transparent 70%);
-  pointer-events:none;
-  z-index:0;
-  transition:background 0.4s ease;
+/* Sparkle/particle texture overlay */
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  opacity:var(--sparkle-opacity);
+  background-image:
+    radial-gradient(1px 1px at 10% 15%,rgba(255,255,255,0.7),transparent),
+    radial-gradient(1px 1px at 25% 35%,rgba(255,220,190,0.6),transparent),
+    radial-gradient(1.5px 1.5px at 40% 10%,rgba(255,255,255,0.5),transparent),
+    radial-gradient(1px 1px at 55% 45%,rgba(255,200,170,0.5),transparent),
+    radial-gradient(1px 1px at 70% 20%,rgba(255,255,255,0.6),transparent),
+    radial-gradient(1.5px 1.5px at 85% 55%,rgba(255,220,190,0.4),transparent),
+    radial-gradient(1px 1px at 15% 70%,rgba(255,255,255,0.5),transparent),
+    radial-gradient(1px 1px at 35% 80%,rgba(255,200,170,0.4),transparent),
+    radial-gradient(1.5px 1.5px at 60% 75%,rgba(255,255,255,0.5),transparent),
+    radial-gradient(1px 1px at 80% 85%,rgba(255,220,190,0.4),transparent),
+    radial-gradient(1px 1px at 92% 30%,rgba(255,255,255,0.5),transparent),
+    radial-gradient(1px 1px at 5% 50%,rgba(255,220,190,0.4),transparent),
+    radial-gradient(1.5px 1.5px at 48% 55%,rgba(255,255,255,0.3),transparent),
+    radial-gradient(1px 1px at 75% 42%,rgba(255,200,170,0.3),transparent);
+  background-size:100% 100%;
+  animation:sparkleShift 20s ease-in-out infinite alternate;
+}
+@keyframes sparkleShift{
+  0%{transform:translateY(0) scale(1);opacity:var(--sparkle-opacity);}
+  50%{transform:translateY(-3px) scale(1.01);opacity:calc(var(--sparkle-opacity) * 1.2);}
+  100%{transform:translateY(1px) scale(0.99);opacity:var(--sparkle-opacity);}
 }
 #root{position:relative;z-index:1;}
 
-/* ══════ MICRO INTERACTIONS — all interactive elements ══════ */
+/* Gender overrides */
+body.boy header,body.boy .gender-accent{background:#eaf3fb!important;}
+body.girl header,body.girl .gender-accent{background:#fde7e4!important;}
+body.dark-mode.boy header,body.dark-mode.boy .gender-accent{background:rgba(26,42,61,0.8)!important;}
+body.dark-mode.girl header,body.dark-mode.girl .gender-accent{background:rgba(45,31,42,0.8)!important;}
+
+/* ══════ GLOBAL TRANSITIONS — micro interactions ══════ */
 button,a,[role="button"]{
-  transition:transform 0.18s ease,box-shadow 0.18s ease,background-color 0.22s ease,border-color 0.22s ease,opacity 0.18s ease !important;
+  transition:transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.2s ease,background-color 0.25s ease,border-color 0.25s ease,opacity 0.2s ease!important;
   -webkit-user-select:none;user-select:none;
 }
+/* Squish press */
+button:active{transform:scale(0.94)!important;}
+/* Desktop hover lift */
+@media(hover:hover){button:hover{opacity:0.88;}}
 
-/* ══════ SQUISH PRESS for buttons, chips, nav items ══════ */
-button:active{
-  transform:scale(0.95) !important;
-}
-
-/* ══════ DESKTOP HOVER for cards ══════ */
-@media(hover:hover){
-  button:hover{
-    opacity:0.92;
-  }
-}
-
-/* ══════ NIGHT MODE TOGGLE BUTTON ══════ */
+/* ══════ NIGHT MODE TOGGLE ══════ */
 #theme-toggle{
-  position:fixed;
-  top:12px;
-  right:12px;
-  z-index:100;
-  width:38px;
-  height:38px;
-  border-radius:50%;
-  border:none;
-  background:var(--nav-bg);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-  box-shadow:0 2px 12px rgba(0,0,0,0.1);
-  cursor:pointer;
-  font-size:18px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  transition:transform 0.18s ease,box-shadow 0.18s ease,background-color 0.3s ease !important;
+  position:fixed;top:12px;right:12px;z-index:100;
+  width:40px;height:40px;border-radius:50%;border:none;
+  background:var(--card-bg);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:var(--card-shadow);
+  cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.2s ease,background 0.3s ease!important;
 }
-#theme-toggle:active{
-  transform:scale(0.88) !important;
-}
+#theme-toggle:active{transform:scale(0.85)!important;}
 </style>
 </head>
 <body>
 <div id="root"></div>
-<button id="theme-toggle" aria-label="Toggle night mode" onclick="toggleTheme()">🌙</button>
+<button id="theme-toggle" aria-label="Toggle theme" onclick="toggleTheme()">🌙</button>
 <script>
 // ── Theme System: auto (device) / light / dark ──
-// "auto" = follow device prefers-color-scheme
-// "light" / "dark" = user override, ignores device setting
 function applyTheme(mode){
   var body=document.body;
   var btn=document.getElementById('theme-toggle');
@@ -213,20 +246,17 @@ function applyTheme(mode){
   }
   body.classList.remove('dark-mode','light-mode');
   body.classList.add(dark?'dark-mode':'light-mode');
-  // Icon shows: auto=🔄  light=🌙(tap for dark)  dark=☀️(tap for light)
   var saved=getThemePref();
-  if(saved==='auto') btn.textContent=dark?'🌙':'☀️';
+  if(saved==='auto') btn.textContent=dark?'☀️':'🌙';
   else if(saved==='dark') btn.textContent='☀️';
   else btn.textContent='🌙';
-  // Show a subtle dot indicator when in auto mode
-  btn.title=saved==='auto'?'Auto (following device)':saved==='dark'?'Dark mode (tap for auto)':'Light mode (tap for dark)';
-  if(meta) meta.content=dark?'#0F172A':'#faf6f0';
+  btn.title=saved==='auto'?'Auto (following device · tap to lock light)':saved==='light'?'Light mode · tap to switch to dark':'Dark mode · tap to switch to auto';
+  if(meta) meta.content=dark?'#0F172A':'#f5e6de';
 }
 function getThemePref(){
   try{return localStorage.getItem('theme')||'auto';}catch(e){return 'auto';}
 }
 function toggleTheme(){
-  // Cycle: auto → light → dark → auto
   var current=getThemePref();
   var next;
   if(current==='auto') next='light';
@@ -235,14 +265,10 @@ function toggleTheme(){
   try{localStorage.setItem('theme',next);}catch(e){}
   applyTheme(next);
 }
-// Listen for device theme changes (only matters when pref is "auto")
 window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(){
   if(getThemePref()==='auto') applyTheme('auto');
 });
-// Initialise on load
-(function(){
-  applyTheme(getThemePref());
-})();
+(function(){applyTheme(getThemePref());})();
 </script>
 
 <script type="text/plain" id="jsx-src">
@@ -418,7 +444,7 @@ function getNightWindows(thisDayEntries, nextDayEntries) {
 const ICONS={feed:"🍼",nap:"😴",wake:"☀️",sleep:"🌙",poop:"💩"};
 const NAMES={feed:"Feed",nap:"Nap",wake:"Wake Up",sleep:"Bedtime",poop:"Nappy"};
 const POOP_TYPES=["Yellow/seedy","Mustard","Green","Brown","Dark green","Orange","Black/tarry","White/pale","Mucousy","Watery","Formed/solid","Pellet-like","Frothy","Bloody/streaked","Other"];
-// Theme-aware color getter — reads CSS variables for dark mode support
+// Theme-aware colors — reads CSS custom properties so dark mode works
 function getC(){
   const s=getComputedStyle(document.documentElement);
   const v=n=>s.getPropertyValue(n).trim();
@@ -437,7 +463,6 @@ function getC(){
   };
 }
 let C=getC();
-// Refresh C when theme changes
 const _origToggle=window.toggleTheme;
 window.toggleTheme=function(){_origToggle();setTimeout(()=>{C=getC();},80);};
 const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em",_ls08="0.08em",_bN="none",_oN="none";
@@ -445,8 +470,8 @@ const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em"
 
 function Sheet({onClose,title,children}){
   return(
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",borderRadius:"24px 24px 0 0",padding:"18px 18px 52px",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto"}}>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",borderRadius:"24px 24px 0 0",padding:"18px 18px 52px",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto"}}>
         <div style={{width:48,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
         {title&&<div style={{fontFamily:"'Playfair Display',serif",fontSize:20,marginBottom:16}}>{title}</div>}
         {children}
@@ -526,7 +551,7 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
 
       {showPicker && (
         <div onClick={()=>setShowPicker(false)} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.5)",backdropFilter:"blur(3px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg)",borderRadius:20,padding:"20px",width:"100%",maxWidth:300,boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--picker-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",borderRadius:20,padding:"20px",width:"100%",maxWidth:300,boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}}>
             <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:14,textAlign:"center"}}>Set Time</div>
 
             <div style={{marginBottom:14}}>
@@ -558,7 +583,7 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
 
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>{onChange("");setParsed(null);setShowPicker(false);}}
-                style={{flex:1,padding:"10px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.lt,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                style={{flex:1,padding:"10px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.lt,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
                 Clear
               </button>
               <button onClick={handleDone}
@@ -606,7 +631,7 @@ function PinPad({value, onChange, onComplete}){
           <button key={i} onClick={()=>tap(d)}
             disabled={d===null}
             style={{height:56,borderRadius:16,border:`1.5px solid ${C.blush}`,
-              background:d===null?"transparent":d==="⌫"?"#f5e8e0":"white",
+              background:d===null?"transparent":d==="⌫"?"var(--card-bg-alt)":"var(--card-bg-solid)",
               fontSize:d==="⌫"?20:22,fontWeight:600,color:C.deep,cursor:d===null?"default":"pointer",
               fontFamily:_fI,opacity:d===null?0:1,
               boxShadow:d===null?"none":"0 1px 4px rgba(44,31,26,0.08)"}}>
@@ -1078,12 +1103,12 @@ function LinkChildForm({ joinChildByCode, C }) {
   const [linkError, setLinkError] = React.useState("");
   const [linkName, setLinkName] = React.useState("");
   return (
-    <div style={{background:"var(--card-bg)",borderRadius:14,padding:"14px",border:`1px solid ${C.blush}`,marginBottom:16}}>
+    <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"14px",border:`1px solid ${C.blush}`,marginBottom:16}}>
       <div style={{fontSize:14,fontWeight:700,color:C.mid,marginBottom:4}}>Link a child</div>
       <div style={{fontSize:13,color:C.lt,marginBottom:10}}>Enter a sync code from another parent to add their child to your app.</div>
       <input value={linkCode} onChange={e=>setLinkCode(e.target.value.toUpperCase())}
         placeholder="e.g. AB3X7Y" maxLength={6}
-        style={{width:"100%",fontSize:22,fontFamily:_fM,fontWeight:700,letterSpacing:"0.18em",textAlign:"center",padding:"11px",borderRadius:10,border:`1.5px solid ${linkStatus==="error"?C.ter:C.blush}`,background:"var(--bg)",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
+        style={{width:"100%",fontSize:22,fontFamily:_fM,fontWeight:700,letterSpacing:"0.18em",textAlign:"center",padding:"11px",borderRadius:10,border:`1.5px solid ${linkStatus==="error"?C.ter:C.blush}`,background:"var(--bg-solid)",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
       {linkStatus==="error" && <div style={{fontSize:13,color:C.ter,marginBottom:8,textAlign:"center"}}>{linkError}</div>}
       {linkStatus==="ok" && <div style={{fontSize:13,color:C.mint,marginBottom:8,textAlign:"center"}}>✓ {linkName} added to your app!</div>}
       <button onClick={async()=>{
@@ -1106,7 +1131,7 @@ function RestoreDataForm({ restoreFromBackup, setShowFamilyModal, familyUsername
 
   if (familyUsername) {
     return (
-      <div style={{borderRadius:12,border:"1px dashed #b0e8cc",overflow:"hidden",background:"#f0faf6"}}>
+      <div style={{borderRadius:12,border:"1px dashed #b0e8cc",overflow:"hidden",background:"var(--card-bg)"}}>
         <div style={{padding:"12px 16px",display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:18}}>🔄</span>
           <div style={{flex:1}}>
@@ -1129,7 +1154,7 @@ function RestoreDataForm({ restoreFromBackup, setShowFamilyModal, familyUsername
             <div style={{fontSize:13,color:C.lt,marginBottom:8,marginTop:10}}>Enter an account code from another device to import that data.</div>
             <input value={restoreInput} onChange={e=>setRestoreInput(e.target.value.toUpperCase())}
               placeholder="Enter account code"
-              style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"var(--bg)",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
+              style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"var(--bg-solid)",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
             {restoreStatus==="fail" && <div style={{fontSize:13,color:C.ter,marginBottom:8,textAlign:"center"}}>Code not found — check and try again</div>}
             {restoreStatus==="ok" && <div style={{fontSize:13,color:"#50c878",marginBottom:8,textAlign:"center"}}>✓ Data restored successfully!</div>}
             <button onClick={async()=>{
@@ -1158,7 +1183,7 @@ function RestoreDataForm({ restoreFromBackup, setShowFamilyModal, familyUsername
           <div style={{fontSize:13,color:C.lt,marginBottom:8}}>Enter an account code from another device to restore all data.</div>
           <input value={restoreInput} onChange={e=>setRestoreInput(e.target.value.toUpperCase())}
             placeholder="Enter account code"
-            style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"var(--bg)",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
+            style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"var(--bg-solid)",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
           {restoreStatus==="fail" && <div style={{fontSize:13,color:C.ter,marginBottom:8,textAlign:"center"}}>Code not found — check and try again</div>}
           {restoreStatus==="ok" && <div style={{fontSize:13,color:C.mint,marginBottom:8,textAlign:"center"}}>✓ Data restored successfully!</div>}
           <button onClick={async()=>{
@@ -1216,7 +1241,6 @@ function LeapBanner({ l, ageWeeks, C }) {
 
 function App(){
   const timerRef = React.useRef(null);
-  // Theme state — triggers re-render when toggled so C values refresh
   const[isDark,setIsDark]=useState(()=>document.body.classList.contains('dark-mode'));
   useEffect(()=>{
     const obs=new MutationObserver(()=>{
@@ -1398,9 +1422,9 @@ function App(){
   const[nameEdit,setNameEdit]=useState(false);
   const[nameIn,setNameIn]=useState("");
   const theme = babySex==="girl"
-    ? {primary:isDark?"#2d1f2a":"#fde7e4",secondary:isDark?"#3d2a38":"#f5ccc7",grad:isDark?"linear-gradient(135deg,#2d1f2a,#3d2a38)":"linear-gradient(135deg,#fde7e4,#f5ccc7)"}
+    ? {primary:isDark?"rgba(45,31,42,0.8)":"#fde7e4",secondary:isDark?"rgba(61,42,56,0.8)":"#f5ccc7",grad:isDark?"linear-gradient(135deg,rgba(45,31,42,0.9),rgba(61,42,56,0.9))":"linear-gradient(135deg,#fde7e4,#f5ccc7)"}
     : babySex==="boy"
-    ? {primary:isDark?"#1a2a3d":"#eaf3fb",secondary:isDark?"#1e3450":"#d0e6f5",grad:isDark?"linear-gradient(135deg,#1a2a3d,#1e3450)":"linear-gradient(135deg,#eaf3fb,#d0e6f5)"}
+    ? {primary:isDark?"rgba(26,42,61,0.8)":"#eaf3fb",secondary:isDark?"rgba(30,52,80,0.8)":"#d0e6f5",grad:isDark?"linear-gradient(135deg,rgba(26,42,61,0.9),rgba(30,52,80,0.9))":"linear-gradient(135deg,#eaf3fb,#d0e6f5)"}
     : {primary:isDark?"#c9705a":"#c9705a",secondary:isDark?"#7a5c52":"#7a5c52",grad:"linear-gradient(135deg,#c9705a,#a85a44)"};
   const[growthForm,setGrowthForm]=useState({date:todayStr(),kg:""});
   const[onboarded,setOnboarded]=useState(()=>{
@@ -4847,8 +4871,8 @@ function App(){
     }
   },[Object.keys(days).join(",")]);
 
-  const tabSt=t=>({flex:1,padding:"8px 2px 6px",border:_bN,background:"none",fontSize:9,fontWeight:tab===t?700:500,cursor:_cP,color:tab===t?C.ter:C.lt,display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.02em",position:"relative",transition:"transform 0.18s ease"});
-  const card={background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:22,padding:"16px",marginBottom:14,boxShadow:"var(--shadow-card)",transition:"transform 0.18s ease, box-shadow 0.18s ease"};
+  const tabSt=t=>({flex:1,padding:"8px 2px 6px",border:_bN,background:"none",fontSize:9,fontWeight:tab===t?700:500,cursor:_cP,color:tab===t?C.ter:"var(--text-lt)",display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.02em",position:"relative",transition:"transform 0.2s cubic-bezier(.23,1,.32,1)"});
+  const card={background:"var(--card-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",border:"1px solid var(--card-border)",borderRadius:22,padding:"16px",marginBottom:14,boxShadow:"var(--card-shadow)",transition:"transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.2s ease"};
 
   const tabIcons={day:"📅",insights:"💡",milestones:"⭐",develop:"🧩",settings:"👤"};
   const tabLabels={day:"Day",insights:"Insights",milestones:"Milestones",develop:"Development",settings:""};
@@ -4893,7 +4917,7 @@ function App(){
         <div style={{display:"flex",background:"var(--card-bg-alt)",borderRadius:99,padding:4,marginBottom:16,gap:4}}>
           {[["login","Sign In"],["create","Create Account"]].map(([m,l])=>(
             <button key={m} onClick={()=>{setAuthMode(m);setAuthError("");setAuthPin("");setAuthPin2("");setAuthUsernameStatus("idle");setAgreedToTerms(false);}}
-              style={{padding:"7px 16px",borderRadius:99,border:_bN,background:authMode===m?"white":"transparent",color:authMode===m?C.ter:C.lt,fontWeight:700,fontSize:13,cursor:_cP,fontFamily:_fI,transition:"all 0.2s",boxShadow:authMode===m?"0 1px 6px rgba(0,0,0,0.1)":"none"}}>
+              style={{padding:"7px 16px",borderRadius:99,border:_bN,background:authMode===m?"var(--card-bg-solid)":"transparent",color:authMode===m?C.ter:C.lt,fontWeight:700,fontSize:13,cursor:_cP,fontFamily:_fI,transition:"all 0.2s",boxShadow:authMode===m?"0 1px 6px rgba(0,0,0,0.1)":"none"}}>
               {l}
             </button>
           ))}
@@ -4906,7 +4930,7 @@ function App(){
               autoCapitalize="none" autoCorrect="off" spellCheck="false"
               autoComplete="off" data-lpignore="true" data-form-type="other"
               placeholder="e.g. TeamSmith"
-              style={{width:"100%",fontSize:16,padding:"11px 14px",borderRadius:12,border:`2px solid ${isLogin?authUsernameStatus==="found"?"#50c878":authUsernameStatus==="notfound"?C.ter:C.blush:C.blush}`,background:"var(--card-bg)",outline:_oN,fontFamily:_fI,boxSizing:_bBB}}
+              style={{width:"100%",fontSize:16,padding:"11px 14px",borderRadius:12,border:`2px solid ${isLogin?authUsernameStatus==="found"?"#50c878":authUsernameStatus==="notfound"?C.ter:C.blush:C.blush}`,background:"var(--card-bg-solid)",outline:_oN,fontFamily:_fI,boxSizing:_bBB}}
               onChange={e=>checkAuthUsername(e.target.value)}/>
             {isLogin && authUsernameStatus!=="idle" && (
               <div style={{fontSize:12,marginTop:4,textAlign:"center",color:authUsernameStatus==="found"?"#50c878":authUsernameStatus==="notfound"?C.ter:C.lt}}>
@@ -4969,7 +4993,7 @@ function App(){
 
         {showForgotPin && (
         <div onClick={()=>setShowForgotPin(false)} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.6)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg)",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:340,boxShadow:"0 8px 40px rgba(0,0,0,0.18)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg-solid)",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:340,boxShadow:"0 8px 40px rgba(0,0,0,0.18)"}}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:4}}>🔑 Reset PIN</div>
             <div style={{fontSize:13,color:C.lt,marginBottom:20}}>for <strong>{authUsername||"your account"}</strong></div>
 
@@ -4980,7 +5004,7 @@ function App(){
                 <input value={forgotPinWord} onChange={e=>{setForgotPinWord(e.target.value);setForgotPinError("");}}
                   placeholder="e.g. sunshine  or  AB3X7Y"
                   autoCapitalize="none" autoCorrect="off" spellCheck="false"
-                  style={{width:"100%",fontSize:15,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--bg)",outline:"none",fontFamily:_fI,color:C.deep,boxSizing:"border-box",marginBottom:14}}/>
+                  style={{width:"100%",fontSize:15,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--bg-solid)",outline:"none",fontFamily:_fI,color:C.deep,boxSizing:"border-box",marginBottom:14}}/>
                 {forgotPinError&&<div style={{fontSize:13,color:C.ter,textAlign:"center",marginBottom:10,fontWeight:600}}>{forgotPinError}</div>}
                 <button onClick={async()=>{
                   if(!forgotPinWord.trim()){setForgotPinError("Enter your recovery word");return;}
@@ -5003,7 +5027,7 @@ function App(){
                   style={{width:"100%",padding:"12px",borderRadius:99,border:"none",background:forgotPinWord.trim()?`linear-gradient(135deg,#c9705a,#a85a44)`:"#f2d9cc",color:forgotPinWord.trim()?"white":"#b89890",fontSize:14,fontWeight:700,cursor:forgotPinWord.trim()?"pointer":"not-allowed",fontFamily:_fI,marginBottom:10}}>
                   {forgotPinLoading?"⏳ Checking…":"Verify →"}
                 </button>
-                <button onClick={()=>setShowForgotPin(false)} style={{width:"100%",padding:"10px",borderRadius:99,border:"none",background:"#f2ece8",color:C.lt,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:_fI}}>Cancel</button>
+                <button onClick={()=>setShowForgotPin(false)} style={{width:"100%",padding:"10px",borderRadius:99,border:"none",background:"var(--card-bg-alt)",color:C.lt,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:_fI}}>Cancel</button>
               </>
             )}
 
@@ -5024,7 +5048,7 @@ function App(){
                   style={{width:"100%",marginTop:12,padding:"12px",borderRadius:99,border:"none",background:forgotPinNewPin.length===4?`linear-gradient(135deg,#c9705a,#a85a44)`:"#f2d9cc",color:forgotPinNewPin.length===4?"white":"#b89890",fontSize:14,fontWeight:700,cursor:forgotPinNewPin.length===4?"pointer":"not-allowed",fontFamily:_fI,marginBottom:8}}>
                   {forgotPinLoading?"⏳ Saving…":"Set new PIN"}
                 </button>
-                <button onClick={()=>setForgotPinStep("word")} style={{width:"100%",padding:"10px",borderRadius:99,border:"none",background:"#f2ece8",color:C.lt,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:_fI}}>← Back</button>
+                <button onClick={()=>setForgotPinStep("word")} style={{width:"100%",padding:"10px",borderRadius:99,border:"none",background:"var(--card-bg-alt)",color:C.lt,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:_fI}}>← Back</button>
               </>
             )}
 
@@ -5077,7 +5101,7 @@ function App(){
                 ["📈","Analyse trends"],
               ].map(function(item,i){
                 return (
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:12,padding:"9px 10px"}}>
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:12,padding:"9px 10px"}}>
                     <div style={{fontSize:15}}>{item[0]}</div>
                     <div style={{fontSize:12,color:C.mid,fontWeight:500,lineHeight:1.2}}>{item[1]}</div>
                   </div>
@@ -5101,7 +5125,7 @@ function App(){
                 <div style={{fontSize:13,opacity:0.82,fontWeight:400,marginTop:2}}>Set up a username & PIN</div>
               </div>
             </button>
-            <button onClick={()=>{setAuthMode("login");setAuthScreen("login");setAuthError("");setAuthPin("");}} style={{width:"100%",background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"18px",color:C.deep,fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,textAlign:"left",display:"flex",alignItems:"center",gap:14}}>
+            <button onClick={()=>{setAuthMode("login");setAuthScreen("login");setAuthError("");setAuthPin("");}} style={{width:"100%",background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"18px",color:C.deep,fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,textAlign:"left",display:"flex",alignItems:"center",gap:14}}>
               <span style={{fontSize:28}}>🔐</span>
               <div>
                 <div style={{fontSize:16,fontWeight:700}}>I already have an account</div>
@@ -5130,7 +5154,7 @@ function App(){
                   border:`2px solid ${
                     obUsernameStatus==="available"?"#50c878":
                     obUsernameStatus==="taken"||obUsernameStatus==="invalid"?C.ter:C.blush}`,
-                  background:"var(--card-bg)",outline:_oN,fontFamily:_fI,textAlign:"center",
+                  background:"var(--card-bg-solid)",outline:_oN,fontFamily:_fI,textAlign:"center",
                   boxSizing:_bBB,transition:"border-color 0.2s"}}/>
               <span style={{position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",fontSize:18}}>
                 {obUsernameStatus==="checking"?"⏳":
@@ -5211,7 +5235,7 @@ function App(){
 
           <div style={{width:"100%",maxWidth:430,minHeight:"100vh",display:"flex",flexDirection:"column",padding:"env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)"}}>
             <div style={{padding:"48px 28px 0",display:"flex",alignItems:"center",gap:12}}>
-              <div style={{width:44,height:44,borderRadius:13,background:"var(--card-bg)",border:`1px solid ${C.blush}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,boxShadow:"0 4px 16px rgba(201,112,90,0.15)"}}>
+              <div style={{width:44,height:44,borderRadius:13,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,boxShadow:"0 4px 16px rgba(201,112,90,0.15)"}}>
                 <img src="icon.png" alt="OBubba" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";e.target.parentNode.innerHTML="🍼";}}/>
               </div>
               <div>
@@ -5236,7 +5260,7 @@ function App(){
               </div>
               <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginBottom:6}}>
                 {[["🍼","Feeds & intake"],["😴","Sleep tracking"],["🧠","Smart insights"],["📏","Growth & WHO"],["⭐","Milestones"],["🔗","Partner sync"]].map(([ico,lbl],i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:6,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:99,padding:"7px 13px",boxShadow:"0 1px 4px rgba(201,112,90,0.08)"}}>
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:6,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:99,padding:"7px 13px",boxShadow:"0 1px 4px rgba(201,112,90,0.08)"}}>
                     <span style={{fontSize:13}}>{ico}</span>
                     <span style={{fontSize:12,color:C.mid,fontWeight:500}}>{lbl}</span>
                   </div>
@@ -5254,7 +5278,7 @@ function App(){
 
           <div style={{width:"100%",maxWidth:430,minHeight:"100vh",display:"flex",flexDirection:"column",padding:"env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)"}}>
             <div style={{padding:"48px 28px 20px",display:"flex",alignItems:"center",gap:12}}>
-              <button onClick={()=>setObStep(s=>s-1)} style={{width:38,height:38,borderRadius:11,background:"var(--card-bg)",border:`1px solid ${C.blush}`,color:C.mid,fontSize:17,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:_fI}}>←</button>
+              <button onClick={()=>setObStep(s=>s-1)} style={{width:38,height:38,borderRadius:11,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,color:C.mid,fontSize:17,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:_fI}}>←</button>
               <div style={{flex:1,height:3,background:C.blush,borderRadius:99,overflow:"hidden"}}>
                 <div style={{height:"100%",width:`${(obStep/3)*100}%`,background:"linear-gradient(90deg,#c9705a,#e0825f)",borderRadius:99,transition:"width 0.4s ease"}}/>
               </div>
@@ -5264,7 +5288,7 @@ function App(){
               <div style={{fontSize:46,marginBottom:14,lineHeight:1}}>{step.icon}</div>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:C.deep,lineHeight:1.22,whiteSpace:"pre-line",marginBottom:10}}>{step.title}</div>
               <div style={{fontSize:14,color:C.mid,lineHeight:1.65,marginBottom:22}}>{step.sub}</div>
-              <div style={{background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:22,padding:"22px 18px",boxShadow:"0 2px 16px rgba(201,112,90,0.08)"}}>
+              <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:22,padding:"22px 18px",boxShadow:"0 2px 16px rgba(201,112,90,0.08)"}}>
                 {step.action}
               </div>
             </div>
@@ -5290,7 +5314,7 @@ function App(){
           <img src="oliver.png" style={{width:100,height:100,borderRadius:20,marginBottom:16,boxShadow:"0 8px 24px rgba(0,0,0,0.1)"}}/>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.deep,lineHeight:1.25,marginBottom:6}}>Now let's add your baby ✨</div>
           <div style={{fontSize:13,color:C.lt,lineHeight:1.6,marginBottom:20}}>OBubba uses your baby's details to personalise nap predictions, feeding recommendations, milestones and growth charts.</div>
-          <div style={{display:"flex",background:"#f0e8e0",borderRadius:99,padding:3,marginBottom:18,gap:3}}>
+          <div style={{display:"flex",background:"var(--card-bg-alt)",borderRadius:99,padding:3,marginBottom:18,gap:3}}>
             {[["new","👶 Add my baby"],["link","🔗 Join via share code"]].map(([m,l])=>(
               <button key={m} onClick={()=>{setObChildMode(m);setObLinkStatus("");setObLinkError("");}}
                 style={{flex:1,padding:"9px 6px",borderRadius:99,border:_bN,background:obChildMode===m?"white":"transparent",color:obChildMode===m?C.ter:C.lt,fontWeight:700,fontSize:13,cursor:_cP,fontFamily:_fI,transition:"all 0.2s",boxShadow:obChildMode===m?"0 1px 6px rgba(0,0,0,0.1)":"none"}}>
@@ -5307,7 +5331,7 @@ function App(){
               </div>
               <input value={obName} onChange={e=>setObName(e.target.value)}
                 placeholder="Baby's name (optional)"
-                style={{width:"100%",fontSize:18,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"var(--card-bg)",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
+                style={{width:"100%",fontSize:18,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"var(--card-bg-solid)",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
               <div style={{display:"flex",gap:8,marginBottom:10}}>
                 {[["born","Already born 🎉"],["unborn","Not born yet 🤰"]].map(([v,l])=>(
                   <div key={v} onClick={()=>setBabyUnborn(v==="unborn")} style={{flex:1,padding:"10px 6px",borderRadius:12,border:`2px solid ${(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.blush}`,background:(v==="unborn"?babyUnborn:!babyUnborn)?"#fdf0eb":"white",textAlign:"center",cursor:_cP,fontSize:13,fontWeight:700,color:(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.mid,transition:"all 0.2s"}}>
@@ -5316,7 +5340,7 @@ function App(){
                 ))}
               </div>
               <input type="date" value={obDob} onChange={e=>setObDob(e.target.value)}
-                style={{width:"100%",fontSize:16,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"var(--card-bg)",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
+                style={{width:"100%",fontSize:16,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"var(--card-bg-solid)",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
                 {[["boy","👦","Boy","#eaf3fb","#3d6a8a"],["girl","👧","Girl","#fde7e4","#a85070"],["","⬜","Not set","#f0e8e0","#7a5c52"]].map(([v,emoji,l,accent,col])=>(
                   <button key={v} onClick={()=>setObSex(v)}
@@ -5337,7 +5361,7 @@ function App(){
 
           {obChildMode==="link" && (
             <div>
-              <div style={{background:"#f0faf5",borderRadius:14,padding:"12px 14px",marginBottom:14,border:"1px solid #b0e8cc",display:"flex",gap:10,alignItems:"flex-start",textAlign:"left"}}>
+              <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px 14px",marginBottom:14,border:"1px solid #b0e8cc",display:"flex",gap:10,alignItems:"flex-start",textAlign:"left"}}>
                 <span style={{fontSize:18,flexShrink:0}}>📲</span>
                 <div style={{fontSize:13,color:"#2a7a50",lineHeight:1.55}}>If another parent has already set up this baby, they can share a <strong>6-digit code</strong> from their Share menu. Enter it below to add the child to your app.</div>
               </div>
@@ -5346,7 +5370,7 @@ function App(){
                 onChange={e=>{ setObLinkCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"")); setObLinkStatus(""); setObLinkError(""); }}
                 placeholder="e.g. AB3X7Y"
                 maxLength={6}
-                style={{width:"100%",fontSize:28,fontFamily:_fM,fontWeight:700,letterSpacing:"0.2em",textAlign:"center",padding:"16px",borderRadius:14,border:`2px solid ${obLinkStatus==="error"?C.ter:obLinkStatus==="ok"?"#50c878":C.blush}`,background:"var(--card-bg)",color:C.ter,outline:_oN,marginBottom:10,boxSizing:_bBB}}/>
+                style={{width:"100%",fontSize:28,fontFamily:_fM,fontWeight:700,letterSpacing:"0.2em",textAlign:"center",padding:"16px",borderRadius:14,border:`2px solid ${obLinkStatus==="error"?C.ter:obLinkStatus==="ok"?"#50c878":C.blush}`,background:"var(--card-bg-solid)",color:C.ter,outline:_oN,marginBottom:10,boxSizing:_bBB}}/>
               {obLinkStatus==="error" && <div style={{fontSize:13,color:C.ter,marginBottom:10,textAlign:"center"}}>{obLinkError}</div>}
               {obLinkStatus==="ok" && <div style={{fontSize:13,color:"#50c878",marginBottom:10,textAlign:"center",fontWeight:600}}>✔ Child linked! Taking you in…</div>}
               <button onClick={async()=>{
@@ -5375,7 +5399,7 @@ function App(){
   }
 
   return(
-    <div style={{background:"var(--bg)",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:"var(--text-deep)",paddingBottom:80,transition:"background 0.5s,color 0.5s"}}>
+    <div style={{background:"transparent",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:"var(--text-deep)",paddingBottom:80,transition:"color 0.5s"}}>
       <style>{`
         @keyframes pulse{0%,100%{box-shadow:0 0 0 12px rgba(201,112,90,0.15)}50%{box-shadow:0 0 0 22px rgba(201,112,90,0.04)}}
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -5396,7 +5420,7 @@ function App(){
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
                 <div style={{marginBottom:8}}>Too busy to log each feed and nap one by one? Just <strong style={{color:C.ter}}>tap 📋 Notes</strong> and type or paste your day in plain English — OBubba reads it and logs everything for you.</div>
-                <div style={{background:"#f5f0e8",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"12px 14px",marginBottom:10}}>
                   <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Example — just type something like:</div>
                   <div style={{fontSize:14,color:C.deep,lineHeight:1.7,fontStyle:"italic"}}>
                     Woke up 6:30am<br/>7am 180ml<br/>Nap 9:15 - 10:00<br/>11:30 150ml<br/>Nap 1pm - 2:15pm<br/>5pm 180ml<br/>Bedtime 7pm
@@ -5409,7 +5433,7 @@ function App(){
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
                 <div style={{marginBottom:8}}>The <strong style={{color:C.ter}}>Insights</strong> tab is your baby's command centre — everything in one place:</div>
-                <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
                   <div>📏 <strong>Growth Percentiles</strong> — log weight and height, see WHO percentiles for both</div>
                   <div>🍼 <strong>Today with {babyName||"Baby"}</strong> — daily summary of sleep, feeds and development</div>
                   <div>🍼 <strong>Feeding Insight</strong> — NHS milk targets, intake tracking and suggestions</div>
@@ -5425,7 +5449,7 @@ function App(){
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
                 <div style={{marginBottom:8}}>The <strong style={{color:C.ter}}>Develop</strong> tab is all about what's ahead:</div>
-                <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
                   <div>🔮 <strong>Coming Up</strong> — shows the current or next developmental phase with expected timelines, what to expect, and all the new skills emerging</div>
                   <div>🎯 <strong>Activities</strong> — age-appropriate play ideas filtered by category (movement, social, language, thinking)</div>
                   <div>🏥 <strong>NHS & WHO Guidance</strong> — expert advice tailored to your baby's exact age</div>
@@ -5436,7 +5460,7 @@ function App(){
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
                 <div style={{marginBottom:8}}>Tap <strong style={{color:C.ter}}>👤 Account</strong> in the header, then <strong>Share & Sync</strong> to open the sync menu.</div>
-                <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
                   <div>🔗 Tap <strong>Get code</strong> next to your child's name — this creates a 6-letter <strong>child sync code</strong></div>
                   <div>📲 Your partner opens Share & Sync → <strong>Link a child</strong> → enters that code</div>
                   <div>✅ Both phones stay in sync automatically from then on</div>
@@ -5448,7 +5472,7 @@ function App(){
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
                 <div style={{marginBottom:8}}>Each child has their own logs, growth chart and milestones.</div>
-                <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
                   <div>👆 <strong>Swipe left/right</strong> on the header to switch between children</div>
                   <div>＋ Tap the <strong>+ button</strong> in the top left to add another child</div>
                   <div>✏️ To edit a child's name, DOB or sex, tap their name in the header</div>
@@ -5459,12 +5483,12 @@ function App(){
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
                 <div style={{marginBottom:8}}>Your data backs up to the cloud automatically and works offline too.</div>
-                <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:7,fontSize:14}}>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:7,fontSize:14}}>
                   <div>🔑 <strong>Set a recovery word</strong> in Share & Sync — this lets you reset your PIN if you ever forget it.</div>
                   <div>📱 To move to a new phone, just sign in with your <strong>username & PIN</strong> — all your data restores automatically</div>
                   <div>☁️ Everything backs up on its own — nothing to export or save manually</div>
                 </div>
-                <div style={{marginTop:10,padding:"9px 12px",background:"#fff3f0",borderRadius:10,fontSize:13,color:C.ter,fontWeight:600,lineHeight:1.5}}>⚠️ Without a recovery word, a forgotten PIN means losing access. Set one as soon as you finish this tour!</div>
+                <div style={{marginTop:10,padding:"9px 12px",background:"var(--card-bg-alt)",borderRadius:10,fontSize:13,color:C.ter,fontWeight:600,lineHeight:1.5}}>⚠️ Without a recovery word, a forgotten PIN means losing access. Set one as soon as you finish this tour!</div>
               </div>
             ), location:"👤 Account → Share & Sync" },
           { icon:"🎉", title:"You're all set!", body:"Start by logging today's wake time — the countdown will guide nap and bedtime from there. You can replay this tour anytime from Settings. Happy tracking!", location:null },
@@ -5483,7 +5507,7 @@ function App(){
         const step = TUT_STEPS[tutStep];
         const isLast = tutStep === TUT_STEPS.length - 1;
 
-        const cardBg = "var(--card-bg)";
+        const cardBg = "var(--card-bg-solid)";
         const cardText = C.deep;
         const cardSub = C.mid;
         const locBg = "#f5f0e8";
@@ -5534,7 +5558,7 @@ function App(){
               </div>
               <div style={{display:"flex",gap:8}}>
                 {tutStep > 0 && (
-                  <button onClick={prevStep} style={{flex:1,padding:"9px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                  <button onClick={prevStep} style={{flex:1,padding:"9px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
                     ← Back
                   </button>
                 )}
@@ -5559,7 +5583,7 @@ function App(){
         </div>
       )}
       <div
-        style={{background:theme.primary,padding:"16px 16px 0",position:"relative",transition:"background 0.5s"}}
+        style={{background:theme.primary,padding:"16px 16px 0",position:"relative",transition:"background 0.5s",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)"}}
         onTouchStart={handleSwipeStart}
         onTouchEnd={handleSwipeEnd}
       >
@@ -5644,7 +5668,7 @@ function App(){
                     {breastActive?"⏸":"▶"}
                   </button>
                   <button onClick={saveBreastFeed} style={{flex:1,padding:"3px",borderRadius:7,border:_bN,background:C.ter,color:"white",fontSize:11,cursor:_cP,fontWeight:700}}>Save ✓</button>
-                  <button onClick={cancelBreastTimer} style={{padding:"3px 7px",borderRadius:7,border:_bN,background:"#f0e8e4",color:C.lt,fontSize:11,cursor:_cP}}>✕</button>
+                  <button onClick={cancelBreastTimer} style={{padding:"3px 7px",borderRadius:7,border:_bN,background:"var(--card-bg-alt)",color:C.lt,fontSize:11,cursor:_cP}}>✕</button>
                 </div>
               </div>
             )}
@@ -5770,7 +5794,7 @@ function App(){
         </div>
       </div>
       {showWakeInline && (
-        <div style={{background:"var(--card-bg)",borderTop:`2px solid ${C.ter}`,padding:"12px 16px",maxWidth:520,margin:"0 auto",boxShadow:"0 4px 16px rgba(201,112,90,0.12)",animation:"fadeUp 0.2s ease"}}>
+        <div style={{background:"var(--card-bg-solid)",borderTop:`2px solid ${C.ter}`,padding:"12px 16px",maxWidth:520,margin:"0 auto",boxShadow:"0 4px 16px rgba(201,112,90,0.12)",animation:"fadeUp 0.2s ease"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:18}}>☀️</span>
             <div style={{flex:1}}>
@@ -5785,7 +5809,7 @@ function App(){
               ✓ Log
             </button>
             <button onClick={()=>setShowWakeInline(false)}
-              style={{background:"#f0e8e0",border:_bN,borderRadius:"50%",width:28,height:28,color:C.lt,cursor:_cP,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+              style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:"50%",width:28,height:28,color:C.lt,cursor:_cP,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
           </div>
         </div>
       )}
@@ -5802,7 +5826,7 @@ function App(){
               {/* Personal/NHS toggle pill — anchored under date strip */}
               {usePersonalRecs !== null && (
                 <div style={{display:"flex",justifyContent:"flex-end",marginBottom:-6,marginTop:-6,position:"relative",zIndex:10}}>
-                  <div style={{display:"inline-flex",background:"var(--card-bg)",borderRadius:99,boxShadow:"0 2px 10px rgba(0,0,0,0.10)",border:`1px solid ${C.blush}`,overflow:"hidden"}}>
+                  <div style={{display:"inline-flex",background:"var(--card-bg-solid)",borderRadius:99,boxShadow:"0 2px 10px rgba(0,0,0,0.10)",border:`1px solid ${C.blush}`,overflow:"hidden"}}>
                     <button onClick={()=>{setUsePersonalRecs(true);try{localStorage.setItem("use_personal_recs_v1","true");}catch{};}} style={{padding:"5px 14px",fontSize:12,fontFamily:_fM,fontWeight:700,border:"none",background:usePersonalRecs===true?"linear-gradient(135deg,#50a888,#3a8870)":"transparent",color:usePersonalRecs===true?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap"}}>✨ Personal</button>
                     <div style={{width:1,background:C.blush}}/>
                     <button onClick={()=>{setUsePersonalRecs(false);try{localStorage.setItem("use_personal_recs_v1","false");}catch{};}} style={{padding:"5px 14px",fontSize:12,fontFamily:_fM,fontWeight:700,border:"none",background:usePersonalRecs===false?"#4a5a80":"transparent",color:usePersonalRecs===false?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap"}}>NHS</button>
@@ -5826,7 +5850,7 @@ function App(){
               )}
 
               {/* ONE-TAP QUICK LOG ROW */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fff8f4",border:`1px solid ${C.blush}`,borderRadius:18,padding:"10px 14px",marginBottom:10,gap:4}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:18,padding:"10px 14px",marginBottom:10,gap:4}}>
                 <span style={{fontSize:10,fontWeight:700,color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:_fM,whiteSpace:"nowrap",marginRight:6}}>Quick</span>
                 {[
                   {emoji:"🍼",label:"Feed",action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""})},
@@ -6035,15 +6059,15 @@ function App(){
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:7}}>
                           {badgeVal&&<Badge type={e.type}>{badgeVal}</Badge>}
-                          <button onClick={()=>openEdit(e)} style={{background:"#f0e8e0",border:_bN,borderRadius:"50%",width:23,height:23,color:C.mid,cursor:_cP,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
-                          <button onClick={()=>delEntry(e.id)} style={{background:"#f0e5e0",border:_bN,borderRadius:"50%",width:23,height:23,color:C.lt,cursor:_cP,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                          <button onClick={()=>openEdit(e)} style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:"50%",width:23,height:23,color:C.mid,cursor:_cP,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
+                          <button onClick={()=>delEntry(e.id)} style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:"50%",width:23,height:23,color:C.lt,cursor:_cP,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                         </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
-              <div style={{background:"#f0eeff",borderRadius:20,padding:"14px 17px",marginBottom:18,border:"1px solid #d8d2f0"}}>
+              <div style={{background:"var(--card-bg)",borderRadius:20,padding:"14px 17px",marginBottom:18,border:"1px solid #d8d2f0"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                   <div style={{display:"flex",alignItems:"center",gap:7}}>
                     <div style={{width:3,height:18,background:"#7b68ee",borderRadius:99}}/>
@@ -6070,7 +6094,7 @@ function App(){
                             <div style={{flex:1,height:1,background:"#d8d2f0"}}/>
                           </div>
                         )}
-                        <div style={{padding:"7px 10px",background:"var(--card-bg)",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
+                        <div style={{padding:"7px 10px",background:"var(--card-bg-solid)",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                             <div>
                               <span style={{color:"#5040a0",fontSize:15}}>🌟 {fmt12(e.time)} wake</span>
@@ -6109,7 +6133,7 @@ function App(){
                   const totalMins2 = naps2.reduce((s,n)=>s+minDiff(n.start,n.end),0);
                   const range2 = napNormalRange();
                   return (
-                    <div style={{background:"#f0faf6",border:`1px solid ${C.mint}30`,borderLeft:`4px solid ${C.mint}`,borderRadius:16,padding:"14px 16px",marginBottom:10}}>
+                    <div style={{background:"var(--card-bg)",border:`1px solid ${C.mint}30`,borderLeft:`4px solid ${C.mint}`,borderRadius:16,padding:"14px 16px",marginBottom:10}}>
                       <div style={{fontSize:14,fontFamily:_fM,color:C.mint,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>Is This Normal? Today's Sleep</div>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                         <div>
@@ -6121,7 +6145,7 @@ function App(){
                           <div style={{fontSize:15,fontWeight:600,color:C.mid}}>{range2.label}</div>
                         </div>}
                       </div>
-                      <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg)",borderRadius:10,padding:"9px 12px"}}>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg-solid)",borderRadius:10,padding:"9px 12px"}}>
                         <span style={{fontSize:16,flexShrink:0}}>✓</span>
                         <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>Day still in progress — more naps expected. Check back later for a full summary.</div>
                       </div>
@@ -6141,7 +6165,7 @@ function App(){
                         <div style={{fontSize:15,fontWeight:600,color:C.mid}}>{sc.range.label}</div>
                       </div>
                     </div>
-                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg)",borderRadius:10,padding:"9px 12px"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg-solid)",borderRadius:10,padding:"9px 12px"}}>
                       <span style={{fontSize:16,flexShrink:0}}>{sc.icon}</span>
                       <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{sc.message}</div>
                     </div>
@@ -6149,7 +6173,7 @@ function App(){
                 );
               })()}
               <div style={{display:"flex",gap:8,marginTop:4}}>
-                <button onClick={copySummary} style={{flex:1,padding:"13px",borderRadius:14,border:`1.5px solid ${C.rose}`,background:"var(--card-bg)",color:C.ter,fontSize:15,cursor:_cP,fontFamily:_fI,fontWeight:600,boxShadow:"0 2px 8px rgba(201,112,90,0.08)"}}>
+                <button onClick={copySummary} style={{flex:1,padding:"13px",borderRadius:14,border:`1.5px solid ${C.rose}`,background:"var(--card-bg-solid)",color:C.ter,fontSize:15,cursor:_cP,fontFamily:_fI,fontWeight:600,boxShadow:"0 2px 8px rgba(201,112,90,0.08)"}}>
                   {copied?"✓ Copied!":"📋 Copy Day"}
                 </button>
                 <button onClick={()=>{setTab("insights");setInsightSection(p=>({...p,sleep:true}));}} style={{flex:1,padding:"13px",borderRadius:14,border:_bN,background:`linear-gradient(135deg,#c9705a,#a85a44)`,color:"white",fontSize:15,cursor:_cP,fontFamily:_fI,fontWeight:600,boxShadow:"0 4px 14px rgba(201,112,90,0.3)"}}>
@@ -6226,7 +6250,7 @@ function App(){
           const weightGain = latestW && prevW ? Math.round((latestW.kg - prevW.kg)*1000)/1000 : null;
 
           const collHead = (key, icon, label) => (
-            <button onClick={()=>toggleInsight(key)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"var(--card-bg)",border:`1.5px solid ${C.blush}`,borderRadius:16,marginBottom:insightSection[key]?0:12,borderBottomLeftRadius:insightSection[key]?0:16,borderBottomRightRadius:insightSection[key]?0:16,cursor:_cP,boxShadow:"0 2px 8px rgba(201,112,90,0.05)"}}>
+            <button onClick={()=>toggleInsight(key)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"var(--card-bg-solid)",border:`1.5px solid ${C.blush}`,borderRadius:16,marginBottom:insightSection[key]?0:12,borderBottomLeftRadius:insightSection[key]?0:16,borderBottomRightRadius:insightSection[key]?0:16,cursor:_cP,boxShadow:"0 2px 8px rgba(201,112,90,0.05)"}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:16}}>{icon}</span>
                 <span style={{fontSize:14,fontWeight:700,color:C.deep,letterSpacing:"0.02em"}}>{label}</span>
@@ -6245,7 +6269,7 @@ function App(){
                   {/* Weight + Height side by side */}
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
                     {/* Weight side */}
-                    <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
+                    <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
                       <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Weight</div>
                       {latestW ? (
                         <div>
@@ -6262,7 +6286,7 @@ function App(){
                       ) : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
                     </div>
                     {/* Height side */}
-                    <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
+                    <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
                       <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Height</div>
                       {latestH ? (
                         <div>
@@ -6313,7 +6337,7 @@ function App(){
                           <div style={{fontSize:13,color:C.deep}}>{fmtLong(w.date)}</div>
                           <div style={{display:"flex",gap:6,alignItems:"center"}}>
                             <span style={{background:"#f5e0d8",color:C.ter,fontFamily:_fM,fontSize:12,padding:"2px 8px",borderRadius:99}}>{w.kg}kg</span>
-                            <button onClick={()=>setWeights(ws=>ws.filter(x=>x.date!==w.date))} style={{background:"#f0e5e0",border:_bN,borderRadius:"50%",width:20,height:20,color:C.lt,cursor:_cP,fontSize:12,lineHeight:"20px",padding:0}}>✕</button>
+                            <button onClick={()=>setWeights(ws=>ws.filter(x=>x.date!==w.date))} style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:"50%",width:20,height:20,color:C.lt,cursor:_cP,fontSize:12,lineHeight:"20px",padding:0}}>✕</button>
                           </div>
                         </div>
                       ))}
@@ -6322,7 +6346,7 @@ function App(){
                           <div style={{fontSize:13,color:C.deep}}>{fmtLong(h.date)}</div>
                           <div style={{display:"flex",gap:6,alignItems:"center"}}>
                             <span style={{background:"#d5e7f2",color:C.sky,fontFamily:_fM,fontSize:12,padding:"2px 8px",borderRadius:99}}>{h.cm}cm</span>
-                            <button onClick={()=>setHeights(hs=>hs.filter(x=>x.date!==h.date))} style={{background:"#f0e5e0",border:_bN,borderRadius:"50%",width:20,height:20,color:C.lt,cursor:_cP,fontSize:12,lineHeight:"20px",padding:0}}>✕</button>
+                            <button onClick={()=>setHeights(hs=>hs.filter(x=>x.date!==h.date))} style={{background:"var(--card-bg-alt)",border:_bN,borderRadius:"50%",width:20,height:20,color:C.lt,cursor:_cP,fontSize:12,lineHeight:"20px",padding:0}}>✕</button>
                           </div>
                         </div>
                       ))}
@@ -6377,7 +6401,7 @@ function App(){
                 if (cats.length > 0) devLine = `Working on ${cats.slice(0,2).map(c => catNames[c]||c).join(" and ")}.`;
 
                 return (
-                  <div style={{background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
+                  <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
                     <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,fontWeight:700,color:C.deep,marginBottom:2}}>{dayLabel} with {name}</div>
                     <div style={{fontSize:12,color:C.lt,fontFamily:_fM,marginBottom:14}}>{fmtAge(age)} · week {ageWeeks}</div>
                     <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -6442,7 +6466,7 @@ function App(){
                         </div>
                       )}
                     </div>
-                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg)",borderRadius:10,padding:"9px 11px",marginBottom:(fc.sleepLink||fc.suggestions.length)?6:0}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg-solid)",borderRadius:10,padding:"9px 11px",marginBottom:(fc.sleepLink||fc.suggestions.length)?6:0}}>
                       <span style={{fontSize:14,flexShrink:0}}>{fc.icon}</span>
                       <div style={{fontSize:13,color:C.mid,lineHeight:1.5}}>{fc.statusMsg}</div>
                     </div>
@@ -6473,7 +6497,7 @@ function App(){
               {/* ── TRENDS SECTION (collapsible) ── */}
               {collHead("trends","📈","Trends")}
               {insightSection.trends && (
-                <div style={{background:"var(--card-bg)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
+                <div style={{background:"var(--card-bg-solid)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
 
                   {/* Growth Chart */}
                   {sortedW.length>=1&&babySex&&babyDob&&(()=>{
@@ -6591,7 +6615,7 @@ function App(){
               {/* ── SLEEP ANALYSIS SECTION (collapsible) ── */}
               {collHead("sleep","😴","Sleep Analysis")}
               {insightSection.sleep && (
-                <div style={{background:"var(--card-bg)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
+                <div style={{background:"var(--card-bg-solid)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
                   {/* Sleep Stability Score & Analytics */}
                   {(()=>{
                     const score = sleepScore();
@@ -6676,7 +6700,7 @@ function App(){
                                   </div>
                                   <div style={{display:"flex",gap:7}}>
                                     <button onClick={()=>setBridgeNap(false)} style={{flex:1,background:"linear-gradient(135deg,#50a888,#3a8870)",border:"none",borderRadius:99,padding:"7px 0",fontSize:13,fontWeight:700,color:"white",cursor:"pointer"}}>Remove bridge nap</button>
-                                    <button onClick={()=>setBridgeNap(true)} style={{flex:1,background:"#f0faf6",border:"1px solid #a0ddc0",borderRadius:99,padding:"7px 0",fontSize:13,fontWeight:600,color:"#2a7055",cursor:"pointer"}}>Keep it in</button>
+                                    <button onClick={()=>setBridgeNap(true)} style={{flex:1,background:"var(--card-bg)",border:"1px solid #a0ddc0",borderRadius:99,padding:"7px 0",fontSize:13,fontWeight:600,color:"#2a7055",cursor:"pointer"}}>Keep it in</button>
                                   </div>
                                 </div>
                               );
@@ -6958,7 +6982,7 @@ function App(){
               {/* ── REPORTS SECTION (collapsible) — Day Report ── */}
               {collHead("reports","📊","Day Report")}
               {insightSection.reports && (
-                <div style={{background:"var(--card-bg)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
+                <div style={{background:"var(--card-bg-solid)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
                   {(()=>{
                     const rEntries = days[selDay]||[];
                     const rDayE = rEntries.filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
@@ -7018,7 +7042,7 @@ function App(){
                             </div>
                           ))}
                         </div>
-                        <div style={{background:"#f0eeff",borderRadius:12,padding:"10px",marginBottom:8,border:"1px solid #d8d2f0"}}>
+                        <div style={{background:"var(--card-bg)",borderRadius:12,padding:"10px",marginBottom:8,border:"1px solid #d8d2f0"}}>
                           <div style={{fontSize:13,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🌟 Night Wakes</div>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                             <span style={{fontSize:14,color:"#5040a0"}}>{rNightE.length} wake{rNightE.length!==1?"s":""}</span>
@@ -7186,7 +7210,7 @@ function App(){
                     </div>
                   </div>
                   <div style={{flexShrink:0,paddingTop:2}}>
-                    {!done && isNow  && <span style={{fontSize:11,background:"#fdeee8",color:C.ter,borderRadius:99,padding:"3px 8px",fontWeight:700}}>Now</span>}
+                    {!done && isNow  && <span style={{fontSize:11,background:"var(--chip-bg-active)",color:C.ter,borderRadius:99,padding:"3px 8px",fontWeight:700}}>Now</span>}
                     {!done && isPast && <span style={{fontSize:11,background:"#f0f8f0",color:C.mint,borderRadius:99,padding:"3px 8px",cursor:_cP}}>Log it</span>}
                     {!done && isFuture && <span style={{fontSize:11,color:"#bbb",fontFamily:_fM}}>wk {m.weeks[0]}</span>}
                   </div>
@@ -7211,7 +7235,7 @@ function App(){
                 <span style={{fontSize:11,color:C.lt,display:"inline-block",transform:open?"rotate(180deg)":"rotate(0)"}} >▼</span>
               </button>
               {open && (
-                <div style={{border:`1px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 12px 12px",padding:"4px 14px 10px",background:"var(--card-bg)"}}>
+                <div style={{border:`1px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 12px 12px",padding:"4px 14px 10px",background:"var(--card-bg-solid)"}}>
                   {children}
                 </div>
               )}
@@ -7241,7 +7265,7 @@ function App(){
               <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,marginBottom:12,WebkitOverflowScrolling:"touch"}}>
                 {[{key:"all",icon:"⭐",label:"All"},...MILESTONE_CATS].map(c=>(
                   <button key={c.key} onClick={()=>setMsFilter(c.key)}
-                    style={{flexShrink:0,padding:"7px 14px",borderRadius:999,border:`1.5px solid ${msFilter===c.key?C.ter:C.blush}`,background:msFilter===c.key?"var(--card-bg-alt)":"var(--card-bg-alt)",color:msFilter===c.key?C.ter:C.mid,fontSize:12,fontWeight:msFilter===c.key?700:400,cursor:_cP,fontFamily:_fI,whiteSpace:"nowrap",boxShadow:msFilter===c.key?"0 0 10px rgba(240,180,140,0.35)":"0 2px 6px rgba(0,0,0,0.04)"}}>
+                    style={{flexShrink:0,padding:"7px 14px",borderRadius:999,border:`1px solid ${msFilter===c.key?"var(--card-border)":"var(--card-border)"}`,background:msFilter===c.key?"var(--chip-bg-active)":"var(--chip-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",color:msFilter===c.key?C.ter:C.mid,fontSize:12,fontWeight:msFilter===c.key?700:400,cursor:_cP,fontFamily:_fI,whiteSpace:"nowrap",boxShadow:msFilter===c.key?"var(--chip-shadow-active)":"var(--chip-shadow)"}}>
                     {c.icon} {c.label}
                   </button>
                 ))}
@@ -7491,7 +7515,7 @@ function App(){
                 );
               })()}
 
-              <div style={{background:"linear-gradient(135deg,#fdeee8,#f5e4dc)",border:`1px solid ${C.rose}`,borderRadius:20,padding:"16px",marginBottom:14,display:"flex",alignItems:"center",gap:14}}>
+              <div style={{background:"linear-gradient(135deg,#fdeee8,var(--card-bg-alt))",border:`1px solid ${C.rose}`,borderRadius:20,padding:"16px",marginBottom:14,display:"flex",alignItems:"center",gap:14}}>
                 <div style={{width:52,height:52,borderRadius:16,background:`linear-gradient(135deg,${C.ter},#a85a44)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                   <span style={{fontSize:24}}>🧩</span>
                 </div>
@@ -7508,7 +7532,7 @@ function App(){
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
                   {[{key:"all",label:"All",icon:"✦"},...ACT_CATS].map(c=>(
                     <button key={c.key} onClick={()=>setDevActFilter(c.key)}
-                      style={{padding:"7px 14px",borderRadius:999,border:`1.5px solid ${devActFilter===c.key?C.ter:C.blush}`,background:devActFilter===c.key?"#fdf0eb":C.warm,fontSize:12,fontWeight:600,color:devActFilter===c.key?C.ter:C.mid,cursor:_cP,fontFamily:_fI,transition:"all 0.15s",boxShadow:devActFilter===c.key?"0 0 10px rgba(240,180,140,0.35)":"0 2px 6px rgba(0,0,0,0.04)"}}>
+                      style={{padding:"7px 14px",borderRadius:999,border:"1px solid var(--card-border)",background:devActFilter===c.key?"var(--chip-bg-active)":"var(--chip-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",fontSize:12,fontWeight:600,color:devActFilter===c.key?C.ter:C.mid,cursor:_cP,fontFamily:_fI,transition:"all 0.2s",boxShadow:devActFilter===c.key?"var(--chip-shadow-active)":"var(--chip-shadow)"}}>
                       {c.icon} {c.label}
                     </button>
                   ))}
@@ -7539,7 +7563,7 @@ function App(){
                           <div style={{fontSize:13,color:C.deep,lineHeight:1.6,marginBottom:6}}>
                             <span style={{fontWeight:700,color:C.ter}}>How: </span>{a.how}
                           </div>
-                          <div style={{fontSize:12,color:C.mid,lineHeight:1.55,background:"var(--card-bg)",borderRadius:10,padding:"8px 11px",border:`1px solid ${C.blush}`}}>
+                          <div style={{fontSize:12,color:C.mid,lineHeight:1.55,background:"var(--card-bg-solid)",borderRadius:10,padding:"8px 11px",border:`1px solid ${C.blush}`}}>
                             <span style={{fontWeight:600,color:C.mint}}>Why it helps: </span>{a.why}
                           </div>
                         </div>
@@ -7555,7 +7579,7 @@ function App(){
                 ) : (
                   devAdvice.map((item, i) => (
                     <div key={i} style={{display:"flex",gap:12,padding:"12px 0",borderBottom:i<devAdvice.length-1?`1px solid ${C.blush}`:"none"}}>
-                      <div style={{width:36,height:36,borderRadius:12,background:"#f0faf5",border:"1px solid #c0e8d0",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}}>
+                      <div style={{width:36,height:36,borderRadius:12,background:"var(--card-bg)",border:"1px solid #c0e8d0",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}}>
                         {item.icon}
                       </div>
                       <div style={{flex:1}}>
@@ -7584,7 +7608,7 @@ function App(){
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,marginBottom:4}}>👤 {familyUsername||"Account"}</div>
           {familyUsername&&<div style={{fontSize:12,fontFamily:_fM,color:C.lt,marginBottom:20}}>{syncStatus==="synced"?"🔄 Synced":syncStatus==="syncing"?"⏳ Syncing…":syncStatus==="error"?"⚠️ Sync error":"☁️ "+familyUsername}</div>}
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            <button onClick={()=>setShowFamilyModal(true)} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
+            <button onClick={()=>setShowFamilyModal(true)} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:24}}>👨‍👩‍👧</span>
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Share & Sync</div>
@@ -7596,7 +7620,7 @@ function App(){
                 const tot=Object.values(children).reduce((s,c)=>s+Object.values(c.days||{}).reduce((s2,arr)=>s2+(arr||[]).length,0),0);
                 const days2=Object.values(children).reduce((s,c)=>s+Object.keys(c.days||{}).length,0);
                 if(window.confirm("Save current data to cloud?\n\n"+days2+" days · "+tot+" entries\n\n⚠️ This replaces whatever is currently saved in the cloud with what's on this device. Use this if you're sure this device has the most up-to-date data.")){pushToCloud(backupCode,childrenRef.current);}
-              }} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
+              }} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
                 <span style={{fontSize:24}}>💾</span>
                 <div>
                   <div style={{fontSize:15,fontWeight:700,color:C.mint}}>Save to Cloud</div>
@@ -7604,7 +7628,7 @@ function App(){
                 </div>
               </button>
             )}
-            <button onClick={()=>{setTutStep(0);try{localStorage.removeItem("tut_v2");}catch{}}} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
+            <button onClick={()=>{setTutStep(0);try{localStorage.removeItem("tut_v2");}catch{}}} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:24}}>❓</span>
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:C.deep}}>App Tour</div>
@@ -7612,7 +7636,7 @@ function App(){
               </div>
             </button>
             {familyUsername&&(
-              <button onClick={logout} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%",marginTop:6}}>
+              <button onClick={logout} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%",marginTop:6}}>
                 <span style={{fontSize:24}}>🚪</span>
                 <div>
                   <div style={{fontSize:15,fontWeight:700,color:C.mid}}>Sign Out</div>
@@ -7624,7 +7648,7 @@ function App(){
         </div>
       )}
 
-      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"var(--nav-bg)",backdropFilter:"blur(14px)",WebkitBackdropFilter:"blur(14px)",borderTop:"1px solid var(--nav-border)",display:"flex",alignItems:"stretch",boxShadow:"var(--shadow-nav)",maxWidth:520,margin:"0 auto",borderRadius:"20px 20px 0 0",paddingBottom:"env(safe-area-inset-bottom,0)"}}>
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"var(--nav-bg)",backdropFilter:"var(--glass-blur)",WebkitBackdropFilter:"var(--glass-blur)",borderTop:"1px solid var(--nav-border)",display:"flex",alignItems:"stretch",boxShadow:"var(--nav-shadow)",maxWidth:520,margin:"0 auto",borderRadius:"22px 22px 0 0",paddingBottom:"env(safe-area-inset-bottom,0)"}}>
         {["day","insights","milestones","develop"].map(t=>(
           <button key={t} onClick={()=>{setTab(t);setLogPanel(null);}} style={tabSt(t)}>
             <span style={{fontSize:14,transition:"transform 0.15s",transform:tab===t?"scale(1.1)":"scale(1)"}}>{tabIcons[t]}</span>
@@ -7813,7 +7837,7 @@ function App(){
           <div style={{marginBottom:12}}>
             <TimeInput label="Wake Time" value={logForm.feedTime} onChange={t=>setLogForm(f=>({...f,feedTime:t}))}/>
           </div>
-          <div style={{background:"#f5f0e8",borderRadius:12,padding:"10px 12px",marginBottom:14,fontSize:13,color:C.mid,lineHeight:1.55}}>
+          <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 12px",marginBottom:14,fontSize:13,color:C.mid,lineHeight:1.55}}>
             ☀️ Logs morning wake time — used to calculate wake windows and today's nap schedule.
           </div>
           <PBtn onClick={()=>{
@@ -7994,14 +8018,14 @@ function App(){
               <div style={{fontSize:15,color:C.mid,marginBottom:4,lineHeight:1.6}}>
                 Paste your notes in any format — the app will read them and sort them into the right categories.
               </div>
-              <div style={{fontSize:15,fontFamily:_fM,color:C.lt,marginBottom:12,padding:"10px",background:"var(--bg)",borderRadius:10,lineHeight:1.8}}>
+              <div style={{fontSize:15,fontFamily:_fM,color:C.lt,marginBottom:12,padding:"10px",background:"var(--bg-solid)",borderRadius:10,lineHeight:1.8}}>
                 e.g. "Woke up 7am · Feed 8am 180ml · Nap 10:15-11:30 · Feed 1pm 150ml · Asleep 7pm · Wake1 10:30pm 60ml"
               </div>
               <textarea
                 value={pasteText}
                 onChange={e=>setPasteText(e.target.value)}
                 placeholder={"Paste your notes here...\n\nWoke up 9am\nFeed 9am 210ml\nNap 11:15-12:35\nFeed 1pm 150ml\nNap 2:25-2:50\nAsleep 7pm\nWake1 8:30pm 70ml"}
-                style={{width:"100%",minHeight:180,padding:"12px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:"var(--bg)",fontSize:15,fontFamily:_fI,outline:_oN,resize:"vertical",lineHeight:1.7,boxSizing:_bBB,marginBottom:8}}
+                style={{width:"100%",minHeight:180,padding:"12px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:"var(--bg-solid)",fontSize:15,fontFamily:_fI,outline:_oN,resize:"vertical",lineHeight:1.7,boxSizing:_bBB,marginBottom:8}}
               />
               {parseError&&<div style={{fontSize:14,color:C.ter,background:"var(--card-bg-alt)",borderRadius:10,padding:"8px 12px",marginBottom:10}}>{parseError}</div>}
               <PBtn onClick={runParse}>Parse Notes →</PBtn>
@@ -8033,19 +8057,19 @@ function App(){
                           : fresh.detectedDate;
                         _setParsedEntries({...fresh, detectedDate: revertedDate, yearWarning:null});
                       }
-                    }} style={{flex:1,padding:"8px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.mid,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                    }} style={{flex:1,padding:"8px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
                       Keep {parsedEntries.yearWarning.parsed}
                     </button>
                   </div>
                 </div>
               )}
               {parsedEntries.detectedDate&&!parsedEntries.yearWarning&&(
-                <div style={{fontSize:14,fontFamily:_fM,color:C.mint,background:"#f0faf6",borderRadius:10,padding:"7px 12px",marginBottom:12}}>
+                <div style={{fontSize:14,fontFamily:_fM,color:C.mint,background:"var(--card-bg)",borderRadius:10,padding:"7px 12px",marginBottom:12}}>
                   📅 Detected date: <strong>{fmtLong(parsedEntries.detectedDate)}</strong> — entries will be added to this day
                 </div>
               )}
               {parsedEntries.detectedDate&&parsedEntries.yearWarning&&(
-                <div style={{fontSize:14,fontFamily:_fM,color:C.lt,background:"var(--bg)",borderRadius:10,padding:"7px 12px",marginBottom:12}}>
+                <div style={{fontSize:14,fontFamily:_fM,color:C.lt,background:"var(--bg-solid)",borderRadius:10,padding:"7px 12px",marginBottom:12}}>
                   📅 Detected date: <strong>{fmtLong(parsedEntries.detectedDate)}</strong>
                 </div>
               )}
@@ -8059,7 +8083,7 @@ function App(){
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12,maxHeight:280,overflowY:"auto"}}>
                 {parsedEntries.entries.map((e,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 11px",borderRadius:12,background:"var(--bg)",border:`1px solid ${C.blush}`,borderLeft:`3px solid ${e.type==="feed"?C.ter:e.type==="nap"?C.mint:e.type==="sleep"?C.sky:C.gold}`}}>
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 11px",borderRadius:12,background:"var(--bg-solid)",border:`1px solid ${C.blush}`,borderLeft:`3px solid ${e.type==="feed"?C.ter:e.type==="nap"?C.mint:e.type==="sleep"?C.sky:C.gold}`}}>
                     <span style={{fontSize:16}}>{ICONS[e.type]}</span>
                     <div style={{flex:1}}>
                       <div style={{fontSize:15,fontWeight:500}}>{NAMES[e.type]}{e.night?" (night)":""}</div>
@@ -8171,7 +8195,7 @@ function App(){
                 </div>
               ))}
             </div>
-            <div style={{background:"#f0eeff",borderRadius:14,padding:"12px",marginBottom:10,border:"1px solid #d8d2f0"}}>
+            <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px",marginBottom:10,border:"1px solid #d8d2f0"}}>
               <div style={{fontSize:15,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:8}}>🌟 Night Wakes</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:stretches.length?10:0}}>
                 <span style={{fontSize:15,color:"#5040a0"}}>{nEs.length} wake{nEs.length!==1?"s":""}</span>
@@ -8181,7 +8205,7 @@ function App(){
                 <>
                   <div style={{fontSize:14,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Stretches between wakes</div>
                   {stretches.map((s,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"var(--card-bg)",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
+                    <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"var(--card-bg-solid)",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
                       <div>
                         <div style={{fontSize:14,color:"#5040a0"}}>{s.from} → {s.to}</div>
                         <div style={{fontSize:14,fontFamily:_fM,color:"#9080c8",marginTop:2}}>{fmt12(s.toTime)}{s.feed?` · ${s.feed}ml`:""}</div>
@@ -8238,7 +8262,7 @@ function App(){
         };
         return (
           <div style={{position:"fixed",inset:0,background:"rgba(30,20,15,0.5)",backdropFilter:"blur(6px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",boxSizing:"border-box"}} onClick={()=>setShowPersonalPopup(false)}>
-            <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg)",borderRadius:24,padding:"28px 22px",width:"100%",maxWidth:360,boxShadow:"0 12px 48px rgba(0,0,0,0.22)",boxSizing:"border-box"}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg-solid)",borderRadius:24,padding:"28px 22px",width:"100%",maxWidth:360,boxShadow:"0 12px 48px rgba(0,0,0,0.22)",boxSizing:"border-box"}}>
               <div style={{textAlign:"center",marginBottom:18}}>
                 <div style={{fontSize:32,marginBottom:8}}>🎉</div>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:6}}>7 days of data!</div>
@@ -8270,7 +8294,7 @@ function App(){
 
       {showNightWake&&(
         <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.55)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowNightWake(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg)",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",width:"100%",boxSizing:_bBB}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",width:"100%",boxSizing:_bBB}}>
             <div style={{width:36,height:4,background:C.blush,borderRadius:99,margin:"0 auto 20px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,marginBottom:20}}>🌟 Log Night Wake</div>
 
@@ -8418,20 +8442,20 @@ function App(){
 
       {showAddChild && (
         <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.5)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowAddChild(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%"}}>
             <div style={{width:40,height:4,background:"#f2d9cc",borderRadius:99,margin:"0 auto 20px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:"var(--text-deep)",marginBottom:20}}>Add a child</div>
 
             <div style={{fontSize:14,color:"#b89890",marginBottom:6,fontWeight:600}}>Name</div>
             <input value={newChildName} onChange={e=>setNewChildName(e.target.value)}
               placeholder="Baby's name" autoFocus
-              style={{width:"100%",fontSize:18,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"var(--card-bg)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
+              style={{width:"100%",fontSize:18,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"var(--card-bg-solid)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
 
             <div style={{fontSize:14,color:"#b89890",marginBottom:6,fontWeight:600}}>
               {newChildUnborn ? "Due date" : "Date of birth"}
             </div>
             <input type="date" value={newChildDob} onChange={e=>setNewChildDob(e.target.value)}
-              style={{width:"100%",fontSize:16,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"var(--card-bg)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
+              style={{width:"100%",fontSize:16,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"var(--card-bg-solid)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
 
             <div style={{display:"flex",gap:8,marginBottom:14}}>
               {["","girl","boy"].map(s=>(
@@ -8466,7 +8490,7 @@ function App(){
       )}
       {showChildSettings&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowChildSettings(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480,boxShadow:"0 -8px 40px rgba(0,0,0,0.15)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg-solid)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480,boxShadow:"0 -8px 40px rgba(0,0,0,0.15)"}}>
             <div style={{width:36,height:4,background:C.blush,borderRadius:99,margin:"0 auto 24px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,marginBottom:24}}>Child Settings</div>
             <div style={{marginBottom:16}}>
@@ -8506,7 +8530,7 @@ function App(){
               <div style={{background:"#fff4f2",border:`2px solid ${C.ter}`,borderRadius:16,padding:"16px",textAlign:"center"}}>
                 <div style={{fontSize:15,fontWeight:600,color:C.deep,marginBottom:12}}>Delete {csName||"this child"}? This cannot be undone.</div>
                 <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>setCsConfirmDelete(false)} style={{flex:1,padding:"11px",borderRadius:99,border:`2px solid ${C.blush}`,background:"var(--card-bg)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>Cancel</button>
+                  <button onClick={()=>setCsConfirmDelete(false)} style={{flex:1,padding:"11px",borderRadius:99,border:`2px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>Cancel</button>
                   <button onClick={()=>{deleteChild(resolvedActiveId);setShowChildSettings(false);setCsConfirmDelete(false);}}
                     style={{flex:1,padding:"11px",borderRadius:99,border:_bN,background:C.ter,color:"white",fontSize:14,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
                     Yes, delete
@@ -8519,7 +8543,7 @@ function App(){
       )}
       {showFamilyModal && (
         <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.5)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowFamilyModal(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
 
             <div style={{width:40,height:4,background:C.blush,borderRadius:99,margin:"0 auto 20px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:C.deep,marginBottom:6}}>Data & Sync</div>
@@ -8531,13 +8555,13 @@ function App(){
               </div>
             </div>
             {backupCode && (
-              <div style={{background:"#f0faf5",borderRadius:12,padding:"10px 14px",marginBottom:8,border:"1px solid #b0e8cc",display:"flex",alignItems:"center",gap:8}}>
+              <div style={{background:"var(--card-bg)",borderRadius:12,padding:"10px 14px",marginBottom:8,border:"1px solid #b0e8cc",display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:16}}>☁️</span>
                 <div style={{fontSize:13,color:"#2a7a50",lineHeight:1.4}}>Auto-backup active — your data saves to the cloud and restores when you sign in on any device.</div>
               </div>
             )}
             {familyUsername && (
-              <div style={{background:"var(--card-bg)",borderRadius:12,padding:"12px 14px",marginBottom:12,border:`1px solid ${C.blush}`}}>
+              <div style={{background:"var(--card-bg-solid)",borderRadius:12,padding:"12px 14px",marginBottom:12,border:`1px solid ${C.blush}`}}>
                 <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Recovery word</div>
                 <div style={{fontSize:13,color:C.mid,marginBottom:10,lineHeight:1.5}}>A secret word you choose — used to reset your PIN if you ever forget it. No email or phone number required.</div>
                 <div style={{display:"flex",gap:8}}>
@@ -8547,7 +8571,7 @@ function App(){
                     onChange={e=>{ setRecoveryWordInput(e.target.value); setRecoveryWordStatus(null); }}
                     placeholder="e.g. sunshine, mango…"
                     autoCapitalize="none" autoCorrect="off" spellCheck="false"
-                    style={{flex:1,fontSize:15,padding:"9px 12px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"var(--bg)",outline:"none",fontFamily:_fI,color:C.deep,boxSizing:"border-box"}}
+                    style={{flex:1,fontSize:15,padding:"9px 12px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"var(--bg-solid)",outline:"none",fontFamily:_fI,color:C.deep,boxSizing:"border-box"}}
                   />
                   <button
                     onClick={async()=>{
@@ -8569,7 +8593,7 @@ function App(){
               </div>
             )}
             {familyUsername ? (
-              <div style={{background:"var(--card-bg)",borderRadius:12,padding:"12px 14px",marginBottom:16,border:`1px solid ${C.blush}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{background:"var(--card-bg-solid)",borderRadius:12,padding:"12px 14px",marginBottom:16,border:`1px solid ${C.blush}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div>
                   <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Your username</div>
                   <div style={{fontSize:20,fontWeight:700,color:C.ter}}>{familyUsername}</div>
@@ -8592,7 +8616,7 @@ function App(){
                 const code = childSyncCodes[cid];
                 const isShared = !!code;
                 return (
-                  <div key={cid} style={{background:"var(--card-bg)",borderRadius:14,padding:"12px 14px",border:`1px solid ${isShared?C.mint+"40":C.blush}`}}>
+                  <div key={cid} style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px 14px",border:`1px solid ${isShared?C.mint+"40":C.blush}`}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:isShared?8:0}}>
                       <div>
                         <div style={{fontWeight:700,fontSize:15,color:C.deep}}>{child.name||"Unnamed child"}</div>
@@ -8608,12 +8632,12 @@ function App(){
                     </div>
                     {isShared && (
                       <>
-                        <div style={{background:"#f0faf5",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,border:"1px solid #b0e8cc"}}>
+                        <div style={{background:"var(--card-bg)",borderRadius:10,padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6,border:"1px solid #b0e8cc"}}>
                           <div>
                             <div style={{fontSize:11,fontFamily:_fM,color:"#4a8a6a",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Sync code</div>
                             <div style={{fontFamily:_fM,fontSize:24,fontWeight:700,color:C.ter,letterSpacing:"0.18em"}}>{code}</div>
                           </div>
-                          <button onClick={()=>{try{navigator.clipboard.writeText(code);}catch{}}} style={{padding:"6px 12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",fontSize:12,fontWeight:600,color:C.mid,cursor:_cP,fontFamily:_fI}}>
+                          <button onClick={()=>{try{navigator.clipboard.writeText(code);}catch{}}} style={{padding:"6px 12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg-solid)",fontSize:12,fontWeight:600,color:C.mid,cursor:_cP,fontFamily:_fI}}>
                             Copy
                           </button>
                         </div>
@@ -8632,7 +8656,7 @@ function App(){
             {familyUsername && (
               <div style={{borderTop:`1px solid ${C.blush}`,marginTop:16,paddingTop:16}}>
                 <button onClick={()=>{setShowFamilyModal(false);logout();}}
-                  style={{width:"100%",padding:"12px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg)",color:C.lt,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                  style={{width:"100%",padding:"12px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.lt,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
                   Sign out of {familyUsername}
                 </button>
               </div>
