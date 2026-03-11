@@ -47,103 +47,203 @@
     onAuthStateChanged(auth, user => { if (user) window._fbUid = user.uid; });
   </script>
   <style>
+/* ══════ BASE RESET ══════ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html{color-scheme:light;}
 html,body{height:100%;overscroll-behavior:none;}
-body{background:#faf6f0;font-family:'DM Sans',sans-serif;transition:background-color 0.4s ease,color 0.4s ease;}
+body{font-family:'DM Sans',sans-serif;transition:background-color 0.4s ease,color 0.4s ease;}
 ::-webkit-scrollbar{display:none;}
 input,select,button{font-family:inherit;}
+input::placeholder{color:var(--placeholder);opacity:1;}
+
+/* ══════ CSS CUSTOM PROPERTIES — LIGHT MODE (default) ══════ */
+:root,body,.light-mode{
+  --bg:#faf6f0;
+  --card-bg:white;
+  --card-bg-alt:#fff9f2;
+  --card-border:rgba(242,217,204,0.7);
+  --text-deep:#2c1f1a;
+  --text-mid:#7a5c52;
+  --text-lt:#b89890;
+  --blush:#f2d9cc;
+  --rose:#e8b4a0;
+  --cream:#faf6f0;
+  --warm:#fff9f2;
+  --ter:#c9705a;
+  --mint:#6fa898;
+  --sky:#7aabc4;
+  --gold:#d4a855;
+  --placeholder:#c8beb8;
+  --sheet-bg:#faf6f0;
+  --sheet-overlay:rgba(44,31,26,0.55);
+  --shadow-card:0 0 0 1px rgba(255,255,255,0.5) inset, 0 10px 30px rgba(230,170,140,0.18);
+  --shadow-card-hover:0 0 0 1px rgba(255,255,255,0.6) inset, 0 14px 32px rgba(230,170,140,0.25), 0 4px 8px rgba(0,0,0,0.04);
+  --shadow-nav:0 -4px 25px rgba(44,31,26,0.08);
+  --nav-bg:rgba(255,255,255,0.88);
+  --nav-border:rgba(242,217,204,0.5);
+  --glow-accent:rgba(240,180,140,0.25);
+  --glow-subtle:rgba(255,220,190,0.25);
+  --chip-shadow:0 2px 6px rgba(0,0,0,0.04);
+  --chip-active-shadow:0 0 10px rgba(240,180,140,0.35);
+  --glass-bg:rgba(255,255,255,0.65);
+  --warning-border:rgba(220,150,120,0.4);
+  --warning-glow:0 0 18px rgba(240,180,140,0.15);
+  --input-bg:#fff9f2;
+  --picker-bg:white;
+}
+
+/* ══════ DARK / NIGHT MODE ══════ */
+body.dark-mode{
+  --bg:#0F172A;
+  --card-bg:#1E293B;
+  --card-bg-alt:#243449;
+  --card-border:rgba(51,65,85,0.7);
+  --text-deep:#E5E7EB;
+  --text-mid:#94A3B8;
+  --text-lt:#64748B;
+  --blush:#334155;
+  --rose:#475569;
+  --cream:#0F172A;
+  --warm:#1E293B;
+  --ter:#d4836e;
+  --mint:#7bc4ad;
+  --sky:#8dbdd5;
+  --gold:#e0b86a;
+  --placeholder:#475569;
+  --sheet-bg:#1E293B;
+  --sheet-overlay:rgba(0,0,0,0.65);
+  --shadow-card:0 0 0 1px rgba(240,180,140,0.08) inset, 0 10px 30px rgba(0,0,0,0.45), 0 0 12px rgba(240,180,140,0.1);
+  --shadow-card-hover:0 0 0 1px rgba(240,180,140,0.12) inset, 0 14px 35px rgba(0,0,0,0.5), 0 0 16px rgba(240,180,140,0.15);
+  --shadow-nav:0 -4px 25px rgba(0,0,0,0.4);
+  --nav-bg:rgba(30,41,59,0.92);
+  --nav-border:rgba(51,65,85,0.5);
+  --glow-accent:rgba(240,180,140,0.2);
+  --glow-subtle:rgba(240,180,140,0.06);
+  --chip-shadow:0 2px 6px rgba(0,0,0,0.2);
+  --chip-active-shadow:0 0 10px rgba(240,180,140,0.3);
+  --glass-bg:rgba(30,41,59,0.7);
+  --warning-border:rgba(212,131,110,0.4);
+  --warning-glow:0 0 18px rgba(240,180,140,0.12);
+  --input-bg:#243449;
+  --picker-bg:#1E293B;
+  color-scheme:dark;
+}
+
+body{background:var(--bg);color:var(--text-deep);}
+
+/* Gender accent overrides (still work in both modes) */
 body.boy header,body.boy .gender-accent{background:#eaf3fb!important;}
 body.girl header,body.girl .gender-accent{background:#fde7e4!important;}
-input::placeholder{color:#c8beb8;opacity:1;}
+body.dark-mode.boy header,body.dark-mode.boy .gender-accent{background:#1a2a3d!important;}
+body.dark-mode.girl header,body.dark-mode.girl .gender-accent{background:#2d1f2a!important;}
 
-/* ─── GLOBAL TRANSITIONS ─── */
+/* ══════ AMBIENT GLOW BEHIND CONTENT ══════ */
+#root::before{
+  content:'';
+  position:fixed;
+  top:0;left:0;right:0;
+  height:50vh;
+  background:radial-gradient(circle at 50% 0%,var(--glow-subtle),transparent 70%);
+  pointer-events:none;
+  z-index:0;
+  transition:background 0.4s ease;
+}
+#root{position:relative;z-index:1;}
+
+/* ══════ MICRO INTERACTIONS — all interactive elements ══════ */
 button,a,[role="button"]{
-  transition:transform 0.18s ease,box-shadow 0.18s ease,background-color 0.18s ease,opacity 0.18s ease;
+  transition:transform 0.18s ease,box-shadow 0.18s ease,background-color 0.22s ease,border-color 0.22s ease,opacity 0.18s ease !important;
+  -webkit-user-select:none;user-select:none;
 }
 
-/* ─── SQUISH PRESS ─── */
-button:active,
-[role="button"]:active{
-  transform:scale(0.94)!important;
+/* ══════ SQUISH PRESS for buttons, chips, nav items ══════ */
+button:active{
+  transform:scale(0.95) !important;
 }
 
-/* ─── CARD TAP ─── */
-.ob-card:active{transform:scale(0.98)!important;}
-
-/* ─── DESKTOP HOVER ─── */
+/* ══════ DESKTOP HOVER for cards ══════ */
 @media(hover:hover){
-  .ob-card:hover{
-    transform:translateY(-2px);
-    box-shadow:0 14px 32px rgba(0,0,0,0.10),0 4px 8px rgba(0,0,0,0.06)!important;
+  button:hover{
+    opacity:0.92;
   }
 }
 
-/* ─── AMBIENT GLOW BEHIND CARDS (light mode) ─── */
-.ob-card{
-  position:relative;
-  transition:transform 0.18s ease,box-shadow 0.18s ease;
-}
-.ob-card::before{
-  content:'';
-  position:absolute;
-  inset:-8px;
-  border-radius:28px;
-  background:radial-gradient(circle at top,rgba(255,220,190,0.25),transparent 70%);
-  z-index:-1;
-  pointer-events:none;
-}
-
-/* ─── FLOATING NAV (light) ─── */
-.ob-nav{
-  background:rgba(255,255,255,0.85)!important;
-  backdrop-filter:blur(12px)!important;
-  -webkit-backdrop-filter:blur(12px)!important;
-  border-top:none!important;
-  border-radius:24px 24px 0 0!important;
-  box-shadow:0 -8px 25px rgba(0,0,0,0.10)!important;
-  transition:background 0.4s ease,box-shadow 0.4s ease;
-}
-
-/* ─── THEME TOGGLE BUTTON ─── */
-.ob-theme-toggle{
-  background:rgba(255,255,255,0.5);
+/* ══════ NIGHT MODE TOGGLE BUTTON ══════ */
+#theme-toggle{
+  position:fixed;
+  top:12px;
+  right:12px;
+  z-index:100;
+  width:38px;
+  height:38px;
+  border-radius:50%;
   border:none;
-  border-radius:99px;
-  width:32px;height:32px;
-  display:flex;align-items:center;justify-content:center;
+  background:var(--nav-bg);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  box-shadow:0 2px 12px rgba(0,0,0,0.1);
   cursor:pointer;
-  font-size:16px;
-  transition:transform 0.18s ease,background 0.3s ease;
-  flex-shrink:0;
+  font-size:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform 0.18s ease,box-shadow 0.18s ease,background-color 0.3s ease !important;
 }
-.ob-theme-toggle:active{transform:scale(0.88)!important;}
-
-/* ─── NIGHT MODE ─── */
-body.dark-mode{
-  background:#0F172A!important;
-  color:#E5E7EB;
-  color-scheme:dark;
+#theme-toggle:active{
+  transform:scale(0.88) !important;
 }
-body.dark-mode .ob-theme-toggle{
-  background:rgba(255,255,255,0.12);
-}
-body.dark-mode .ob-nav{
-  background:rgba(30,41,59,0.88)!important;
-  box-shadow:0 -8px 25px rgba(0,0,0,0.35)!important;
-  border-top:1px solid rgba(51,65,85,0.5)!important;
-}
-body.dark-mode .ob-card::before{
-  background:radial-gradient(circle at top,rgba(240,180,140,0.08),transparent 70%);
-}
-
-/* ─── NIGHT MODE ANIMATION ─── */
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
 <div id="root"></div>
+<button id="theme-toggle" aria-label="Toggle night mode" onclick="toggleTheme()">🌙</button>
+<script>
+// ── Theme System: auto (device) / light / dark ──
+// "auto" = follow device prefers-color-scheme
+// "light" / "dark" = user override, ignores device setting
+function applyTheme(mode){
+  var body=document.body;
+  var btn=document.getElementById('theme-toggle');
+  var meta=document.querySelector('meta[name="theme-color"]');
+  var dark;
+  if(mode==='auto'){
+    dark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  }else{
+    dark=(mode==='dark');
+  }
+  body.classList.remove('dark-mode','light-mode');
+  body.classList.add(dark?'dark-mode':'light-mode');
+  // Icon shows: auto=🔄  light=🌙(tap for dark)  dark=☀️(tap for light)
+  var saved=getThemePref();
+  if(saved==='auto') btn.textContent=dark?'🌙':'☀️';
+  else if(saved==='dark') btn.textContent='☀️';
+  else btn.textContent='🌙';
+  // Show a subtle dot indicator when in auto mode
+  btn.title=saved==='auto'?'Auto (following device)':saved==='dark'?'Dark mode (tap for auto)':'Light mode (tap for dark)';
+  if(meta) meta.content=dark?'#0F172A':'#faf6f0';
+}
+function getThemePref(){
+  try{return localStorage.getItem('theme')||'auto';}catch(e){return 'auto';}
+}
+function toggleTheme(){
+  // Cycle: auto → light → dark → auto
+  var current=getThemePref();
+  var next;
+  if(current==='auto') next='light';
+  else if(current==='light') next='dark';
+  else next='auto';
+  try{localStorage.setItem('theme',next);}catch(e){}
+  applyTheme(next);
+}
+// Listen for device theme changes (only matters when pref is "auto")
+window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(){
+  if(getThemePref()==='auto') applyTheme('auto');
+});
+// Initialise on load
+(function(){
+  applyTheme(getThemePref());
+})();
+</script>
 
 <script type="text/plain" id="jsx-src">
 const { useState, useEffect, useRef } = React;
@@ -318,14 +418,35 @@ function getNightWindows(thisDayEntries, nextDayEntries) {
 const ICONS={feed:"🍼",nap:"😴",wake:"☀️",sleep:"🌙",poop:"💩"};
 const NAMES={feed:"Feed",nap:"Nap",wake:"Wake Up",sleep:"Bedtime",poop:"Nappy"};
 const POOP_TYPES=["Yellow/seedy","Mustard","Green","Brown","Dark green","Orange","Black/tarry","White/pale","Mucousy","Watery","Formed/solid","Pellet-like","Frothy","Bloody/streaked","Other"];
-const C={ter:"#c9705a",mid:"#7a5c52",lt:"#b89890",blush:"#f2d9cc",rose:"#e8b4a0",cream:"#faf6f0",warm:"#fff9f2",mint:"#6fa898",sky:"#7aabc4",gold:"#d4a855",deep:"#2c1f1a"};
+// Theme-aware color getter — reads CSS variables for dark mode support
+function getC(){
+  const s=getComputedStyle(document.documentElement);
+  const v=n=>s.getPropertyValue(n).trim();
+  return{
+    ter:v('--ter')||"#c9705a",
+    mid:v('--text-mid')||"#7a5c52",
+    lt:v('--text-lt')||"#b89890",
+    blush:v('--blush')||"#f2d9cc",
+    rose:v('--rose')||"#e8b4a0",
+    cream:v('--cream')||"#faf6f0",
+    warm:v('--warm')||"#fff9f2",
+    mint:v('--mint')||"#6fa898",
+    sky:v('--sky')||"#7aabc4",
+    gold:v('--gold')||"#d4a855",
+    deep:v('--text-deep')||"#2c1f1a"
+  };
+}
+let C=getC();
+// Refresh C when theme changes
+const _origToggle=window.toggleTheme;
+window.toggleTheme=function(){_origToggle();setTimeout(()=>{C=getC();},80);};
 const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em",_ls08="0.08em",_bN="none",_oN="none";
 
 
 function Sheet({onClose,title,children}){
   return(
-    <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.55)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:C.cream,borderRadius:"24px 24px 0 0",padding:"18px 18px 52px",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto"}}>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",borderRadius:"24px 24px 0 0",padding:"18px 18px 52px",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto"}}>
         <div style={{width:48,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
         {title&&<div style={{fontFamily:"'Playfair Display',serif",fontSize:20,marginBottom:16}}>{title}</div>}
         {children}
@@ -338,7 +459,7 @@ function Inp({label,...p}){
   return(
     <div style={{marginBottom:12}}>
       {label&&<label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>{label}</label>}
-      <input {...p} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,...(p.style||{})}}/>
+      <input {...p} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,...(p.style||{})}}/>
     </div>
   );
 }
@@ -405,7 +526,7 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
 
       {showPicker && (
         <div onClick={()=>setShowPicker(false)} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.5)",backdropFilter:"blur(3px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"white",borderRadius:20,padding:"20px",width:"100%",maxWidth:300,boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg)",borderRadius:20,padding:"20px",width:"100%",maxWidth:300,boxShadow:"0 12px 40px rgba(0,0,0,0.2)"}}>
             <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:14,textAlign:"center"}}>Set Time</div>
 
             <div style={{marginBottom:14}}>
@@ -432,12 +553,12 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
 
             <div style={{display:"flex",justifyContent:"center",marginBottom:16}}>
               <input type="time" value={parsed||""} onChange={handleWheel}
-                style={{fontSize:28,fontFamily:"'Playfair Display',serif",padding:"8px 20px",borderRadius:14,border:`2px solid ${C.blush}`,background:C.warm,color:C.deep,textAlign:"center",outline:_oN,width:"100%",maxWidth:200,boxSizing:_bBB}}/>
+                style={{fontSize:28,fontFamily:"'Playfair Display',serif",padding:"8px 20px",borderRadius:14,border:`2px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,textAlign:"center",outline:_oN,width:"100%",maxWidth:200,boxSizing:_bBB}}/>
             </div>
 
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>{onChange("");setParsed(null);setShowPicker(false);}}
-                style={{flex:1,padding:"10px",borderRadius:99,border:`1px solid ${C.blush}`,background:"white",color:C.lt,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                style={{flex:1,padding:"10px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.lt,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
                 Clear
               </button>
               <button onClick={handleDone}
@@ -957,12 +1078,12 @@ function LinkChildForm({ joinChildByCode, C }) {
   const [linkError, setLinkError] = React.useState("");
   const [linkName, setLinkName] = React.useState("");
   return (
-    <div style={{background:"white",borderRadius:14,padding:"14px",border:`1px solid ${C.blush}`,marginBottom:16}}>
+    <div style={{background:"var(--card-bg)",borderRadius:14,padding:"14px",border:`1px solid ${C.blush}`,marginBottom:16}}>
       <div style={{fontSize:14,fontWeight:700,color:C.mid,marginBottom:4}}>Link a child</div>
       <div style={{fontSize:13,color:C.lt,marginBottom:10}}>Enter a sync code from another parent to add their child to your app.</div>
       <input value={linkCode} onChange={e=>setLinkCode(e.target.value.toUpperCase())}
         placeholder="e.g. AB3X7Y" maxLength={6}
-        style={{width:"100%",fontSize:22,fontFamily:_fM,fontWeight:700,letterSpacing:"0.18em",textAlign:"center",padding:"11px",borderRadius:10,border:`1.5px solid ${linkStatus==="error"?C.ter:C.blush}`,background:"#faf6f0",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
+        style={{width:"100%",fontSize:22,fontFamily:_fM,fontWeight:700,letterSpacing:"0.18em",textAlign:"center",padding:"11px",borderRadius:10,border:`1.5px solid ${linkStatus==="error"?C.ter:C.blush}`,background:"var(--bg)",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
       {linkStatus==="error" && <div style={{fontSize:13,color:C.ter,marginBottom:8,textAlign:"center"}}>{linkError}</div>}
       {linkStatus==="ok" && <div style={{fontSize:13,color:C.mint,marginBottom:8,textAlign:"center"}}>✓ {linkName} added to your app!</div>}
       <button onClick={async()=>{
@@ -1008,7 +1129,7 @@ function RestoreDataForm({ restoreFromBackup, setShowFamilyModal, familyUsername
             <div style={{fontSize:13,color:C.lt,marginBottom:8,marginTop:10}}>Enter an account code from another device to import that data.</div>
             <input value={restoreInput} onChange={e=>setRestoreInput(e.target.value.toUpperCase())}
               placeholder="Enter account code"
-              style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"#faf6f0",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
+              style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"var(--bg)",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
             {restoreStatus==="fail" && <div style={{fontSize:13,color:C.ter,marginBottom:8,textAlign:"center"}}>Code not found — check and try again</div>}
             {restoreStatus==="ok" && <div style={{fontSize:13,color:"#50c878",marginBottom:8,textAlign:"center"}}>✓ Data restored successfully!</div>}
             <button onClick={async()=>{
@@ -1037,7 +1158,7 @@ function RestoreDataForm({ restoreFromBackup, setShowFamilyModal, familyUsername
           <div style={{fontSize:13,color:C.lt,marginBottom:8}}>Enter an account code from another device to restore all data.</div>
           <input value={restoreInput} onChange={e=>setRestoreInput(e.target.value.toUpperCase())}
             placeholder="Enter account code"
-            style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"#faf6f0",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
+            style={{width:"100%",fontSize:16,fontFamily:_fM,fontWeight:700,letterSpacing:_ls1,textAlign:"center",padding:"10px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"var(--bg)",color:C.ter,outline:_oN,marginBottom:8,boxSizing:_bBB}}/>
           {restoreStatus==="fail" && <div style={{fontSize:13,color:C.ter,marginBottom:8,textAlign:"center"}}>Code not found — check and try again</div>}
           {restoreStatus==="ok" && <div style={{fontSize:13,color:C.mint,marginBottom:8,textAlign:"center"}}>✓ Data restored successfully!</div>}
           <button onClick={async()=>{
@@ -1095,42 +1216,17 @@ function LeapBanner({ l, ageWeeks, C }) {
 
 function App(){
   const timerRef = React.useRef(null);
-
-  // ─── Night mode state ───
-  const[nightMode,setNightMode]=useState(()=>{try{return localStorage.getItem("obubba_theme")==="dark";}catch{return false;}});
+  // Theme state — triggers re-render when toggled so C values refresh
+  const[isDark,setIsDark]=useState(()=>document.body.classList.contains('dark-mode'));
   useEffect(()=>{
-    if(nightMode){document.body.classList.add("dark-mode");document.body.classList.remove("light-mode");try{document.querySelector('meta[name="theme-color"]').content="#0F172A";}catch{}}
-    else{document.body.classList.remove("dark-mode");document.body.classList.add("light-mode");try{document.querySelector('meta[name="theme-color"]').content="#faf6f0";}catch{}}
-    try{localStorage.setItem("obubba_theme",nightMode?"dark":"light");}catch{}
-  },[nightMode]);
-
-  // ─── Night mode color resolver ───
-  const N={
-    cardBg:nightMode?"#1E293B":"white",
-    cardBg2:nightMode?"#243449":"#fff8f4",
-    cardBorder:nightMode?"#334155":C.blush,
-    text:nightMode?"#E5E7EB":C.deep,
-    textMid:nightMode?"#94A3B8":C.mid,
-    textLt:nightMode?"#64748B":C.lt,
-    bg:nightMode?"#0F172A":C.cream,
-    warm:nightMode?"#1E293B":C.warm,
-    headerBg:nightMode?"#1E293B":undefined,
-    inputBg:nightMode?"#243449":C.warm,
-    inputBorder:nightMode?"#334155":C.blush,
-    overlayBg:nightMode?"rgba(15,23,42,0.7)":"rgba(44,31,26,0.55)",
-    sheetBg:nightMode?"#1E293B":C.cream,
-    cardShadow:nightMode
-      ?"0 10px 30px rgba(0,0,0,0.5),0 0 12px rgba(240,180,140,0.12)"
-      :"0 0 0 1px rgba(255,255,255,0.5) inset,0 10px 25px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04),0 0 30px rgba(230,170,140,0.18)",
-    chipShadow:nightMode
-      ?"0 2px 8px rgba(0,0,0,0.3)"
-      :"0 2px 6px rgba(0,0,0,0.05)",
-    chipActiveShadow:nightMode
-      ?"0 0 10px rgba(240,180,140,0.3),0 2px 8px rgba(0,0,0,0.3)"
-      :"0 0 10px rgba(240,180,140,0.35),0 2px 6px rgba(0,0,0,0.05)",
-    navBg:nightMode?"rgba(30,41,59,0.88)":"rgba(255,255,255,0.85)",
-    glassBg:nightMode?"rgba(30,41,59,0.65)":"rgba(255,255,255,0.65)",
-  };
+    const obs=new MutationObserver(()=>{
+      const dark=document.body.classList.contains('dark-mode');
+      setIsDark(dark);
+      C=getC();
+    });
+    obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+    return()=>obs.disconnect();
+  },[]);
 
 
   const[children,setChildren]=useState(()=>{
@@ -1301,13 +1397,11 @@ function App(){
   const[copied,setCopied]=useState(false);
   const[nameEdit,setNameEdit]=useState(false);
   const[nameIn,setNameIn]=useState("");
-  const theme = nightMode
-    ? {primary:"#1E293B",secondary:"#243449",grad:"linear-gradient(135deg,#1E293B,#243449)"}
-    : babySex==="girl"
-    ? {primary:"#fde7e4",secondary:"#f5ccc7",grad:"linear-gradient(135deg,#fde7e4,#f5ccc7)"}
+  const theme = babySex==="girl"
+    ? {primary:isDark?"#2d1f2a":"#fde7e4",secondary:isDark?"#3d2a38":"#f5ccc7",grad:isDark?"linear-gradient(135deg,#2d1f2a,#3d2a38)":"linear-gradient(135deg,#fde7e4,#f5ccc7)"}
     : babySex==="boy"
-    ? {primary:"#eaf3fb",secondary:"#d0e6f5",grad:"linear-gradient(135deg,#eaf3fb,#d0e6f5)"}
-    : {primary:"#c9705a",secondary:"#7a5c52",grad:"linear-gradient(135deg,#c9705a,#a85a44)"};
+    ? {primary:isDark?"#1a2a3d":"#eaf3fb",secondary:isDark?"#1e3450":"#d0e6f5",grad:isDark?"linear-gradient(135deg,#1a2a3d,#1e3450)":"linear-gradient(135deg,#eaf3fb,#d0e6f5)"}
+    : {primary:isDark?"#c9705a":"#c9705a",secondary:isDark?"#7a5c52":"#7a5c52",grad:"linear-gradient(135deg,#c9705a,#a85a44)"};
   const[growthForm,setGrowthForm]=useState({date:todayStr(),kg:""});
   const[onboarded,setOnboarded]=useState(()=>{
     try{
@@ -4753,8 +4847,8 @@ function App(){
     }
   },[Object.keys(days).join(",")]);
 
-  const tabSt=t=>({flex:1,padding:"8px 2px 6px",border:_bN,background:"none",fontSize:9,fontWeight:tab===t?700:500,cursor:_cP,color:tab===t?C.ter:N.textLt,display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.02em",position:"relative",transition:"transform 0.18s ease"});
-  const card={background:N.cardBg,border:`1px solid ${nightMode?"rgba(51,65,85,0.6)":"rgba(220,150,120,0.25)"}`,borderRadius:22,padding:"16px",marginBottom:14,boxShadow:N.cardShadow,transition:"transform 0.18s ease,box-shadow 0.18s ease"};
+  const tabSt=t=>({flex:1,padding:"8px 2px 6px",border:_bN,background:"none",fontSize:9,fontWeight:tab===t?700:500,cursor:_cP,color:tab===t?C.ter:C.lt,display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.02em",position:"relative",transition:"transform 0.18s ease"});
+  const card={background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:22,padding:"16px",marginBottom:14,boxShadow:"var(--shadow-card)",transition:"transform 0.18s ease, box-shadow 0.18s ease"};
 
   const tabIcons={day:"📅",insights:"💡",milestones:"⭐",develop:"🧩",settings:"👤"};
   const tabLabels={day:"Day",insights:"Insights",milestones:"Milestones",develop:"Development",settings:""};
@@ -4796,7 +4890,7 @@ function App(){
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:C.deep,marginBottom:3}}>OBubba</div>
           <div style={{fontSize:14,color:C.lt}}>{isLogin?"Welcome back":"Create your account"}</div>
         </div>
-        <div style={{display:"flex",background:C.warm,borderRadius:99,padding:4,marginBottom:16,gap:4}}>
+        <div style={{display:"flex",background:"var(--card-bg-alt)",borderRadius:99,padding:4,marginBottom:16,gap:4}}>
           {[["login","Sign In"],["create","Create Account"]].map(([m,l])=>(
             <button key={m} onClick={()=>{setAuthMode(m);setAuthError("");setAuthPin("");setAuthPin2("");setAuthUsernameStatus("idle");setAgreedToTerms(false);}}
               style={{padding:"7px 16px",borderRadius:99,border:_bN,background:authMode===m?"white":"transparent",color:authMode===m?C.ter:C.lt,fontWeight:700,fontSize:13,cursor:_cP,fontFamily:_fI,transition:"all 0.2s",boxShadow:authMode===m?"0 1px 6px rgba(0,0,0,0.1)":"none"}}>
@@ -4812,7 +4906,7 @@ function App(){
               autoCapitalize="none" autoCorrect="off" spellCheck="false"
               autoComplete="off" data-lpignore="true" data-form-type="other"
               placeholder="e.g. TeamSmith"
-              style={{width:"100%",fontSize:16,padding:"11px 14px",borderRadius:12,border:`2px solid ${isLogin?authUsernameStatus==="found"?"#50c878":authUsernameStatus==="notfound"?C.ter:C.blush:C.blush}`,background:"white",outline:_oN,fontFamily:_fI,boxSizing:_bBB}}
+              style={{width:"100%",fontSize:16,padding:"11px 14px",borderRadius:12,border:`2px solid ${isLogin?authUsernameStatus==="found"?"#50c878":authUsernameStatus==="notfound"?C.ter:C.blush:C.blush}`,background:"var(--card-bg)",outline:_oN,fontFamily:_fI,boxSizing:_bBB}}
               onChange={e=>checkAuthUsername(e.target.value)}/>
             {isLogin && authUsernameStatus!=="idle" && (
               <div style={{fontSize:12,marginTop:4,textAlign:"center",color:authUsernameStatus==="found"?"#50c878":authUsernameStatus==="notfound"?C.ter:C.lt}}>
@@ -4846,7 +4940,7 @@ function App(){
             </button>
           ) : !isLogin && !authLoading ? (
             <div>
-              <div style={{display:"flex",alignItems:"flex-start",gap:8,marginTop:14,marginBottom:12,padding:"10px 12px",background:C.warm,borderRadius:12,border:`1.5px solid ${agreedToTerms?C.mint:C.blush}`}}>
+              <div style={{display:"flex",alignItems:"flex-start",gap:8,marginTop:14,marginBottom:12,padding:"10px 12px",background:"var(--card-bg-alt)",borderRadius:12,border:`1.5px solid ${agreedToTerms?C.mint:C.blush}`}}>
                 <input type="checkbox" checked={agreedToTerms} onChange={e=>setAgreedToTerms(e.target.checked)}
                   style={{marginTop:3,width:18,height:18,accentColor:C.ter,flexShrink:0,cursor:_cP}}/>
                 <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>
@@ -4875,7 +4969,7 @@ function App(){
 
         {showForgotPin && (
         <div onClick={()=>setShowForgotPin(false)} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.6)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"white",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:340,boxShadow:"0 8px 40px rgba(0,0,0,0.18)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg)",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:340,boxShadow:"0 8px 40px rgba(0,0,0,0.18)"}}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:4}}>🔑 Reset PIN</div>
             <div style={{fontSize:13,color:C.lt,marginBottom:20}}>for <strong>{authUsername||"your account"}</strong></div>
 
@@ -4886,7 +4980,7 @@ function App(){
                 <input value={forgotPinWord} onChange={e=>{setForgotPinWord(e.target.value);setForgotPinError("");}}
                   placeholder="e.g. sunshine  or  AB3X7Y"
                   autoCapitalize="none" autoCorrect="off" spellCheck="false"
-                  style={{width:"100%",fontSize:15,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"#faf6f0",outline:"none",fontFamily:_fI,color:C.deep,boxSizing:"border-box",marginBottom:14}}/>
+                  style={{width:"100%",fontSize:15,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--bg)",outline:"none",fontFamily:_fI,color:C.deep,boxSizing:"border-box",marginBottom:14}}/>
                 {forgotPinError&&<div style={{fontSize:13,color:C.ter,textAlign:"center",marginBottom:10,fontWeight:600}}>{forgotPinError}</div>}
                 <button onClick={async()=>{
                   if(!forgotPinWord.trim()){setForgotPinError("Enter your recovery word");return;}
@@ -4983,7 +5077,7 @@ function App(){
                 ["📈","Analyse trends"],
               ].map(function(item,i){
                 return (
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,background:"white",border:`1px solid ${C.blush}`,borderRadius:12,padding:"9px 10px"}}>
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:12,padding:"9px 10px"}}>
                     <div style={{fontSize:15}}>{item[0]}</div>
                     <div style={{fontSize:12,color:C.mid,fontWeight:500,lineHeight:1.2}}>{item[1]}</div>
                   </div>
@@ -5007,7 +5101,7 @@ function App(){
                 <div style={{fontSize:13,opacity:0.82,fontWeight:400,marginTop:2}}>Set up a username & PIN</div>
               </div>
             </button>
-            <button onClick={()=>{setAuthMode("login");setAuthScreen("login");setAuthError("");setAuthPin("");}} style={{width:"100%",background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"18px",color:C.deep,fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,textAlign:"left",display:"flex",alignItems:"center",gap:14}}>
+            <button onClick={()=>{setAuthMode("login");setAuthScreen("login");setAuthError("");setAuthPin("");}} style={{width:"100%",background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"18px",color:C.deep,fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,textAlign:"left",display:"flex",alignItems:"center",gap:14}}>
               <span style={{fontSize:28}}>🔐</span>
               <div>
                 <div style={{fontSize:16,fontWeight:700}}>I already have an account</div>
@@ -5036,7 +5130,7 @@ function App(){
                   border:`2px solid ${
                     obUsernameStatus==="available"?"#50c878":
                     obUsernameStatus==="taken"||obUsernameStatus==="invalid"?C.ter:C.blush}`,
-                  background:"white",outline:_oN,fontFamily:_fI,textAlign:"center",
+                  background:"var(--card-bg)",outline:_oN,fontFamily:_fI,textAlign:"center",
                   boxSizing:_bBB,transition:"border-color 0.2s"}}/>
               <span style={{position:"absolute",right:16,top:"50%",transform:"translateY(-50%)",fontSize:18}}>
                 {obUsernameStatus==="checking"?"⏳":
@@ -5117,7 +5211,7 @@ function App(){
 
           <div style={{width:"100%",maxWidth:430,minHeight:"100vh",display:"flex",flexDirection:"column",padding:"env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)"}}>
             <div style={{padding:"48px 28px 0",display:"flex",alignItems:"center",gap:12}}>
-              <div style={{width:44,height:44,borderRadius:13,background:"white",border:`1px solid ${C.blush}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,boxShadow:"0 4px 16px rgba(201,112,90,0.15)"}}>
+              <div style={{width:44,height:44,borderRadius:13,background:"var(--card-bg)",border:`1px solid ${C.blush}`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,boxShadow:"0 4px 16px rgba(201,112,90,0.15)"}}>
                 <img src="icon.png" alt="OBubba" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";e.target.parentNode.innerHTML="🍼";}}/>
               </div>
               <div>
@@ -5142,7 +5236,7 @@ function App(){
               </div>
               <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",marginBottom:6}}>
                 {[["🍼","Feeds & intake"],["😴","Sleep tracking"],["🧠","Smart insights"],["📏","Growth & WHO"],["⭐","Milestones"],["🔗","Partner sync"]].map(([ico,lbl],i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:6,background:"white",border:`1px solid ${C.blush}`,borderRadius:99,padding:"7px 13px",boxShadow:"0 1px 4px rgba(201,112,90,0.08)"}}>
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:6,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:99,padding:"7px 13px",boxShadow:"0 1px 4px rgba(201,112,90,0.08)"}}>
                     <span style={{fontSize:13}}>{ico}</span>
                     <span style={{fontSize:12,color:C.mid,fontWeight:500}}>{lbl}</span>
                   </div>
@@ -5160,7 +5254,7 @@ function App(){
 
           <div style={{width:"100%",maxWidth:430,minHeight:"100vh",display:"flex",flexDirection:"column",padding:"env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)"}}>
             <div style={{padding:"48px 28px 20px",display:"flex",alignItems:"center",gap:12}}>
-              <button onClick={()=>setObStep(s=>s-1)} style={{width:38,height:38,borderRadius:11,background:"white",border:`1px solid ${C.blush}`,color:C.mid,fontSize:17,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:_fI}}>←</button>
+              <button onClick={()=>setObStep(s=>s-1)} style={{width:38,height:38,borderRadius:11,background:"var(--card-bg)",border:`1px solid ${C.blush}`,color:C.mid,fontSize:17,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontFamily:_fI}}>←</button>
               <div style={{flex:1,height:3,background:C.blush,borderRadius:99,overflow:"hidden"}}>
                 <div style={{height:"100%",width:`${(obStep/3)*100}%`,background:"linear-gradient(90deg,#c9705a,#e0825f)",borderRadius:99,transition:"width 0.4s ease"}}/>
               </div>
@@ -5170,7 +5264,7 @@ function App(){
               <div style={{fontSize:46,marginBottom:14,lineHeight:1}}>{step.icon}</div>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:C.deep,lineHeight:1.22,whiteSpace:"pre-line",marginBottom:10}}>{step.title}</div>
               <div style={{fontSize:14,color:C.mid,lineHeight:1.65,marginBottom:22}}>{step.sub}</div>
-              <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:22,padding:"22px 18px",boxShadow:"0 2px 16px rgba(201,112,90,0.08)"}}>
+              <div style={{background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:22,padding:"22px 18px",boxShadow:"0 2px 16px rgba(201,112,90,0.08)"}}>
                 {step.action}
               </div>
             </div>
@@ -5207,13 +5301,13 @@ function App(){
 
           {obChildMode==="new" && (
             <div>
-              <div style={{background:"#fdf0eb",borderRadius:14,padding:"12px 14px",marginBottom:14,border:`1px solid ${C.blush}`,display:"flex",gap:10,alignItems:"flex-start",textAlign:"left"}}>
+              <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"12px 14px",marginBottom:14,border:`1px solid ${C.blush}`,display:"flex",gap:10,alignItems:"flex-start",textAlign:"left"}}>
                 <span style={{fontSize:18,flexShrink:0}}>💡</span>
                 <div style={{fontSize:13,color:C.mid,lineHeight:1.55}}>Used for <strong>nap & wake windows</strong>, <strong>feed recommendations</strong>, <strong>milestones</strong> and <strong>growth percentiles</strong>. Update anytime in ⚙️ Baby Settings.</div>
               </div>
               <input value={obName} onChange={e=>setObName(e.target.value)}
                 placeholder="Baby's name (optional)"
-                style={{width:"100%",fontSize:18,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"white",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
+                style={{width:"100%",fontSize:18,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"var(--card-bg)",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
               <div style={{display:"flex",gap:8,marginBottom:10}}>
                 {[["born","Already born 🎉"],["unborn","Not born yet 🤰"]].map(([v,l])=>(
                   <div key={v} onClick={()=>setBabyUnborn(v==="unborn")} style={{flex:1,padding:"10px 6px",borderRadius:12,border:`2px solid ${(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.blush}`,background:(v==="unborn"?babyUnborn:!babyUnborn)?"#fdf0eb":"white",textAlign:"center",cursor:_cP,fontSize:13,fontWeight:700,color:(v==="unborn"?babyUnborn:!babyUnborn)?C.ter:C.mid,transition:"all 0.2s"}}>
@@ -5222,7 +5316,7 @@ function App(){
                 ))}
               </div>
               <input type="date" value={obDob} onChange={e=>setObDob(e.target.value)}
-                style={{width:"100%",fontSize:16,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"white",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
+                style={{width:"100%",fontSize:16,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"var(--card-bg)",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
                 {[["boy","👦","Boy","#eaf3fb","#3d6a8a"],["girl","👧","Girl","#fde7e4","#a85070"],["","⬜","Not set","#f0e8e0","#7a5c52"]].map(([v,emoji,l,accent,col])=>(
                   <button key={v} onClick={()=>setObSex(v)}
@@ -5252,7 +5346,7 @@ function App(){
                 onChange={e=>{ setObLinkCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,"")); setObLinkStatus(""); setObLinkError(""); }}
                 placeholder="e.g. AB3X7Y"
                 maxLength={6}
-                style={{width:"100%",fontSize:28,fontFamily:_fM,fontWeight:700,letterSpacing:"0.2em",textAlign:"center",padding:"16px",borderRadius:14,border:`2px solid ${obLinkStatus==="error"?C.ter:obLinkStatus==="ok"?"#50c878":C.blush}`,background:"white",color:C.ter,outline:_oN,marginBottom:10,boxSizing:_bBB}}/>
+                style={{width:"100%",fontSize:28,fontFamily:_fM,fontWeight:700,letterSpacing:"0.2em",textAlign:"center",padding:"16px",borderRadius:14,border:`2px solid ${obLinkStatus==="error"?C.ter:obLinkStatus==="ok"?"#50c878":C.blush}`,background:"var(--card-bg)",color:C.ter,outline:_oN,marginBottom:10,boxSizing:_bBB}}/>
               {obLinkStatus==="error" && <div style={{fontSize:13,color:C.ter,marginBottom:10,textAlign:"center"}}>{obLinkError}</div>}
               {obLinkStatus==="ok" && <div style={{fontSize:13,color:"#50c878",marginBottom:10,textAlign:"center",fontWeight:600}}>✔ Child linked! Taking you in…</div>}
               <button onClick={async()=>{
@@ -5281,7 +5375,7 @@ function App(){
   }
 
   return(
-    <div style={{background:"#f7f3ee",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:C.deep,paddingBottom:80,transition:"background 0.5s,color 0.5s"}}>
+    <div style={{background:"var(--bg)",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:"var(--text-deep)",paddingBottom:80,transition:"background 0.5s,color 0.5s"}}>
       <style>{`
         @keyframes pulse{0%,100%{box-shadow:0 0 0 12px rgba(201,112,90,0.15)}50%{box-shadow:0 0 0 22px rgba(201,112,90,0.04)}}
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -5389,7 +5483,7 @@ function App(){
         const step = TUT_STEPS[tutStep];
         const isLast = tutStep === TUT_STEPS.length - 1;
 
-        const cardBg = "white";
+        const cardBg = "var(--card-bg)";
         const cardText = C.deep;
         const cardSub = C.mid;
         const locBg = "#f5f0e8";
@@ -5417,7 +5511,7 @@ function App(){
             }}>
               <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:12}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:40,height:40,borderRadius:12,background:"#fdf0eb",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{step.icon}</div>
+                  <div style={{width:40,height:40,borderRadius:12,background:"var(--card-bg-alt)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{step.icon}</div>
                   <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:cardText,lineHeight:1.2}}>{step.title}</div>
                 </div>
                 <button onClick={dismissTutorial} style={{background:_bN,border:_bN,color:locText,fontSize:18,cursor:_cP,padding:"0 0 0 8px",lineHeight:1,flexShrink:0}}>✕</button>
@@ -5440,7 +5534,7 @@ function App(){
               </div>
               <div style={{display:"flex",gap:8}}>
                 {tutStep > 0 && (
-                  <button onClick={prevStep} style={{flex:1,padding:"9px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"white",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                  <button onClick={prevStep} style={{flex:1,padding:"9px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
                     ← Back
                   </button>
                 )}
@@ -5483,16 +5577,11 @@ function App(){
               display:"flex",alignItems:"center",justifyContent:"center"
             }}>+</button>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <button className="ob-theme-toggle" onClick={()=>setNightMode(m=>!m)} title={nightMode?"Switch to light mode":"Switch to night mode"}>
-              {nightMode?"☀️":"🌙"}
-            </button>
-            <button onClick={e=>{e.stopPropagation();setTab("settings");}}
-              style={{background:nightMode?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.5)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:140}}>
-              <span style={{fontSize:14}}>👤</span>
-              <span style={{fontSize:11,fontFamily:_fM,fontWeight:700,color:N.textMid,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{familyUsername||"Account"}</span>
-            </button>
-          </div>
+          <button onClick={e=>{e.stopPropagation();setTab("settings");}}
+            style={{background:"rgba(255,255,255,0.5)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:140}}>
+            <span style={{fontSize:14}}>👤</span>
+            <span style={{fontSize:11,fontFamily:_fM,fontWeight:700,color:C.mid,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{familyUsername||"Account"}</span>
+          </button>
         </div>
         {!nameEdit ? (
           <div onClick={()=>{setNameIn(babyName);setNameEdit(true);}} style={{cursor:_cP,marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
@@ -5500,7 +5589,7 @@ function App(){
               <img src="icon.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
                 onError={e=>{e.target.style.display="none";e.target.parentNode.style.background=C.ter;e.target.parentNode.style.display="flex";e.target.parentNode.style.alignItems="center";e.target.parentNode.style.justifyContent="center";e.target.parentNode.innerHTML="🍼";}}/>
             </div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:N.text,fontWeight:700,lineHeight:1.1}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:C.deep,fontWeight:700,lineHeight:1.1}}>
               {babyName ? `${possessive(babyName)} Tracker` : "Baby Tracker"}
             </div>
           </div>
@@ -5681,7 +5770,7 @@ function App(){
         </div>
       </div>
       {showWakeInline && (
-        <div style={{background:"white",borderTop:`2px solid ${C.ter}`,padding:"12px 16px",maxWidth:520,margin:"0 auto",boxShadow:"0 4px 16px rgba(201,112,90,0.12)",animation:"fadeUp 0.2s ease"}}>
+        <div style={{background:"var(--card-bg)",borderTop:`2px solid ${C.ter}`,padding:"12px 16px",maxWidth:520,margin:"0 auto",boxShadow:"0 4px 16px rgba(201,112,90,0.12)",animation:"fadeUp 0.2s ease"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:18}}>☀️</span>
             <div style={{flex:1}}>
@@ -5713,7 +5802,7 @@ function App(){
               {/* Personal/NHS toggle pill — anchored under date strip */}
               {usePersonalRecs !== null && (
                 <div style={{display:"flex",justifyContent:"flex-end",marginBottom:-6,marginTop:-6,position:"relative",zIndex:10}}>
-                  <div style={{display:"inline-flex",background:"white",borderRadius:99,boxShadow:"0 2px 10px rgba(0,0,0,0.10)",border:`1px solid ${C.blush}`,overflow:"hidden"}}>
+                  <div style={{display:"inline-flex",background:"var(--card-bg)",borderRadius:99,boxShadow:"0 2px 10px rgba(0,0,0,0.10)",border:`1px solid ${C.blush}`,overflow:"hidden"}}>
                     <button onClick={()=>{setUsePersonalRecs(true);try{localStorage.setItem("use_personal_recs_v1","true");}catch{};}} style={{padding:"5px 14px",fontSize:12,fontFamily:_fM,fontWeight:700,border:"none",background:usePersonalRecs===true?"linear-gradient(135deg,#50a888,#3a8870)":"transparent",color:usePersonalRecs===true?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap"}}>✨ Personal</button>
                     <div style={{width:1,background:C.blush}}/>
                     <button onClick={()=>{setUsePersonalRecs(false);try{localStorage.setItem("use_personal_recs_v1","false");}catch{};}} style={{padding:"5px 14px",fontSize:12,fontFamily:_fM,fontWeight:700,border:"none",background:usePersonalRecs===false?"#4a5a80":"transparent",color:usePersonalRecs===false?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap"}}>NHS</button>
@@ -5723,10 +5812,10 @@ function App(){
 
               {/* 2. Age guidance */}
               {ageStage&&(
-                <div style={{background:nightMode?"linear-gradient(135deg,#243449,#1E293B)":`linear-gradient(135deg,${C.warm},#fff4ee)`,border:`1px solid ${nightMode?"rgba(220,150,120,0.3)":C.blush}`,borderLeft:`4px solid ${C.ter}`,borderRadius:16,padding:"12px 14px",marginBottom:14,boxShadow:nightMode?"0 0 18px rgba(240,180,140,0.15)":"0 0 18px rgba(240,180,140,0.12)"}}>
+                <div style={{background:`linear-gradient(135deg,${C.warm},#fff4ee)`,border:`1px solid ${C.blush}`,borderLeft:`4px solid ${C.ter}`,borderRadius:16,padding:"12px 14px",marginBottom:14}}>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontFamily:_fM,color:N.textLt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:3}}>{ageStage.label}</div>
-                    <div style={{fontSize:14,color:N.textMid,lineHeight:1.5}}>{ageStage.tip}</div>
+                    <div style={{fontSize:14,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:3}}>{ageStage.label}</div>
+                    <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{ageStage.tip}</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:7}}>
                       {[{icon:"😴",val:ageStage.napGoal},{icon:"🍼",val:ageStage.feedGoal},{icon:"🌙",val:ageStage.nightNote}].map((x,i)=>(
                         <span key={i} style={{fontSize:14,fontFamily:_fM,background:"rgba(201,112,90,0.1)",color:C.ter,padding:"2px 8px",borderRadius:99}}>{x.icon} {x.val}</span>
@@ -5737,8 +5826,8 @@ function App(){
               )}
 
               {/* ONE-TAP QUICK LOG ROW */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:N.cardBg2,border:`1px solid ${N.cardBorder}`,borderRadius:18,padding:"10px 14px",marginBottom:10,gap:4,boxShadow:N.chipShadow}}>
-                <span style={{fontSize:10,fontWeight:700,color:N.textLt,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:_fM,whiteSpace:"nowrap",marginRight:6}}>Quick</span>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#fff8f4",border:`1px solid ${C.blush}`,borderRadius:18,padding:"10px 14px",marginBottom:10,gap:4}}>
+                <span style={{fontSize:10,fontWeight:700,color:C.lt,textTransform:"uppercase",letterSpacing:"0.08em",fontFamily:_fM,whiteSpace:"nowrap",marginRight:6}}>Quick</span>
                 {[
                   {emoji:"🍼",label:"Feed",action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""})},
                   {emoji:"💩",label:"Nappy",action:()=>quickAddLog("poop",{type:"poop",time:nowTime(),poopType:"wet",night:false,note:""})},
@@ -5776,9 +5865,9 @@ function App(){
                   {id:"paste", icon:"📋", label:"Notes"},
                 ].map(({id,icon,label})=>(
                   <button key={id} onClick={()=>id==="paste"?openPaste():openLogPanel(id)}
-                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"10px 4px",borderRadius:14,border:`2px solid ${logPanel===id?C.ter:N.cardBorder}`,background:logPanel===id?(nightMode?"#2a2040":C.warm+"e0"):N.warm,cursor:_cP,fontFamily:_fI,transition:"all 0.15s",boxShadow:N.chipShadow}}>
+                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"10px 4px",borderRadius:14,border:`2px solid ${logPanel===id?C.ter:C.blush}`,background:logPanel===id?"#fdf0eb":C.warm,cursor:_cP,fontFamily:_fI,transition:"all 0.15s"}}>
                     <span style={{fontSize:22}}>{icon}</span>
-                    <span style={{fontSize:11,fontWeight:700,color:logPanel===id?C.ter:N.textMid,letterSpacing:"0.01em",textAlign:"center",lineHeight:1.2}}>{label}</span>
+                    <span style={{fontSize:11,fontWeight:700,color:logPanel===id?C.ter:C.mid,letterSpacing:"0.01em",textAlign:"center",lineHeight:1.2}}>{label}</span>
                   </button>
                 ))}
               </div>
@@ -5791,10 +5880,10 @@ function App(){
                   {big:naps.length,unit:"naps",label:"Day Sleep",color:C.mint,bg:"#eaf6f3"},
                   {big:hm(napMins),unit:"",label:"Nap Time",color:C.sky,bg:"#eaf3f8"},
                 ].map((s,i)=>(
-                  <div key={i} style={{background:nightMode?"#243449":s.bg,borderRadius:16,padding:"12px 4px",textAlign:"center",boxShadow:nightMode?"0 2px 8px rgba(0,0,0,0.2)":"0 2px 8px rgba(0,0,0,0.04)",transition:"transform 0.18s ease"}}>
+                  <div key={i} style={{background:s.bg,borderRadius:16,padding:"12px 4px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.04)"}}>
                     <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:s.color,lineHeight:1}}>{s.big}</div>
                     {s.unit&&<div style={{fontSize:14,fontFamily:_fM,color:s.color,opacity:0.7,marginTop:1}}>{s.unit}</div>}
-                    <div style={{fontSize:8,color:N.textMid,marginTop:3,textTransform:"uppercase",letterSpacing:_ls08,fontFamily:_fM}}>{s.label}</div>
+                    <div style={{fontSize:8,color:C.mid,marginTop:3,textTransform:"uppercase",letterSpacing:_ls08,fontFamily:_fM}}>{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -5848,7 +5937,7 @@ function App(){
               </div>
               <div ref={logListCallbackRef} style={{display:"flex",flexDirection:"column",gap:7,marginBottom:13}}>
                 {dayE.length===0&&(
-                  <div style={{textAlign:"center",padding:"22px 12px",background:C.warm,borderRadius:14,border:`1px dashed ${C.blush}`}}>
+                  <div style={{textAlign:"center",padding:"22px 12px",background:"var(--card-bg-alt)",borderRadius:14,border:`1px dashed ${C.blush}`}}>
                     <div style={{fontSize:28,marginBottom:8}}>👆</div>
                     <div style={{fontSize:15,fontWeight:600,color:C.mid,marginBottom:4}}>Nothing logged yet today</div>
                     <div style={{fontSize:13,color:C.lt,lineHeight:1.5}}>
@@ -5981,7 +6070,7 @@ function App(){
                             <div style={{flex:1,height:1,background:"#d8d2f0"}}/>
                           </div>
                         )}
-                        <div style={{padding:"7px 10px",background:"white",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
+                        <div style={{padding:"7px 10px",background:"var(--card-bg)",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                             <div>
                               <span style={{color:"#5040a0",fontSize:15}}>🌟 {fmt12(e.time)} wake</span>
@@ -6007,7 +6096,7 @@ function App(){
               {(()=>{
                 const sc = sleepNormalCard();
                 if (!sc) return (
-                  <div style={{background:C.warm,borderRadius:14,padding:"16px",marginBottom:10,border:`1px dashed ${C.blush}`,textAlign:"center"}}>
+                  <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"16px",marginBottom:10,border:`1px dashed ${C.blush}`,textAlign:"center"}}>
                     <div style={{fontSize:22,marginBottom:6}}>😴</div>
                     <div style={{fontSize:14,fontWeight:600,color:C.mid,marginBottom:3}}>No naps logged yet</div>
                     <div style={{fontSize:13,color:C.lt}}>Tap <strong>Start Nap</strong> in the header or log a nap to see age-based sleep guidance.</div>
@@ -6032,7 +6121,7 @@ function App(){
                           <div style={{fontSize:15,fontWeight:600,color:C.mid}}>{range2.label}</div>
                         </div>}
                       </div>
-                      <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"white",borderRadius:10,padding:"9px 12px"}}>
+                      <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg)",borderRadius:10,padding:"9px 12px"}}>
                         <span style={{fontSize:16,flexShrink:0}}>✓</span>
                         <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>Day still in progress — more naps expected. Check back later for a full summary.</div>
                       </div>
@@ -6052,7 +6141,7 @@ function App(){
                         <div style={{fontSize:15,fontWeight:600,color:C.mid}}>{sc.range.label}</div>
                       </div>
                     </div>
-                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"white",borderRadius:10,padding:"9px 12px"}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg)",borderRadius:10,padding:"9px 12px"}}>
                       <span style={{fontSize:16,flexShrink:0}}>{sc.icon}</span>
                       <div style={{fontSize:14,color:C.mid,lineHeight:1.5}}>{sc.message}</div>
                     </div>
@@ -6060,7 +6149,7 @@ function App(){
                 );
               })()}
               <div style={{display:"flex",gap:8,marginTop:4}}>
-                <button onClick={copySummary} style={{flex:1,padding:"13px",borderRadius:14,border:`1.5px solid ${C.rose}`,background:"white",color:C.ter,fontSize:15,cursor:_cP,fontFamily:_fI,fontWeight:600,boxShadow:"0 2px 8px rgba(201,112,90,0.08)"}}>
+                <button onClick={copySummary} style={{flex:1,padding:"13px",borderRadius:14,border:`1.5px solid ${C.rose}`,background:"var(--card-bg)",color:C.ter,fontSize:15,cursor:_cP,fontFamily:_fI,fontWeight:600,boxShadow:"0 2px 8px rgba(201,112,90,0.08)"}}>
                   {copied?"✓ Copied!":"📋 Copy Day"}
                 </button>
                 <button onClick={()=>{setTab("insights");setInsightSection(p=>({...p,sleep:true}));}} style={{flex:1,padding:"13px",borderRadius:14,border:_bN,background:`linear-gradient(135deg,#c9705a,#a85a44)`,color:"white",fontSize:15,cursor:_cP,fontFamily:_fI,fontWeight:600,boxShadow:"0 4px 14px rgba(201,112,90,0.3)"}}>
@@ -6137,7 +6226,7 @@ function App(){
           const weightGain = latestW && prevW ? Math.round((latestW.kg - prevW.kg)*1000)/1000 : null;
 
           const collHead = (key, icon, label) => (
-            <button onClick={()=>toggleInsight(key)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"white",border:`1.5px solid ${C.blush}`,borderRadius:16,marginBottom:insightSection[key]?0:12,borderBottomLeftRadius:insightSection[key]?0:16,borderBottomRightRadius:insightSection[key]?0:16,cursor:_cP,boxShadow:"0 2px 8px rgba(201,112,90,0.05)"}}>
+            <button onClick={()=>toggleInsight(key)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:"var(--card-bg)",border:`1.5px solid ${C.blush}`,borderRadius:16,marginBottom:insightSection[key]?0:12,borderBottomLeftRadius:insightSection[key]?0:16,borderBottomRightRadius:insightSection[key]?0:16,cursor:_cP,boxShadow:"0 2px 8px rgba(201,112,90,0.05)"}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:16}}>{icon}</span>
                 <span style={{fontSize:14,fontWeight:700,color:C.deep,letterSpacing:"0.02em"}}>{label}</span>
@@ -6156,7 +6245,7 @@ function App(){
                   {/* Weight + Height side by side */}
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
                     {/* Weight side */}
-                    <div style={{background:"white",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
+                    <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
                       <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Weight</div>
                       {latestW ? (
                         <div>
@@ -6173,7 +6262,7 @@ function App(){
                       ) : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
                     </div>
                     {/* Height side */}
-                    <div style={{background:"white",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
+                    <div style={{background:"var(--card-bg)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
                       <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Height</div>
                       {latestH ? (
                         <div>
@@ -6288,7 +6377,7 @@ function App(){
                 if (cats.length > 0) devLine = `Working on ${cats.slice(0,2).map(c => catNames[c]||c).join(" and ")}.`;
 
                 return (
-                  <div style={{background:"white",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
+                  <div style={{background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"0 2px 12px rgba(201,112,90,0.06)"}}>
                     <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,fontWeight:700,color:C.deep,marginBottom:2}}>{dayLabel} with {name}</div>
                     <div style={{fontSize:12,color:C.lt,fontFamily:_fM,marginBottom:14}}>{fmtAge(age)} · week {ageWeeks}</div>
                     <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -6353,7 +6442,7 @@ function App(){
                         </div>
                       )}
                     </div>
-                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"white",borderRadius:10,padding:"9px 11px",marginBottom:(fc.sleepLink||fc.suggestions.length)?6:0}}>
+                    <div style={{display:"flex",alignItems:"flex-start",gap:8,background:"var(--card-bg)",borderRadius:10,padding:"9px 11px",marginBottom:(fc.sleepLink||fc.suggestions.length)?6:0}}>
                       <span style={{fontSize:14,flexShrink:0}}>{fc.icon}</span>
                       <div style={{fontSize:13,color:C.mid,lineHeight:1.5}}>{fc.statusMsg}</div>
                     </div>
@@ -6384,7 +6473,7 @@ function App(){
               {/* ── TRENDS SECTION (collapsible) ── */}
               {collHead("trends","📈","Trends")}
               {insightSection.trends && (
-                <div style={{background:"white",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
+                <div style={{background:"var(--card-bg)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
 
                   {/* Growth Chart */}
                   {sortedW.length>=1&&babySex&&babyDob&&(()=>{
@@ -6502,7 +6591,7 @@ function App(){
               {/* ── SLEEP ANALYSIS SECTION (collapsible) ── */}
               {collHead("sleep","😴","Sleep Analysis")}
               {insightSection.sleep && (
-                <div style={{background:"white",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
+                <div style={{background:"var(--card-bg)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
                   {/* Sleep Stability Score & Analytics */}
                   {(()=>{
                     const score = sleepScore();
@@ -6779,7 +6868,7 @@ function App(){
                           if (!sched) return null;
                           const isRhythmAdj = flex && flex.source === "rhythm-adjusted";
                           return (
-                            <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderRadius:14,padding:"14px"}}>
+                            <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:14,padding:"14px"}}>
                               <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:4}}>📅 Tomorrow's Predicted Rhythm</div>
                               <div style={{fontSize:12,color:C.lt,fontFamily:_fM,marginBottom:10}}>
                                 {isRhythmAdj ? "⚡ Adjusted for circadian rhythm" : "Based on recent sleep patterns"}
@@ -6837,19 +6926,19 @@ function App(){
                             <div style={{marginTop:14}}>
                               <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>Last {last14.length} Days Average</div>
                               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-                                <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
                                   <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>🌙 Avg Bedtime</div>
                                   <div style={{fontSize:18,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{fmtMins(avgBed)}</div>
                                 </div>
-                                <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
                                   <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>☀️ Avg Wake</div>
                                   <div style={{fontSize:18,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{fmtMins(avgWake)}</div>
                                 </div>
-                                <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
                                   <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>🔔 Avg Night Wakes</div>
                                   <div style={{fontSize:18,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{avgNightWakes}</div>
                                 </div>
-                                <div style={{background:C.warm,borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
+                                <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 12px",border:`1px solid ${C.blush}`}}>
                                   <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>😴 Avg Nap Time</div>
                                   <div style={{fontSize:18,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{hm(avgNapMin)}</div>
                                   <div style={{fontSize:11,color:C.lt,marginTop:1}}>{avgNapCount} naps/day avg</div>
@@ -6869,7 +6958,7 @@ function App(){
               {/* ── REPORTS SECTION (collapsible) — Day Report ── */}
               {collHead("reports","📊","Day Report")}
               {insightSection.reports && (
-                <div style={{background:"white",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
+                <div style={{background:"var(--card-bg)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
                   {(()=>{
                     const rEntries = days[selDay]||[];
                     const rDayE = rEntries.filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
@@ -6892,16 +6981,16 @@ function App(){
                           </div>
                         </div>
                         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
-                          <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderRadius:12,padding:"10px",textAlign:"center"}}>
+                          <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:12,padding:"10px",textAlign:"center"}}>
                             <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Wake Up</div>
                             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:C.gold}}>{wakeEv?fmt12(wakeEv.time):"—"}</div>
                           </div>
-                          <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderRadius:12,padding:"10px",textAlign:"center"}}>
+                          <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:12,padding:"10px",textAlign:"center"}}>
                             <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Bedtime</div>
                             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:C.sky}}>{sleepEv?fmt12(sleepEv.time):"—"}</div>
                           </div>
                         </div>
-                        <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.ter}`,borderRadius:12,padding:"10px",marginBottom:8}}>
+                        <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.ter}`,borderRadius:12,padding:"10px",marginBottom:8}}>
                           <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🍼 Feeding</div>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                             <span style={{fontSize:14,color:C.deep}}>Total</span>
@@ -6916,7 +7005,7 @@ function App(){
                             <span style={{fontFamily:_fM}}>{nightFeedMl}ml</span>
                           </div>}
                         </div>
-                        <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.mint}`,borderRadius:12,padding:"10px",marginBottom:8}}>
+                        <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.mint}`,borderRadius:12,padding:"10px",marginBottom:8}}>
                           <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>😴 Naps</div>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                             <span style={{fontSize:14,color:C.deep}}>{dayNaps.length} nap{dayNaps.length!==1?"s":""}</span>
@@ -7122,7 +7211,7 @@ function App(){
                 <span style={{fontSize:11,color:C.lt,display:"inline-block",transform:open?"rotate(180deg)":"rotate(0)"}} >▼</span>
               </button>
               {open && (
-                <div style={{border:`1px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 12px 12px",padding:"4px 14px 10px",background:"white"}}>
+                <div style={{border:`1px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 12px 12px",padding:"4px 14px 10px",background:"var(--card-bg)"}}>
                   {children}
                 </div>
               )}
@@ -7152,7 +7241,7 @@ function App(){
               <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,marginBottom:12,WebkitOverflowScrolling:"touch"}}>
                 {[{key:"all",icon:"⭐",label:"All"},...MILESTONE_CATS].map(c=>(
                   <button key={c.key} onClick={()=>setMsFilter(c.key)}
-                    style={{flexShrink:0,padding:"5px 11px",borderRadius:99,border:`1.5px solid ${msFilter===c.key?C.ter:C.blush}`,background:msFilter===c.key?"#fdeee8":C.warm,color:msFilter===c.key?C.ter:C.mid,fontSize:12,fontWeight:msFilter===c.key?700:400,cursor:_cP,fontFamily:_fI,whiteSpace:"nowrap"}}>
+                    style={{flexShrink:0,padding:"7px 14px",borderRadius:999,border:`1.5px solid ${msFilter===c.key?C.ter:C.blush}`,background:msFilter===c.key?"var(--card-bg-alt)":"var(--card-bg-alt)",color:msFilter===c.key?C.ter:C.mid,fontSize:12,fontWeight:msFilter===c.key?700:400,cursor:_cP,fontFamily:_fI,whiteSpace:"nowrap",boxShadow:msFilter===c.key?"0 0 10px rgba(240,180,140,0.35)":"0 2px 6px rgba(0,0,0,0.04)"}}>
                     {c.icon} {c.label}
                   </button>
                 ))}
@@ -7419,7 +7508,7 @@ function App(){
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
                   {[{key:"all",label:"All",icon:"✦"},...ACT_CATS].map(c=>(
                     <button key={c.key} onClick={()=>setDevActFilter(c.key)}
-                      style={{padding:"5px 12px",borderRadius:99,border:`1.5px solid ${devActFilter===c.key?C.ter:C.blush}`,background:devActFilter===c.key?"#fdf0eb":C.warm,fontSize:12,fontWeight:600,color:devActFilter===c.key?C.ter:C.mid,cursor:_cP,fontFamily:_fI,transition:"all 0.15s"}}>
+                      style={{padding:"7px 14px",borderRadius:999,border:`1.5px solid ${devActFilter===c.key?C.ter:C.blush}`,background:devActFilter===c.key?"#fdf0eb":C.warm,fontSize:12,fontWeight:600,color:devActFilter===c.key?C.ter:C.mid,cursor:_cP,fontFamily:_fI,transition:"all 0.15s",boxShadow:devActFilter===c.key?"0 0 10px rgba(240,180,140,0.35)":"0 2px 6px rgba(0,0,0,0.04)"}}>
                       {c.icon} {c.label}
                     </button>
                   ))}
@@ -7433,7 +7522,7 @@ function App(){
                   filteredActs.map(a => {
                     const catInfo = ACT_CATS.find(c=>c.key===a.cat);
                     return (
-                      <div key={a.id} style={{padding:"14px",marginBottom:10,borderRadius:16,background:"#fdf8f5",border:`1px solid ${C.blush}`}}>
+                      <div key={a.id} style={{padding:"14px",marginBottom:10,borderRadius:16,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`}}>
                         <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:8}}>
                           <div style={{width:34,height:34,borderRadius:12,background:`linear-gradient(135deg,${C.ter}22,${C.ter}11)`,border:`1px solid ${C.rose}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:15}}>
                             {catInfo?.icon||"✦"}
@@ -7450,7 +7539,7 @@ function App(){
                           <div style={{fontSize:13,color:C.deep,lineHeight:1.6,marginBottom:6}}>
                             <span style={{fontWeight:700,color:C.ter}}>How: </span>{a.how}
                           </div>
-                          <div style={{fontSize:12,color:C.mid,lineHeight:1.55,background:"white",borderRadius:10,padding:"8px 11px",border:`1px solid ${C.blush}`}}>
+                          <div style={{fontSize:12,color:C.mid,lineHeight:1.55,background:"var(--card-bg)",borderRadius:10,padding:"8px 11px",border:`1px solid ${C.blush}`}}>
                             <span style={{fontWeight:600,color:C.mint}}>Why it helps: </span>{a.why}
                           </div>
                         </div>
@@ -7495,7 +7584,7 @@ function App(){
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,marginBottom:4}}>👤 {familyUsername||"Account"}</div>
           {familyUsername&&<div style={{fontSize:12,fontFamily:_fM,color:C.lt,marginBottom:20}}>{syncStatus==="synced"?"🔄 Synced":syncStatus==="syncing"?"⏳ Syncing…":syncStatus==="error"?"⚠️ Sync error":"☁️ "+familyUsername}</div>}
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            <button onClick={()=>setShowFamilyModal(true)} style={{display:"flex",alignItems:"center",gap:14,background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
+            <button onClick={()=>setShowFamilyModal(true)} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:24}}>👨‍👩‍👧</span>
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Share & Sync</div>
@@ -7507,7 +7596,7 @@ function App(){
                 const tot=Object.values(children).reduce((s,c)=>s+Object.values(c.days||{}).reduce((s2,arr)=>s2+(arr||[]).length,0),0);
                 const days2=Object.values(children).reduce((s,c)=>s+Object.keys(c.days||{}).length,0);
                 if(window.confirm("Save current data to cloud?\n\n"+days2+" days · "+tot+" entries\n\n⚠️ This replaces whatever is currently saved in the cloud with what's on this device. Use this if you're sure this device has the most up-to-date data.")){pushToCloud(backupCode,childrenRef.current);}
-              }} style={{display:"flex",alignItems:"center",gap:14,background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
+              }} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
                 <span style={{fontSize:24}}>💾</span>
                 <div>
                   <div style={{fontSize:15,fontWeight:700,color:C.mint}}>Save to Cloud</div>
@@ -7515,7 +7604,7 @@ function App(){
                 </div>
               </button>
             )}
-            <button onClick={()=>{setTutStep(0);try{localStorage.removeItem("tut_v2");}catch{}}} style={{display:"flex",alignItems:"center",gap:14,background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
+            <button onClick={()=>{setTutStep(0);try{localStorage.removeItem("tut_v2");}catch{}}} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:24}}>❓</span>
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:C.deep}}>App Tour</div>
@@ -7523,7 +7612,7 @@ function App(){
               </div>
             </button>
             {familyUsername&&(
-              <button onClick={logout} style={{display:"flex",alignItems:"center",gap:14,background:"white",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%",marginTop:6}}>
+              <button onClick={logout} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%",marginTop:6}}>
                 <span style={{fontSize:24}}>🚪</span>
                 <div>
                   <div style={{fontSize:15,fontWeight:700,color:C.mid}}>Sign Out</div>
@@ -7535,7 +7624,7 @@ function App(){
         </div>
       )}
 
-      <div className="ob-nav" style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:N.navBg,borderTop:`1px solid ${N.cardBorder}`,display:"flex",alignItems:"stretch",boxShadow:"0 -4px 20px rgba(44,31,26,0.06)",maxWidth:520,margin:"0 auto",paddingBottom:"env(safe-area-inset-bottom,0)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderRadius:"24px 24px 0 0"}}>
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"var(--nav-bg)",backdropFilter:"blur(14px)",WebkitBackdropFilter:"blur(14px)",borderTop:"1px solid var(--nav-border)",display:"flex",alignItems:"stretch",boxShadow:"var(--shadow-nav)",maxWidth:520,margin:"0 auto",borderRadius:"20px 20px 0 0",paddingBottom:"env(safe-area-inset-bottom,0)"}}>
         {["day","insights","milestones","develop"].map(t=>(
           <button key={t} onClick={()=>{setTab(t);setLogPanel(null);}} style={tabSt(t)}>
             <span style={{fontSize:14,transition:"transform 0.15s",transform:tab===t?"scale(1.1)":"scale(1)"}}>{tabIcons[t]}</span>
@@ -7620,7 +7709,7 @@ function App(){
                   <div key={k}>
                     <label style={{fontSize:14,fontFamily:_fM,color:C.lt,display:"block",marginBottom:3}}>{lbl}</label>
                     <input type="number" inputMode="numeric" min="0" max="60" placeholder="mins" value={logForm[k]||""} onChange={e=>setLogForm(f=>({...f,[k]:e.target.value}))}
-                      style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
+                      style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
                   </div>
                 ))}
               </div>
@@ -7653,12 +7742,12 @@ function App(){
                 <div style={{fontSize:13,color:C.lt,marginBottom:10,fontFamily:_fM}}>What type?</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
                   <button onClick={()=>{const t=nappyTime||nowTime();quickAddLog("poop",{type:"poop",time:t,poopType:"wet",note:""});setNappyMode(null);setNappyTime("");}}
-                    style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:C.warm,fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                    style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
                     <span>💧</span>
                     <span style={{fontSize:14,fontWeight:700,color:C.mid}}>Wet</span>
                   </button>
                   <button onClick={()=>setNappyMode("dirty")}
-                    style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:C.warm,fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                    style={{padding:"18px 10px",borderRadius:16,border:`2px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:32,cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
                     <span>💩</span>
                     <span style={{fontSize:14,fontWeight:700,color:C.mid}}>Dirty</span>
                   </button>
@@ -7674,7 +7763,7 @@ function App(){
                 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
                   {POOP_TYPES.map(pt=>(
                     <button key={pt} onClick={()=>{const t=nappyTime||nowTime();quickAddLog("poop",{type:"poop",time:t,poopType:pt,note:""});setNappyMode(null);setNappyTime("");}}
-                      style={{padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:13,color:C.mid,cursor:_cP,fontFamily:_fI}}>
+                      style={{padding:"7px 14px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:13,color:C.mid,cursor:_cP,fontFamily:_fI}}>
                       {pt}
                     </button>
                   ))}
@@ -7751,7 +7840,7 @@ function App(){
                 const half=Math.round(tot/2);
                 setLogForm(f=>({...f,pumpTotal:e.target.value,pumpL:tot>0?String(half):"",pumpR:tot>0?String(tot-half):""}));
               }}
-              style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`2px solid ${C.ter}`,background:"#fdf0eb",fontSize:18,fontWeight:700,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center",color:C.ter}}/>
+              style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`2px solid ${C.ter}`,background:"var(--card-bg-alt)",fontSize:18,fontWeight:700,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center",color:C.ter}}/>
             <div style={{fontSize:12,color:C.lt,marginTop:4,textAlign:"center",fontFamily:_fM}}>Splits equally between left & right — adjust below if needed</div>
           </div>
           <div style={{marginBottom:14}}>
@@ -7767,7 +7856,7 @@ function App(){
                       const newTotal=(parseInt(updated.pumpL)||0)+(parseInt(updated.pumpR)||0);
                       setLogForm(f=>({...f,[k]:e.target.value,pumpTotal:newTotal>0?String(newTotal):""}));
                     }}
-                    style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
+                    style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
                 </div>
               ))}
             </div>
@@ -7808,7 +7897,7 @@ function App(){
                     <div key={k}>
                       <label style={{fontSize:14,fontFamily:_fM,color:C.lt,display:"block",marginBottom:3}}>{lbl}</label>
                       <input type="number" inputMode="numeric" min="0" max="60" placeholder="mins" value={form[k]||""} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}
-                        style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
+                        style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
                     </div>
                   ))}
                 </div>
@@ -7821,7 +7910,7 @@ function App(){
             <TimeInput label="Time" value={form.time} onChange={t=>setForm(f=>({...f,time:t}))}/>
               <div style={{marginBottom:12}}>
                 <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>Night feed?</label>
-                <select value={form.night} onChange={e=>setForm(f=>({...f,night:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB}}>
+                <select value={form.night} onChange={e=>setForm(f=>({...f,night:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB}}>
                   <option value="no">No — daytime</option>
                   <option value="yes">Yes — night wake</option>
                 </select>
@@ -7905,16 +7994,16 @@ function App(){
               <div style={{fontSize:15,color:C.mid,marginBottom:4,lineHeight:1.6}}>
                 Paste your notes in any format — the app will read them and sort them into the right categories.
               </div>
-              <div style={{fontSize:15,fontFamily:_fM,color:C.lt,marginBottom:12,padding:"10px",background:C.cream,borderRadius:10,lineHeight:1.8}}>
+              <div style={{fontSize:15,fontFamily:_fM,color:C.lt,marginBottom:12,padding:"10px",background:"var(--bg)",borderRadius:10,lineHeight:1.8}}>
                 e.g. "Woke up 7am · Feed 8am 180ml · Nap 10:15-11:30 · Feed 1pm 150ml · Asleep 7pm · Wake1 10:30pm 60ml"
               </div>
               <textarea
                 value={pasteText}
                 onChange={e=>setPasteText(e.target.value)}
                 placeholder={"Paste your notes here...\n\nWoke up 9am\nFeed 9am 210ml\nNap 11:15-12:35\nFeed 1pm 150ml\nNap 2:25-2:50\nAsleep 7pm\nWake1 8:30pm 70ml"}
-                style={{width:"100%",minHeight:180,padding:"12px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:C.cream,fontSize:15,fontFamily:_fI,outline:_oN,resize:"vertical",lineHeight:1.7,boxSizing:_bBB,marginBottom:8}}
+                style={{width:"100%",minHeight:180,padding:"12px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:"var(--bg)",fontSize:15,fontFamily:_fI,outline:_oN,resize:"vertical",lineHeight:1.7,boxSizing:_bBB,marginBottom:8}}
               />
-              {parseError&&<div style={{fontSize:14,color:C.ter,background:"#fdf0eb",borderRadius:10,padding:"8px 12px",marginBottom:10}}>{parseError}</div>}
+              {parseError&&<div style={{fontSize:14,color:C.ter,background:"var(--card-bg-alt)",borderRadius:10,padding:"8px 12px",marginBottom:10}}>{parseError}</div>}
               <PBtn onClick={runParse}>Parse Notes →</PBtn>
             </>
           ) : (
@@ -7944,7 +8033,7 @@ function App(){
                           : fresh.detectedDate;
                         _setParsedEntries({...fresh, detectedDate: revertedDate, yearWarning:null});
                       }
-                    }} style={{flex:1,padding:"8px",borderRadius:99,border:`1px solid ${C.blush}`,background:"white",color:C.mid,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                    }} style={{flex:1,padding:"8px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.mid,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
                       Keep {parsedEntries.yearWarning.parsed}
                     </button>
                   </div>
@@ -7956,7 +8045,7 @@ function App(){
                 </div>
               )}
               {parsedEntries.detectedDate&&parsedEntries.yearWarning&&(
-                <div style={{fontSize:14,fontFamily:_fM,color:C.lt,background:C.cream,borderRadius:10,padding:"7px 12px",marginBottom:12}}>
+                <div style={{fontSize:14,fontFamily:_fM,color:C.lt,background:"var(--bg)",borderRadius:10,padding:"7px 12px",marginBottom:12}}>
                   📅 Detected date: <strong>{fmtLong(parsedEntries.detectedDate)}</strong>
                 </div>
               )}
@@ -7970,7 +8059,7 @@ function App(){
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12,maxHeight:280,overflowY:"auto"}}>
                 {parsedEntries.entries.map((e,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 11px",borderRadius:12,background:C.cream,border:`1px solid ${C.blush}`,borderLeft:`3px solid ${e.type==="feed"?C.ter:e.type==="nap"?C.mint:e.type==="sleep"?C.sky:C.gold}`}}>
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 11px",borderRadius:12,background:"var(--bg)",border:`1px solid ${C.blush}`,borderLeft:`3px solid ${e.type==="feed"?C.ter:e.type==="nap"?C.mint:e.type==="sleep"?C.sky:C.gold}`}}>
                     <span style={{fontSize:16}}>{ICONS[e.type]}</span>
                     <div style={{flex:1}}>
                       <div style={{fontSize:15,fontWeight:500}}>{NAMES[e.type]}{e.night?" (night)":""}</div>
@@ -8045,16 +8134,16 @@ function App(){
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-              <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 10px",textAlign:"center"}}>
+              <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 10px",textAlign:"center"}}>
                 <div style={{fontSize:14,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4}}>Wake Up</div>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.gold}}>{wakeEv?fmt12(wakeEv.time):"—"}</div>
               </div>
-              <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 10px",textAlign:"center"}}>
+              <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 10px",textAlign:"center"}}>
                 <div style={{fontSize:14,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4}}>Bedtime</div>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:C.sky}}>{sleepEv?fmt12(sleepEv.time):"—"}</div>
               </div>
             </div>
-            <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.ter}`,borderRadius:14,padding:"12px",marginBottom:10}}>
+            <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.ter}`,borderRadius:14,padding:"12px",marginBottom:10}}>
               <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:8}}>🍼 Feeding</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                 <span style={{fontSize:15,color:C.deep}}>Total</span>
@@ -8069,7 +8158,7 @@ function App(){
                 <span style={{fontFamily:_fM}}>{nightFeedMl}ml</span>
               </div>}
             </div>
-            <div style={{background:C.warm,border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.mint}`,borderRadius:14,padding:"12px",marginBottom:10}}>
+            <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderLeft:`3px solid ${C.mint}`,borderRadius:14,padding:"12px",marginBottom:10}}>
               <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:8}}>😴 Naps</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <span style={{fontSize:15,color:C.deep}}>{dayNaps.length} nap{dayNaps.length!==1?"s":""}</span>
@@ -8092,7 +8181,7 @@ function App(){
                 <>
                   <div style={{fontSize:14,fontFamily:_fM,color:"#7060c0",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Stretches between wakes</div>
                   {stretches.map((s,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"white",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
+                    <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 10px",background:"var(--card-bg)",borderRadius:10,border:"1px solid #d8d2f0",marginBottom:5}}>
                       <div>
                         <div style={{fontSize:14,color:"#5040a0"}}>{s.from} → {s.to}</div>
                         <div style={{fontSize:14,fontFamily:_fM,color:"#9080c8",marginTop:2}}>{fmt12(s.toTime)}{s.feed?` · ${s.feed}ml`:""}</div>
@@ -8149,14 +8238,14 @@ function App(){
         };
         return (
           <div style={{position:"fixed",inset:0,background:"rgba(30,20,15,0.5)",backdropFilter:"blur(6px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px",boxSizing:"border-box"}} onClick={()=>setShowPersonalPopup(false)}>
-            <div onClick={e=>e.stopPropagation()} style={{background:"white",borderRadius:24,padding:"28px 22px",width:"100%",maxWidth:360,boxShadow:"0 12px 48px rgba(0,0,0,0.22)",boxSizing:"border-box"}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg)",borderRadius:24,padding:"28px 22px",width:"100%",maxWidth:360,boxShadow:"0 12px 48px rgba(0,0,0,0.22)",boxSizing:"border-box"}}>
               <div style={{textAlign:"center",marginBottom:18}}>
                 <div style={{fontSize:32,marginBottom:8}}>🎉</div>
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:6}}>7 days of data!</div>
                 <div style={{fontSize:14,color:C.mid,lineHeight:1.65}}>We've analysed {possessive(babyName||"Baby")} real patterns. How would you like recommendations?</div>
               </div>
               {(pb.personalAvgWW||pb.personalAvgMl)&&(
-                <div style={{background:C.warm,borderRadius:14,padding:"10px 14px",marginBottom:18,border:`1px solid ${C.blush}`}}>
+                <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"10px 14px",marginBottom:18,border:`1px solid ${C.blush}`}}>
                   {pb.personalAvgWW&&(
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13,marginBottom:pb.personalAvgMl?6:0}}>
                       <span style={{color:C.lt}}>Wake windows</span>
@@ -8181,7 +8270,7 @@ function App(){
 
       {showNightWake&&(
         <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.55)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowNightWake(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:C.cream,borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",width:"100%",boxSizing:_bBB}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg)",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",width:"100%",boxSizing:_bBB}}>
             <div style={{width:36,height:4,background:C.blush,borderRadius:99,margin:"0 auto 20px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,marginBottom:20}}>🌟 Log Night Wake</div>
 
@@ -8233,7 +8322,7 @@ function App(){
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
                       <input type="number" inputMode="numeric" placeholder="ml" value={nwForm.ml}
                         onChange={e=>setNwForm(f=>({...f,ml:e.target.value}))}
-                        style={{flex:1,fontSize:18,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,color:C.deep,outline:_oN,fontFamily:_fM,textAlign:"center",boxSizing:_bBB}}/>
+                        style={{flex:1,fontSize:18,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,fontFamily:_fM,textAlign:"center",boxSizing:_bBB}}/>
                       <span style={{fontSize:15,color:C.lt,fontFamily:_fM}}>ml</span>
                     </div>
                     <div style={{display:"flex",gap:6,marginTop:7}}>
@@ -8251,14 +8340,14 @@ function App(){
                     <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:5}}>Notes (e.g. rocked, dummy…)</div>
                     <input placeholder="How did you resettle?" value={nwForm.assistedNote}
                       onChange={e=>setNwForm(f=>({...f,assistedNote:e.target.value}))}
-                      style={{width:"100%",fontSize:14,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,color:C.deep,outline:_oN,fontFamily:_fI,boxSizing:_bBB}}/>
+                      style={{width:"100%",fontSize:14,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,fontFamily:_fI,boxSizing:_bBB}}/>
                   </div>
                 )}
                 <div>
                   <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:5}}>Duration soothed (optional)</div>
                   <input type="number" inputMode="numeric" placeholder="minutes" value={nwForm.assistedDuration}
                     onChange={e=>setNwForm(f=>({...f,assistedDuration:e.target.value}))}
-                    style={{width:"100%",fontSize:14,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:C.warm,color:C.deep,outline:_oN,fontFamily:_fM,boxSizing:_bBB}}/>
+                    style={{width:"100%",fontSize:14,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,fontFamily:_fM,boxSizing:_bBB}}/>
                 </div>
               </div>
             )}
@@ -8270,7 +8359,7 @@ function App(){
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <input type="number" inputMode="numeric" placeholder="ml" value={nwForm.ml}
                     onChange={e=>setNwForm(f=>({...f,ml:e.target.value}))}
-                    style={{flex:1,fontSize:20,padding:"12px 14px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:C.warm,color:C.deep,outline:_oN,fontFamily:_fM,textAlign:"center",boxSizing:_bBB}}/>
+                    style={{flex:1,fontSize:20,padding:"12px 14px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,fontFamily:_fM,textAlign:"center",boxSizing:_bBB}}/>
                   <span style={{fontSize:16,color:C.lt,fontFamily:_fM}}>ml</span>
                 </div>
                 <div style={{display:"flex",gap:8,marginTop:8}}>
@@ -8287,7 +8376,7 @@ function App(){
             <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Notes</div>
             <input placeholder="e.g. fussed, resettled easily…" value={nwForm.note}
               onChange={e=>setNwForm(f=>({...f,note:e.target.value}))}
-              style={{width:"100%",fontSize:15,padding:"12px 14px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:C.warm,color:C.deep,outline:_oN,fontFamily:_fI,marginBottom:20,boxSizing:_bBB}}/>
+              style={{width:"100%",fontSize:15,padding:"12px 14px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,fontFamily:_fI,marginBottom:20,boxSizing:_bBB}}/>
 
             <button onClick={()=>{
               if(!nwForm.time) return;
@@ -8329,20 +8418,20 @@ function App(){
 
       {showAddChild && (
         <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.5)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowAddChild(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#faf6f0",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%"}}>
             <div style={{width:40,height:4,background:"#f2d9cc",borderRadius:99,margin:"0 auto 20px"}}/>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:"#2c1f1a",marginBottom:20}}>Add a child</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:"var(--text-deep)",marginBottom:20}}>Add a child</div>
 
             <div style={{fontSize:14,color:"#b89890",marginBottom:6,fontWeight:600}}>Name</div>
             <input value={newChildName} onChange={e=>setNewChildName(e.target.value)}
               placeholder="Baby's name" autoFocus
-              style={{width:"100%",fontSize:18,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"white",color:"#2c1f1a",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
+              style={{width:"100%",fontSize:18,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"var(--card-bg)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
 
             <div style={{fontSize:14,color:"#b89890",marginBottom:6,fontWeight:600}}>
               {newChildUnborn ? "Due date" : "Date of birth"}
             </div>
             <input type="date" value={newChildDob} onChange={e=>setNewChildDob(e.target.value)}
-              style={{width:"100%",fontSize:16,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"white",color:"#2c1f1a",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
+              style={{width:"100%",fontSize:16,padding:"12px 14px",borderRadius:12,border:"1.5px solid #f2d9cc",background:"var(--card-bg)",color:"var(--text-deep)",outline:_oN,fontFamily:_fI,marginBottom:14}}/>
 
             <div style={{display:"flex",gap:8,marginBottom:14}}>
               {["","girl","boy"].map(s=>(
@@ -8377,7 +8466,7 @@ function App(){
       )}
       {showChildSettings&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowChildSettings(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"white",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480,boxShadow:"0 -8px 40px rgba(0,0,0,0.15)"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:480,boxShadow:"0 -8px 40px rgba(0,0,0,0.15)"}}>
             <div style={{width:36,height:4,background:C.blush,borderRadius:99,margin:"0 auto 24px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,marginBottom:24}}>Child Settings</div>
             <div style={{marginBottom:16}}>
@@ -8417,7 +8506,7 @@ function App(){
               <div style={{background:"#fff4f2",border:`2px solid ${C.ter}`,borderRadius:16,padding:"16px",textAlign:"center"}}>
                 <div style={{fontSize:15,fontWeight:600,color:C.deep,marginBottom:12}}>Delete {csName||"this child"}? This cannot be undone.</div>
                 <div style={{display:"flex",gap:8}}>
-                  <button onClick={()=>setCsConfirmDelete(false)} style={{flex:1,padding:"11px",borderRadius:99,border:`2px solid ${C.blush}`,background:"white",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>Cancel</button>
+                  <button onClick={()=>setCsConfirmDelete(false)} style={{flex:1,padding:"11px",borderRadius:99,border:`2px solid ${C.blush}`,background:"var(--card-bg)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>Cancel</button>
                   <button onClick={()=>{deleteChild(resolvedActiveId);setShowChildSettings(false);setCsConfirmDelete(false);}}
                     style={{flex:1,padding:"11px",borderRadius:99,border:_bN,background:C.ter,color:"white",fontSize:14,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
                     Yes, delete
@@ -8430,7 +8519,7 @@ function App(){
       )}
       {showFamilyModal && (
         <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.5)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowFamilyModal(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#faf6f0",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg)",borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxHeight:"85vh",overflowY:"auto"}}>
 
             <div style={{width:40,height:4,background:C.blush,borderRadius:99,margin:"0 auto 20px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,fontWeight:700,color:C.deep,marginBottom:6}}>Data & Sync</div>
@@ -8448,7 +8537,7 @@ function App(){
               </div>
             )}
             {familyUsername && (
-              <div style={{background:"white",borderRadius:12,padding:"12px 14px",marginBottom:12,border:`1px solid ${C.blush}`}}>
+              <div style={{background:"var(--card-bg)",borderRadius:12,padding:"12px 14px",marginBottom:12,border:`1px solid ${C.blush}`}}>
                 <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Recovery word</div>
                 <div style={{fontSize:13,color:C.mid,marginBottom:10,lineHeight:1.5}}>A secret word you choose — used to reset your PIN if you ever forget it. No email or phone number required.</div>
                 <div style={{display:"flex",gap:8}}>
@@ -8458,7 +8547,7 @@ function App(){
                     onChange={e=>{ setRecoveryWordInput(e.target.value); setRecoveryWordStatus(null); }}
                     placeholder="e.g. sunshine, mango…"
                     autoCapitalize="none" autoCorrect="off" spellCheck="false"
-                    style={{flex:1,fontSize:15,padding:"9px 12px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"#faf6f0",outline:"none",fontFamily:_fI,color:C.deep,boxSizing:"border-box"}}
+                    style={{flex:1,fontSize:15,padding:"9px 12px",borderRadius:10,border:`1.5px solid ${C.blush}`,background:"var(--bg)",outline:"none",fontFamily:_fI,color:C.deep,boxSizing:"border-box"}}
                   />
                   <button
                     onClick={async()=>{
@@ -8480,7 +8569,7 @@ function App(){
               </div>
             )}
             {familyUsername ? (
-              <div style={{background:"white",borderRadius:12,padding:"12px 14px",marginBottom:16,border:`1px solid ${C.blush}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{background:"var(--card-bg)",borderRadius:12,padding:"12px 14px",marginBottom:16,border:`1px solid ${C.blush}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div>
                   <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:3}}>Your username</div>
                   <div style={{fontSize:20,fontWeight:700,color:C.ter}}>{familyUsername}</div>
@@ -8503,7 +8592,7 @@ function App(){
                 const code = childSyncCodes[cid];
                 const isShared = !!code;
                 return (
-                  <div key={cid} style={{background:"white",borderRadius:14,padding:"12px 14px",border:`1px solid ${isShared?C.mint+"40":C.blush}`}}>
+                  <div key={cid} style={{background:"var(--card-bg)",borderRadius:14,padding:"12px 14px",border:`1px solid ${isShared?C.mint+"40":C.blush}`}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:isShared?8:0}}>
                       <div>
                         <div style={{fontWeight:700,fontSize:15,color:C.deep}}>{child.name||"Unnamed child"}</div>
@@ -8524,7 +8613,7 @@ function App(){
                             <div style={{fontSize:11,fontFamily:_fM,color:"#4a8a6a",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:2}}>Sync code</div>
                             <div style={{fontFamily:_fM,fontSize:24,fontWeight:700,color:C.ter,letterSpacing:"0.18em"}}>{code}</div>
                           </div>
-                          <button onClick={()=>{try{navigator.clipboard.writeText(code);}catch{}}} style={{padding:"6px 12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"white",fontSize:12,fontWeight:600,color:C.mid,cursor:_cP,fontFamily:_fI}}>
+                          <button onClick={()=>{try{navigator.clipboard.writeText(code);}catch{}}} style={{padding:"6px 12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",fontSize:12,fontWeight:600,color:C.mid,cursor:_cP,fontFamily:_fI}}>
                             Copy
                           </button>
                         </div>
@@ -8543,7 +8632,7 @@ function App(){
             {familyUsername && (
               <div style={{borderTop:`1px solid ${C.blush}`,marginTop:16,paddingTop:16}}>
                 <button onClick={()=>{setShowFamilyModal(false);logout();}}
-                  style={{width:"100%",padding:"12px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"white",color:C.lt,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                  style={{width:"100%",padding:"12px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg)",color:C.lt,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
                   Sign out of {familyUsername}
                 </button>
               </div>
