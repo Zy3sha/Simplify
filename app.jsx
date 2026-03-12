@@ -249,7 +249,7 @@ function Inp({label,...p}){
   return(
     <div style={{marginBottom:12}}>
       {label&&<label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>{label}</label>}
-      <input {...p} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,...(p.style||{})}}/>
+      <input {...p} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--input-bg)",color:C.deep,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,...(p.style||{})}}/>
     </div>
   );
 }
@@ -5689,8 +5689,8 @@ function App(){
         @keyframes tutPulse{0%,100%{box-shadow:0 0 0 0 rgba(201,112,90,0.5)}70%{box-shadow:0 0 0 14px rgba(201,112,90,0)}}
       `}</style>
       {showTutPrompt && (
-        <div style={{position:"fixed",inset:0,zIndex:9990,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowTutPrompt(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",borderRadius:24,padding:"28px 24px",maxWidth:340,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{position:"fixed",inset:0,zIndex:9990,background:"var(--sheet-overlay)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowTutPrompt(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(30px) saturate(1.6)",WebkitBackdropFilter:"blur(30px) saturate(1.6)",borderRadius:24,padding:"28px 24px",maxWidth:340,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.4)",border:"1px solid var(--card-border)"}}>
             <div style={{fontSize:36,marginBottom:12}}>🎉</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:8}}>You're getting the hang of it!</div>
             <div style={{fontSize:14,color:C.mid,lineHeight:1.6,marginBottom:20}}>Want a quick 60-second tour of everything OBubba can do?</div>
@@ -7984,77 +7984,8 @@ function App(){
                 </div>
               </button>
             )}
-            {/* Reminders */}
-            <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",width:"100%",marginBottom:10}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <span style={{fontSize:20}}>🔔</span>
-                  <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Reminders</div>
-                </div>
-                <button onClick={()=>{setReminderForm({text:"",date:todayStr(),time:""});setShowAddReminder(true);}} style={{fontSize:12,color:C.ter,fontWeight:700,background:_bN,border:_bN,cursor:_cP,fontFamily:_fM}}>+ Add</button>
-              </div>
-              {reminders.length===0?(
-                <div style={{fontSize:13,color:C.lt,padding:"8px 0"}}>No reminders yet</div>
-              ):(
-                reminders.map(r=>(
-                  <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:`1px solid ${C.blush}`,opacity:r.done?0.5:1}}>
-                    <div onClick={()=>toggleReminder(r.id)} style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${r.done?C.mint:C.ter}`,background:r.done?C.mint:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,flexShrink:0}}>
-                      {r.done&&<span style={{color:"white",fontSize:10,fontWeight:700}}>✓</span>}
-                    </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:13,fontWeight:600,color:C.deep,textDecoration:r.done?"line-through":"none"}}>{r.text}</div>
-                      {r.time&&<div style={{fontSize:11,color:C.lt,fontFamily:_fM}}>{fmtLong(r.date)} · {fmt12(r.time)}</div>}
-                    </div>
-                    <button onClick={()=>deleteReminder(r.id)} style={{background:_bN,border:_bN,fontSize:13,color:"#e06070",cursor:_cP}}>✕</button>
-                  </div>
-                ))
-              )}
-            </div>
 
-                        {/* All Appointments */}
-            <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",width:"100%",marginBottom:10}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <span style={{fontSize:20}}>📅</span>
-                  <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Appointments</div>
-                </div>
-                <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:""});setShowAddAppt(true);}} style={{fontSize:12,color:C.ter,fontWeight:700,background:_bN,border:_bN,cursor:_cP,fontFamily:_fM}}>+ Add</button>
-              </div>
-              {appointments.length===0?(
-                <div style={{fontSize:13,color:C.lt,padding:"8px 0"}}>No appointments yet</div>
-              ):(
-                appointments.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).map(a=>(
-                  <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:`1px solid ${C.blush}`}}>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:14,fontWeight:600,color:C.deep}}>{a.title}</div>
-                      <div style={{fontSize:12,color:C.lt,fontFamily:_fM}}>{fmtLong(a.date)}{a.time?" · "+fmt12(a.time):""}</div>
-                    </div>
-                    <button onClick={()=>deleteAppointment(a.id)} style={{background:_bN,border:_bN,fontSize:13,color:"#e06070",cursor:_cP}}>✕</button>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Pinned Notes Management */}
-            <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",width:"100%",marginBottom:10}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <span style={{fontSize:20}}>📌</span>
-                  <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Pinned Notes</div>
-                </div>
-                <button onClick={()=>setShowAddPin(true)} style={{fontSize:12,color:C.ter,fontWeight:700,background:_bN,border:_bN,cursor:_cP,fontFamily:_fM}}>+ Add</button>
-              </div>
-              {pinnedNotes.length===0?(
-                <div style={{fontSize:13,color:C.lt,padding:"8px 0"}}>No pinned notes</div>
-              ):(
-                pinnedNotes.map(n=>(
-                  <div key={n.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"8px 0",borderBottom:`1px solid ${C.blush}`}}>
-                    <div style={{flex:1,fontSize:13,color:C.deep,lineHeight:1.5}}>{n.text}</div>
-                    <button onClick={()=>deletePinnedNote(n.id)} style={{background:_bN,border:_bN,fontSize:13,color:"#e06070",cursor:_cP}}>✕</button>
-                  </div>
-                ))
-              )}
-            </div>
+            
 
                         <button onClick={()=>{setTutStep(0);try{localStorage.removeItem("tut_v2");}catch{}}} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:24}}>❓</span>
@@ -8259,7 +8190,7 @@ function App(){
                   <div key={k}>
                     <label style={{fontSize:14,fontFamily:_fM,color:C.lt,display:"block",marginBottom:3}}>{lbl}</label>
                     <input type="number" inputMode="numeric" min="0" max="60" placeholder="mins" value={logForm[k]||""} onChange={e=>setLogForm(f=>({...f,[k]:e.target.value}))}
-                      style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
+                      style={{width:"100%",padding:"9px 11px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--input-bg)",color:C.deep,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
                   </div>
                 ))}
               </div>
@@ -8442,7 +8373,7 @@ function App(){
                       const newTotal=(parseInt(updated.pumpL)||0)+(parseInt(updated.pumpR)||0);
                       setLogForm(f=>({...f,[k]:e.target.value,pumpTotal:newTotal>0?String(newTotal):""}));
                     }}
-                    style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
+                    style={{width:"100%",padding:"9px 11px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--input-bg)",color:C.deep,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
                 </div>
               ))}
             </div>
@@ -8483,7 +8414,7 @@ function App(){
                     <div key={k}>
                       <label style={{fontSize:14,fontFamily:_fM,color:C.lt,display:"block",marginBottom:3}}>{lbl}</label>
                       <input type="number" inputMode="numeric" min="0" max="60" placeholder="mins" value={form[k]||""} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))}
-                        style={{width:"100%",padding:"9px 11px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
+                        style={{width:"100%",padding:"9px 11px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--input-bg)",color:C.deep,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB,textAlign:"center"}}/>
                     </div>
                   ))}
                 </div>
@@ -8496,7 +8427,7 @@ function App(){
             <TimeInput label="Time" value={form.time} onChange={t=>setForm(f=>({...f,time:t}))}/>
               <div style={{marginBottom:12}}>
                 <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>Night feed?</label>
-                <select value={form.night} onChange={e=>setForm(f=>({...f,night:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB}}>
+                <select value={form.night} onChange={e=>setForm(f=>({...f,night:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--input-bg)",color:C.deep,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB}}>
                   <option value="no">No — daytime</option>
                   <option value="yes">Yes — night wake</option>
                 </select>
@@ -9270,11 +9201,11 @@ function App(){
 
             {/* ═══ Add Appointment Modal ═══ */}
       {showAddAppt&&(
-        <div style={{position:"fixed",inset:0,zIndex:9990,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowAddAppt(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",borderRadius:24,padding:"24px 20px",maxWidth:360,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{position:"fixed",inset:0,zIndex:9990,background:"var(--sheet-overlay)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowAddAppt(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(30px) saturate(1.6)",WebkitBackdropFilter:"blur(30px) saturate(1.6)",borderRadius:24,padding:"24px 20px",maxWidth:360,width:"100%",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.4)",border:"1px solid var(--card-border)"}}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:16}}>📅 Add Appointment</div>
             <Inp label="Title" type="text" placeholder="e.g. Health visitor, GP, vaccination" value={apptForm.title} onChange={e=>setApptForm(f=>({...f,title:e.target.value}))}/>
-            <div style={{display:"flex",gap:8}}>
+            <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
               <div style={{flex:1}}><Inp label="Date" type="date" value={apptForm.date} onChange={e=>setApptForm(f=>({...f,date:e.target.value}))}/></div>
               <div style={{flex:1}}><Inp label="Time" type="time" value={apptForm.time} onChange={e=>setApptForm(f=>({...f,time:e.target.value}))}/></div>
             </div>
@@ -9307,32 +9238,32 @@ function App(){
               </button>
             )}
             <PBtn onClick={addAppointment}>Save Appointment</PBtn>
-            <button onClick={()=>setShowAddAppt(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
+            <button onClick={()=>setShowAddAppt(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:"1px solid var(--card-border)",background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
           </div>
         </div>
       )}
 
       {/* ═══ Add Pinned Note Modal ═══ */}
       {showAddPin&&(
-        <div style={{position:"fixed",inset:0,zIndex:9990,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowAddPin(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",borderRadius:24,padding:"24px 20px",maxWidth:360,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{position:"fixed",inset:0,zIndex:9990,background:"var(--sheet-overlay)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowAddPin(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(30px) saturate(1.6)",WebkitBackdropFilter:"blur(30px) saturate(1.6)",borderRadius:24,padding:"24px 20px",maxWidth:360,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.4)",border:"1px solid var(--card-border)"}}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:16}}>📌 Pin an Important Note</div>
             <div style={{fontSize:13,color:C.lt,marginBottom:12,lineHeight:1.5}}>This note will appear at the top of every day. Use it for allergies, medical info, or reminders.</div>
             <textarea value={pinForm} onChange={e=>setPinForm(e.target.value)} placeholder="e.g. Oliver allergic to dairy — confirmed by GP"
-              style={{width:"100%",fontSize:15,padding:"12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,fontFamily:_fI,resize:"vertical",minHeight:80,boxSizing:_bBB}}/>
+              style={{width:"100%",fontSize:15,padding:"12px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--input-bg)",color:C.deep,outline:_oN,fontFamily:_fI,resize:"vertical",minHeight:80,boxSizing:_bBB}}/>
             <div style={{marginTop:10}}><PBtn onClick={addPinnedNote}>Pin Note</PBtn></div>
-            <button onClick={()=>setShowAddPin(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
+            <button onClick={()=>setShowAddPin(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:"1px solid var(--card-border)",background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
           </div>
         </div>
       )}
 
       {/* ═══ Add Reminder Modal ═══ */}
       {showAddReminder&&(
-        <div style={{position:"fixed",inset:0,zIndex:9990,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowAddReminder(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",borderRadius:24,padding:"24px 20px",maxWidth:360,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{position:"fixed",inset:0,zIndex:9990,background:"var(--sheet-overlay)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowAddReminder(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(30px) saturate(1.6)",WebkitBackdropFilter:"blur(30px) saturate(1.6)",borderRadius:24,padding:"24px 20px",maxWidth:360,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.4)",border:"1px solid var(--card-border)"}}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:16}}>🔔 Add Reminder</div>
             <Inp label="Reminder" type="text" placeholder="e.g. Give Oliver Calpol after vaccine" value={reminderForm.text} onChange={e=>setReminderForm(f=>({...f,text:e.target.value}))}/>
-            <div style={{display:"flex",gap:8}}>
+            <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
               <div style={{flex:1}}><Inp label="Date" type="date" value={reminderForm.date} onChange={e=>setReminderForm(f=>({...f,date:e.target.value}))}/></div>
               <div style={{flex:1}}><Inp label="Time (optional)" type="time" value={reminderForm.time} onChange={e=>setReminderForm(f=>({...f,time:e.target.value}))}/></div>
             </div>
@@ -9343,7 +9274,7 @@ function App(){
               </button>
             )}
             <PBtn onClick={addReminder}>Save Reminder</PBtn>
-            <button onClick={()=>setShowAddReminder(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
+            <button onClick={()=>setShowAddReminder(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:"1px solid var(--card-border)",background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
           </div>
         </div>
       )}
