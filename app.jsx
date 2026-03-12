@@ -6371,49 +6371,9 @@ function App(){
                 <div style={{padding:"16px 16px 14px"}}>
                   <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:12}}>📏 Growth Percentiles</div>
 
-                  {/* Weight + Height side by side */}
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-                    {/* Weight side */}
-                    <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
-                      <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Weight</div>
-                      {latestW ? (
-                        <div>
-                          <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:700,color:percentileColor(latestW.pct),lineHeight:1}}>{ordinal(latestW.pct)}</div>
-                          <div style={{fontSize:10,fontFamily:_fM,color:C.lt,marginTop:1}}>percentile</div>
-                          <div style={{fontSize:14,fontWeight:700,color:C.deep,marginTop:6}}>{latestW.kg}kg</div>
-                          <div style={{fontSize:11,color:C.mid,marginTop:1}}>{latestW.ageMo}mo · {fmtLong(latestW.date)}</div>
-                          {weightGain !== null && (
-                            <div style={{fontSize:11,color:weightGain>=0?C.mint:C.ter,fontFamily:_fM,marginTop:3,fontWeight:700}}>
-                              {weightGain>=0?"↑":"↓"} {Math.abs(weightGain*1000)}g
-                            </div>
-                          )}
-                        </div>
-                      ) : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
-                    </div>
-                    {/* Height side */}
-                    <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
-                      <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Height</div>
-                      {latestH ? (
-                        <div>
-                          <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,fontWeight:700,color:percentileColor(latestH.pct),lineHeight:1}}>{ordinal(latestH.pct)}</div>
-                          <div style={{fontSize:10,fontFamily:_fM,color:C.lt,marginTop:1}}>percentile</div>
-                          <div style={{fontSize:14,fontWeight:700,color:C.deep,marginTop:6}}>{latestH.cm}cm</div>
-                          <div style={{fontSize:11,color:C.mid,marginTop:1}}>{latestH.ageMo}mo · {fmtLong(latestH.date)}</div>
-                        </div>
-                      ) : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
-                    </div>
-                  </div>
-
-                  {/* Overall status */}
-                  {latestW && (
-                    <div style={{fontSize:12,padding:"5px 12px",borderRadius:99,display:"inline-block",background:percentileColor(latestW.pct)+"22",color:percentileColor(latestW.pct),fontFamily:_fM,fontWeight:600}}>
-                      {percentileNote(latestW.pct)}
-                    </div>
-                  )}
-
-                  {/* WHO Growth Charts */}
-                  {babyDob && (weights.length > 0 || heights.length > 0) && (
-                    <div style={{marginTop:14}}>
+                  {/* WHO Growth Charts with integrated stats */}
+                  {babyDob && (weights.length > 0 || heights.length > 0) ? (
+                    <div>
                       {weights.length > 0 && (()=>{
                         const wData = weights.map(w => {
                           const mo = Math.round(((new Date(w.date) - new Date(babyDob)) / (1000*60*60*24*30.44))*10)/10;
@@ -6422,7 +6382,14 @@ function App(){
                         const lms = babySex==="girl" ? WHO_LMS_GIRLS : WHO_LMS_BOYS;
                         return (
                           <div style={{marginBottom:12}}>
-                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Weight · WHO Percentile Curves</div>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                              <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Weight · WHO Curves</div>
+                              {latestW && <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                <span style={{fontSize:13,fontWeight:700,color:C.deep}}>{latestW.kg}kg</span>
+                                <span style={{fontSize:12,fontWeight:700,color:percentileColor(latestW.pct),background:percentileColor(latestW.pct)+"18",padding:"2px 8px",borderRadius:99,fontFamily:_fM}}>{ordinal(latestW.pct)}</span>
+                                {weightGain !== null && <span style={{fontSize:11,color:weightGain>=0?C.mint:C.ter,fontFamily:_fM,fontWeight:700}}>{weightGain>=0?"↑":"↓"}{Math.abs(weightGain*1000)}g</span>}
+                              </div>}
+                            </div>
                             <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"10px 6px 4px",border:`1px solid ${C.blush}`}}>
                               <GrowthChart lmsTable={lms} babyData={wData} yLabel="Weight" unit="kg" sex={babySex} color={C.ter}/>
                             </div>
@@ -6437,13 +6404,39 @@ function App(){
                         const lms = babySex==="girl" ? WHO_LENGTH_LMS_GIRLS : WHO_LENGTH_LMS_BOYS;
                         return (
                           <div style={{marginBottom:12}}>
-                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Height · WHO Percentile Curves</div>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                              <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Height · WHO Curves</div>
+                              {latestH && <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                <span style={{fontSize:13,fontWeight:700,color:C.deep}}>{latestH.cm}cm</span>
+                                <span style={{fontSize:12,fontWeight:700,color:percentileColor(latestH.pct),background:percentileColor(latestH.pct)+"18",padding:"2px 8px",borderRadius:99,fontFamily:_fM}}>{ordinal(latestH.pct)}</span>
+                              </div>}
+                            </div>
                             <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"10px 6px 4px",border:`1px solid ${C.blush}`}}>
                               <GrowthChart lmsTable={lms} babyData={hData} yLabel="Height" unit="cm" sex={babySex} color={C.sky}/>
                             </div>
                           </div>
                         );
                       })()}
+                    </div>
+                  ) : (
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                      <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
+                        <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Weight</div>
+                        {latestW ? <div><span style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:percentileColor(latestW.pct)}}>{ordinal(latestW.pct)}</span> <span style={{fontSize:12,color:C.lt}}>· {latestW.kg}kg</span></div>
+                        : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
+                      </div>
+                      <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
+                        <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Height</div>
+                        {latestH ? <div><span style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:percentileColor(latestH.pct)}}>{ordinal(latestH.pct)}</span> <span style={{fontSize:12,color:C.lt}}>· {latestH.cm}cm</span></div>
+                        : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Overall status */}
+                  {latestW && (
+                    <div style={{fontSize:12,padding:"5px 12px",borderRadius:99,display:"inline-block",background:percentileColor(latestW.pct)+"22",color:percentileColor(latestW.pct),fontFamily:_fM,fontWeight:600,marginBottom:8}}>
+                      {percentileNote(latestW.pct)}
                     </div>
                   )}
 
