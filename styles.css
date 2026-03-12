@@ -143,9 +143,9 @@ body.dark-mode .glass-card::after{background:linear-gradient(90deg,transparent,r
   contain:content;
 }
 body.dark-mode .glass-entry{box-shadow:
-    inset 0 0 4px rgba(255,190,90,0.16),
-    inset 0 0.5px 0 rgba(255,220,150,0.14),
-    0 0 3px rgba(255,180,70,0.22),
+    inset 0 0 5px rgba(255,190,90,0.20),
+    inset 0 0.5px 0 rgba(255,220,150,0.16),
+    0 0 4px rgba(255,180,70,0.28),
     0 2px 10px rgba(0,0,0,0.28)!important}
 .glass-entry::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;pointer-events:none;z-index:3;background:var(--specular);opacity:0.4}
 
@@ -203,14 +203,14 @@ body.light-mode button,body:not(.dark-mode) button{
     0 0 28px rgba(192,160,220,0.20)!important;
   animation:candlePulse 4s ease-in-out infinite!important}
 
-/* Dark mode — orange-amber edge glow — subtle, tight */
+/* Dark mode — orange-amber edge glow */
 body.dark-mode button{
-  border:1.5px solid rgba(255,190,90,0.35)!important;
+  border:1.5px solid rgba(255,190,90,0.42)!important;
   box-shadow:
-    inset 0 0 5px rgba(255,190,90,0.25),
-    inset 0 1px 0 rgba(255,220,150,0.22),
-    0 0 4px rgba(255,180,70,0.35),
-    0 0 10px rgba(255,155,45,0.22)!important;
+    inset 0 0 8px rgba(255,190,90,0.35),
+    inset 0 1px 0 rgba(255,220,150,0.28),
+    0 0 6px rgba(255,180,70,0.48),
+    0 0 14px rgba(255,155,45,0.32)!important;
   animation:candlePulse 4s ease-in-out infinite!important}
 
 /* CTA gradient buttons — stronger edge fire */
@@ -224,11 +224,11 @@ body.light-mode button[style*="linear-gradient(135deg"],body:not(.dark-mode) but
     0 4px 14px rgba(192,112,136,0.22)!important}
 body.dark-mode button[style*="linear-gradient(135deg"]{
   box-shadow:
-    inset 0 0 6px rgba(255,190,90,0.30),
-    inset 0 1px 0 rgba(255,220,150,0.28),
-    0 0 5px rgba(255,180,70,0.40),
-    0 0 12px rgba(255,155,45,0.28),
-    0 4px 12px rgba(217,139,114,0.18)!important}
+    inset 0 0 7px rgba(255,190,90,0.35),
+    inset 0 1px 0 rgba(255,220,150,0.32),
+    0 0 6px rgba(255,180,70,0.48),
+    0 0 14px rgba(255,155,45,0.34),
+    0 4px 12px rgba(217,139,114,0.22)!important}
 
 /* Pill buttons */
 body.light-mode button[style*="borderRadius:99"],body:not(.dark-mode) button[style*="borderRadius:99"]{
@@ -240,10 +240,10 @@ body.light-mode button[style*="borderRadius:99"],body:not(.dark-mode) button[sty
     0 0 26px rgba(192,160,220,0.16)!important}
 body.dark-mode button[style*="borderRadius:99"]{
   box-shadow:
-    inset 0 0 5px rgba(255,190,90,0.22),
-    inset 0 1px 0 rgba(255,220,150,0.20),
-    0 0 4px rgba(255,180,70,0.32),
-    0 0 10px rgba(255,155,45,0.18)!important}
+    inset 0 0 5px rgba(255,190,90,0.28),
+    inset 0 1px 0 rgba(255,220,150,0.24),
+    0 0 5px rgba(255,180,70,0.38),
+    0 0 12px rgba(255,155,45,0.24)!important}
 
 /* Action grid buttons (borderRadius:14 + flexDirection) — NO outer bleed */
 body.light-mode button[style*="borderRadius:14"][style*="flexDirection"],
@@ -253,8 +253,8 @@ body:not(.dark-mode) button[style*="borderRadius:14"][style*="flexDirection"]{
     inset 0 1px 0 rgba(255,255,255,0.55)!important}
 body.dark-mode button[style*="borderRadius:14"][style*="flexDirection"]{
   box-shadow:
-    inset 0 0 4px rgba(255,190,90,0.22),
-    inset 0 1px 0 rgba(255,220,150,0.18)!important}
+    inset 0 0 4px rgba(255,190,90,0.25),
+    inset 0 1px 0 rgba(255,220,150,0.20)!important}
 
 /* Hide fixed toggle (inline in header now) */
 #theme-toggle{display:none!important}
@@ -287,11 +287,11 @@ body.light-mode div[data-entry-id],body:not(.dark-mode) div[data-entry-id]{
     0 0 14px rgba(217,168,192,0.24),
     0 0 26px rgba(192,160,220,0.10)!important}
 body.dark-mode div[data-entry-id]{
-  border:1.5px solid rgba(255,190,90,0.24)!important;
+  border:1.5px solid rgba(255,190,90,0.28)!important;
   box-shadow:
-    inset 0 0 4px rgba(255,190,90,0.18),
-    inset 0 1px 0 rgba(255,220,150,0.14),
-    0 0 3px rgba(255,180,70,0.25),
+    inset 0 0 5px rgba(255,190,90,0.22),
+    inset 0 1px 0 rgba(255,220,150,0.16),
+    0 0 4px rgba(255,180,70,0.30),
     0 2px 8px rgba(0,0,0,0.25)!important}
 div[data-entry-id]::after{content:"";position:absolute;top:0;left:0;right:0;height:40%;background:linear-gradient(180deg,rgba(255,255,255,0.12) 0%,transparent 100%);pointer-events:none;z-index:4;border-radius:inherit}
 body.dark-mode div[data-entry-id]::after{background:linear-gradient(180deg,rgba(255,200,120,0.08) 0%,transparent 100%)}
@@ -321,7 +321,7 @@ body.light-mode div[style*="position:\"fixed\""][style*="bottom:0"],body:not(.da
   background:radial-gradient(ellipse 50% 100% at 50% 0%,rgba(245,218,210,0.12),transparent 60%),rgba(255,252,248,0.88)!important;
   box-shadow:0 -4px 24px rgba(245,218,210,0.18),0 -8px 48px rgba(240,210,200,0.08)!important}
 
-/* Nav bar buttons — completely clean, zero glow/border */
+/* Nav bar buttons — subtle glow allowed since buttons are spaced */
 div[style*="position:\"fixed\""][style*="bottom:0"] button,
 div[style*="position:\"fixed\""][style*="bottom:0"] button[style]{
   box-shadow:none!important;border:none!important;border-color:transparent!important;background-image:none!important;animation:none!important}
@@ -356,14 +356,14 @@ body:not(.dark-mode) div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
   box-shadow:inset 0 0 4px rgba(246,221,227,0.35),inset 0 1px 0 rgba(255,255,255,0.50)!important;
   background:var(--card-bg-solid)!important}
 body.dark-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
-  box-shadow:inset 0 0 3px rgba(255,190,90,0.18),inset 0 1px 0 rgba(255,220,150,0.14)!important}
+  box-shadow:inset 0 0 4px rgba(255,190,90,0.22),inset 0 1px 0 rgba(255,220,150,0.16)!important}
 
 /* Stats grid (4-column) — NO outer bleed */
 body.light-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr 1fr\""]>div,
 body:not(.dark-mode) div[style*="gridTemplateColumns:\"1fr 1fr 1fr 1fr\""]>div{
   box-shadow:inset 0 0 4px rgba(246,221,227,0.35),inset 0 1px 0 rgba(255,255,255,0.50)!important}
 body.dark-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr 1fr\""]>div{
-  box-shadow:inset 0 0 3px rgba(255,190,90,0.18),inset 0 1px 0 rgba(255,220,150,0.14)!important}
+  box-shadow:inset 0 0 4px rgba(255,190,90,0.22),inset 0 1px 0 rgba(255,220,150,0.16)!important}
 
 /* Tutorial / Forgot PIN — blur only on overlay */
 div[style*="animation:\"tutPop"]{backdrop-filter:blur(30px) saturate(1.6);-webkit-backdrop-filter:blur(30px) saturate(1.6)}
@@ -391,11 +391,11 @@ body.light-mode button[style*="borderRadius:18"][style*="padding:\"19px\""],body
     0 0 64px rgba(180,150,210,0.14)!important}
 body.dark-mode button[style*="borderRadius:18"][style*="padding:\"19px\""]{
   box-shadow:
-    inset 0 0 8px rgba(255,190,90,0.32),
-    inset 0 1px 0 rgba(255,220,150,0.28),
-    0 0 8px rgba(255,180,70,0.40),
-    0 0 18px rgba(255,155,45,0.28),
-    0 0 32px rgba(255,130,20,0.16)!important}
+    inset 0 0 8px rgba(255,190,90,0.35),
+    inset 0 1px 0 rgba(255,220,150,0.30),
+    0 0 8px rgba(255,180,70,0.45),
+    0 0 18px rgba(255,155,45,0.32),
+    0 0 34px rgba(255,130,20,0.18)!important}
 
 /* Feature pills */
 body.light-mode div[style*="borderRadius:99"][style*="padding:\"7px 13px\""],body:not(.dark-mode) div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{
@@ -453,12 +453,12 @@ body:not(.dark-mode) div[style*="borderRadius"][style*="card-bg"]{
     0 0 14px rgba(217,168,192,0.25),
     0 0 28px rgba(192,160,220,0.12)!important}
 body.dark-mode div[style*="borderRadius"][style*="card-bg"]{
-  border:1.5px solid rgba(255,190,90,0.28)!important;
+  border:1.5px solid rgba(255,190,90,0.34)!important;
   box-shadow:
-    inset 0 0 5px rgba(255,190,90,0.20),
-    inset 0 1px 0 rgba(255,220,150,0.16),
-    0 0 4px rgba(255,180,70,0.28),
-    0 0 10px rgba(255,155,45,0.16)!important}
+    inset 0 0 7px rgba(255,190,90,0.28),
+    inset 0 1px 0 rgba(255,220,150,0.20),
+    0 0 5px rgba(255,180,70,0.38),
+    0 0 12px rgba(255,155,45,0.24)!important}
 
 /* All elements with chip-bg */
 body.light-mode div[style*="borderRadius"][style*="chip-bg"],
@@ -480,12 +480,12 @@ body.light-mode button[style*="card-bg"],body:not(.dark-mode) button[style*="car
     0 0 14px rgba(217,168,192,0.30),
     0 0 28px rgba(192,160,220,0.16)!important}
 body.dark-mode button[style*="card-bg"]{
-  border:1.5px solid rgba(255,190,90,0.32)!important;
+  border:1.5px solid rgba(255,190,90,0.35)!important;
   box-shadow:
-    inset 0 0 5px rgba(255,190,90,0.25),
-    inset 0 1px 0 rgba(255,220,150,0.22),
-    0 0 4px rgba(255,180,70,0.35),
-    0 0 10px rgba(255,155,45,0.20)!important}
+    inset 0 0 6px rgba(255,190,90,0.28),
+    inset 0 1px 0 rgba(255,220,150,0.24),
+    0 0 5px rgba(255,180,70,0.40),
+    0 0 12px rgba(255,155,45,0.24)!important}
 
 /* All solid-bg elements */
 body.light-mode div[style*="card-bg-solid"][style*="borderRadius"],

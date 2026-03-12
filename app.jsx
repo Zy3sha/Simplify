@@ -24,6 +24,15 @@ const fmtCountdown = s => {
 };
 const avgArr = arr => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
 
+// ── Fluid unit conversion (always store ml internally) ──
+const ML_PER_OZ = 29.5735;
+const mlToOz = ml => Math.round(ml / ML_PER_OZ * 10) / 10;
+const ozToMl = oz => Math.round(oz * ML_PER_OZ);
+const mlToDisplay = (ml, unit) => unit === "oz" ? mlToOz(ml) : Math.round(ml);
+const displayToMl = (val, unit) => unit === "oz" ? ozToMl(parseFloat(val) || 0) : parseInt(val) || 0;
+const volLabel = (unit) => unit === "oz" ? "oz" : "ml";
+const fmtVol = (ml, unit) => ml ? `${mlToDisplay(ml, unit)}${volLabel(unit)}` : "";
+
 // Global time parser for use in TimeInput component (outside App scope)
 function parseTimeFree(str, previousMinutes=null) {
   if (!str) return null;
@@ -195,7 +204,7 @@ function getC(){
 }
 let C=getC();
 // Theme re-render trigger — called by React App on mount
-let _themeCallback = null;
+
 const _origToggle=window.toggleTheme;
 window.toggleTheme=function(){
   _origToggle();
@@ -203,7 +212,7 @@ window.toggleTheme=function(){
   void document.body.offsetHeight;
   C=getC();
   // Trigger React re-render immediately
-  if(_themeCallback) _themeCallback();
+  if(window._themeCallback) window._themeCallback();
 };
 const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em",_ls08="0.08em",_bN="none",_oN="none";
 
@@ -1125,7 +1134,7 @@ function App(){
 
   useEffect(()=>{
     // Register callback so toggleTheme can trigger instant re-render
-    _themeCallback = ()=>{
+    window._themeCallback = ()=>{
       void document.body.offsetHeight; // force layout
       C=getC();
       setIsDark(document.body.classList.contains('dark-mode'));
@@ -1138,7 +1147,7 @@ function App(){
       setThemeKey(k=>k+1);
     });
     obs.observe(document.body,{attributes:true,attributeFilter:['class']});
-    return()=>{obs.disconnect();_themeCallback=null;};
+    return()=>{obs.disconnect();window._themeCallback=null;};
   },[]);
 
 
@@ -1239,7 +1248,7 @@ function App(){
         let detail="",amount="",duration="",note=e.note||"";
         if(e.type==="feed"){
           detail=e.feedType||"milk";
-          amount=e.feedType==="breast"?`L:${e.breastL||0}m R:${e.breastR||0}m`:(e.amount?e.amount+"ml":"");
+          amount=e.feedType==="breast"?`L:${e.breastL||0}m R:${e.breastR||0}m`:(e.amount?fmtVol(e.amount,FU):"");
         }else if(e.type==="poop"){
           detail=e.poopType||"wet";
         }else if(e.type==="nap"){
@@ -1462,6 +1471,10 @@ function App(){
   const[usePersonalRecs,setUsePersonalRecs]=useState(()=>{
     try{const v=localStorage.getItem("use_personal_recs_v1");return v===null?null:JSON.parse(v);}catch{return null;}
   });
+  const[fluidUnit,setFluidUnit]=useState(()=>{
+    try{return localStorage.getItem("fluid_unit_v1")||"ml";}catch{return "ml";}
+  });
+  const FU=fluidUnit; // shorthand for templates
     const[pasteText,setPasteText]=useState("");
   const[parsedEntries,setParsedEntries]=useState(null);
   const parsedEntriesRef = React.useRef(null);
@@ -3747,27 +3760,27 @@ function App(){
     if (isPastDay) {
       if (totalHigh) {
         status="high"; color="#b88a20"; bg="var(--card-bg)"; icon="📈";
-        statusMsg=`Total intake was above average at ${totalMl}ml — common during growth spurts.`;
+        statusMsg=`Total intake was above average at ${fmtVol(totalMl,FU)} — common during growth spurts.`;
       } else if (metMinimum) {
         status="ok"; color=C.mint; bg="var(--card-bg)"; icon="✓";
-        statusMsg=`Good day — ${totalMl}ml total, meeting the minimum recommended intake of ${totalMin}ml. Day feeds: ${dayMl}ml, night feeds: ${nightMl}ml.`;
+        statusMsg=`Good day — ${fmtVol(totalMl,FU)} total, meeting the minimum recommended intake of ${fmtVol(totalMin,FU)}. Day feeds: ${fmtVol(dayMl,FU)}, night feeds: ${fmtVol(nightMl,FU)}.`;
       } else {
         status="low"; color=C.ter; bg="var(--card-bg)"; icon="⚠️";
-        statusMsg=`Total intake was ${totalMl}ml — ${dayShortfall}ml a little under the recommended ${totalMin}ml. Day feeds: ${dayMl}ml, night feeds: ${nightMl}ml. One low day is nothing to worry about.`;
+        statusMsg=`Total intake was ${fmtVol(totalMl,FU)} — ${fmtVol(dayShortfall,FU)} a little under the recommended ${fmtVol(totalMin,FU)}. Day feeds: ${fmtVol(dayMl,FU)}, night feeds: ${fmtVol(nightMl,FU)}. One low day is nothing to worry about.`;
       }
 
 
     } else if (bedLogged) {
       if (totalHigh) {
         status="high"; color="#b88a20"; bg="var(--card-bg)"; icon="📈";
-        statusMsg=`Total intake was above average at ${totalMl}ml — common during growth spurts.`;
+        statusMsg=`Total intake was above average at ${fmtVol(totalMl,FU)} — common during growth spurts.`;
       } else if (metMinimum) {
         status="ok"; color=C.mint; bg="var(--card-bg)"; icon="✓";
-        statusMsg=`Great job — ${totalMl}ml total today, meeting the minimum of ${totalMin}ml. Day: ${dayMl}ml, night feeds: ${nightMl}ml.`;
+        statusMsg=`Great job — ${fmtVol(totalMl,FU)} total today, meeting the minimum of ${fmtVol(totalMin,FU)}. Day: ${fmtVol(dayMl,FU)}, night feeds: ${fmtVol(nightMl,FU)}.`;
       } else {
 
         status="low"; color=C.ter; bg="var(--card-bg)"; icon="⚠️";
-        statusMsg=`Total milk today was ${totalMl}ml — ${dayShortfall}ml below the recommended minimum of ${totalMin}ml.`;
+        statusMsg=`Total milk today was ${fmtVol(totalMl,FU)} — ${fmtVol(dayShortfall,FU)} below the recommended minimum of ${fmtVol(totalMin,FU)}.`;
         sleepLink = {
           icon:"🌙",
           title:"Expect a hunger wake tonight",
@@ -3779,20 +3792,20 @@ function App(){
     } else if (approachingBed) {
       if (totalHigh) {
         status="high"; color="#b88a20"; bg="var(--card-bg)"; icon="📈";
-        statusMsg=`Intake is above average at ${totalMl}ml — looking good.`;
+        statusMsg=`Intake is above average at ${fmtVol(totalMl,FU)} — looking good.`;
       } else if (metMinimum) {
         status="ok"; color=C.mint; bg="var(--card-bg)"; icon="✓";
-        statusMsg=`Minimum intake reached (${totalMl}ml) — great work. Bedtime is about ${Math.round(remainingMins/60*10)/10 < 1 ? remainingMins+"m" : Math.round(remainingMins/60)+"h"} away.`;
+        statusMsg=`Minimum intake reached (${fmtVol(totalMl,FU)}) — great work. Bedtime is about ${Math.round(remainingMins/60*10)/10 < 1 ? remainingMins+"m" : Math.round(remainingMins/60)+"h"} away.`;
       } else {
 
         const feedsLeft = Math.max(remainingFeeds, 1);
         const topUpEach = Math.round(dayShortfall / feedsLeft / 10) * 10;
         status="low"; color=C.ter; bg="var(--card-bg)"; icon="⏳";
-        statusMsg=`${dayShortfall}ml still needed to reach the minimum (${totalMin}ml) — bedtime is ~${remainingMins < 60 ? remainingMins+"m" : Math.round(remainingMins/60)+"h"} away.`;
+        statusMsg=`${fmtVol(dayShortfall,FU)} still needed to reach the minimum (${fmtVol(totalMin,FU)}) — bedtime is ~${remainingMins < 60 ? remainingMins+"m" : Math.round(remainingMins/60)+"h"} away.`;
         sleepLink = {
           icon:"🍼",
           title:"Top up before bed",
-          body:`With ${feedsLeft} feed${feedsLeft!==1?"s":""} left before bedtime, try offering an extra ~${topUpEach}ml at each to hit the minimum. A fuller tummy before bed reduces the chance of hunger-driven night waking. If baby doesn't take it, don't worry — one short day is nothing to worry about.`
+          body:`With ${feedsLeft} feed${feedsLeft!==1?"s":""} left before bedtime, try offering an extra ~${fmtVol(topUpEach,FU)} at each to hit the minimum. A fuller tummy before bed reduces the chance of hunger-driven night waking. If baby doesn't take it, don't worry — one short day is nothing to worry about.`
         };
       }
 
@@ -3800,13 +3813,13 @@ function App(){
     } else {
       if (dayFraction < 0.2) {
         status="early"; color=C.mint; bg="var(--card-bg)"; icon="☀️";
-        statusMsg=`${totalMl}ml so far — the day is just getting started. Goal: reach ${totalMin}ml before bedtime.`;
+        statusMsg=`${fmtVol(totalMl,FU)} so far — the day is just getting started. Goal: reach ${fmtVol(totalMin,FU)} before bedtime.`;
       } else if (totalHigh) {
         status="high"; color="#b88a20"; bg="var(--card-bg)"; icon="📈";
-        statusMsg=`Intake is above average at ${totalMl}ml — common during growth spurts.`;
+        statusMsg=`Intake is above average at ${fmtVol(totalMl,FU)} — common during growth spurts.`;
       } else if (metMinimum) {
         status="ok"; color=C.mint; bg="var(--card-bg)"; icon="✓";
-        statusMsg=`Minimum intake reached — ${totalMl}ml so far today. Keep it up through bedtime.`;
+        statusMsg=`Minimum intake reached — ${fmtVol(totalMl,FU)} so far today. Keep it up through bedtime.`;
       } else {
 
         const feedsLeft = Math.max(remainingFeeds, 1);
@@ -3822,24 +3835,24 @@ function App(){
         if (!isPastDay && (currentHour < 12 || (currentHour === 12 && currentMin === 0))) {
           // Before noon — way too early to flag low intake
           status="ontrack"; color=C.mint; bg="var(--card-bg)"; icon="☀️";
-          statusMsg=`${totalMl}ml so far — the day is just getting started. Goal: reach ${totalMin}ml before bedtime.`;
+          statusMsg=`${fmtVol(totalMl,FU)} so far — the day is just getting started. Goal: reach ${fmtVol(totalMin,FU)} before bedtime.`;
         } else if (!isPastDay && currentHour < 13) {
           // Before 1pm — too early to flag low intake
           status="ontrack"; color=C.mint; bg="var(--card-bg)"; icon="☀️";
-          statusMsg=`${totalMl}ml so far — the day is still young. Goal: reach ${totalMin}ml before bedtime.`;
+          statusMsg=`${fmtVol(totalMl,FU)} so far — the day is still young. Goal: reach ${fmtVol(totalMin,FU)} before bedtime.`;
         } else if (maxPossibleIntake >= totalMin) {
           // Still achievable — show as "on track" not "low"
           status="ontrack"; color=C.mint; bg="var(--card-bg)"; icon="☀️";
-          statusMsg=`${totalMl}ml so far — ${dayShortfall}ml to go. Plenty of time to reach the minimum of ${totalMin}ml.`;
+          statusMsg=`${fmtVol(totalMl,FU)} so far — ${fmtVol(dayShortfall,FU)} to go. Plenty of time to reach the minimum of ${fmtVol(totalMin,FU)}.`;
         } else {
           status="low"; color=C.ter; bg="var(--card-bg)"; icon="⚠️";
-          statusMsg=`${totalMl}ml so far — ${dayShortfall}ml to go to reach the minimum of ${totalMin}ml before bedtime.`;
+          statusMsg=`${fmtVol(totalMl,FU)} so far — ${fmtVol(dayShortfall,FU)} to go to reach the minimum of ${fmtVol(totalMin,FU)} before bedtime.`;
         }
         if (hasFrequentNightWakes) {
           sleepLink = {
             icon:"💤",
             title:"May be linked to night waking",
-            body:`Baby is averaging ${avgNightWakes} night wake${avgNightWakes!==1?"s":""}/night. Low daytime intake is a common reason babies feed more overnight. Spreading ${topUpEach>0?`an extra ~${topUpEach}ml across`:"intake across"} the remaining feeds today can help reduce hunger-driven waking.`
+            body:`Baby is averaging ${avgNightWakes} night wake${avgNightWakes!==1?"s":""}/night. Low daytime intake is a common reason babies feed more overnight. Spreading ${topUpEach>0?`an extra ~${fmtVol(topUpEach,FU)} across`:"intake across"} the remaining feeds today can help reduce hunger-driven waking.`
           };
         }
       }
@@ -4045,7 +4058,7 @@ function App(){
     if (avgNightWakes > 2 && avgMlRecent < 450 && avgMlRecent > 0) {
       insights.push({
         type:"warn", icon:"🔗", title:"Low Day Feeds May Be Driving Night Waking",
-        body:`Average daytime intake of ${avgMlRecent}ml is below the typical minimum, and night wakes are averaging ${avgNightWakes}/night. Hungry babies often compensate at night — not from habit, but genuine need. Offering one extra daytime feed or adding 20–30ml per bottle may reduce overnight hunger waking within a few days.`
+        body:`Average daytime intake of ${fmtVol(avgMlRecent,FU)} is below the typical minimum, and night wakes are averaging ${avgNightWakes}/night. Hungry babies often compensate at night — not from habit, but genuine need. Offering one extra daytime feed or adding 20–30ml per bottle may reduce overnight hunger waking within a few days.`
       });
     }
 
@@ -4165,6 +4178,10 @@ function App(){
       try{localStorage.setItem("use_personal_recs_v1", JSON.stringify(usePersonalRecs));}catch{}
     }
   },[usePersonalRecs]);
+
+  React.useEffect(()=>{
+    try{localStorage.setItem("fluid_unit_v1",fluidUnit);}catch{}
+  },[fluidUnit]);
 
 
   function parseTime(str, previousMinutes=null) {
@@ -4539,7 +4556,7 @@ function App(){
     setEType(entry.type);
     setFeedType(entry.feedType||"milk");
     
-    setForm({amount:entry.amount||"",time:entry.time||nowTime(),start:entry.start||nowTime(),end:entry.end||nowTime(),note:entry.note||"",night:entry.night?"yes":"no",poopType:entry.poopType||"",breastL:entry.breastL||"",breastR:entry.breastR||"",pumpL:entry.pumpL||"",pumpR:entry.pumpR||""});
+    setForm({amount:entry.amount?String(mlToDisplay(entry.amount,fluidUnit)):"",time:entry.time||nowTime(),start:entry.start||nowTime(),end:entry.end||nowTime(),note:entry.note||"",night:entry.night?"yes":"no",poopType:entry.poopType||"",breastL:entry.breastL||"",breastR:entry.breastR||"",pumpL:entry.pumpL?String(mlToDisplay(entry.pumpL,fluidUnit)):"",pumpR:entry.pumpR?String(mlToDisplay(entry.pumpR,fluidUnit)):""});
     setModal("entry");
   }
   function delEntry(id){
@@ -4587,11 +4604,11 @@ function App(){
     const f=logForm;
     const t = f.feedTime || nowTime();
     if(f.feedType==="bottle"){
-      quickAddLog("feed",{type:"feed",time:t,feedType:"milk",amount:parseInt(f.amount)||0,note:f.note||""});
+      quickAddLog("feed",{type:"feed",time:t,feedType:"milk",amount:displayToMl(f.amount,FU),note:f.note||""});
     } else if(f.feedType==="breast"){
       quickAddLog("feed",{type:"feed",time:t,feedType:"breast",breastL:parseInt(f.breastL)||0,breastR:parseInt(f.breastR)||0,amount:0,note:f.note||""});
     } else if(f.feedType==="pump"){
-      const pL=parseInt(f.pumpL)||0, pR=parseInt(f.pumpR)||0;
+      const pL=displayToMl(f.pumpL,FU), pR=displayToMl(f.pumpR,FU);
       quickAddLog("feed",{type:"feed",time:t,feedType:"pump",pumpL:pL,pumpR:pR,amount:pL+pR,note:f.note||""});
     } else {
       quickAddLog("feed",{type:"feed",time:t,feedType:"solids",amount:0,note:f.note||""});
@@ -4601,9 +4618,9 @@ function App(){
   function saveLogPump(){
     const f=logForm;
     const t = f.pumpStart || nowTime();
-    const total = parseInt(f.pumpTotal)||0;
-    const pL = parseInt(f.pumpL)||0;
-    const pR = parseInt(f.pumpR)||0;
+    const total = displayToMl(f.pumpTotal,FU);
+    const pL = displayToMl(f.pumpL,FU);
+    const pR = displayToMl(f.pumpR,FU);
 
     const finalL = (f.pumpL===""&&f.pumpR===""&&total>0) ? Math.round(total/2) : pL;
     const finalR = (f.pumpL===""&&f.pumpR===""&&total>0) ? total-Math.round(total/2) : pR;
@@ -4636,7 +4653,7 @@ function App(){
         const pL=parseInt(form.pumpL)||0, pR=parseInt(form.pumpR)||0;
         e={...e,type:"feed",time:formTime,amount:pL+pR,feedType:"pump",pumpL:pL,pumpR:pR,night:form.night==="yes"};
       } else {
-        e={...e,type:"feed",time:formTime,amount:parseInt(form.amount)||0,night:form.night==="yes",feedType:feedType};
+        e={...e,type:"feed",time:formTime,amount:displayToMl(form.amount,FU),night:form.night==="yes",feedType:feedType};
       }
     }
     else if(eType==="nap"){e={...e,type:"nap",start:formStart,end:formEnd,night:false};}
@@ -4797,12 +4814,12 @@ function App(){
     const ln=[`${fmtLong(selDay)} — ${possessive(babyName||"Baby")} Day`,""];
     dayE.forEach(e=>{
       if(e.type==="wake")ln.push(`☀️ Wake up ${fmt12(e.time)}`);
-      else if(e.type==="feed")ln.push(`🍼 Feed ${e.amount}ml at ${fmt12(e.time)}${e.note?` (${e.note})`:""}`);
+      else if(e.type==="feed")ln.push(`🍼 Feed ${fmtVol(e.amount,FU)} at ${fmt12(e.time)}${e.note?` (${e.note})`:""}`);
       else if(e.type==="nap")ln.push(`😴 Nap ${fmt12(e.start)}–${fmt12(e.end)} (${hm(minDiff(e.start,e.end))})${e.note?` (${e.note})`:""}`);
       else if(e.type==="sleep")ln.push(`🌙 Bedtime ${fmt12(e.time)}`);
     });
-    if(nightE.length){ln.push("");ln.push("Night:");nightE.forEach((e,i)=>ln.push(`🌟 Wake ${i+1} ${fmt12(e.time)}${e.amount?` — ${e.amount}ml`:""}${e.note?` (${e.note})`:""}`));}
-    ln.push("");ln.push(`Total feeds: ${totalMl}ml · Naps: ${naps.length} (${hm(napMins)})`);
+    if(nightE.length){ln.push("");ln.push("Night:");nightE.forEach((e,i)=>ln.push(`🌟 Wake ${i+1} ${fmt12(e.time)}${e.amount?` — ${fmtVol(e.amount,FU)}`:""}${e.note?` (${e.note})`:""}`));}
+    ln.push("");ln.push(`Total feeds: ${fmtVol(totalMl,FU)} · Naps: ${naps.length} (${hm(napMins)})`);
     navigator.clipboard.writeText(ln.join("\n")).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});
   }
   function addDay(){
@@ -4927,7 +4944,7 @@ function App(){
     }
   },[Object.keys(days).join(",")]);
 
-  const tabSt=t=>({flex:1,padding:"8px 2px 6px",border:_bN,background:"none",fontSize:9,fontWeight:tab===t?700:500,cursor:_cP,color:tab===t?C.ter:"var(--text-lt)",display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.02em",position:"relative",transition:"transform 0.2s cubic-bezier(.23,1,.32,1)"});
+  const tabSt=t=>({flex:"none",padding:"8px 14px 6px",border:_bN,background:"none",fontSize:9,fontWeight:tab===t?700:500,cursor:_cP,color:tab===t?C.ter:"var(--text-lt)",display:"flex",flexDirection:"column",alignItems:"center",gap:2,letterSpacing:"0.02em",position:"relative",transition:"transform 0.2s cubic-bezier(.23,1,.32,1)",borderRadius:12});
   const card={background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"var(--card-shadow)",transition:"transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.25s ease"};
 
   const tabIcons={day:"📅",insights:"💡",milestones:"⭐",develop:"🧩",settings:"👤"};
@@ -5990,7 +6007,7 @@ function App(){
               {/* 5. Today's summary stats */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:14}}>
                 {[
-                  {big:totalMl||dayE.filter(e=>e.type==="feed"&&e.feedType==="solids").length,unit:totalMl?"ml":"meals",label:totalMl?"Total Milk":"Solids",color:C.ter,bg:"var(--card-bg)"},
+                  {big:totalMl?mlToDisplay(totalMl,FU):dayE.filter(e=>e.type==="feed"&&e.feedType==="solids").length,unit:totalMl?volLabel(FU):"meals",label:totalMl?"Total Milk":"Solids",color:C.ter,bg:"var(--card-bg)"},
                   {big:dayE.filter(e=>e.type==="poop").length,unit:"💩",label:"Nappies",color:C.mid,bg:"var(--card-bg)"},
                   {big:naps.length,unit:"naps",label:"Day Sleep",color:C.mint,bg:"var(--card-bg)"},
                   {big:hm(napMins),unit:"",label:"Nap Time",color:C.sky,bg:"var(--card-bg)"},
@@ -6095,9 +6112,9 @@ function App(){
                   } else if(e.type==="feed"&&e.feedType==="pump"){
                     const parts=[];
                     const total=(e.pumpL||0)+(e.pumpR||0)||e.amount||0;
-                    if(total>0) parts.push(`${total}ml`);
-                    if(e.pumpL>0) parts.push(`L: ${e.pumpL}ml`);
-                    if(e.pumpR>0) parts.push(`R: ${e.pumpR}ml`);
+                    if(total>0) parts.push(fmtVol(total,FU));
+                    if(e.pumpL>0) parts.push(`L: ${fmtVol(e.pumpL,FU)}`);
+                    if(e.pumpR>0) parts.push(`R: ${fmtVol(e.pumpR,FU)}`);
                     if(e.pumpDuration>0) parts.push(`${e.pumpDuration}min`);
                     if(parts.length) subDetail=parts.join(" · ");
                   } else if(e.type==="feed"&&e.feedType==="solids"){
@@ -6118,9 +6135,9 @@ function App(){
                   let badgeVal = null;
                   if(e.type==="feed"){
                     if(e.feedType==="breast") badgeVal=`${(e.breastL||0)+(e.breastR||0)}min`;
-                    else if(e.feedType==="pump") badgeVal=`${(e.pumpL||0)+(e.pumpR||0)||e.amount||0}ml`;
+                    else if(e.feedType==="pump") badgeVal=fmtVol((e.pumpL||0)+(e.pumpR||0)||e.amount||0,FU);
                     else if(e.feedType==="solids") badgeVal=null;
-                    else badgeVal=e.amount?`${e.amount}ml`:null;
+                    else badgeVal=e.amount?fmtVol(e.amount,FU):null;
                   } else if(e.type==="nap"){
                     const dur=e.start&&e.end?minDiff(e.start,e.end):0;
                     badgeVal=dur>0?hm(dur):null;
@@ -6198,7 +6215,7 @@ function App(){
                               {!e.selfSettled&&!e.assisted&&e.note&&<div style={{fontSize:14,color:"var(--text-lt)",fontStyle:"italic",marginTop:1}}>{e.note}</div>}
                             </div>
                             <div style={{display:"flex",alignItems:"center",gap:7}}>
-                              {e.amount>0&&<span style={{background:"var(--chip-bg)",color:C.gold,fontFamily:_fM,fontSize:15,padding:"2px 7px",borderRadius:99}}>{e.amount} ml</span>}
+                              {e.amount>0&&<span style={{background:"var(--chip-bg)",color:C.gold,fontFamily:_fM,fontSize:15,padding:"2px 7px",borderRadius:99}}>{fmtVol(e.amount,FU)}</span>}
                               <button onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1.5px solid rgba(123,104,238,0.30)",borderRadius:"50%",width:24,height:24,color:"#7b68ee",cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 8px rgba(123,104,238,0.20)"}}>✎</button>
                               <button onClick={()=>delEntry(e.id)} style={{background:"var(--card-bg-solid)",border:"1.5px solid var(--card-border)",borderRadius:"50%",width:24,height:24,color:"#e06070",cursor:_cP,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                             </div>
@@ -6238,7 +6255,7 @@ function App(){
                               {!e.selfSettled&&!e.assisted&&e.note&&<div style={{fontSize:14,color:"var(--text-lt)",fontStyle:"italic",marginTop:1}}>{e.note}</div>}
                             </div>
                             <div style={{display:"flex",alignItems:"center",gap:7}}>
-                              {e.amount>0&&<span style={{background:"var(--chip-bg)",color:C.gold,fontFamily:_fM,fontSize:15,padding:"2px 7px",borderRadius:99}}>{e.amount} ml</span>}
+                              {e.amount>0&&<span style={{background:"var(--chip-bg)",color:C.gold,fontFamily:_fM,fontSize:15,padding:"2px 7px",borderRadius:99}}>{fmtVol(e.amount,FU)}</span>}
                               <button onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1.5px solid rgba(123,104,238,0.30)",borderRadius:"50%",width:24,height:24,color:"#7b68ee",cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 8px rgba(123,104,238,0.20)"}}>✎</button>
                               <button onClick={()=>delEntry(e.id)} style={{background:"var(--card-bg-solid)",border:"1.5px solid var(--card-border)",borderRadius:"50%",width:24,height:24,color:"#e06070",cursor:_cP,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                             </div>
@@ -6312,7 +6329,7 @@ function App(){
           <div>
             <div className="glass-card" style={card}>
               <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:4}}>Avg Daily Feed (last 7 days)</div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:700,color:C.ter}}>{avgMl}<span style={{fontSize:15,color:C.lt,fontWeight:400}}> ml</span></div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:700,color:C.ter}}>{mlToDisplay(avgMl,FU)}<span style={{fontSize:15,color:C.lt,fontWeight:400}}> {volLabel(FU)}</span></div>
             </div>
             <div className="glass-card" style={card}>
               <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>Feed Total by Day</div>
@@ -6344,7 +6361,7 @@ function App(){
                 <div key={i} onClick={()=>{setSelDay(s.date);setTab("day");}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"9px 0",borderBottom:i<wStats.length-1?`1px solid ${C.blush}`:"none",cursor:_cP}}>
                   <span style={{fontSize:15,color:s.date===selDay?C.ter:C.deep,fontWeight:s.date===selDay?600:400}}>{fmtLong(s.date)}</span>
                   <div style={{display:"flex",gap:8}}>
-                    <span style={{fontSize:14,fontFamily:_fM,color:C.ter}}>{s.ml}ml</span>
+                    <span style={{fontSize:14,fontFamily:_fM,color:C.ter}}>{fmtVol(s.ml,FU)}</span>
                     <span style={{fontSize:14,fontFamily:_fM,color:C.mint}}>{s.naps} naps</span>
                     <span style={{fontSize:14,fontFamily:_fM,color:C.lt}}>{s.nightW}🌙</span>
                   </div>
@@ -6673,7 +6690,7 @@ function App(){
                         <div style={{marginBottom:14}}>
                           <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>This Week vs Last Week</div>
                           {[
-                            {label:"Avg Daily Feed",curr:tLast.avgMl,prev:tPrev.avgMl,unit:"ml"},
+                            {label:"Avg Daily Feed",curr:mlToDisplay(tLast.avgMl,FU),prev:mlToDisplay(tPrev.avgMl,FU),unit:volLabel(FU)},
                             {label:"Avg Nap Time",curr:tLast.avgNap,prev:tPrev.avgNap,unit:"",fmt:hm},
                             {label:"Avg Night Wakes",curr:tLast.avgNight,prev:tPrev.avgNight,unit:""},
                           ].map((row,i)=>{
@@ -6694,8 +6711,8 @@ function App(){
                         </div>
                       )}
                       <div style={{marginBottom:14}}>
-                        <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>Daily Feed (ml)</div>
-                        <TrendLine vals={mlVals} keys={dayKeys} color={C.ter}/>
+                        <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>Daily Feed ({volLabel(FU)})</div>
+                        <TrendLine vals={mlVals.map(v=>mlToDisplay(v,FU))} keys={dayKeys} color={C.ter} unit={volLabel(FU)}/>
                       </div>
                       <div style={{marginBottom:14}}>
                         <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>Daily Nap Time</div>
@@ -6708,7 +6725,7 @@ function App(){
                             <div key={i} style={{padding:"8px 0",borderBottom:i<weekAvgs.length-1?`1px solid ${C.blush}`:"none"}}>
                               <div style={{fontSize:13,fontFamily:_fM,color:C.lt,marginBottom:4}}>{wk.label} · {wk.days} days</div>
                               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                                <span style={{background:"var(--chip-bg)",color:C.ter,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{wk.avgMl}ml/day</span>
+                                <span style={{background:"var(--chip-bg)",color:C.ter,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{mlToDisplay(wk.avgMl,FU)}{volLabel(FU)}/day</span>
                                 <span style={{background:"var(--chip-bg)",color:C.mint,fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{hm(wk.avgNap)} naps</span>
                                 <span style={{background:"var(--chip-bg)",color:"var(--gold)",fontFamily:_fM,fontSize:13,padding:"2px 7px",borderRadius:99}}>~{wk.avgNight} wakes</span>
                               </div>
@@ -7127,7 +7144,7 @@ function App(){
                           <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🍼 Feeding</div>
                           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                             <span style={{fontSize:14,color:C.deep}}>Total</span>
-                            <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:C.ter}}>{totalFeedMl}<span style={{fontSize:12,color:C.lt}}>ml</span></span>
+                            <span style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:C.ter}}>{mlToDisplay(totalFeedMl,FU)}<span style={{fontSize:12,color:C.lt}}>{volLabel(FU)}</span></span>
                           </div>
                           <div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:C.mid,borderTop:`1px solid ${C.blush}`,paddingTop:4}}>
                             <span>Daytime · {dayFeeds.length} feeds</span>
@@ -7792,6 +7809,24 @@ function App(){
                 </div>
               </div>
             )}
+            {/* Fluid Measurement Unit */}
+            <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",width:"100%",marginBottom:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
+                <span style={{fontSize:24}}>🍼</span>
+                <div>
+                  <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Fluid Measurement</div>
+                  <div style={{fontSize:12,color:C.lt,marginTop:2}}>Choose how milk and pump volumes are displayed</div>
+                </div>
+              </div>
+              <div style={{display:"inline-flex",background:"var(--card-bg)",borderRadius:99,border:`1px solid ${C.blush}`,overflow:"hidden",marginBottom:8}}>
+                <button onClick={()=>setFluidUnit("ml")} style={{padding:"7px 20px",fontSize:13,fontFamily:_fM,fontWeight:700,border:"none",background:fluidUnit==="ml"?`linear-gradient(135deg,${C.ter},#a85a44)`:"transparent",color:fluidUnit==="ml"?"white":C.lt,cursor:"pointer",borderRadius:99}}>ml</button>
+                <div style={{width:1,background:C.blush}}/>
+                <button onClick={()=>setFluidUnit("oz")} style={{padding:"7px 20px",fontSize:13,fontFamily:_fM,fontWeight:700,border:"none",background:fluidUnit==="oz"?`linear-gradient(135deg,${C.ter},#a85a44)`:"transparent",color:fluidUnit==="oz"?"white":C.lt,cursor:"pointer",borderRadius:99}}>fl oz</button>
+              </div>
+              <div style={{fontSize:12,color:C.lt,lineHeight:1.5}}>
+                {fluidUnit==="oz"?"Volumes shown in fluid ounces. Data is stored in ml internally — you can switch back anytime.":"Volumes shown in millilitres (default)."}
+              </div>
+            </div>
             {/* Sleep Recommendations Mode */}
             <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",width:"100%"}}>
               <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
@@ -7839,7 +7874,7 @@ function App(){
         </div>
       )}
 
-      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"var(--nav-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderTop:"1px solid var(--nav-border)",display:"flex",alignItems:"stretch",boxShadow:"var(--nav-shadow)",maxWidth:520,margin:"0 auto",borderRadius:"22px 22px 0 0",paddingBottom:"env(safe-area-inset-bottom,0)"}}>
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"var(--nav-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderTop:"1px solid var(--nav-border)",display:"flex",justifyContent:"space-evenly",alignItems:"center",boxShadow:"var(--nav-shadow)",maxWidth:520,margin:"0 auto",borderRadius:"22px 22px 0 0",paddingBottom:"env(safe-area-inset-bottom,0)",padding:"4px 8px env(safe-area-inset-bottom,0)"}}>
         {["day","insights","milestones","develop"].map(t=>(
           <button key={t} onClick={()=>{setTab(t);setLogPanel(null);}} style={tabSt(t)}>
             <span style={{fontSize:14,transition:"transform 0.15s",transform:tab===t?"scale(1.1)":"scale(1)"}}>{tabIcons[t]}</span>
@@ -7914,7 +7949,7 @@ function App(){
           </div>
 
           {logForm.feedType==="bottle"&&(
-            <Inp label="Amount (ml)" type="number" inputMode="numeric" placeholder="e.g. 180" value={logForm.amount} onChange={e=>setLogForm(f=>({...f,amount:e.target.value}))}/>
+            <Inp label={`Amount (${volLabel(FU)})`} type="number" inputMode="numeric" placeholder={FU==="oz"?"e.g. 6":"e.g. 180"} value={logForm.amount} onChange={e=>setLogForm(f=>({...f,amount:e.target.value}))}/>
           )}
           {logForm.feedType==="breast"&&(
             <div style={{marginBottom:12}}>
@@ -8082,7 +8117,7 @@ function App(){
           <Inp label="Duration (mins)" type="number" inputMode="numeric" min="0" placeholder="e.g. 20"
             value={logForm.pumpDuration||""} onChange={e=>setLogForm(f=>({...f,pumpDuration:e.target.value}))}/>
           <div style={{marginBottom:14}}>
-            <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:6}}>Total pumped (ml)</label>
+            <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:6}}>Total pumped ({volLabel(FU)})</label>
             <input type="number" inputMode="numeric" min="0" placeholder="e.g. 120"
               value={logForm.pumpTotal||""}
               onChange={e=>{
@@ -8094,12 +8129,12 @@ function App(){
             <div style={{fontSize:12,color:C.lt,marginTop:4,textAlign:"center",fontFamily:_fM}}>Splits equally between left & right — adjust below if needed</div>
           </div>
           <div style={{marginBottom:14}}>
-            <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:6}}>Per side (ml)</label>
+            <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:6}}>Per side ({volLabel(FU)})</label>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
               {[["pumpL","Left (L)"],["pumpR","Right (R)"]].map(([k,lbl])=>(
                 <div key={k}>
                   <label style={{fontSize:13,fontFamily:_fM,color:C.mid,display:"block",marginBottom:3,textAlign:"center"}}>{lbl}</label>
-                  <input type="number" inputMode="numeric" min="0" placeholder="ml"
+                  <input type="number" inputMode="numeric" min="0" placeholder={volLabel(FU)}
                     value={logForm[k]||""}
                     onChange={e=>{
                       const updated={...logForm,[k]:e.target.value};
@@ -8138,7 +8173,7 @@ function App(){
                 </button>
               ))}
             </div>
-            {feedType==="milk"&&<Inp label="Amount (ml)" type="number" inputMode="numeric" placeholder="e.g. 180" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}/>}
+            {feedType==="milk"&&<Inp label={`Amount (${volLabel(FU)})`} type="number" inputMode="numeric" placeholder={FU==="oz"?"e.g. 6":"e.g. 180"} value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}/>}
             {feedType==="breast"&&(
               <div style={{marginBottom:12}}>
                 <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:6}}>Minutes each side</label>
@@ -8314,7 +8349,7 @@ function App(){
                     <div style={{flex:1}}>
                       <div style={{fontSize:15,fontWeight:500}}>{NAMES[e.type]}{e.night?" (night)":""}</div>
                       <div style={{fontSize:15,fontFamily:_fM,color:C.lt}}>
-                        {e.type==="nap"?`${fmt12(e.start)} – ${fmt12(e.end)} (${hm(minDiff(e.start,e.end))})`:`${fmt12(e.time)}${e.amount?` · ${e.amount}ml`:""}`}
+                        {e.type==="nap"?`${fmt12(e.start)} – ${fmt12(e.end)} (${hm(minDiff(e.start,e.end))})`:`${fmt12(e.time)}${e.amount?` · ${fmtVol(e.amount,FU)}`:""}`}
                         {e.note?` · ${e.note}`:""}
                       </div>
                     </div>
@@ -8397,7 +8432,7 @@ function App(){
               <div style={{fontSize:15,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:8}}>🍼 Feeding</div>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                 <span style={{fontSize:15,color:C.deep}}>Total</span>
-                <span style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.ter}}>{totalFeedMl}<span style={{fontSize:14,color:C.lt,fontWeight:400}}>ml</span></span>
+                <span style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.ter}}>{mlToDisplay(totalFeedMl,FU)}<span style={{fontSize:14,color:C.lt,fontWeight:400}}>{volLabel(FU)}</span></span>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:14,color:C.mid,borderTop:`1px solid ${C.blush}`,paddingTop:6}}>
                 <span>Daytime · {dayFeeds.length} feeds</span>
@@ -8548,7 +8583,7 @@ function App(){
                 setEditEntry(entry);
                 setEType(entry.type);
                 setFeedType(entry.feedType||"milk");
-                setForm({amount:entry.amount||"",time:entry.time||nowTime(),start:entry.start||nowTime(),end:entry.end||nowTime(),note:entry.note||"",night:entry.night?"yes":"no",poopType:entry.poopType||"",breastL:entry.breastL||"",breastR:entry.breastR||"",pumpL:entry.pumpL||"",pumpR:entry.pumpR||""});
+                setForm({amount:entry.amount?String(mlToDisplay(entry.amount,fluidUnit)):"",time:entry.time||nowTime(),start:entry.start||nowTime(),end:entry.end||nowTime(),note:entry.note||"",night:entry.night?"yes":"no",poopType:entry.poopType||"",breastL:entry.breastL||"",breastR:entry.breastR||"",pumpL:entry.pumpL?String(mlToDisplay(entry.pumpL,fluidUnit)):"",pumpR:entry.pumpR?String(mlToDisplay(entry.pumpR,fluidUnit)):""});
                 setModal("entry");
               }} style={{width:"100%",padding:"10px",borderRadius:99,border:_bN,background:"transparent",color:C.lt,fontSize:13,cursor:_cP,fontFamily:_fI}}>
                 Just edit time/note
@@ -8610,13 +8645,13 @@ function App(){
                   <div style={{marginBottom:10}}>
                     <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:5}}>Amount</div>
                     <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <input type="number" inputMode="numeric" placeholder="ml" value={nwForm.ml}
+                      <input type="number" inputMode="numeric" placeholder={volLabel(FU)} value={nwForm.ml}
                         onChange={e=>setNwForm(f=>({...f,ml:e.target.value}))}
                         style={{flex:1,fontSize:18,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,fontFamily:_fM,textAlign:"center",boxSizing:_bBB}}/>
-                      <span style={{fontSize:15,color:C.lt,fontFamily:_fM}}>ml</span>
+                      <span style={{fontSize:15,color:C.lt,fontFamily:_fM}}>{volLabel(FU)}</span>
                     </div>
                     <div style={{display:"flex",gap:6,marginTop:7}}>
-                      {[60,90,120,150,180].map(ml=>(
+                      {(FU==="oz"?[2,3,4,5,6]:[60,90,120,150,180]).map(ml=>(
                         <button key={ml} onClick={()=>setNwForm(f=>({...f,ml:String(ml)}))}
                           style={{flex:1,padding:"6px 2px",borderRadius:9,border:`1px solid ${nwForm.ml===String(ml)?"#7b68ee":C.blush}`,background:nwForm.ml===String(ml)?"#f0eeff":C.warm,color:nwForm.ml===String(ml)?"#5040a0":C.lt,fontSize:11,fontFamily:_fM,cursor:_cP}}>
                           {ml}
@@ -8647,13 +8682,13 @@ function App(){
               <div style={{marginBottom:16}}>
                 <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Feed amount (if applicable)</div>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <input type="number" inputMode="numeric" placeholder="ml" value={nwForm.ml}
+                  <input type="number" inputMode="numeric" placeholder={volLabel(FU)} value={nwForm.ml}
                     onChange={e=>setNwForm(f=>({...f,ml:e.target.value}))}
                     style={{flex:1,fontSize:20,padding:"12px 14px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,fontFamily:_fM,textAlign:"center",boxSizing:_bBB}}/>
-                  <span style={{fontSize:16,color:C.lt,fontFamily:_fM}}>ml</span>
+                  <span style={{fontSize:16,color:C.lt,fontFamily:_fM}}>{volLabel(FU)}</span>
                 </div>
                 <div style={{display:"flex",gap:8,marginTop:8}}>
-                  {[60,90,120,150,180].map(ml=>(
+                  {(FU==="oz"?[2,3,4,5,6]:[60,90,120,150,180]).map(ml=>(
                     <button key={ml} onClick={()=>setNwForm(f=>({...f,ml:String(ml)}))}
                       style={{flex:1,padding:"7px 2px",borderRadius:10,border:`1px solid ${nwForm.ml===String(ml)?"#7b68ee":C.blush}`,background:nwForm.ml===String(ml)?"#f0eeff":C.warm,color:nwForm.ml===String(ml)?"#5040a0":C.lt,fontSize:12,fontFamily:_fM,cursor:_cP}}>
                       {ml}
@@ -8671,7 +8706,7 @@ function App(){
             <button onClick={()=>{
               if(!nwForm.time) return;
               const isMilkAssisted = nwForm.assisted && nwForm.assistedType==="milk";
-              const ml = nwForm.selfSettled ? 0 : isMilkAssisted ? (parseInt(nwForm.ml)||0) : (parseInt(nwForm.ml)||0);
+              const ml = nwForm.selfSettled ? 0 : isMilkAssisted ? displayToMl(nwForm.ml,FU) : displayToMl(nwForm.ml,FU);
               const noteStr = nwForm.selfSettled
                 ? (nwForm.note||"Self settled")
                 : nwForm.assisted
