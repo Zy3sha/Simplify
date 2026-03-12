@@ -326,13 +326,15 @@ body.light-mode div[style*="position:\"fixed\""][style*="bottom:0"],body:not(.da
   background:radial-gradient(ellipse 50% 100% at 50% 0%,rgba(245,235,232,0.08),transparent 60%),rgba(255,255,254,0.90)!important;
   box-shadow:0 -4px 24px rgba(245,235,232,0.12),0 -8px 48px rgba(240,230,228,0.06)!important}
 
-/* Nav bar buttons — NO outer bleed */
-div[style*="position:\"fixed\""][style*="bottom:0"] button{
-  box-shadow:none!important;border-color:transparent!important;animation:none!important}
+/* Nav bar buttons — completely clean, zero glow/border */
+div[style*="position:\"fixed\""][style*="bottom:0"] button,
+div[style*="position:\"fixed\""][style*="bottom:0"] button[style]{
+  box-shadow:none!important;border:none!important;border-color:transparent!important;background-image:none!important;animation:none!important}
 
-/* Quick log bar buttons — NO outer bleed */
-div[style*="borderRadius:18"][style*="gap:4"] button{
-  box-shadow:none!important;border-color:transparent!important;animation:none!important}
+/* Quick log bar buttons — completely clean */
+div[style*="borderRadius:18"][style*="gap:4"] button,
+div[style*="borderRadius:18"][style*="gap:4"] button[style]{
+  box-shadow:none!important;border:none!important;border-color:transparent!important;background-image:none!important;animation:none!important}
 
 /* Sheets / Modals — these DO get blur since they're overlay */
 div[style*="borderRadius:\"24px 24px 0 0\""],div[style*="borderRadius:24px 24px 0 0"]{
