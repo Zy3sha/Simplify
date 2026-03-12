@@ -1319,18 +1319,13 @@ function App(){
         const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0,w,h);
         const dataUrl=canvas.toDataURL("image/jpeg",0.5);
         const milestoneId=photoInputRef.current._forMilestone;
-        const isBottle=photoInputRef.current._bottleSnap;
-        photoInputRef.current._bottleSnap=false;
         if(milestoneId){
           // Attach to milestone
           setMilestones(prev=>({...prev,[milestoneId]:{...prev[milestoneId],photo:dataUrl}}));
         }else{
           // Add to photo diary
-          setPhotos(prev=>[...prev,{id:uid(),date:selDay||todayStr(),time:nowTime(),dataUrl,note:isBottle?"🍼 Bottle":""}]);
-          if(isBottle){
-            setQuickFlash("📸 Bottle saved ✓");
-            setTimeout(()=>setQuickFlash(null),1200);
-          }
+          setPhotos(prev=>[...prev,{id:uid(),date:selDay||todayStr(),time:nowTime(),dataUrl,note:""}]);
+
         }
         try{navigator.vibrate&&navigator.vibrate(30);}catch{}
       };
@@ -5964,14 +5959,7 @@ function App(){
                   }},
                   {emoji:"🫙",label:"Pump",action:()=>openLogPanel("pump")},
                   {emoji:"☀️",label:"Wake",action:()=>handleSmartWake()},
-                  {emoji:"📸",label:"Bottle",action:()=>{
-                    // Snap bottle photo — saves to photo diary tagged as bottle
-                    if(photoInputRef.current){
-                      photoInputRef.current._forMilestone=null;
-                      photoInputRef.current._bottleSnap=true;
-                      photoInputRef.current.click();
-                    }
-                  }},
+
                   {emoji:"📷",label:"Photo",action:()=>capturePhoto(null)},
                 ].map(({emoji,label,action})=>(
                   <button key={label} onClick={action}
@@ -7954,17 +7942,7 @@ function App(){
             <Inp label="Note (optional)" type="text" placeholder="e.g. fussy, didn't finish…" value={logForm.note} onChange={e=>setLogForm(f=>({...f,note:e.target.value}))}/>
           )}
           <PBtn onClick={saveLogFeed}>✓ Log Feed</PBtn>
-          {logForm.feedType==="bottle"&&(
-            <button onClick={()=>{
-              if(photoInputRef.current){
-                photoInputRef.current._forMilestone=null;
-                photoInputRef.current._bottleSnap=true;
-                photoInputRef.current.click();
-              }
-            }} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.mid,fontFamily:_fI,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-              <span style={{fontSize:18}}>📸</span> Snap Bottle — save photo for later
-            </button>
-          )}
+          
         </Sheet>
       )}
 
