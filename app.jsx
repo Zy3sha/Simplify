@@ -33,6 +33,22 @@ const displayToMl = (val, unit) => unit === "oz" ? ozToMl(parseFloat(val) || 0) 
 const volLabel = (unit) => unit === "oz" ? "oz" : "ml";
 const fmtVol = (ml, unit) => ml ? `${mlToDisplay(ml, unit)}${volLabel(unit)}` : "";
 
+// ── Weight/Height unit conversion (always store kg/cm internally) ──
+const KG_PER_LB = 0.453592;
+const CM_PER_IN = 2.54;
+const kgToLb = kg => Math.round(kg / KG_PER_LB * 10) / 10;
+const lbToKg = lb => Math.round(parseFloat(lb) * KG_PER_LB * 1000) / 1000;
+const cmToIn = cm => Math.round(cm / CM_PER_IN * 10) / 10;
+const inToCm = inch => Math.round(parseFloat(inch) * CM_PER_IN * 10) / 10;
+const kgToDisplay = (kg, unit) => unit === "lbs" ? kgToLb(kg) : Math.round(kg * 1000) / 1000;
+const displayToKg = (val, unit) => unit === "lbs" ? lbToKg(val) : parseFloat(val) || 0;
+const cmToDisplay = (cm, unit) => unit === "lbs" ? cmToIn(cm) : Math.round(cm * 10) / 10;
+const displayToCm = (val, unit) => unit === "lbs" ? inToCm(val) : parseFloat(val) || 0;
+const wtLabel = (unit) => unit === "lbs" ? "lbs" : "kg";
+const htLabel = (unit) => unit === "lbs" ? "in" : "cm";
+const fmtWt = (kg, unit) => kg ? `${kgToDisplay(kg, unit)}${wtLabel(unit)}` : "";
+const fmtHt = (cm, unit) => cm ? `${cmToDisplay(cm, unit)}${htLabel(unit)}` : "";
+
 // Global time parser for use in TimeInput component (outside App scope)
 function parseTimeFree(str, previousMinutes=null) {
   if (!str) return null;
@@ -1263,7 +1279,7 @@ function App(){
       });
     });
     // Add weight/height
-    rows.push([]);rows.push(["Date","Weight (kg)","Height (cm)","Weight %ile","Height %ile"]);
+    rows.push([]);rows.push(["Date","Weight ("+wtLabel(MU)+")","Height ("+htLabel(MU)+")","Weight %ile","Height %ile"]);
     const allDates=[...new Set([...weights.map(w=>w.date),...heights.map(h=>h.date)])].sort();
     allDates.forEach(d=>{
       const w=weights.find(x=>x.date===d);
@@ -1271,7 +1287,7 @@ function App(){
       let wp="",hp="";
       if(w&&babyDob){const mo=Math.floor((new Date(d)-new Date(babyDob))/(1000*60*60*24*30.44));wp=getPercentile(w.kg,mo,babySex)||"";}
       if(h&&babyDob){const mo=Math.floor((new Date(d)-new Date(babyDob))/(1000*60*60*24*30.44));hp=getHeightPercentile(h.cm,mo,babySex)||"";}
-      rows.push([d,w?w.kg:"",h?h.cm:"",wp,hp].map(v=>'"'+String(v)+'"'));
+      rows.push([d,w?kgToDisplay(w.kg,MU):"",h?cmToDisplay(h.cm,MU):"",wp,hp].map(v=>'"'+String(v)+'"'));
     });
     const csv=rows.map(r=>r.join(",")).join("\n");
     const blob=new Blob([csv],{type:"text/csv"});
@@ -1303,12 +1319,18 @@ function App(){
         const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0,w,h);
         const dataUrl=canvas.toDataURL("image/jpeg",0.5);
         const milestoneId=photoInputRef.current._forMilestone;
+        const isBottle=photoInputRef.current._bottleSnap;
+        photoInputRef.current._bottleSnap=false;
         if(milestoneId){
           // Attach to milestone
           setMilestones(prev=>({...prev,[milestoneId]:{...prev[milestoneId],photo:dataUrl}}));
         }else{
           // Add to photo diary
-          setPhotos(prev=>[...prev,{id:uid(),date:selDay||todayStr(),time:nowTime(),dataUrl,note:""}]);
+          setPhotos(prev=>[...prev,{id:uid(),date:selDay||todayStr(),time:nowTime(),dataUrl,note:isBottle?"🍼 Bottle":""}]);
+          if(isBottle){
+            setQuickFlash("📸 Bottle saved ✓");
+            setTimeout(()=>setQuickFlash(null),1200);
+          }
         }
         try{navigator.vibrate&&navigator.vibrate(30);}catch{}
       };
@@ -1317,6 +1339,7 @@ function App(){
     reader.readAsDataURL(file);
     e.target.value="";
   }
+
   const setMilestones  = (fn) => setChildren(prev => {
     const cur = prev[resolvedActiveId];
     const next = typeof fn === "function" ? fn(cur.milestones) : fn;
@@ -1474,7 +1497,11 @@ function App(){
   const[fluidUnit,setFluidUnit]=useState(()=>{
     try{return localStorage.getItem("fluid_unit_v1")||"ml";}catch{return "ml";}
   });
+  const[measureUnit,setMeasureUnit]=useState(()=>{
+    try{return localStorage.getItem("measure_unit_v1")||"metric";}catch{return "metric";}
+  });
   const FU=fluidUnit; // shorthand for templates
+  const MU=measureUnit; // "metric" or "lbs"
     const[pasteText,setPasteText]=useState("");
   const[parsedEntries,setParsedEntries]=useState(null);
   const parsedEntriesRef = React.useRef(null);
@@ -4183,6 +4210,10 @@ function App(){
     try{localStorage.setItem("fluid_unit_v1",fluidUnit);}catch{}
   },[fluidUnit]);
 
+  React.useEffect(()=>{
+    try{localStorage.setItem("measure_unit_v1",measureUnit);}catch{}
+  },[measureUnit]);
+
 
   function parseTime(str, previousMinutes=null) {
     if (!str) return null;
@@ -4574,7 +4605,7 @@ function App(){
   const lastLogRef = React.useRef({time:0, key:""});
   const[quickFlash,setQuickFlash]=useState(null);
   const[mascotPopup,setMascotPopup]=useState(null); // {type:'celebration'|'thinking'|'loading', message:'...'}
-  const[viewPhoto,setViewPhoto]=useState(null); // {id, dataUrl, date, time} — full-screen photo viewer
+  const[viewPhoto,setViewPhoto]=useState(null);
 
   function showMascot(type, message, duration=3000){
     setMascotPopup({type, message});
@@ -4932,7 +4963,8 @@ function App(){
   }
   function addWeight(){
     if(!wForm.kg)return;
-    const updated=[...weights.filter(x=>x.date!==wForm.date),{date:wForm.date,kg:parseFloat(wForm.kg)}].sort((a,b)=>a.date.localeCompare(b.date));
+    const kgVal = displayToKg(wForm.kg, MU);
+    const updated=[...weights.filter(x=>x.date!==wForm.date),{date:wForm.date,kg:kgVal}].sort((a,b)=>a.date.localeCompare(b.date));
     setWeights(updated);setWForm({date:todayStr(),kg:""});
   }
 
@@ -5344,7 +5376,7 @@ function App(){
               <button onClick={()=>setObStep(1)} style={{width:"100%",background:"rgba(201,112,90,0.55)",backdropFilter:"blur(20px) saturate(1.8)",WebkitBackdropFilter:"blur(20px) saturate(1.8)",border:"1.5px solid rgba(255,200,180,0.40)",borderRadius:18,padding:"19px",color:"white",fontSize:17,fontWeight:700,cursor:_cP,boxShadow:"0 8px 32px rgba(201,112,90,0.3), 0 0 44px rgba(255,190,70,0.20), 0 0 72px rgba(255,170,40,0.12)",letterSpacing:"0.01em",transition:"transform 0.12s",fontFamily:_fI}}>
                 Get Started →
               </button>
-              <div style={{textAlign:"center",marginTop:12,fontSize:12,color:C.lt,letterSpacing:"0.02em"}}>Free · No ads · Your data stays private</div>
+
             </div>
           </div>
         ) : (
@@ -5656,16 +5688,14 @@ function App(){
           <div style={{position:"fixed",inset:0,zIndex:999,pointerEvents:"auto"}}>
             <div style={{position:"absolute",inset:0,background:"rgba(16,8,4,0.85)",backdropFilter:"blur(3px)"}}
               onClick={nextStep}/>
-            <div style={{
+            <div className="tour-card" style={{
               position:"fixed",
               left:"50%",
               top:"50%",
               transform:"translate(-50%, -50%)",
               width:"min(370px, calc(100vw - 28px))",
-              background:cardBg,
               borderRadius:24,
               padding:"22px 20px 18px",
-              boxShadow:"0 28px 72px rgba(0,0,0,0.55)",
               animation:"tutPop 0.3s ease",
               zIndex:1002,
               pointerEvents:"auto",
@@ -5925,6 +5955,14 @@ function App(){
                   }},
                   {emoji:"🫙",label:"Pump",action:()=>openLogPanel("pump")},
                   {emoji:"☀️",label:"Wake",action:()=>handleSmartWake()},
+                  {emoji:"📸",label:"Bottle",action:()=>{
+                    // Snap bottle photo — saves to photo diary tagged as bottle
+                    if(photoInputRef.current){
+                      photoInputRef.current._forMilestone=null;
+                      photoInputRef.current._bottleSnap=true;
+                      photoInputRef.current.click();
+                    }
+                  }},
                   {emoji:"📷",label:"Photo",action:()=>capturePhoto(null)},
                 ].map(({emoji,label,action})=>(
                   <button key={label} onClick={action}
@@ -5946,6 +5984,8 @@ function App(){
                   <span style={{display:"inline-block",background:"var(--card-bg-solid)",border:"1.5px solid var(--ter)",borderRadius:99,padding:"7px 20px",fontSize:14,fontWeight:700,color:C.ter,fontFamily:_fM,boxShadow:"0 0 20px rgba(246,221,227,0.40), 0 4px 12px rgba(192,112,136,0.15)",animation:"popIn 0.2s cubic-bezier(0.34,1.56,0.64,1)"}}>{quickFlash}</span>
                 </div>
               )}
+
+              {/* Pending bottle snaps banner */}
 
               {/* Age guidance */}
               {ageStage&&(
@@ -6422,9 +6462,9 @@ function App(){
                             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                               <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Weight · WHO Curves</div>
                               {latestW && <div style={{display:"flex",alignItems:"center",gap:6}}>
-                                <span style={{fontSize:13,fontWeight:700,color:C.deep}}>{latestW.kg}kg</span>
+                                <span style={{fontSize:13,fontWeight:700,color:C.deep}}>{fmtWt(latestW.kg,MU)}</span>
                                 <span style={{fontSize:12,fontWeight:700,color:percentileColor(latestW.pct),background:percentileColor(latestW.pct)+"18",padding:"2px 8px",borderRadius:99,fontFamily:_fM}}>{ordinal(latestW.pct)}</span>
-                                {weightGain !== null && <span style={{fontSize:11,color:weightGain>=0?C.mint:C.ter,fontFamily:_fM,fontWeight:700}}>{weightGain>=0?"↑":"↓"}{Math.abs(weightGain*1000)}g</span>}
+                                {weightGain !== null && <span style={{fontSize:11,color:weightGain>=0?C.mint:C.ter,fontFamily:_fM,fontWeight:700}}>{weightGain>=0?"↑":"↓"}{MU==="lbs"?Math.abs(Math.round(weightGain/KG_PER_LB*16*10)/10)+"oz":Math.abs(weightGain*1000)+"g"}</span>}
                               </div>}
                             </div>
                             <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"10px 6px 4px",border:`1px solid ${C.blush}`}}>
@@ -6444,7 +6484,7 @@ function App(){
                             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
                               <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Height · WHO Curves</div>
                               {latestH && <div style={{display:"flex",alignItems:"center",gap:6}}>
-                                <span style={{fontSize:13,fontWeight:700,color:C.deep}}>{latestH.cm}cm</span>
+                                <span style={{fontSize:13,fontWeight:700,color:C.deep}}>{fmtHt(latestH.cm,MU)}</span>
                                 <span style={{fontSize:12,fontWeight:700,color:percentileColor(latestH.pct),background:percentileColor(latestH.pct)+"18",padding:"2px 8px",borderRadius:99,fontFamily:_fM}}>{ordinal(latestH.pct)}</span>
                               </div>}
                             </div>
@@ -6459,12 +6499,12 @@ function App(){
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
                       <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
                         <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Weight</div>
-                        {latestW ? <div><span style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:percentileColor(latestW.pct)}}>{ordinal(latestW.pct)}</span> <span style={{fontSize:12,color:C.lt}}>· {latestW.kg}kg</span></div>
+                        {latestW ? <div><span style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:percentileColor(latestW.pct)}}>{ordinal(latestW.pct)}</span> <span style={{fontSize:12,color:C.lt}}>· {fmtWt(latestW.kg,MU)}</span></div>
                         : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
                       </div>
                       <div style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px",border:`1px solid ${C.blush}`}}>
                         <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Height</div>
-                        {latestH ? <div><span style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:percentileColor(latestH.pct)}}>{ordinal(latestH.pct)}</span> <span style={{fontSize:12,color:C.lt}}>· {latestH.cm}cm</span></div>
+                        {latestH ? <div><span style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:percentileColor(latestH.pct)}}>{ordinal(latestH.pct)}</span> <span style={{fontSize:12,color:C.lt}}>· {fmtHt(latestH.cm,MU)}</span></div>
                         : <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>Not logged</div>}
                       </div>
                     </div>
@@ -6481,20 +6521,22 @@ function App(){
                   <div style={{marginTop:12,borderTop:`1px solid ${C.blush}`,paddingTop:12}}>
                     <Inp label="Date" type="date" value={growthForm.date} onChange={e=>{setGrowthForm(f=>({...f,date:e.target.value}));setHeightForm(f=>({...f,date:e.target.value}));}} style={{marginBottom:10}}/>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:8}}>
-                      <Inp label="Weight (kg)" type="number" step="0.01" placeholder="e.g. 5.2" value={growthForm.kg} onChange={e=>setGrowthForm(f=>({...f,kg:e.target.value}))} style={{marginBottom:0}}/>
-                      <Inp label="Height (cm)" type="number" step="0.1" placeholder="e.g. 62" value={heightForm.cm} onChange={e=>setHeightForm(f=>({...f,cm:e.target.value}))} style={{marginBottom:0}}/>
+                      <Inp label={`Weight (${wtLabel(MU)})`} type="number" step="0.01" placeholder={MU==="lbs"?"e.g. 11.5":"e.g. 5.2"} value={growthForm.kg} onChange={e=>setGrowthForm(f=>({...f,kg:e.target.value}))} style={{marginBottom:0}}/>
+                      <Inp label={`Height (${htLabel(MU)})`} type="number" step="0.1" placeholder={MU==="lbs"?"e.g. 24.4":"e.g. 62"} value={heightForm.cm} onChange={e=>setHeightForm(f=>({...f,cm:e.target.value}))} style={{marginBottom:0}}/>
                     </div>
                     <PBtn onClick={()=>{
                       let saved = false;
                       if(growthForm.kg){
-                        const kg = parseFloat(growthForm.kg);
-                        if(kg < 0.3 || kg > 35){ alert("Weight should be between 0.3kg and 35kg. Please check your entry."); return; }
+                        const kg = displayToKg(growthForm.kg, MU);
+                        const minW = MU==="lbs" ? 0.3 : 0.3;
+                        const maxW = MU==="lbs" ? 35 : 35;
+                        if(kg < minW || kg > maxW){ alert(`Weight should be between ${fmtWt(0.3,MU)} and ${fmtWt(35,MU)}. Please check your entry.`); return; }
                         const updated=[...weights.filter(x=>x.date!==growthForm.date),{date:growthForm.date,kg}].sort((a,b)=>a.date.localeCompare(b.date));
                         setWeights(updated); saved = true;
                       }
                       if(heightForm.cm){
-                        const cm = parseFloat(heightForm.cm);
-                        if(cm < 25 || cm > 140){ alert("Height should be between 25cm and 140cm. Please check your entry."); return; }
+                        const cm = displayToCm(heightForm.cm, MU);
+                        if(cm < 25 || cm > 140){ alert(`Height should be between ${fmtHt(25,MU)} and ${fmtHt(140,MU)}. Please check your entry.`); return; }
                         const updated=[...heights.filter(x=>x.date!==heightForm.date),{date:heightForm.date,cm}].sort((a,b)=>a.date.localeCompare(b.date));
                         setHeights(updated); saved = true;
                       }
@@ -7827,6 +7869,24 @@ function App(){
                 {fluidUnit==="oz"?"Volumes shown in fluid ounces. Data is stored in ml internally — you can switch back anytime.":"Volumes shown in millilitres (default)."}
               </div>
             </div>
+            {/* Weight & Height Units */}
+            <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",width:"100%",marginBottom:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
+                <span style={{fontSize:24}}>📏</span>
+                <div>
+                  <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Weight & Height</div>
+                  <div style={{fontSize:12,color:C.lt,marginTop:2}}>Choose how growth measurements are displayed</div>
+                </div>
+              </div>
+              <div style={{display:"inline-flex",background:"var(--card-bg)",borderRadius:99,border:`1px solid ${C.blush}`,overflow:"hidden",marginBottom:8}}>
+                <button onClick={()=>setMeasureUnit("metric")} style={{padding:"7px 16px",fontSize:13,fontFamily:_fM,fontWeight:700,border:"none",background:measureUnit==="metric"?`linear-gradient(135deg,${C.ter},#a85a44)`:"transparent",color:measureUnit==="metric"?"white":C.lt,cursor:"pointer",borderRadius:99}}>kg / cm</button>
+                <div style={{width:1,background:C.blush}}/>
+                <button onClick={()=>setMeasureUnit("lbs")} style={{padding:"7px 16px",fontSize:13,fontFamily:_fM,fontWeight:700,border:"none",background:measureUnit==="lbs"?`linear-gradient(135deg,${C.ter},#a85a44)`:"transparent",color:measureUnit==="lbs"?"white":C.lt,cursor:"pointer",borderRadius:99}}>lbs / in</button>
+              </div>
+              <div style={{fontSize:12,color:C.lt,lineHeight:1.5}}>
+                {measureUnit==="lbs"?"Growth shown in pounds & inches. Data stored in kg/cm internally.":"Growth shown in kilograms & centimetres (default)."}
+              </div>
+            </div>
             {/* Sleep Recommendations Mode */}
             <div style={{background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",width:"100%"}}>
               <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
@@ -7976,6 +8036,17 @@ function App(){
             <Inp label="Note (optional)" type="text" placeholder="e.g. fussy, didn't finish…" value={logForm.note} onChange={e=>setLogForm(f=>({...f,note:e.target.value}))}/>
           )}
           <PBtn onClick={saveLogFeed}>✓ Log Feed</PBtn>
+          {logForm.feedType==="bottle"&&(
+            <button onClick={()=>{
+              if(photoInputRef.current){
+                photoInputRef.current._forMilestone=null;
+                photoInputRef.current._bottleSnap=true;
+                photoInputRef.current.click();
+              }
+            }} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.mid,fontFamily:_fI,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <span style={{fontSize:18}}>📸</span> Snap Bottle — save photo for later
+            </button>
+          )}
         </Sheet>
       )}
 
@@ -8967,7 +9038,7 @@ function App(){
         </div>
       )}
 
-      {/* ═══ Photo Viewer Overlay ═══ */}
+            {/* ═══ Photo Viewer Overlay ═══ */}
       {viewPhoto && (
         <div onClick={()=>setViewPhoto(null)} style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.85)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:20}}>
           <div onClick={ev=>ev.stopPropagation()} style={{maxWidth:"100%",maxHeight:"80vh",position:"relative"}}>
@@ -8988,19 +9059,19 @@ function App(){
       {/* ═══ Mascot Popup Overlay ═══ */}
       {mascotPopup && (
         <div style={{position:"fixed",inset:0,zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-          <div style={{pointerEvents:"auto",textAlign:"center",animation:"mascotPop 0.5s cubic-bezier(0.22,1.2,0.36,1) both"}}>
+          <div style={{pointerEvents:"auto",animation:"mascotPop 0.5s cubic-bezier(0.22,1.2,0.36,1) both",width:"min(320px, calc(100vw - 40px))"}}>
             <style>{`
               @keyframes mascotPop{from{opacity:0;transform:scale(0.3) translateY(30px)}60%{opacity:1;transform:scale(1.05) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
               @keyframes mascotFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
               @keyframes mascotTextIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
             `}</style>
-            <img
-              src={mascotPopup.type==="celebration"?"obubba-celebration.png":mascotPopup.type==="loading"?"obubba-loading.png":"obubba-thinking.png"}
-              alt=""
-              style={{width:220,height:220,objectFit:"contain",animation:"mascotFloat 2s ease-in-out 0.5s infinite",filter:"drop-shadow(0 16px 36px rgba(217,207,243,0.45))"}}
-            />
-            <div className="mascot-pill" style={{marginTop:14,background:document.body.classList.contains("dark-mode")?"rgba(30,40,60,0.92)":"rgba(255,255,255,0.95)",borderRadius:99,padding:"12px 28px",boxShadow:"0 0 28px rgba(246,221,227,0.50), 0 4px 20px rgba(217,207,243,0.30), inset 0 1px 0 rgba(255,255,255,0.25)",display:"inline-block",border:"1.5px solid rgba(255,255,255,0.18)",animation:"mascotTextIn 0.4s ease 0.3s both"}}>
-              <div style={{fontSize:16,fontWeight:700,color:document.body.classList.contains("dark-mode")?"#F0F2F5":"#5B4F5F",fontFamily:"'DM Sans',sans-serif",letterSpacing:"0.01em"}}>{mascotPopup.message}</div>
+            <div className="mascot-glass-box" style={{textAlign:"center"}}>
+              <img
+                src={mascotPopup.type==="celebration"?"obubba-celebration.png":mascotPopup.type==="loading"?"obubba-loading.png":"obubba-thinking.png"}
+                alt=""
+                style={{width:180,height:180,objectFit:"contain",animation:"mascotFloat 2s ease-in-out 0.5s infinite",filter:"drop-shadow(0 12px 28px rgba(217,207,243,0.40))",marginBottom:12}}
+              />
+              <div style={{fontSize:17,fontWeight:700,color:document.body.classList.contains("dark-mode")?"#F0F2F5":"#5B4F5F",fontFamily:"'DM Sans',sans-serif",letterSpacing:"0.01em",lineHeight:1.4,animation:"mascotTextIn 0.4s ease 0.3s both"}}>{mascotPopup.message}</div>
             </div>
           </div>
         </div>

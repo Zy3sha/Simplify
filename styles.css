@@ -183,58 +183,96 @@ button,a,[role="button"]{-webkit-user-select:none;user-select:none}
 button:active{transform:scale(0.95)!important}
 button{position:relative!important;overflow:visible!important}
 
-/* ═══ EDGE GLOW — light concentrated at the border, not filling interior ═══ */
+/* ═══ CORNER GLOW — white→purple→pink at top-right & bottom-left ═══ */
 @keyframes candlePulse{
   0%,100%{opacity:0.8}
   50%{opacity:1}
 }
 
-/* Light mode — corner glow: top-left + bottom-right only, tight fade */
+/* Light mode — corner halo: top-right + bottom-left, white→purple→pink */
 body.light-mode button,body:not(.dark-mode) button{
   border:1.5px solid rgba(255,225,235,0.40)!important;
   box-shadow:
-    -5px -5px 7px -5px rgba(217,168,192,0.50),
-    5px 5px 7px -5px rgba(192,160,220,0.40)!important;
+    /* Top-right corner — white core */
+    3px -3px 5px -4px rgba(255,255,255,0.85),
+    /* Top-right corner — purple mid */
+    5px -5px 8px -5px rgba(160,100,200,0.40),
+    /* Top-right corner — pink outer */
+    7px -7px 11px -6px rgba(220,140,190,0.28),
+    /* Bottom-left corner — white core */
+    -3px 3px 5px -4px rgba(255,255,255,0.85),
+    /* Bottom-left corner — purple mid */
+    -5px 5px 8px -5px rgba(160,100,200,0.40),
+    /* Bottom-left corner — pink outer */
+    -7px 7px 11px -6px rgba(220,140,190,0.28)!important;
   animation:candlePulse 4s ease-in-out infinite!important}
 
-/* Dark mode — corner glow: top-left + bottom-right amber, tight fade */
+/* Dark mode — corner halo: top-right + bottom-left, white→purple→amber */
 body.dark-mode button{
   border:1.5px solid rgba(255,190,90,0.28)!important;
   box-shadow:
-    -5px -5px 7px -5px rgba(255,170,60,0.48),
-    5px 5px 7px -5px rgba(255,150,40,0.38)!important;
+    3px -3px 5px -4px rgba(255,255,255,0.50),
+    5px -5px 8px -5px rgba(180,120,200,0.35),
+    7px -7px 11px -6px rgba(255,170,60,0.30),
+    -3px 3px 5px -4px rgba(255,255,255,0.50),
+    -5px 5px 8px -5px rgba(180,120,200,0.35),
+    -7px 7px 11px -6px rgba(255,170,60,0.30)!important;
   animation:candlePulse 4s ease-in-out infinite!important}
 
 /* CTA gradient buttons — corner glow, slightly stronger */
 body.light-mode button[style*="linear-gradient(135deg"],body:not(.dark-mode) button[style*="linear-gradient(135deg"]{
   box-shadow:
-    -7px -7px 10px -6px rgba(217,168,192,0.55),
-    7px 7px 10px -6px rgba(192,160,220,0.45)!important}
+    4px -4px 7px -5px rgba(255,255,255,0.90),
+    7px -7px 11px -6px rgba(160,100,200,0.48),
+    9px -9px 14px -7px rgba(220,140,190,0.32),
+    -4px 4px 7px -5px rgba(255,255,255,0.90),
+    -7px 7px 11px -6px rgba(160,100,200,0.48),
+    -9px 9px 14px -7px rgba(220,140,190,0.32)!important}
 body.dark-mode button[style*="linear-gradient(135deg"]{
   box-shadow:
-    -7px -7px 10px -6px rgba(255,170,60,0.52),
-    7px 7px 10px -6px rgba(255,150,40,0.42)!important}
+    4px -4px 7px -5px rgba(255,255,255,0.55),
+    7px -7px 11px -6px rgba(180,120,200,0.40),
+    9px -9px 14px -7px rgba(255,170,60,0.32),
+    -4px 4px 7px -5px rgba(255,255,255,0.55),
+    -7px 7px 11px -6px rgba(180,120,200,0.40),
+    -9px 9px 14px -7px rgba(255,170,60,0.32)!important}
 
 /* Pill buttons — corner glow */
 body.light-mode button[style*="borderRadius:99"],body:not(.dark-mode) button[style*="borderRadius:99"]{
   box-shadow:
-    -5px -5px 7px -5px rgba(217,168,192,0.45),
-    5px 5px 7px -5px rgba(192,160,220,0.35)!important}
+    3px -3px 5px -4px rgba(255,255,255,0.80),
+    5px -5px 8px -5px rgba(160,100,200,0.35),
+    7px -7px 10px -6px rgba(220,140,190,0.22),
+    -3px 3px 5px -4px rgba(255,255,255,0.80),
+    -5px 5px 8px -5px rgba(160,100,200,0.35),
+    -7px 7px 10px -6px rgba(220,140,190,0.22)!important}
 body.dark-mode button[style*="borderRadius:99"]{
   box-shadow:
-    -5px -5px 7px -5px rgba(255,170,60,0.40),
-    5px 5px 7px -5px rgba(255,150,40,0.30)!important}
+    3px -3px 5px -4px rgba(255,255,255,0.45),
+    5px -5px 8px -5px rgba(180,120,200,0.30),
+    7px -7px 10px -6px rgba(255,170,60,0.22),
+    -3px 3px 5px -4px rgba(255,255,255,0.45),
+    -5px 5px 8px -5px rgba(180,120,200,0.30),
+    -7px 7px 10px -6px rgba(255,170,60,0.22)!important}
 
-/* Action grid buttons (borderRadius:14 + flexDirection) — very tight corners */
+/* Action grid buttons (borderRadius:14 + flexDirection) — tighter for grid proximity */
 body.light-mode button[style*="borderRadius:14"][style*="flexDirection"],
 body:not(.dark-mode) button[style*="borderRadius:14"][style*="flexDirection"]{
   box-shadow:
-    -3px -3px 5px -4px rgba(217,168,192,0.50),
-    3px 3px 5px -4px rgba(192,160,220,0.40)!important}
+    2px -2px 4px -3px rgba(255,255,255,0.80),
+    3px -3px 6px -4px rgba(160,100,200,0.38),
+    5px -5px 8px -5px rgba(220,140,190,0.22),
+    -2px 2px 4px -3px rgba(255,255,255,0.80),
+    -3px 3px 6px -4px rgba(160,100,200,0.38),
+    -5px 5px 8px -5px rgba(220,140,190,0.22)!important}
 body.dark-mode button[style*="borderRadius:14"][style*="flexDirection"]{
   box-shadow:
-    -3px -3px 5px -4px rgba(255,170,60,0.45),
-    3px 3px 5px -4px rgba(255,150,40,0.35)!important}
+    2px -2px 4px -3px rgba(255,255,255,0.45),
+    3px -3px 6px -4px rgba(180,120,200,0.32),
+    5px -5px 8px -5px rgba(255,170,60,0.22),
+    -2px 2px 4px -3px rgba(255,255,255,0.45),
+    -3px 3px 6px -4px rgba(180,120,200,0.32),
+    -5px 5px 8px -5px rgba(255,170,60,0.22)!important}
 
 /* Hide fixed toggle (inline in header now) */
 #theme-toggle{display:none!important}
@@ -257,17 +295,25 @@ body.dark-mode .glass-card{
 body.light-mode .glass-entry,body:not(.dark-mode) .glass-entry{
   background:var(--card-bg)!important}
 
-/* Entry rows */
+/* Entry rows — corner halo: top-right + bottom-left */
 body.light-mode div[data-entry-id],body:not(.dark-mode) div[data-entry-id]{
   border:1.5px solid rgba(255,225,235,0.38)!important;
   box-shadow:
-    -4px -4px 6px -5px rgba(217,168,192,0.42),
-    4px 4px 6px -5px rgba(192,160,220,0.32)!important}
+    2px -2px 4px -3px rgba(255,255,255,0.80),
+    4px -4px 7px -5px rgba(160,100,200,0.35),
+    6px -6px 9px -6px rgba(220,140,190,0.22),
+    -2px 2px 4px -3px rgba(255,255,255,0.80),
+    -4px 4px 7px -5px rgba(160,100,200,0.35),
+    -6px 6px 9px -6px rgba(220,140,190,0.22)!important}
 body.dark-mode div[data-entry-id]{
   border:1.5px solid rgba(255,190,90,0.22)!important;
   box-shadow:
-    -4px -4px 6px -5px rgba(255,170,60,0.35),
-    4px 4px 6px -5px rgba(255,150,40,0.25),
+    2px -2px 4px -3px rgba(255,255,255,0.45),
+    4px -4px 7px -5px rgba(180,120,200,0.28),
+    6px -6px 9px -6px rgba(255,170,60,0.22),
+    -2px 2px 4px -3px rgba(255,255,255,0.45),
+    -4px 4px 7px -5px rgba(180,120,200,0.28),
+    -6px 6px 9px -6px rgba(255,170,60,0.22),
     0 2px 4px rgba(0,0,0,0.18)!important}
 div[data-entry-id]::after{content:"";position:absolute;top:0;left:0;right:0;height:40%;background:linear-gradient(180deg,rgba(255,255,255,0.12) 0%,transparent 100%);pointer-events:none;z-index:4;border-radius:inherit}
 body.dark-mode div[data-entry-id]::after{background:linear-gradient(180deg,rgba(255,200,120,0.08) 0%,transparent 100%)}
@@ -326,34 +372,130 @@ body.light-mode div[style*="display:\"inline-flex\""][style*="borderRadius:99"],
   box-shadow:0 0 18px rgba(255,255,255,0.55),0 0 36px rgba(246,221,227,0.25),0 0 52px rgba(217,207,243,0.12)!important}
 
 /* PIN pad — no blur */
-/* Grid children — very tight corners, no bleed between neighbours */
+/* Grid children — very tight corners for grids, reduced bleed */
 body.light-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button,
 body:not(.dark-mode) div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
   box-shadow:
-    -3px -3px 5px -4px rgba(217,168,192,0.50),
-    3px 3px 5px -4px rgba(192,160,220,0.40)!important;
+    2px -2px 3px -3px rgba(255,255,255,0.80),
+    3px -3px 5px -4px rgba(160,100,200,0.38),
+    4px -4px 7px -5px rgba(220,140,190,0.22),
+    -2px 2px 3px -3px rgba(255,255,255,0.80),
+    -3px 3px 5px -4px rgba(160,100,200,0.38),
+    -4px 4px 7px -5px rgba(220,140,190,0.22)!important;
   background:var(--card-bg-solid)!important}
 body.dark-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr\""] button{
   box-shadow:
-    -3px -3px 5px -4px rgba(255,170,60,0.45),
-    3px 3px 5px -4px rgba(255,150,40,0.35)!important}
+    2px -2px 3px -3px rgba(255,255,255,0.45),
+    3px -3px 5px -4px rgba(180,120,200,0.32),
+    4px -4px 7px -5px rgba(255,170,60,0.22),
+    -2px 2px 3px -3px rgba(255,255,255,0.45),
+    -3px 3px 5px -4px rgba(180,120,200,0.32),
+    -4px 4px 7px -5px rgba(255,170,60,0.22)!important}
 
 /* Stats grid (4-column) — very tight corners */
 body.light-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr 1fr\""]>div,
 body:not(.dark-mode) div[style*="gridTemplateColumns:\"1fr 1fr 1fr 1fr\""]>div{
   box-shadow:
-    -3px -3px 5px -4px rgba(217,168,192,0.45),
-    3px 3px 5px -4px rgba(192,160,220,0.35)!important}
+    2px -2px 3px -3px rgba(255,255,255,0.75),
+    3px -3px 5px -4px rgba(160,100,200,0.35),
+    4px -4px 7px -5px rgba(220,140,190,0.20),
+    -2px 2px 3px -3px rgba(255,255,255,0.75),
+    -3px 3px 5px -4px rgba(160,100,200,0.35),
+    -4px 4px 7px -5px rgba(220,140,190,0.20)!important}
 body.dark-mode div[style*="gridTemplateColumns:\"1fr 1fr 1fr 1fr\""]>div{
   box-shadow:
-    -3px -3px 5px -4px rgba(255,170,60,0.40),
-    3px 3px 5px -4px rgba(255,150,40,0.30)!important}
+    2px -2px 3px -3px rgba(255,255,255,0.42),
+    3px -3px 5px -4px rgba(180,120,200,0.28),
+    4px -4px 7px -5px rgba(255,170,60,0.18),
+    -2px 2px 3px -3px rgba(255,255,255,0.42),
+    -3px 3px 5px -4px rgba(180,120,200,0.28),
+    -4px 4px 7px -5px rgba(255,170,60,0.18)!important}
 
 /* Tutorial / Forgot PIN — blur only on overlay */
 div[style*="animation:\"tutPop"]{backdrop-filter:blur(30px) saturate(1.6);-webkit-backdrop-filter:blur(30px) saturate(1.6)}
 body.light-mode div[style*="animation:\"tutPop"],body:not(.dark-mode) div[style*="animation:\"tutPop"]{
   box-shadow:0 0 30px rgba(255,255,255,0.65),0 0 56px rgba(246,221,227,0.35),0 0 84px rgba(217,207,243,0.22),0 28px 72px rgba(207,195,236,0.18)!important}
 div[style*="borderRadius:24"][style*="maxWidth:340"]{backdrop-filter:blur(30px) saturate(1.6);-webkit-backdrop-filter:blur(30px) saturate(1.6)}
+
+/* ═══════════════════════════════════════════════════════════
+   TOUR CARD — solid opaque background for text readability
+   ═══════════════════════════════════════════════════════════ */
+.tour-card{
+  background:rgba(255,252,248,0.97)!important;
+  backdrop-filter:blur(30px) saturate(1.6)!important;
+  -webkit-backdrop-filter:blur(30px) saturate(1.6)!important;
+  border:1.5px solid rgba(255,225,235,0.50)!important;
+  box-shadow:
+    0 28px 72px rgba(0,0,0,0.45),
+    0 0 40px rgba(255,255,255,0.50),
+    0 0 80px rgba(246,221,227,0.30),
+    4px -4px 8px -5px rgba(255,255,255,0.85),
+    7px -7px 12px -6px rgba(160,100,200,0.40),
+    9px -9px 16px -7px rgba(220,140,190,0.25),
+    -4px 4px 8px -5px rgba(255,255,255,0.85),
+    -7px 7px 12px -6px rgba(160,100,200,0.40),
+    -9px 9px 16px -7px rgba(220,140,190,0.25)!important;
+}
+body.dark-mode .tour-card{
+  background:rgba(16,24,44,0.97)!important;
+  border-color:rgba(255,190,90,0.30)!important;
+  box-shadow:
+    0 28px 72px rgba(0,0,0,0.60),
+    0 0 30px rgba(255,180,70,0.15),
+    4px -4px 8px -5px rgba(255,255,255,0.45),
+    7px -7px 12px -6px rgba(180,120,200,0.30),
+    9px -9px 16px -7px rgba(255,170,60,0.22),
+    -4px 4px 8px -5px rgba(255,255,255,0.45),
+    -7px 7px 12px -6px rgba(180,120,200,0.30),
+    -9px 9px 16px -7px rgba(255,170,60,0.22)!important;
+}
+.tour-card *{color:#5B4F5F}
+.tour-card strong{color:#C07088!important}
+.tour-card button[style*="color:\"white\""],.tour-card button[style*="color:\"white\""] *{color:white!important}
+body.dark-mode .tour-card *{color:#F0F2F5}
+body.dark-mode .tour-card strong{color:#d98b72!important}
+
+/* ═══════════════════════════════════════════════════════════
+   MASCOT GLASS BOX — celebration / tutorial complete
+   ═══════════════════════════════════════════════════════════ */
+.mascot-glass-box{
+  background:rgba(255,252,248,0.92)!important;
+  backdrop-filter:blur(24px) saturate(1.6)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(1.6)!important;
+  border:1.5px solid rgba(255,225,235,0.55)!important;
+  border-radius:28px!important;
+  padding:28px 24px 22px!important;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.25),
+    0 0 40px rgba(255,255,255,0.55),
+    0 0 80px rgba(246,221,227,0.30),
+    inset 0 1.5px 0 rgba(255,255,255,0.80),
+    4px -4px 8px -5px rgba(255,255,255,0.90),
+    7px -7px 12px -6px rgba(160,100,200,0.45),
+    10px -10px 16px -8px rgba(220,140,190,0.28),
+    -4px 4px 8px -5px rgba(255,255,255,0.90),
+    -7px 7px 12px -6px rgba(160,100,200,0.45),
+    -10px 10px 16px -8px rgba(220,140,190,0.28)!important;
+  position:relative;overflow:hidden;
+}
+body.dark-mode .mascot-glass-box{
+  background:rgba(16,24,44,0.92)!important;
+  border-color:rgba(255,190,90,0.30)!important;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.45),
+    0 0 30px rgba(255,180,70,0.15),
+    inset 0 1.5px 0 rgba(255,200,120,0.18),
+    4px -4px 8px -5px rgba(255,255,255,0.50),
+    7px -7px 12px -6px rgba(180,120,200,0.35),
+    10px -10px 16px -8px rgba(255,170,60,0.25),
+    -4px 4px 8px -5px rgba(255,255,255,0.50),
+    -7px 7px 12px -6px rgba(180,120,200,0.35),
+    -10px 10px 16px -8px rgba(255,170,60,0.25)!important;
+}
+.mascot-glass-box::before{content:"";position:absolute;top:0;left:0;right:0;height:50%;pointer-events:none;z-index:0;
+  background:linear-gradient(180deg,rgba(255,255,255,0.28) 0%,rgba(255,255,255,0.06) 45%,transparent 100%);border-radius:28px 28px 0 0;mix-blend-mode:overlay}
+body.dark-mode .mascot-glass-box::before{background:linear-gradient(180deg,rgba(255,200,120,0.12) 0%,transparent 100%)}
+.mascot-glass-box>*{position:relative;z-index:1}
 
 /* ═══ WELCOME PAGE ═══ */
 
@@ -364,15 +506,23 @@ body.light-mode div[style*="borderRadius:36"][style*="overflow:\"hidden\""][styl
 body.dark-mode div[style*="borderRadius:36"][style*="overflow:\"hidden\""][style*="animation"]{
   box-shadow:inset 0 1px 0 rgba(255,200,120,0.20),0 0 44px rgba(255,180,70,0.22),0 0 80px rgba(255,155,45,0.12),0 24px 52px rgba(0,0,0,0.30)!important;border-color:rgba(255,190,90,0.30)!important}
 
-/* Get Started — yellow/orange glow */
+/* Get Started — stronger corner halo */
 body.light-mode button[style*="borderRadius:18"][style*="padding:\"19px\""],body:not(.dark-mode) button[style*="borderRadius:18"][style*="padding:\"19px\""]{
   box-shadow:
-    -8px -8px 12px -7px rgba(217,168,192,0.55),
-    8px 8px 12px -7px rgba(192,160,220,0.45)!important}
+    4px -4px 7px -5px rgba(255,255,255,0.90),
+    7px -7px 12px -6px rgba(160,100,200,0.50),
+    10px -10px 16px -8px rgba(220,140,190,0.32),
+    -4px 4px 7px -5px rgba(255,255,255,0.90),
+    -7px 7px 12px -6px rgba(160,100,200,0.50),
+    -10px 10px 16px -8px rgba(220,140,190,0.32)!important}
 body.dark-mode button[style*="borderRadius:18"][style*="padding:\"19px\""]{
   box-shadow:
-    -8px -8px 12px -7px rgba(255,170,60,0.50),
-    8px 8px 12px -7px rgba(255,150,40,0.40)!important}
+    4px -4px 7px -5px rgba(255,255,255,0.55),
+    7px -7px 12px -6px rgba(180,120,200,0.40),
+    10px -10px 16px -8px rgba(255,170,60,0.30),
+    -4px 4px 7px -5px rgba(255,255,255,0.55),
+    -7px 7px 12px -6px rgba(180,120,200,0.40),
+    -10px 10px 16px -8px rgba(255,170,60,0.30)!important}
 
 /* Feature pills */
 body.light-mode div[style*="borderRadius:99"][style*="padding:\"7px 13px\""],body:not(.dark-mode) div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{
@@ -417,6 +567,7 @@ body.dark-mode [style*="backdropFilter"]{background-color:rgba(8,14,28,0.30)}
 
 /* ═══════════════════════════════════════════════════════════
    UNIVERSAL GLOW — every rounded element with card-bg
+   Corner halo: top-right + bottom-left, white→purple→pink
    ═══════════════════════════════════════════════════════════ */
 
 /* All elements with inline border-radius and card-bg get edge glow */
@@ -424,41 +575,63 @@ body.light-mode div[style*="borderRadius"][style*="card-bg"],
 body:not(.dark-mode) div[style*="borderRadius"][style*="card-bg"]{
   border:1.5px solid rgba(255,225,235,0.40)!important;
   box-shadow:
-    -5px -5px 7px -5px rgba(217,168,192,0.45),
-    5px 5px 7px -5px rgba(192,160,220,0.35)!important}
+    3px -3px 5px -4px rgba(255,255,255,0.80),
+    5px -5px 8px -5px rgba(160,100,200,0.38),
+    7px -7px 11px -6px rgba(220,140,190,0.25),
+    -3px 3px 5px -4px rgba(255,255,255,0.80),
+    -5px 5px 8px -5px rgba(160,100,200,0.38),
+    -7px 7px 11px -6px rgba(220,140,190,0.25)!important}
 body.dark-mode div[style*="borderRadius"][style*="card-bg"]{
   border:1.5px solid rgba(255,190,90,0.25)!important;
   box-shadow:
-    -5px -5px 7px -5px rgba(255,170,60,0.38),
-    5px 5px 7px -5px rgba(255,150,40,0.28)!important}
+    3px -3px 5px -4px rgba(255,255,255,0.45),
+    5px -5px 8px -5px rgba(180,120,200,0.30),
+    7px -7px 11px -6px rgba(255,170,60,0.22),
+    -3px 3px 5px -4px rgba(255,255,255,0.45),
+    -5px 5px 8px -5px rgba(180,120,200,0.30),
+    -7px 7px 11px -6px rgba(255,170,60,0.22)!important}
 
 /* All elements with chip-bg */
 body.light-mode div[style*="borderRadius"][style*="chip-bg"],
 body:not(.dark-mode) div[style*="borderRadius"][style*="chip-bg"]{
   border:1px solid rgba(255,225,235,0.35)!important;
   box-shadow:
-    -3px -3px 5px -4px rgba(217,168,192,0.38),
-    3px 3px 5px -4px rgba(192,160,220,0.28)!important}
+    2px -2px 4px -3px rgba(255,255,255,0.75),
+    3px -3px 6px -4px rgba(160,100,200,0.30),
+    -2px 2px 4px -3px rgba(255,255,255,0.75),
+    -3px 3px 6px -4px rgba(160,100,200,0.30)!important}
 
 /* Buttons with card-bg */
 body.light-mode button[style*="card-bg"],body:not(.dark-mode) button[style*="card-bg"]{
   border:1.5px solid rgba(255,225,235,0.42)!important;
   box-shadow:
-    -5px -5px 7px -5px rgba(217,168,192,0.48),
-    5px 5px 7px -5px rgba(192,160,220,0.38)!important}
+    3px -3px 5px -4px rgba(255,255,255,0.85),
+    5px -5px 8px -5px rgba(160,100,200,0.42),
+    7px -7px 11px -6px rgba(220,140,190,0.28),
+    -3px 3px 5px -4px rgba(255,255,255,0.85),
+    -5px 5px 8px -5px rgba(160,100,200,0.42),
+    -7px 7px 11px -6px rgba(220,140,190,0.28)!important}
 body.dark-mode button[style*="card-bg"]{
   border:1.5px solid rgba(255,190,90,0.28)!important;
   box-shadow:
-    -5px -5px 7px -5px rgba(255,170,60,0.42),
-    5px 5px 7px -5px rgba(255,150,40,0.32)!important}
+    3px -3px 5px -4px rgba(255,255,255,0.48),
+    5px -5px 8px -5px rgba(180,120,200,0.35),
+    7px -7px 11px -6px rgba(255,170,60,0.25),
+    -3px 3px 5px -4px rgba(255,255,255,0.48),
+    -5px 5px 8px -5px rgba(180,120,200,0.35),
+    -7px 7px 11px -6px rgba(255,170,60,0.25)!important}
 
 /* All solid-bg elements */
 body.light-mode div[style*="card-bg-solid"][style*="borderRadius"],
 body:not(.dark-mode) div[style*="card-bg-solid"][style*="borderRadius"]{
   border:1.5px solid rgba(255,225,235,0.38)!important;
   box-shadow:
-    -5px -5px 7px -5px rgba(217,168,192,0.40),
-    5px 5px 7px -5px rgba(192,160,220,0.30)!important}
+    3px -3px 5px -4px rgba(255,255,255,0.78),
+    5px -5px 8px -5px rgba(160,100,200,0.35),
+    7px -7px 11px -6px rgba(220,140,190,0.22),
+    -3px 3px 5px -4px rgba(255,255,255,0.78),
+    -5px 5px 8px -5px rgba(160,100,200,0.35),
+    -7px 7px 11px -6px rgba(220,140,190,0.22)!important}
 
 /* Header bar itself */
 body.light-mode div[style*="backdropFilter"][style*="borderBottom"],
