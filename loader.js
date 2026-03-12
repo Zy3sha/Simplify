@@ -5,7 +5,7 @@ window.onerror = function(msg, src, line, col, err) {
   if (err && err.message) detail = err.message;
   if (err && err.stack) detail += '\n' + err.stack.split('\n').slice(0,3).join('\n');
 
-  document.getElementById('root').innerHTML = '<div style="min-height:100vh;background:linear-gradient(135deg,#FFF8F2 0%,#F5E1D8 40%,#F0DDD6 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;font-family:DM Sans,sans-serif;text-align:center;position:relative;overflow:hidden">'
+  document.getElementById('root').innerHTML = '<div style="min-height:100vh;background:linear-gradient(135deg,#FFFDFC 0%,#FBF5F3 40%,#F9F3F1 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;font-family:DM Sans,sans-serif;text-align:center;position:relative;overflow:hidden">'
     + '<style>'
     + '@keyframes babyBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.008)}}'
     + '@keyframes zzz1{0%{opacity:0;transform:translate(0,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(15px,-60px) scale(1.2)}}'
@@ -30,7 +30,7 @@ window.onerror = function(msg, src, line, col, err) {
 // ── Load and compile JSX from external file ──
 (function() {
   var errorPage = function(title, detail) {
-    document.getElementById('root').innerHTML = '<div style="min-height:100vh;background:linear-gradient(135deg,#FFF8F2 0%,#F5E1D8 40%,#F0DDD6 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;font-family:DM Sans,sans-serif;text-align:center">'
+    document.getElementById('root').innerHTML = '<div style="min-height:100vh;background:linear-gradient(135deg,#FFFDFC 0%,#FBF5F3 40%,#F9F3F1 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;font-family:DM Sans,sans-serif;text-align:center">'
       + '<style>@keyframes babyBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.008)}}@keyframes zzz1{0%{opacity:0;transform:translate(0,0) scale(0.6)}30%{opacity:1}100%{opacity:0;transform:translate(15px,-60px) scale(1.2)}}@keyframes zzz2{0%{opacity:0;transform:translate(0,0) scale(0.5)}35%{opacity:1}100%{opacity:0;transform:translate(25px,-75px) scale(1.1)}}@keyframes zzz3{0%{opacity:0;transform:translate(0,0) scale(0.4)}40%{opacity:1}100%{opacity:0;transform:translate(10px,-90px) scale(1)}}@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}</style>'
       + '<div style="position:relative;margin-bottom:28px"><img src="sleep-baby.png" alt="" style="width:200px;height:200px;object-fit:contain;animation:babyBreathe 3.5s ease-in-out infinite;filter:drop-shadow(0 16px 32px rgba(217,207,243,0.35))"><span style="position:absolute;top:8px;right:-5px;font-size:18px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz1 2.8s ease-in-out infinite">z</span><span style="position:absolute;top:-8px;right:12px;font-size:24px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz2 2.8s ease-in-out 0.5s infinite">z</span><span style="position:absolute;top:-28px;right:28px;font-size:16px;font-weight:700;color:#D9CFF3;font-family:Playfair Display,serif;font-style:italic;animation:zzz3 2.8s ease-in-out 1s infinite">z</span></div>'
       + '<div style="font-family:Playfair Display,serif;font-size:26px;font-weight:700;color:#5B4F5F;margin-bottom:10px">Uh oh!</div>'
