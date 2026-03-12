@@ -6641,104 +6641,7 @@ function App(){
               {insightSection.trends && (
                 <div style={{background:"var(--card-bg-solid)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
 
-                  {/* Growth Chart */}
-                  {sortedW.length>=1&&babySex&&babyDob&&(()=>{
-                    const PCTL=[2,9,25,50,75,91,98];
-                    const PC={2:"#e8b4a0",9:"#e8c4b0",25:"#d4ede6",50:"#6fa898",75:"#d4ede6",91:"#e8c4b0",98:"#e8b4a0"};
-                    const maxMo=Math.min(Math.max(...wWithPct.filter(w=>w.ageMo!=null).map(w=>w.ageMo),6)+2,24);
-                    const CW=320,CH=240,PL=30,PR=28,PT=12,PB=24;
-                    const pW=CW-PL-PR,pH2=CH-PT-PB;
-                    const allKg=[];
-                    for(let mo=0;mo<=maxMo;mo++) PCTL.forEach(p=>{const kg=weightForPercentile(mo,p,babySex);if(kg)allKg.push(kg);});
-                    sortedW.forEach(w=>allKg.push(w.kg));
-                    const kMin=Math.floor(Math.min(...allKg)*0.92*10)/10;
-                    const kMax=Math.ceil(Math.max(...allKg)*1.05*10)/10;
-                    const kR=kMax-kMin||1;
-                    const tX=mo=>PL+((mo)/(maxMo))*pW;
-                    const tY=kg=>PT+(1-(kg-kMin)/kR)*pH2;
-                    const pp={};
-                    PCTL.forEach(p=>{const d=[];for(let mo=0;mo<=maxMo;mo++){const kg=weightForPercentile(mo,p,babySex);if(kg)d.push(`${mo===0?"M":"L"}${tX(mo).toFixed(1)},${tY(kg).toFixed(1)}`);}pp[p]=d.join(" ");});
-                    const bp=wWithPct.filter(w=>w.ageMo!=null&&w.ageMo<=maxMo);
-                    const bPath=bp.map((w,i)=>`${i===0?"M":"L"}${tX(w.ageMo).toFixed(1)},${tY(w.kg).toFixed(1)}`).join(" ");
-                    const bands=[[2,9],[9,25],[25,50],[50,75],[75,91],[91,98]];
-                    const bf=["rgba(232,180,160,0.18)","rgba(232,196,176,0.12)","rgba(212,237,230,0.22)","rgba(212,237,230,0.22)","rgba(232,196,176,0.12)","rgba(232,180,160,0.18)"];
-                    return(
-                      <div style={{marginBottom:14}}>
-                        <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:4}}>Growth Chart · WHO Percentiles</div>
-                        <div style={{fontSize:11,color:C.lt,marginBottom:10}}>{babySex==="boy"?"👦 Boys":"👧 Girls"} · 0–{maxMo} months</div>
-                        <svg width="100%" viewBox={`0 0 ${CW} ${CH}`} style={{display:"block"}}>
-                          {bands.map(([lo,hi],bi)=>{const d=[];for(let mo=0;mo<=maxMo;mo++){const k=weightForPercentile(mo,hi,babySex);if(k)d.push(`${tX(mo).toFixed(1)},${tY(k).toFixed(1)}`);}for(let mo=maxMo;mo>=0;mo--){const k=weightForPercentile(mo,lo,babySex);if(k)d.push(`${tX(mo).toFixed(1)},${tY(k).toFixed(1)}`);}return<polygon key={bi} points={d.join(" ")} fill={bf[bi]} stroke="none"/>;
-                          })}
-                          {PCTL.map(p=><g key={p}><path d={pp[p]} fill="none" stroke={PC[p]} strokeWidth={p===50?1.8:0.7} strokeDasharray={p===50?"":"4,3"} opacity={0.85}/><text x={CW-PR+4} y={tY(weightForPercentile(maxMo,p,babySex))+3} fontSize={8} fill={C.lt} fontFamily="monospace">{p===50?"50th":p}</text></g>)}
-                          {[0,3,6,9,12,15,18,21,24].filter(m=>m<=maxMo).map(m=><g key={m}><line x1={tX(m)} y1={PT} x2={tX(m)} y2={CH-PB} stroke={C.blush} strokeWidth={0.4}/><text x={tX(m)} y={CH-PB+14} textAnchor="middle" fontSize={9} fill={C.lt} fontFamily="monospace">{m}m</text></g>)}
-                          {bp.length>1&&<path d={bPath} fill="none" stroke={C.ter} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>}
-                          {(()=>{
-                            const R=3.5;
-                            const positioned=bp.map(w=>({cx:tX(w.ageMo),cy:tY(w.kg),w}));
-                            for(let i=1;i<positioned.length;i++){
-                              for(let j=0;j<i;j++){
-                                const dx=Math.abs(positioned[i].cx-positioned[j].cx);
-                                const dy=Math.abs(positioned[i].cy-positioned[j].cy);
-                                if(dx<R*2&&dy<R*2) positioned[i].cy=positioned[j].cy-R*2.2;
-                              }
-                            }
-                            return positioned.map((p,i)=>(
-                              <g key={i}>
-                                <circle cx={p.cx} cy={p.cy} r={R} fill="white" stroke={C.ter} strokeWidth={2}/>
-                                {i===positioned.length-1&&<text x={p.cx} y={p.cy-R-2} textAnchor="middle" fontSize={7} fill={C.ter} fontFamily="monospace">{p.w.kg}kg</text>}
-                              </g>
-                            ));
-                          })()}
-                        </svg>
-                      </div>
-                    );
-                  })()}
-
                   {/* Feed & Nap Trends */}
-
-                  {/* Height/Length Chart */}
-                  {sortedH.length>=1&&babySex&&babyDob&&(()=>{
-                    const PCTL=[2,9,25,50,75,91,98];
-                    const PC={2:"#e8b4a0",9:"#e8c4b0",25:"#d4ede6",50:"#6fa898",75:"#d4ede6",91:"#e8c4b0",98:"#e8b4a0"};
-                    const maxMo=Math.min(Math.max(...hWithPct.filter(h=>h.ageMo!=null).map(h=>h.ageMo),6)+2,24);
-                    const CW=320,CH=240,PL=30,PR=28,PT=12,PB=24;
-                    const pW2=CW-PL-PR,pH3=CH-PT-PB;
-                    const allCm=[];
-                    for(let mo=0;mo<=maxMo;mo++) PCTL.forEach(p=>{const cm=lengthForPercentile(mo,p,babySex);if(cm)allCm.push(cm);});
-                    sortedH.forEach(h=>allCm.push(h.cm));
-                    const cMin=Math.floor(Math.min(...allCm)*0.97*10)/10;
-                    const cMax=Math.ceil(Math.max(...allCm)*1.03*10)/10;
-                    const cR=cMax-cMin||1;
-                    const tX2=mo=>PL+((mo)/(maxMo))*pW2;
-                    const tY2=cm=>PT+(1-(cm-cMin)/cR)*pH3;
-                    const hPaths={};
-                    PCTL.forEach(p=>{const d=[];for(let mo=0;mo<=maxMo;mo++){const cm=lengthForPercentile(mo,p,babySex);if(cm)d.push(`${mo===0?"M":"L"}${tX2(mo).toFixed(1)},${tY2(cm).toFixed(1)}`);}hPaths[p]=d.join(" ");});
-                    const hbp=hWithPct.filter(h=>h.ageMo!=null&&h.ageMo<=maxMo);
-                    const hBabyPath=hbp.map((h,i)=>`${i===0?"M":"L"}${tX2(h.ageMo).toFixed(1)},${tY2(h.cm).toFixed(1)}`).join(" ");
-                    const hBands=[[2,9],[9,25],[25,50],[50,75],[75,91],[91,98]];
-                    const hBf=["rgba(232,180,160,0.18)","rgba(232,196,176,0.12)","rgba(212,237,230,0.22)","rgba(212,237,230,0.22)","rgba(232,196,176,0.12)","rgba(232,180,160,0.18)"];
-                    return(
-                      <div style={{marginBottom:14}}>
-                        <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:4}}>Height Chart · WHO Percentiles</div>
-                        <div style={{fontSize:11,color:C.lt,marginBottom:10}}>{babySex==="boy"?"👦 Boys":"👧 Girls"} · 0–{maxMo} months</div>
-                        <svg width="100%" viewBox={`0 0 ${CW} ${CH}`} style={{display:"block"}}>
-                          {hBands.map(([lo,hi],bi)=>{const d=[];for(let mo=0;mo<=maxMo;mo++){const cm=lengthForPercentile(mo,hi,babySex);if(cm)d.push(`${tX2(mo).toFixed(1)},${tY2(cm).toFixed(1)}`);}for(let mo=maxMo;mo>=0;mo--){const cm=lengthForPercentile(mo,lo,babySex);if(cm)d.push(`${tX2(mo).toFixed(1)},${tY2(cm).toFixed(1)}`);}return<polygon key={bi} points={d.join(" ")} fill={hBf[bi]} stroke="none"/>;
-                          })}
-                          {PCTL.map(p=><g key={p}><path d={hPaths[p]} fill="none" stroke={PC[p]} strokeWidth={p===50?1.8:0.7} strokeDasharray={p===50?"":"4,3"} opacity={0.85}/><text x={CW-PR+4} y={tY2(lengthForPercentile(maxMo,p,babySex))+3} fontSize={8} fill={C.lt} fontFamily="monospace">{p===50?"50th":p}</text></g>)}
-                          {[0,3,6,9,12,15,18,21,24].filter(m=>m<=maxMo).map(m=><g key={m}><line x1={tX2(m)} y1={PT} x2={tX2(m)} y2={CH-PB} stroke={C.blush} strokeWidth={0.4}/><text x={tX2(m)} y={CH-PB+14} textAnchor="middle" fontSize={9} fill={C.lt} fontFamily="monospace">{m}m</text></g>)}
-                          {hbp.length>1&&<path d={hBabyPath} fill="none" stroke={C.sky} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>}
-                          {hbp.map((h,i)=>(
-                            <g key={i}>
-                              <circle cx={tX2(h.ageMo)} cy={tY2(h.cm)} r={3.5} fill="white" stroke={C.sky} strokeWidth={2}/>
-                              {i===hbp.length-1&&<text x={tX2(h.ageMo)} y={tY2(h.cm)-5} textAnchor="middle" fontSize={7} fill={C.sky} fontFamily="monospace">{h.cm}cm</text>}
-                            </g>
-                          ))}
-                        </svg>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Feed & Nap Trends (original) */}
                   {dayKeys.length<3?(
                     <div style={{textAlign:"center",padding:"24px 10px",color:C.lt}}>
                       <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:C.mid,marginBottom:6}}>Not enough data yet</div>
@@ -9012,19 +8915,19 @@ function App(){
       {/* ═══ Mascot Popup Overlay ═══ */}
       {mascotPopup && (
         <div style={{position:"fixed",inset:0,zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-          <div style={{pointerEvents:"auto",textAlign:"center",animation:"mascotPop 0.4s cubic-bezier(0.34,1.56,0.64,1)"}}>
+          <div style={{pointerEvents:"auto",textAlign:"center",animation:"mascotPop 0.5s cubic-bezier(0.22,1.2,0.36,1) both"}}>
             <style>{`
-              @keyframes mascotPop{from{opacity:0;transform:scale(0.5) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
-              @keyframes mascotConfetti{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(-40px) rotate(180deg)}}
-              @keyframes mascotBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+              @keyframes mascotPop{from{opacity:0;transform:scale(0.3) translateY(30px)}60%{opacity:1;transform:scale(1.05) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+              @keyframes mascotFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+              @keyframes mascotTextIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
             `}</style>
             <img
               src={mascotPopup.type==="celebration"?"obubba-celebration.png":mascotPopup.type==="loading"?"obubba-loading.png":"obubba-thinking.png"}
               alt=""
-              style={{width:140,height:140,objectFit:"contain",animation:"mascotBounce 1.5s ease-in-out infinite",filter:"drop-shadow(0 12px 28px rgba(217,207,243,0.35))"}}
+              style={{width:220,height:220,objectFit:"contain",animation:"mascotFloat 2s ease-in-out 0.5s infinite",filter:"drop-shadow(0 16px 36px rgba(217,207,243,0.45))"}}
             />
-            <div style={{marginTop:10,background:"rgba(255,255,255,0.85)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderRadius:99,padding:"10px 24px",boxShadow:"0 0 24px rgba(246,221,227,0.40), 0 4px 16px rgba(217,207,243,0.20)",display:"inline-block"}}>
-              <div style={{fontSize:15,fontWeight:700,color:"#5B4F5F",fontFamily:"'DM Sans',sans-serif"}}>{mascotPopup.message}</div>
+            <div className="mascot-pill" style={{marginTop:14,background:document.body.classList.contains("dark-mode")?"rgba(30,40,60,0.92)":"rgba(255,255,255,0.95)",borderRadius:99,padding:"12px 28px",boxShadow:"0 0 28px rgba(246,221,227,0.50), 0 4px 20px rgba(217,207,243,0.30), inset 0 1px 0 rgba(255,255,255,0.25)",display:"inline-block",border:"1.5px solid rgba(255,255,255,0.18)",animation:"mascotTextIn 0.4s ease 0.3s both"}}>
+              <div style={{fontSize:16,fontWeight:700,color:document.body.classList.contains("dark-mode")?"#F0F2F5":"#5B4F5F",fontFamily:"'DM Sans',sans-serif",letterSpacing:"0.01em"}}>{mascotPopup.message}</div>
             </div>
           </div>
         </div>
