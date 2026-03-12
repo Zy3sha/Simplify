@@ -136,18 +136,14 @@ body.dark-mode .glass-card::after{background:linear-gradient(90deg,transparent,r
   position:relative;
   backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);
   box-shadow:
-    -2px -2px 6px rgba(243,211,218,0.30),
-    2px 2px 6px rgba(192,160,220,0.22),
-    inset -2px -2px 4px rgba(246,221,227,0.18),
-    inset 2px 2px 4px rgba(217,168,192,0.12)!important;
+    -5px -5px 8px -3px rgba(217,168,192,0.28),
+    5px 5px 8px -3px rgba(192,160,220,0.20)!important;
   contain:content;
 }
 body.dark-mode .glass-entry{box-shadow:
-    -2px -2px 6px rgba(255,180,70,0.20),
-    2px 2px 6px rgba(255,160,40,0.14),
-    inset -2px -2px 4px rgba(255,190,90,0.12),
-    inset 2px 2px 4px rgba(255,160,60,0.08),
-    0 2px 8px rgba(0,0,0,0.25)!important}
+    -5px -5px 8px -3px rgba(255,170,60,0.20),
+    5px 5px 8px -3px rgba(255,150,40,0.14),
+    0 2px 6px rgba(0,0,0,0.22)!important}
 .glass-entry::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;pointer-events:none;z-index:3;background:var(--specular);opacity:0.4}
 
 /* ═══════════════════════════════════════════════════════════
@@ -193,71 +189,53 @@ button{position:relative!important;overflow:visible!important}
   50%{opacity:1}
 }
 
-/* Light mode — diagonal glow: top-left + bottom-right bright, fading to opposite corners */
+/* Light mode — corner glow: top-left + bottom-right only */
 body.light-mode button,body:not(.dark-mode) button{
-  border:1.5px solid rgba(255,225,235,0.55)!important;
+  border:1.5px solid rgba(255,225,235,0.45)!important;
   box-shadow:
-    -3px -3px 8px rgba(243,211,218,0.50),
-    -6px -6px 18px rgba(217,168,192,0.28),
-    3px 3px 8px rgba(192,160,220,0.40),
-    6px 6px 18px rgba(180,150,210,0.20),
-    inset -2px -2px 6px rgba(246,221,227,0.30),
-    inset 2px 2px 6px rgba(217,168,192,0.20),
-    inset 0 1px 0 rgba(255,255,255,0.50)!important;
+    -8px -8px 12px -4px rgba(217,168,192,0.50),
+    -4px -4px 6px -2px rgba(243,211,218,0.40),
+    8px 8px 12px -4px rgba(192,160,220,0.40),
+    4px 4px 6px -2px rgba(180,150,210,0.30)!important;
   animation:candlePulse 4s ease-in-out infinite!important}
 
-/* Dark mode — diagonal glow: top-left + bottom-right amber */
+/* Dark mode — corner glow: top-left + bottom-right amber */
 body.dark-mode button{
-  border:1.5px solid rgba(255,190,90,0.38)!important;
+  border:1.5px solid rgba(255,190,90,0.32)!important;
   box-shadow:
-    -3px -3px 8px rgba(255,180,70,0.45),
-    -6px -6px 18px rgba(255,155,45,0.22),
-    3px 3px 8px rgba(255,160,40,0.35),
-    6px 6px 18px rgba(255,130,20,0.15),
-    inset -2px -2px 6px rgba(255,190,90,0.25),
-    inset 2px 2px 6px rgba(255,160,60,0.15),
-    inset 0 1px 0 rgba(255,220,150,0.22)!important;
+    -8px -8px 12px -4px rgba(255,170,60,0.45),
+    -4px -4px 6px -2px rgba(255,180,70,0.35),
+    8px 8px 12px -4px rgba(255,150,40,0.35),
+    4px 4px 6px -2px rgba(255,160,50,0.25)!important;
   animation:candlePulse 4s ease-in-out infinite!important}
 
-/* CTA gradient buttons — diagonal glow, stronger */
+/* CTA gradient buttons — corner glow, stronger */
 body.light-mode button[style*="linear-gradient(135deg"],body:not(.dark-mode) button[style*="linear-gradient(135deg"]{
   box-shadow:
-    -4px -4px 10px rgba(243,211,218,0.55),
-    -8px -8px 22px rgba(217,168,192,0.30),
-    4px 4px 10px rgba(192,160,220,0.45),
-    8px 8px 22px rgba(180,150,210,0.22),
-    inset -2px -2px 8px rgba(246,221,227,0.35),
-    inset 2px 2px 8px rgba(217,168,192,0.22),
-    inset 0 1px 0 rgba(255,255,255,0.55)!important}
+    -10px -10px 16px -5px rgba(217,168,192,0.55),
+    -5px -5px 8px -3px rgba(243,211,218,0.45),
+    10px 10px 16px -5px rgba(192,160,220,0.45),
+    5px 5px 8px -3px rgba(180,150,210,0.35)!important}
 body.dark-mode button[style*="linear-gradient(135deg"]{
   box-shadow:
-    -4px -4px 10px rgba(255,180,70,0.50),
-    -8px -8px 22px rgba(255,155,45,0.25),
-    4px 4px 10px rgba(255,160,40,0.40),
-    8px 8px 22px rgba(255,130,20,0.18),
-    inset -2px -2px 8px rgba(255,190,90,0.30),
-    inset 2px 2px 8px rgba(255,160,60,0.18),
-    inset 0 1px 0 rgba(255,220,150,0.28)!important}
+    -10px -10px 16px -5px rgba(255,170,60,0.50),
+    -5px -5px 8px -3px rgba(255,180,70,0.40),
+    10px 10px 16px -5px rgba(255,150,40,0.40),
+    5px 5px 8px -3px rgba(255,160,50,0.30)!important}
 
-/* Pill buttons — diagonal glow */
+/* Pill buttons — corner glow */
 body.light-mode button[style*="borderRadius:99"],body:not(.dark-mode) button[style*="borderRadius:99"]{
   box-shadow:
-    -3px -3px 7px rgba(243,211,218,0.42),
-    -5px -5px 14px rgba(217,168,192,0.22),
-    3px 3px 7px rgba(192,160,220,0.35),
-    5px 5px 14px rgba(180,150,210,0.14),
-    inset -2px -2px 5px rgba(246,221,227,0.25),
-    inset 2px 2px 5px rgba(217,168,192,0.16),
-    inset 0 1px 0 rgba(255,255,255,0.45)!important}
+    -7px -7px 10px -4px rgba(217,168,192,0.42),
+    -3px -3px 5px -2px rgba(243,211,218,0.32),
+    7px 7px 10px -4px rgba(192,160,220,0.35),
+    3px 3px 5px -2px rgba(180,150,210,0.22)!important}
 body.dark-mode button[style*="borderRadius:99"]{
   box-shadow:
-    -3px -3px 7px rgba(255,180,70,0.38),
-    -5px -5px 14px rgba(255,155,45,0.18),
-    3px 3px 7px rgba(255,160,40,0.30),
-    5px 5px 14px rgba(255,130,20,0.12),
-    inset -2px -2px 5px rgba(255,190,90,0.20),
-    inset 2px 2px 5px rgba(255,160,60,0.12),
-    inset 0 1px 0 rgba(255,220,150,0.18)!important}
+    -7px -7px 10px -4px rgba(255,170,60,0.38),
+    -3px -3px 5px -2px rgba(255,180,70,0.28),
+    7px 7px 10px -4px rgba(255,150,40,0.30),
+    3px 3px 5px -2px rgba(255,160,50,0.20)!important}
 
 /* Action grid buttons (borderRadius:14 + flexDirection) — NO outer bleed */
 body.light-mode button[style*="borderRadius:14"][style*="flexDirection"],
@@ -293,23 +271,19 @@ body.light-mode .glass-entry,body:not(.dark-mode) .glass-entry{
 
 /* Entry rows */
 body.light-mode div[data-entry-id],body:not(.dark-mode) div[data-entry-id]{
-  border:1.5px solid rgba(255,225,235,0.50)!important;
+  border:1.5px solid rgba(255,225,235,0.42)!important;
   box-shadow:
-    -3px -3px 7px rgba(243,211,218,0.35),
-    -5px -5px 14px rgba(217,168,192,0.16),
-    3px 3px 7px rgba(192,160,220,0.28),
-    5px 5px 14px rgba(180,150,210,0.10),
-    inset -2px -2px 4px rgba(246,221,227,0.18),
-    inset 2px 2px 4px rgba(217,168,192,0.12)!important}
+    -6px -6px 10px -4px rgba(217,168,192,0.35),
+    -3px -3px 5px -2px rgba(243,211,218,0.25),
+    6px 6px 10px -4px rgba(192,160,220,0.28),
+    3px 3px 5px -2px rgba(180,150,210,0.16)!important}
 body.dark-mode div[data-entry-id]{
-  border:1.5px solid rgba(255,190,90,0.28)!important;
+  border:1.5px solid rgba(255,190,90,0.24)!important;
   box-shadow:
-    -3px -3px 7px rgba(255,180,70,0.25),
-    -5px -5px 14px rgba(255,155,45,0.10),
-    3px 3px 7px rgba(255,160,40,0.18),
-    5px 5px 14px rgba(255,130,20,0.06),
-    inset -2px -2px 4px rgba(255,190,90,0.14),
-    inset 2px 2px 4px rgba(255,160,60,0.08),
+    -6px -6px 10px -4px rgba(255,170,60,0.25),
+    -3px -3px 5px -2px rgba(255,180,70,0.18),
+    6px 6px 10px -4px rgba(255,150,40,0.18),
+    3px 3px 5px -2px rgba(255,160,50,0.12),
     0 2px 6px rgba(0,0,0,0.20)!important}
 div[data-entry-id]::after{content:"";position:absolute;top:0;left:0;right:0;height:40%;background:linear-gradient(180deg,rgba(255,255,255,0.12) 0%,transparent 100%);pointer-events:none;z-index:4;border-radius:inherit}
 body.dark-mode div[data-entry-id]::after{background:linear-gradient(180deg,rgba(255,200,120,0.08) 0%,transparent 100%)}
@@ -401,22 +375,16 @@ body.dark-mode div[style*="borderRadius:36"][style*="overflow:\"hidden\""][style
 /* Get Started — yellow/orange glow */
 body.light-mode button[style*="borderRadius:18"][style*="padding:\"19px\""],body:not(.dark-mode) button[style*="borderRadius:18"][style*="padding:\"19px\""]{
   box-shadow:
-    -5px -5px 14px rgba(243,211,218,0.55),
-    -10px -10px 28px rgba(217,168,192,0.30),
-    5px 5px 14px rgba(192,160,220,0.45),
-    10px 10px 28px rgba(180,150,210,0.18),
-    inset -3px -3px 8px rgba(246,221,227,0.30),
-    inset 3px 3px 8px rgba(217,168,192,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.40)!important}
+    -12px -12px 20px -6px rgba(217,168,192,0.55),
+    -6px -6px 10px -3px rgba(243,211,218,0.40),
+    12px 12px 20px -6px rgba(192,160,220,0.45),
+    6px 6px 10px -3px rgba(180,150,210,0.30)!important}
 body.dark-mode button[style*="borderRadius:18"][style*="padding:\"19px\""]{
   box-shadow:
-    -5px -5px 14px rgba(255,180,70,0.45),
-    -10px -10px 28px rgba(255,155,45,0.22),
-    5px 5px 14px rgba(255,160,40,0.35),
-    10px 10px 28px rgba(255,130,20,0.14),
-    inset -3px -3px 8px rgba(255,190,90,0.25),
-    inset 3px 3px 8px rgba(255,160,60,0.14),
-    inset 0 1px 0 rgba(255,220,150,0.22)!important}
+    -12px -12px 20px -6px rgba(255,170,60,0.48),
+    -6px -6px 10px -3px rgba(255,180,70,0.35),
+    12px 12px 20px -6px rgba(255,150,40,0.38),
+    6px 6px 10px -3px rgba(255,160,50,0.25)!important}
 
 /* Feature pills */
 body.light-mode div[style*="borderRadius:99"][style*="padding:\"7px 13px\""],body:not(.dark-mode) div[style*="borderRadius:99"][style*="padding:\"7px 13px\""]{
@@ -466,65 +434,53 @@ body.dark-mode [style*="backdropFilter"]{background-color:rgba(8,14,28,0.30)}
 /* All elements with inline border-radius and card-bg get edge glow */
 body.light-mode div[style*="borderRadius"][style*="card-bg"],
 body:not(.dark-mode) div[style*="borderRadius"][style*="card-bg"]{
-  border:1.5px solid rgba(255,225,235,0.50)!important;
+  border:1.5px solid rgba(255,225,235,0.45)!important;
   box-shadow:
-    -3px -3px 8px rgba(243,211,218,0.38),
-    -5px -5px 16px rgba(217,168,192,0.18),
-    3px 3px 8px rgba(192,160,220,0.30),
-    5px 5px 16px rgba(180,150,210,0.12),
-    inset -2px -2px 5px rgba(246,221,227,0.22),
-    inset 2px 2px 5px rgba(217,168,192,0.14)!important}
+    -7px -7px 10px -4px rgba(217,168,192,0.38),
+    -3px -3px 5px -2px rgba(243,211,218,0.28),
+    7px 7px 10px -4px rgba(192,160,220,0.30),
+    3px 3px 5px -2px rgba(180,150,210,0.18)!important}
 body.dark-mode div[style*="borderRadius"][style*="card-bg"]{
-  border:1.5px solid rgba(255,190,90,0.30)!important;
+  border:1.5px solid rgba(255,190,90,0.28)!important;
   box-shadow:
-    -3px -3px 8px rgba(255,180,70,0.30),
-    -5px -5px 16px rgba(255,155,45,0.14),
-    3px 3px 8px rgba(255,160,40,0.22),
-    5px 5px 16px rgba(255,130,20,0.08),
-    inset -2px -2px 5px rgba(255,190,90,0.16),
-    inset 2px 2px 5px rgba(255,160,60,0.10)!important}
+    -7px -7px 10px -4px rgba(255,170,60,0.30),
+    -3px -3px 5px -2px rgba(255,180,70,0.22),
+    7px 7px 10px -4px rgba(255,150,40,0.22),
+    3px 3px 5px -2px rgba(255,160,50,0.14)!important}
 
 /* All elements with chip-bg */
 body.light-mode div[style*="borderRadius"][style*="chip-bg"],
 body:not(.dark-mode) div[style*="borderRadius"][style*="chip-bg"]{
-  border:1px solid rgba(255,225,235,0.45)!important;
+  border:1px solid rgba(255,225,235,0.40)!important;
   box-shadow:
-    -2px -2px 6px rgba(243,211,218,0.30),
-    2px 2px 6px rgba(192,160,220,0.22),
-    inset -1px -1px 4px rgba(246,221,227,0.16),
-    inset 1px 1px 4px rgba(217,168,192,0.10)!important}
+    -5px -5px 8px -3px rgba(217,168,192,0.30),
+    5px 5px 8px -3px rgba(192,160,220,0.22)!important}
 
 /* Buttons with card-bg */
 body.light-mode button[style*="card-bg"],body:not(.dark-mode) button[style*="card-bg"]{
-  border:1.5px solid rgba(255,225,235,0.55)!important;
+  border:1.5px solid rgba(255,225,235,0.48)!important;
   box-shadow:
-    -3px -3px 8px rgba(243,211,218,0.45),
-    -6px -6px 16px rgba(217,168,192,0.22),
-    3px 3px 8px rgba(192,160,220,0.35),
-    6px 6px 16px rgba(180,150,210,0.14),
-    inset -2px -2px 5px rgba(246,221,227,0.25),
-    inset 2px 2px 5px rgba(217,168,192,0.16)!important}
+    -8px -8px 12px -4px rgba(217,168,192,0.45),
+    -4px -4px 6px -2px rgba(243,211,218,0.35),
+    8px 8px 12px -4px rgba(192,160,220,0.35),
+    4px 4px 6px -2px rgba(180,150,210,0.25)!important}
 body.dark-mode button[style*="card-bg"]{
-  border:1.5px solid rgba(255,190,90,0.35)!important;
+  border:1.5px solid rgba(255,190,90,0.32)!important;
   box-shadow:
-    -3px -3px 8px rgba(255,180,70,0.35),
-    -6px -6px 16px rgba(255,155,45,0.16),
-    3px 3px 8px rgba(255,160,40,0.28),
-    6px 6px 16px rgba(255,130,20,0.10),
-    inset -2px -2px 5px rgba(255,190,90,0.20),
-    inset 2px 2px 5px rgba(255,160,60,0.12)!important}
+    -8px -8px 12px -4px rgba(255,170,60,0.38),
+    -4px -4px 6px -2px rgba(255,180,70,0.28),
+    8px 8px 12px -4px rgba(255,150,40,0.28),
+    4px 4px 6px -2px rgba(255,160,50,0.18)!important}
 
 /* All solid-bg elements */
 body.light-mode div[style*="card-bg-solid"][style*="borderRadius"],
 body:not(.dark-mode) div[style*="card-bg-solid"][style*="borderRadius"]{
-  border:1.5px solid rgba(255,225,235,0.45)!important;
+  border:1.5px solid rgba(255,225,235,0.42)!important;
   box-shadow:
-    -2px -2px 6px rgba(243,211,218,0.32),
-    -4px -4px 12px rgba(217,168,192,0.14),
-    2px 2px 6px rgba(192,160,220,0.24),
-    4px 4px 12px rgba(180,150,210,0.08),
-    inset -1px -1px 4px rgba(246,221,227,0.16),
-    inset 1px 1px 4px rgba(217,168,192,0.10)!important}
+    -6px -6px 10px -4px rgba(217,168,192,0.32),
+    -3px -3px 5px -2px rgba(243,211,218,0.22),
+    6px 6px 10px -4px rgba(192,160,220,0.24),
+    3px 3px 5px -2px rgba(180,150,210,0.14)!important}
 
 /* Header bar itself */
 body.light-mode div[style*="backdropFilter"][style*="borderBottom"],
