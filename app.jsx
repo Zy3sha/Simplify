@@ -1584,7 +1584,6 @@ function App(){
   const[tutStep,setTutStep]=useState(-1);
   const[sessionLogs,setSessionLogs]=useState(0);
   const[showTutPrompt,setShowTutPrompt]=useState(false);
-  const[daysSinceInstall,setDaysSinceInstall]=useState(0);
 
   const[isOnline,setIsOnline]=useState(()=>navigator.onLine);
 
@@ -4217,15 +4216,6 @@ function App(){
     try{localStorage.setItem("measure_unit_v1",measureUnit);}catch{}
   },[measureUnit]);
 
-  // Track install date for engagement hooks
-  React.useEffect(()=>{
-    try{
-      let d=localStorage.getItem("install_date_v1");
-      if(!d){d=todayStr();localStorage.setItem("install_date_v1",d);}
-      setDaysSinceInstall(Math.floor((Date.now()-new Date(d+"T00:00:00").getTime())/(1000*60*60*24)));
-    }catch{}
-  },[]);
-
 
   function parseTime(str, previousMinutes=null) {
     if (!str) return null;
@@ -4623,42 +4613,9 @@ function App(){
     setMascotPopup({type, message});
     if(duration > 0) setTimeout(()=>setMascotPopup(null), duration);
   }
-
-  // ── Social share card generator ──
-  async function shareCard(title, lines, emoji){
-    const W=640,H=400,pad=40;
-    const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
-    const ctx=canvas.getContext("2d");
-    // Background gradient
-    const grad=ctx.createLinearGradient(0,0,W,H);
-    grad.addColorStop(0,"#FFF8F2");grad.addColorStop(0.5,"#F5E1D8");grad.addColorStop(1,"#F0DDD6");
-    ctx.fillStyle=grad;ctx.beginPath();ctx.roundRect(0,0,W,H,24);ctx.fill();
-    // Emoji
-    ctx.font="48px serif";ctx.textAlign="center";ctx.fillText(emoji||"👶",W/2,pad+48);
-    // Title
-    ctx.font="bold 26px 'DM Sans',sans-serif";ctx.fillStyle="#5B4F4F";ctx.fillText(title,W/2,pad+100);
-    // Lines
-    ctx.font="18px 'DM Sans',sans-serif";ctx.fillStyle="#7A6B6B";
-    lines.forEach((l,i)=>ctx.fillText(l,W/2,pad+140+i*28));
-    // Watermark
-    ctx.font="13px 'DM Sans',sans-serif";ctx.fillStyle="#C0A8A0";ctx.fillText("Tracked with OBubba · obubba.com",W/2,H-20);
-    // Share
-    try{
-      const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
-      const file=new File([blob],title.replace(/[^a-z0-9]/gi,"_")+".png",{type:"image/png"});
-      if(navigator.canShare&&navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title,text:title});
-      } else if(navigator.share){
-        await navigator.share({title,text:lines.join(" · ")+" — Tracked with OBubba"});
-      } else {
-        const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=file.name;a.click();
-      }
-    }catch(e){if(e.name!=="AbortError")console.warn("Share error",e);}
-  }
   function quickAddLog(type, data){
     setSessionLogs(c=>{
       const n=c+1;
-      // After 3rd log, offer tutorial if never seen
       try{if(n===3 && !localStorage.getItem("tut_v2") && tutStep===-1) setTimeout(()=>setShowTutPrompt(true),800);}catch{}
       return n;
     });
@@ -5030,7 +4987,7 @@ function App(){
   const card={background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:20,padding:"16px",marginBottom:14,boxShadow:"var(--card-shadow)",transition:"transform 0.2s cubic-bezier(.23,1,.32,1),box-shadow 0.25s ease"};
 
   const tabIcons={day:"📅",insights:"💡",develop:"🧩",settings:"👤"};
-  const tabLabels={day:"Day",insights:"Insights",develop:"Development",settings:""};
+  const tabLabels={day:"Day",insights:"Insights",develop:"Development",settings:"Account"};
 
 
   if (authScreen) {
@@ -5056,8 +5013,7 @@ function App(){
         const ok = await reserveUsername(authUsername, pin);
         if(ok) {
           try{ localStorage.setItem("onboarded_v2","1"); }catch{}
-          try{ localStorage.removeItem("tut_v2"); }catch{}
-          setTutStep(0); setNeedsChildSetup(true); setOnboarded(true); setAuthScreen(null);
+          setNeedsChildSetup(true); setOnboarded(true); setAuthScreen(null);
         } else { setAuthError("That username is taken — try another"); setAuthLoading(false); }
       }
     }
@@ -5230,8 +5186,7 @@ function App(){
       }
       try{ localStorage.setItem("onboarded_v2","1"); }catch{}
 
-      try{ localStorage.removeItem("tut_v2"); }catch{}
-      setTutStep(0);
+      // Tutorial now triggered after 3 logs, not on account creation
       setNeedsChildSetup(true);
       setOnboarded(true);
     };
@@ -5565,14 +5520,13 @@ function App(){
         @keyframes tutPop{from{opacity:0;transform:translate(-50%,-50%) scale(0.93)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
         @keyframes tutPulse{0%,100%{box-shadow:0 0 0 0 rgba(201,112,90,0.5)}70%{box-shadow:0 0 0 14px rgba(201,112,90,0)}}
       `}</style>
-      {/* Tutorial prompt after 3 logs */}
       {showTutPrompt && (
         <div style={{position:"fixed",inset:0,zIndex:9990,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowTutPrompt(false)}>
           <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",borderRadius:24,padding:"28px 24px",maxWidth:340,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
             <div style={{fontSize:36,marginBottom:12}}>🎉</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:8}}>You're getting the hang of it!</div>
             <div style={{fontSize:14,color:C.mid,lineHeight:1.6,marginBottom:20}}>Want a quick 60-second tour of everything OBubba can do?</div>
-            <button onClick={()=>{setShowTutPrompt(false);setTutStep(0);}} style={{width:"100%",padding:"13px",borderRadius:14,border:"none",background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:15,fontWeight:700,cursor:_cP,marginBottom:8,fontFamily:_fI}}>Show me →</button>
+            <button onClick={()=>{setShowTutPrompt(false);setTutStep(0);}} style={{width:"100%",padding:"13px",borderRadius:14,border:"none",background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:15,fontWeight:700,cursor:_cP,marginBottom:8,fontFamily:_fI}}>Show me the tour →</button>
             <button onClick={()=>{setShowTutPrompt(false);try{localStorage.setItem("tut_v2","1");}catch{}}} style={{width:"100%",padding:"11px",borderRadius:14,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.lt,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>Maybe later</button>
           </div>
         </div>
@@ -5645,7 +5599,7 @@ function App(){
                   <div>✎ Tap the edit button on a date to rename or delete the day</div>
                   <div>+ <strong>Date</strong> — tap to add a past day manually</div>
                 </div>
-                <div style={{fontSize:13,color:C.lt,lineHeight:1.5,marginTop:8}}>Today is created automatically. Tap + Date to log a past day you missed.</div>
+                <div style={{fontSize:13,color:C.lt,lineHeight:1.5,marginTop:8}}>Today is created automatically. Tap + Date to add a day.</div>
               </div>
             ), location:"Date strip below header" },
           { icon:"📋", title:"Notes — Your Secret Weapon",
@@ -5699,11 +5653,11 @@ function App(){
                 </div>
               </div>
             ), location:"Bottom navigation — Development tab" },
-          { icon:"🌙", title:"Day & Night Mode", body:"Tap the 🌙 / ☀️ toggle in the top-right of the header to switch between day and night mode. It sits right next to your account button for quick access.", location:"Header — top right" },
+          { icon:"🌙", title:"Day & Night Mode", body:"OBubba auto-switches to night mode at 7pm and day mode at 7am. You can manually toggle in Account (bottom nav) — the theme switch is right at the top.", location:"Account tab" },
           { icon:"👨‍👩‍👧", title:"Share & Sync",
             bodyJSX:(
               <div style={{fontSize:15,color:C.mid,lineHeight:1.65}}>
-                <div style={{marginBottom:8}}>Tap <strong style={{color:C.ter}}>👤 Account</strong> in the header, then <strong>Share & Sync</strong>:</div>
+                <div style={{marginBottom:8}}>Tap <strong style={{color:C.ter}}>👤 Account</strong> in the bottom nav, then <strong>Share & Sync</strong>:</div>
                 <div style={{background:"var(--card-bg-alt)",borderRadius:12,padding:"10px 14px",display:"flex",flexDirection:"column",gap:6,fontSize:14}}>
                   <div>🔗 Tap <strong>Get code</strong> next to your child — share the 6-letter code with your partner</div>
                   <div>📲 Your partner opens Share & Sync → <strong>Link a child</strong> → enters the code</div>
@@ -5725,7 +5679,7 @@ function App(){
                 <div style={{marginTop:10,padding:"9px 12px",background:"var(--card-bg-alt)",borderRadius:10,fontSize:13,color:C.ter,fontWeight:600,lineHeight:1.5}}>⚠️ Without a recovery word, a forgotten PIN means losing access. Set one now in Account → Share & Sync!</div>
               </div>
             ), location:"👤 Account → Share & Sync" },
-          { icon:"🎉", title:"You're all set!", body:"Log today's wake time to get started — the nap countdown will appear next to Start Feed. Before you go, set a recovery word in Account → Share & Sync to keep your data safe. You can replay this tour anytime from Account → App Tour. Happy tracking!", location:null },
+          { icon:"🎉", title:"You're all set!", body:"Log today's wake time to get started — the nap countdown will appear next to Start Feed. Before you go, set a recovery word in Account → Share & Sync to keep your data safe. You can replay this tour anytime from the Account tab → App Tour. Happy tracking!", location:null },
         ];
 
         const dismissTutorial = () => {
@@ -5824,7 +5778,7 @@ function App(){
         onTouchStart={handleSwipeStart}
         onTouchEnd={handleSwipeEnd}
       >
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6,gap:6}}>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             {childIds.map(cid=>(
               <button key={cid} onClick={()=>setActiveChildId(cid)} style={{
@@ -5838,25 +5792,11 @@ function App(){
               display:"flex",alignItems:"center",justifyContent:"center"
             }}>+</button>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:5}}>
-            <button onClick={e=>{e.stopPropagation();toggleTheme();}}
-              style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,fontSize:14,flexShrink:0}}>
-              {isDark?"☀️":"🌙"}
-            </button>
-            <button onClick={e=>{e.stopPropagation();setTab("settings");}}
-              style={{background:"var(--card-bg)",border:_bN,borderRadius:99,padding:"4px 10px 4px 7px",display:"flex",alignItems:"center",gap:5,cursor:_cP,maxWidth:120}}>
-              <span style={{fontSize:13}}>👤</span>
-              <span style={{fontSize:10,fontFamily:_fM,fontWeight:700,color:C.mid,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{familyUsername||"Account"}</span>
-            </button>
-          </div>
+
         </div>
         {!nameEdit ? (
-          <div onClick={()=>{setNameIn(babyName);setNameEdit(true);}} style={{cursor:_cP,marginBottom:6,display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:34,height:34,borderRadius:9,overflow:"hidden",flexShrink:0,border:"1.5px solid rgba(255,255,255,0.75)",boxShadow:"0 2px 8px rgba(0,0,0,0.12)"}}>
-              <img src="obubba-happy.png" alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
-                onError={e=>{e.target.style.display="none";e.target.parentNode.style.background=C.ter;e.target.parentNode.style.display="flex";e.target.parentNode.style.alignItems="center";e.target.parentNode.style.justifyContent="center";e.target.parentNode.textContent="🍼";}}/>
-            </div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:C.deep,fontWeight:700,lineHeight:1.1}}>
+          <div onClick={()=>{setNameIn(babyName);setNameEdit(true);}} style={{cursor:_cP,marginBottom:2,textAlign:"center"}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:C.deep,fontWeight:700,lineHeight:1.2}}>
               {babyName ? `${possessive(babyName)} Tracker` : "Baby Tracker"}
             </div>
           </div>
@@ -5868,8 +5808,7 @@ function App(){
             {babyName&&<button type="button" onClick={()=>setNameEdit(false)} style={{background:"var(--chip-bg)",border:_bN,borderRadius:10,color:C.mid,fontSize:14,padding:"9px 10px",cursor:_cP}}>✕</button>}
           </form>
         )}
-        {}
-        <div style={{marginBottom:7}}>
+        <div style={{marginBottom:7,textAlign:"center"}}>
           {(()=>{
             if (!age && !babyUnborn) return (
               <div onClick={e=>{e.stopPropagation();setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsConfirmDelete(false);setShowChildSettings(true);}}
@@ -6052,15 +5991,6 @@ function App(){
               )}
 
               {/* Pending bottle snaps banner */}
-
-              {/* First-log hint for new users */}
-              {dayE.length===0 && sessionLogs===0 && !localStorage.getItem("tut_v2") && (
-                <div style={{textAlign:"center",padding:"14px",marginBottom:10,background:"var(--card-bg)",borderRadius:16,border:`1.5px dashed ${C.ter}40`}}>
-                  <div style={{fontSize:14,color:C.mid,lineHeight:1.6}}>
-                    <span style={{fontSize:18}}>👆</span> Tap any button above to log {babyName||"your baby"}'s first entry
-                  </div>
-                </div>
-              )}
 
               {/* Age guidance */}
               {ageStage&&(
@@ -7765,6 +7695,19 @@ function App(){
       
       {tab==="settings"&&(
         <div style={{padding:"16px 16px 100px"}}>
+          {/* Theme toggle */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"12px 16px",marginBottom:14}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:22}}>{isDark?"🌙":"☀️"}</span>
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:C.deep}}>{isDark?"Night Mode":"Day Mode"}</div>
+                <div style={{fontSize:11,color:C.lt}}>Auto-switches 7pm / 7am</div>
+              </div>
+            </div>
+            <button onClick={toggleTheme} style={{background:`linear-gradient(135deg,${C.ter},#a85a44)`,border:_bN,borderRadius:99,padding:"8px 16px",color:"white",fontSize:13,fontWeight:700,cursor:_cP}}>
+              {isDark?"☀️ Day":"🌙 Night"}
+            </button>
+          </div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,marginBottom:4}}>👤 {familyUsername||"Account"}</div>
           {familyUsername&&<div style={{fontSize:12,fontFamily:_fM,color:C.lt,marginBottom:20}}>{syncStatus==="synced"?"🔄 Synced":syncStatus==="syncing"?"⏳ Syncing…":syncStatus==="error"?"⚠️ Sync error":"☁️ "+familyUsername}</div>}
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -7907,7 +7850,7 @@ function App(){
       )}
 
       <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"var(--nav-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderTop:"1px solid var(--nav-border)",display:"flex",justifyContent:"space-evenly",alignItems:"center",boxShadow:"var(--nav-shadow)",maxWidth:520,margin:"0 auto",borderRadius:"22px 22px 0 0",paddingBottom:"env(safe-area-inset-bottom,0)",padding:"4px 8px env(safe-area-inset-bottom,0)"}}>
-        {["day","insights","develop"].map(t=>(
+        {["day","insights","develop","settings"].map(t=>(
           <button key={t} onClick={()=>{setTab(t);setLogPanel(null);}} style={tabSt(t)}>
             <span style={{fontSize:14,transition:"transform 0.15s",transform:tab===t?"scale(1.1)":"scale(1)"}}>{tabIcons[t]}</span>
             <span>{tabLabels[t]}</span>
@@ -8289,10 +8232,10 @@ function App(){
       )}
 
       {modal==="addDay"&&(
-        <Sheet onClose={()=>setModal(null)} title="Add Past Day">
+        <Sheet onClose={()=>setModal(null)} title="Add Date">
           <div style={{fontSize:15,color:C.lt,marginBottom:12,lineHeight:1.6}}>Today is created automatically. Use this to log a past day you missed.</div>
           <Inp label="Date" type="date" value={newDate} onChange={e=>setNewDate(e.target.value)} max={(()=>{const y=new Date();y.setDate(y.getDate()-1);return y.toISOString().split("T")[0];})()}/>
-          <PBtn onClick={addDay}>Add Past Day</PBtn>
+          <PBtn onClick={addDay}>Add Date</PBtn>
         </Sheet>
       )}
 
