@@ -1105,7 +1105,7 @@ function App(){
         unborn: oldUnborn==="1",
         days: daysData,
         weights: oldWeights ? JSON.parse(oldWeights) : [],
-        milestones: oldMilestones ? JSON.parse(oldMilestones) : {}, teething:[], weaning:[]
+        milestones: oldMilestones ? JSON.parse(oldMilestones) : {}, teething:[], weaning:[], cryingHelps:{}
       }};
     } catch(e) {
       const cid = uid();
@@ -1126,7 +1126,7 @@ function App(){
 
   const childIds = Object.keys(children);
   const resolvedActiveId = (activeChildId && children[activeChildId]) ? activeChildId : childIds[0];
-  const activeChild = children[resolvedActiveId] || { id:"", name:"", dob:"", sex:"", unborn:false, days:{}, weights:[], heights:[], photos:[], milestones:{}, teething:[], weaning:[] };
+  const activeChild = children[resolvedActiveId] || { id:"", name:"", dob:"", sex:"", unborn:false, days:{}, weights:[], heights:[], photos:[], milestones:{}, teething:[], weaning:[], cryingHelps:{} };
 
   const babyName    = activeChild.name;
   const babyDob     = activeChild.dob;
@@ -1249,6 +1249,12 @@ function App(){
   }
 
   const teething = activeChild.teething || [];
+  const cryingHelps = activeChild.cryingHelps || {};
+  const setCryingHelps = (fn) => setChildren(prev => {
+    const cur = prev[resolvedActiveId] || {};
+    const next = typeof fn === "function" ? fn(cur.cryingHelps || {}) : fn;
+    return {...prev, [resolvedActiveId]: {...cur, cryingHelps: next}};
+  });
   const weaning = activeChild.weaning || [];
   const setTeething = (fn) => setChildren(prev => {
     const cur = prev[resolvedActiveId] || {};
@@ -1324,6 +1330,7 @@ function App(){
   const[showCryingGuide,setShowCryingGuide]=useState(false);
   const[showWakePrompt,setShowWakePrompt]=useState(false);
   const[showCryingHelper,setShowCryingHelper]=useState(false);
+  const[cryingResult,setCryingResult]=useState(null);
   const[showTeethingForm,setShowTeethingForm]=useState(false);
   const[teethingForm,setTeethingForm]=useState({tooth:"",date:"",symptoms:[],note:""});
   const[showWeaningForm,setShowWeaningForm]=useState(false);
@@ -5392,6 +5399,16 @@ function App(){
       }
     }
 
+    // Boost scores based on what's helped before (learned per-child)
+    const helpCounts = cryingHelps || {};
+    reasons.forEach(r => {
+      const key = r.title.toLowerCase().replace(/\s+/g,"_");
+      const count = helpCounts[key] || 0;
+      if (count > 0) r.score += Math.min(20, count * 5); // boost up to +20 from history
+      r._helpKey = key;
+      r._helpCount = count;
+    });
+
     // Sort by score descending
     reasons.sort((a,b) => b.score - a.score);
     return reasons;
@@ -7393,7 +7410,6 @@ function App(){
                 </div>
                 <span style={{fontSize:14,color:C.lt}}>→</span>
               </button>
-              </div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                 <span style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",color:C.mid,fontSize:15}}>Daytime</span>
               </div>
@@ -10049,7 +10065,7 @@ function App(){
             {weaningForm.reaction==="allergic"&&(
               <div style={{padding:"10px 12px",borderRadius:12,background:"rgba(232,87,74,0.08)",border:"1px solid rgba(232,87,74,0.2)",marginBottom:14}}>
                 <div style={{fontSize:12,color:"#e8574a",fontWeight:600}}>⚠️ If you suspect an allergic reaction</div>
-                <div style={{fontSize:11,color:"#c04040",marginTop:3,lineHeight:1.5}}>Note symptoms (rash, swelling, vomiting, diarrhoea). If severe (breathing difficulty, swelling of face/lips), call 999 immediately. For mild reactions, contact your GP or health visitor. Avoid this food until you've spoken to a professional.</div>
+                <div style={{fontSize:11,color:"#c04040",marginTop:3,lineHeight:1.5}}>Note symptoms (rash, swelling, vomiting, diarrhoea). If severe (breathing difficulty, swelling of face/lips), call emergency services immediately. For mild reactions, contact your doctor or health visitor. Avoid this food until you've spoken to a professional.</div>
               </div>
             )}
             <button onPointerDown={e=>{
@@ -10066,23 +10082,46 @@ function App(){
       )}
 
       {/* Why Is My Baby Crying? — diagnostic sheet */}
-      {showCryingHelper&&(
-        <div onClick={e=>{if(e.target===e.currentTarget)setShowCryingHelper(false);}} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.55)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end"}}>
+      {showCryingHelper&&(()=>{
+        const reasons = getCryingDiagnosis();
+        const topScore = reasons.length ? reasons[0].score : 0;
+        const lowConf = topScore < 50;
+        return (
+        <div onClick={e=>{if(e.target===e.currentTarget){setShowCryingHelper(false);setCryingResult(null);}}} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.55)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end"}}>
           <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",width:"100%",boxSizing:_bBB,maxHeight:"88vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
             <div style={{width:36,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
             <div style={{textAlign:"center",marginBottom:16}}>
               <div style={{fontSize:32,marginBottom:6}}>😢</div>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,marginBottom:4}}>Why is {babyName||"baby"} crying?</div>
-              <div style={{fontSize:13,color:C.lt}}>Ranked by what's most likely right now</div>
+              <div style={{fontSize:13,color:C.lt}}>Based on today's data and {babyName||"baby"}'s age</div>
             </div>
+
+            {/* Reassurance card when nothing obvious */}
+            {lowConf&&(
+              <div style={{padding:"18px 16px",borderRadius:16,background:"linear-gradient(135deg, rgba(80,200,120,0.08), rgba(111,168,152,0.06))",border:`1.5px solid ${C.mint}33`,marginBottom:14}}>
+                <div style={{fontSize:18,marginBottom:6}}>😊</div>
+                <div style={{fontSize:15,fontWeight:700,color:C.deep,marginBottom:4}}>Sometimes babies just cry</div>
+                <div style={{fontSize:13,color:C.mid,lineHeight:1.6,marginBottom:8}}>
+                  Everything looks OK — {babyName||"baby"} has been fed recently, had decent sleep, and is within a normal wake window. Some crying is completely normal{age&&age.totalWeeks<13?", especially in the first 3 months (peak crying is around 6–8 weeks)":""}.
+                </div>
+                <div style={{fontSize:13,fontWeight:600,color:C.deep,lineHeight:1.5}}>Things to try:</div>
+                <div style={{fontSize:12,color:C.mid,lineHeight:1.7,marginTop:2}}>
+                  Skin-to-skin contact · Gentle shushing or white noise · A walk outside or change of scenery · Warm bath · Gentle rocking or swaying · Check for hair tourniquet (toes, fingers)
+                </div>
+              </div>
+            )}
+
+            {/* Reason cards */}
+            <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:8}}>{lowConf?"Other possibilities":"Ranked by likelihood"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {getCryingDiagnosis().map((r,i)=>(
+              {reasons.map((r,i)=>(
                 <div key={i} style={{display:"flex",gap:12,padding:"14px",borderRadius:16,border:`1.5px solid ${r.urgency==="high"?C.ter+"44":r.urgency==="med"?C.gold+"44":C.blush}`,background:r.urgency==="high"?"rgba(201,112,90,0.06)":r.urgency==="med"?"rgba(212,168,85,0.04)":"var(--card-bg-alt)"}}>
                   <div style={{fontSize:26,flexShrink:0,lineHeight:1}}>{r.emoji}</div>
                   <div style={{flex:1}}>
                     <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
                       <span style={{fontSize:15,fontWeight:700,color:r.urgency==="high"?C.ter:r.urgency==="med"?C.gold:C.deep}}>{r.title}</span>
-                      {i===0&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:99,background:C.ter+"22",color:C.ter,fontWeight:700,fontFamily:_fM}}>MOST LIKELY</span>}
+                      {i===0&&!lowConf&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:99,background:C.ter+"22",color:C.ter,fontWeight:700,fontFamily:_fM}}>MOST LIKELY</span>}
+                      {r._helpCount>0&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:99,background:C.mint+"22",color:C.mint,fontWeight:700,fontFamily:_fM}}>HELPED BEFORE</span>}
                     </div>
                     <div style={{fontSize:12,color:C.mid,lineHeight:1.4,marginBottom:4}}>{r.detail}</div>
                     <div style={{fontSize:12,color:C.deep,fontWeight:600,lineHeight:1.4}}>💡 {r.action}</div>
@@ -10090,17 +10129,46 @@ function App(){
                 </div>
               ))}
             </div>
-            <div style={{marginTop:16,padding:"12px",borderRadius:12,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`}}>
+
+            {/* What helped? — learning */}
+            {!cryingResult ? (
+              <div style={{marginTop:16}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.deep,textAlign:"center",marginBottom:8}}>What helped?</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center"}}>
+                  {reasons.slice(0,5).map((r,i)=>(
+                    <button key={i} onPointerDown={e=>{
+                      e.preventDefault(); haptic();
+                      setCryingHelps(prev=>({...prev,[r._helpKey]:(prev[r._helpKey]||0)+1}));
+                      setCryingResult(r.title);
+                    }} style={{padding:"7px 12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg-solid)",fontSize:12,fontWeight:600,color:C.mid,cursor:_cP}}>
+                      {r.emoji} {r.title}
+                    </button>
+                  ))}
+                  <button onPointerDown={e=>{e.preventDefault();setCryingResult("none");}} style={{padding:"7px 12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg-solid)",fontSize:12,fontWeight:600,color:C.lt,cursor:_cP}}>
+                    🤷 Nothing yet
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{marginTop:16,textAlign:"center",padding:"12px",borderRadius:12,background:"rgba(80,200,120,0.08)"}}>
+                <div style={{fontSize:14,color:C.mint,fontWeight:600}}>{cryingResult==="none"?"Hang in there ❤️":`Got it — "${cryingResult}" logged ✓`}</div>
+                <div style={{fontSize:11,color:C.lt,marginTop:3}}>{cryingResult==="none"?"If crying persists, try the suggestions above":"This helps OBubba learn what works for "+( babyName||"your baby")}</div>
+              </div>
+            )}
+
+            {/* Medical disclaimer */}
+            <div style={{marginTop:14,padding:"12px",borderRadius:12,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`}}>
               <div style={{fontSize:12,color:C.lt,lineHeight:1.5,textAlign:"center"}}>
-                ⚠️ This is a guide based on logged data and age, not medical advice. If baby seems unwell, has a temperature, or you're worried, contact your GP or call NHS 111.
+                ⚠️ This is a guide based on logged data and age, not medical advice. If baby seems unwell, has a temperature, is inconsolable for 2+ hours, or you're worried, contact your doctor or local medical helpline.
               </div>
             </div>
-            <button onClick={()=>setShowCryingHelper(false)} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:99,border:_bN,background:C.blush,color:C.mid,fontSize:15,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+            <button onClick={()=>{setShowCryingHelper(false);setCryingResult(null);}} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:99,border:_bN,background:C.blush,color:C.mid,fontSize:15,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
               Close
             </button>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Wake Prompt — AM after bedtime: night wake or new day? */}
       {showWakePrompt&&(
