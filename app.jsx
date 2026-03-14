@@ -6634,14 +6634,14 @@ function App(){
               @keyframes obWelcFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
               @keyframes obBorderShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
               @keyframes obTwinkle{0%{opacity:0.6}100%{opacity:1}}
-              @keyframes obHaloSpin{0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
+              @keyframes obHaloSpin{0%{transform:translate(-50%,-50%) rotate(0deg);opacity:0.3}25%{opacity:0.8}50%{transform:translate(-50%,-50%) rotate(180deg);opacity:0.35}75%{opacity:0.75}100%{transform:translate(-50%,-50%) rotate(360deg);opacity:0.3}}
               @keyframes obGlassShine{0%{transform:translateX(-120%) rotate(25deg)}100%{transform:translateX(120%) rotate(25deg)}}
             `}</style>
             <div style={{position:"absolute",inset:0,background:"radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.7) 0%, transparent 100%), radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.5) 0%, transparent 100%), radial-gradient(1.5px 1.5px at 50% 10%, rgba(255,255,255,0.8) 0%, transparent 100%), radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.4) 0%, transparent 100%), radial-gradient(1px 1px at 80% 80%, rgba(255,255,255,0.6) 0%, transparent 100%), radial-gradient(1.5px 1.5px at 90% 15%, rgba(255,200,150,0.7) 0%, transparent 100%), radial-gradient(1px 1px at 15% 55%, rgba(255,255,255,0.5) 0%, transparent 100%), radial-gradient(1px 1px at 45% 45%, rgba(255,200,180,0.6) 0%, transparent 100%)",animation:"obTwinkle 4s ease-in-out infinite alternate",pointerEvents:"none",opacity:_dk?1:0.15}}/>
             <div style={{position:"absolute",top:"10%",left:"50%",transform:"translateX(-50%)",width:300,height:300,background:"radial-gradient(circle, rgba(201,112,90,0.15) 0%, rgba(160,80,180,0.08) 50%, transparent 70%)",pointerEvents:"none"}}/>
             <div style={{position:"relative",zIndex:1,marginTop:48,marginBottom:20,animation:"obWelcFloat 4s ease-in-out infinite"}}>
               {/* Glow halo — rotating gradient behind the frame */}
-              <div style={{position:"absolute",top:"50%",left:"50%",width:210,height:210,transform:"translate(-50%,-50%)",borderRadius:"50%",background:`conic-gradient(from 0deg, rgba(212,168,85,0.35), rgba(201,112,90,0.25), rgba(144,96,176,0.3), rgba(80,200,120,0.15), rgba(212,168,85,0.35))`,animation:"obHaloSpin 8s linear infinite",filter:"blur(24px)",opacity:_dk?0.7:0.45,pointerEvents:"none"}}/>
+              <div style={{position:"absolute",top:"50%",left:"50%",width:210,height:210,transform:"translate(-50%,-50%)",borderRadius:"50%",background:`conic-gradient(from 0deg, rgba(212,168,85,0.35), rgba(201,112,90,0.25), rgba(144,96,176,0.3), rgba(80,200,120,0.15), rgba(212,168,85,0.35))`,animation:"obHaloSpin 8s ease-in-out infinite",filter:"blur(24px)",pointerEvents:"none"}}/>
               {/* Secondary soft glow */}
               <div style={{position:"absolute",top:"50%",left:"50%",width:180,height:180,transform:"translate(-50%,-50%)",borderRadius:"50%",background:_dk?"radial-gradient(circle, rgba(201,112,90,0.2) 0%, transparent 70%)":"radial-gradient(circle, rgba(201,112,90,0.12) 0%, transparent 70%)",pointerEvents:"none"}}/>
               {/* Glass frame */}
@@ -6679,7 +6679,7 @@ function App(){
             </div>
             <div style={{fontSize:12,color:_wMute,textAlign:"center",zIndex:1,marginBottom:24,lineHeight:1.5,maxWidth:300}}>Built with <strong style={{color:_wTrustHi,fontWeight:600}}>NHS</strong>, <strong style={{color:_wTrustHi,fontWeight:600}}>AASM</strong>, and <strong style={{color:_wTrustHi,fontWeight:600}}>WHO</strong> guidelines, recommendations, and research.</div>
             <button onClick={()=>setObStep(1)} style={{width:"100%",maxWidth:320,padding:16,border:_bN,borderRadius:99,fontSize:17,fontWeight:700,color:"white",cursor:_cP,zIndex:1,background:"linear-gradient(135deg, #c9705a, #a85a44)",boxShadow:_wCtaShadow,marginBottom:12,fontFamily:_fI}}>Start Tracking →</button>
-            <button onClick={()=>setObStep(1)} style={{fontSize:13,color:_wMute,zIndex:1,cursor:_cP,border:_bN,background:_bN,fontFamily:_fI,marginBottom:40}}>See how it works →</button>
+
           </div>
           
         ) : (
