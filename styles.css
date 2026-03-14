@@ -179,8 +179,8 @@ body.dark-mode input::placeholder{color:#4a5a72!important}
 /* ═══════════════════════════════════════════════════════════
    BUTTONS — no backdrop-filter, just glow shadows
    ═══════════════════════════════════════════════════════════ */
-button,a,[role="button"]{-webkit-user-select:none;user-select:none}
-button:active{transform:scale(0.95)!important}
+button,a,[role="button"]{-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(0.96)!important;transition:transform 0.06s ease!important}
 button{position:relative!important;overflow:visible!important}
 
 /* ═══ EDGE GLOW — light concentrated at the border, not filling interior ═══ */
@@ -473,3 +473,27 @@ body.light-mode select[style*="borderRadius"],body:not(.dark-mode) select[style*
   box-shadow:0 0 12px rgba(255,255,255,0.35),0 0 24px rgba(246,221,227,0.15),inset 0 1px 2px rgba(217,207,243,0.08)!important}
 body.dark-mode input[style*="borderRadius"],body.dark-mode select[style*="borderRadius"]{
   box-shadow:0 0 10px rgba(255,180,70,0.10),inset 0 0 12px rgba(255,190,90,0.06),inset 0 1px 2px rgba(0,0,0,0.15)!important}
+
+/* ═══ Priority notification glow — Apple-style shifting colors ═══ */
+@keyframes prioGlow {
+  0%   { border-color: rgba(201,112,90,0.6);  box-shadow: 0 0 18px rgba(201,112,90,0.25), 0 0 4px rgba(201,112,90,0.15) inset; }
+  25%  { border-color: rgba(212,168,85,0.6);   box-shadow: 0 0 18px rgba(212,168,85,0.25), 0 0 4px rgba(212,168,85,0.15) inset; }
+  50%  { border-color: rgba(152,120,208,0.6);  box-shadow: 0 0 18px rgba(152,120,208,0.25), 0 0 4px rgba(152,120,208,0.15) inset; }
+  75%  { border-color: rgba(122,171,196,0.6);  box-shadow: 0 0 18px rgba(122,171,196,0.25), 0 0 4px rgba(122,171,196,0.15) inset; }
+  100% { border-color: rgba(201,112,90,0.6);   box-shadow: 0 0 18px rgba(201,112,90,0.25), 0 0 4px rgba(201,112,90,0.15) inset; }
+}
+@keyframes prioGlowDark {
+  0%   { border-color: rgba(201,112,90,0.5);  box-shadow: 0 0 24px rgba(201,112,90,0.2), 0 0 6px rgba(201,112,90,0.12) inset; }
+  25%  { border-color: rgba(212,168,85,0.5);   box-shadow: 0 0 24px rgba(212,168,85,0.2), 0 0 6px rgba(212,168,85,0.12) inset; }
+  50%  { border-color: rgba(152,120,208,0.5);  box-shadow: 0 0 24px rgba(152,120,208,0.2), 0 0 6px rgba(152,120,208,0.12) inset; }
+  75%  { border-color: rgba(80,168,136,0.5);   box-shadow: 0 0 24px rgba(80,168,136,0.2), 0 0 6px rgba(80,168,136,0.12) inset; }
+  100% { border-color: rgba(201,112,90,0.5);   box-shadow: 0 0 24px rgba(201,112,90,0.2), 0 0 6px rgba(201,112,90,0.12) inset; }
+}
+.prio-glow {
+  animation: prioGlow 6s ease-in-out infinite;
+  border: 2px solid transparent;
+  border-radius: 16px;
+}
+body.dark-mode .prio-glow {
+  animation: prioGlowDark 6s ease-in-out infinite;
+}

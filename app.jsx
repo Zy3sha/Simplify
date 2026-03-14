@@ -6589,6 +6589,21 @@ function App(){
     ];
     const step = steps[obStep];
     const isHeroStep = obStep === 0;
+    const _dk = document.body.classList.contains("dark-mode");
+    const _wBg = _dk ? "linear-gradient(170deg, #1a0e2e 0%, #1f1135 20%, #2a1540 40%, #1e1038 60%, #150d28 100%)" : "linear-gradient(170deg, #fdf6f0 0%, #f8ece4 20%, #f5e4da 40%, #faf0ea 60%, #fdf8f5 100%)";
+    const _wTxt = _dk ? "white" : C.deep;
+    const _wSub = _dk ? "rgba(255,255,255,0.65)" : C.mid;
+    const _wMute = _dk ? "rgba(255,255,255,0.45)" : C.lt;
+    const _wTag = _dk ? "rgba(255,255,255,0.55)" : C.lt;
+    const _wPillBg = _dk ? "rgba(255,255,255,0.06)" : "rgba(201,112,90,0.06)";
+    const _wPillBd = _dk ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${C.blush}`;
+    const _wPillTxt = _dk ? "rgba(255,255,255,0.85)" : C.deep;
+    const _wPillSub = _dk ? "rgba(255,255,255,0.45)" : C.lt;
+    const _wBrand = _dk ? "linear-gradient(135deg, #f5e0d0, #ffffff, #f0d0c0)" : "linear-gradient(135deg, #c9705a, #a85a44, #c9705a)";
+    const _wMascotBg = _dk ? "#1e1038" : "#faf0ea";
+    const _wMascotShadow = _dk ? "0 0 30px rgba(212,168,85,0.3), 0 0 60px rgba(201,112,90,0.15), 0 8px 32px rgba(0,0,0,0.4)" : "0 0 20px rgba(212,168,85,0.2), 0 0 40px rgba(201,112,90,0.1), 0 8px 24px rgba(0,0,0,0.06)";
+    const _wCtaShadow = _dk ? "0 4px 20px rgba(201,112,90,0.4), 0 0 40px rgba(201,112,90,0.15)" : "0 4px 16px rgba(201,112,90,0.3)";
+    const _wTrustHi = _dk ? "rgba(255,255,255,0.65)" : C.deep;
     return (
       <div style={{minHeight:"100vh",background:"var(--bg-grad)",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'DM Sans',sans-serif",boxSizing:_bBB,overflowY:"auto",position:"relative",overflow:"hidden"}}>
         <style>{`
@@ -6601,59 +6616,44 @@ function App(){
         <div style={{position:"absolute",bottom:-60,right:-80,width:320,height:320,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(201,112,90,0.09) 0%,transparent 70%)",pointerEvents:"none"}}/>
         <div style={{position:"absolute",bottom:80,left:-60,width:200,height:200,borderRadius:"50%",background:"radial-gradient(ellipse,rgba(111,168,152,0.08) 0%,transparent 70%)",pointerEvents:"none"}}/>
 
-        {isHeroStep ? (()=>{
-          const dk = document.body.classList.contains("dark-mode");
-          const wBg = dk ? "linear-gradient(170deg, #1a0e2e 0%, #1f1135 20%, #2a1540 40%, #1e1038 60%, #150d28 100%)" : "linear-gradient(170deg, #fdf6f0 0%, #f8ece4 20%, #f5e4da 40%, #faf0ea 60%, #fdf8f5 100%)";
-          const wTxt = dk ? "white" : C.deep;
-          const wSub = dk ? "rgba(255,255,255,0.65)" : C.mid;
-          const wMute = dk ? "rgba(255,255,255,0.45)" : C.lt;
-          const wTag = dk ? "rgba(255,255,255,0.55)" : C.lt;
-          const wPillBg = dk ? "rgba(255,255,255,0.06)" : "rgba(201,112,90,0.06)";
-          const wPillBd = dk ? "1px solid rgba(255,255,255,0.1)" : `1px solid ${C.blush}`;
-          const wPillTxt = dk ? "rgba(255,255,255,0.85)" : C.deep;
-          const wPillSub = dk ? "rgba(255,255,255,0.45)" : C.lt;
-          const wBrand = dk ? "linear-gradient(135deg, #f5e0d0, #ffffff, #f0d0c0)" : "linear-gradient(135deg, #c9705a, #a85a44, #c9705a)";
-          const wMascotBg = dk ? "#1e1038" : "#faf0ea";
-          const wMascotShadow = dk ? "0 0 30px rgba(212,168,85,0.3), 0 0 60px rgba(201,112,90,0.15), 0 8px 32px rgba(0,0,0,0.4)" : "0 0 20px rgba(212,168,85,0.2), 0 0 40px rgba(201,112,90,0.1), 0 8px 24px rgba(0,0,0,0.06)";
-          const wCtaShadow = dk ? "0 4px 20px rgba(201,112,90,0.4), 0 0 40px rgba(201,112,90,0.15)" : "0 4px 16px rgba(201,112,90,0.3)";
-          const wTrustHi = dk ? "rgba(255,255,255,0.65)" : C.deep;
-          return (
-          <div style={{width:"100%",maxWidth:430,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",padding:"env(safe-area-inset-top,0px) 24px env(safe-area-inset-bottom,0px)",position:"relative",overflow:"hidden",background:wBg}}>
+        {isHeroStep ? (
+          <div style={{width:"100%",maxWidth:430,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",padding:"env(safe-area-inset-top,0px) 24px env(safe-area-inset-bottom,0px)",position:"relative",overflow:"hidden",background:_wBg}}>
             <style>{`
               @keyframes obWelcFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
               @keyframes obBorderShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
               @keyframes obTwinkle{0%{opacity:0.6}100%{opacity:1}}
             `}</style>
-            <div style={{position:"absolute",inset:0,background:"radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.7) 0%, transparent 100%), radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.5) 0%, transparent 100%), radial-gradient(1.5px 1.5px at 50% 10%, rgba(255,255,255,0.8) 0%, transparent 100%), radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.4) 0%, transparent 100%), radial-gradient(1px 1px at 80% 80%, rgba(255,255,255,0.6) 0%, transparent 100%), radial-gradient(1.5px 1.5px at 90% 15%, rgba(255,200,150,0.7) 0%, transparent 100%), radial-gradient(1px 1px at 15% 55%, rgba(255,255,255,0.5) 0%, transparent 100%), radial-gradient(1px 1px at 45% 45%, rgba(255,200,180,0.6) 0%, transparent 100%)",animation:"obTwinkle 4s ease-in-out infinite alternate",pointerEvents:"none",opacity:dk?1:0.15}}/>
+            <div style={{position:"absolute",inset:0,background:"radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.7) 0%, transparent 100%), radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.5) 0%, transparent 100%), radial-gradient(1.5px 1.5px at 50% 10%, rgba(255,255,255,0.8) 0%, transparent 100%), radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.4) 0%, transparent 100%), radial-gradient(1px 1px at 80% 80%, rgba(255,255,255,0.6) 0%, transparent 100%), radial-gradient(1.5px 1.5px at 90% 15%, rgba(255,200,150,0.7) 0%, transparent 100%), radial-gradient(1px 1px at 15% 55%, rgba(255,255,255,0.5) 0%, transparent 100%), radial-gradient(1px 1px at 45% 45%, rgba(255,200,180,0.6) 0%, transparent 100%)",animation:"obTwinkle 4s ease-in-out infinite alternate",pointerEvents:"none",opacity:_dk?1:0.15}}/>
             <div style={{position:"absolute",top:"10%",left:"50%",transform:"translateX(-50%)",width:300,height:300,background:"radial-gradient(circle, rgba(201,112,90,0.15) 0%, rgba(160,80,180,0.08) 50%, transparent 70%)",pointerEvents:"none"}}/>
             <div style={{position:"relative",zIndex:1,marginTop:48,marginBottom:20,animation:"obWelcFloat 4s ease-in-out infinite"}}>
-              <div style={{width:160,height:160,borderRadius:32,padding:4,background:"linear-gradient(135deg, #d4a855, #c9705a, #9060b0, #c9705a, #d4a855)",backgroundSize:"300% 300%",animation:"obBorderShift 6s ease infinite",boxShadow:wMascotShadow}}>
-                <div style={{width:"100%",height:"100%",borderRadius:28,overflow:"hidden",background:wMascotBg}}>
+              <div style={{width:160,height:160,borderRadius:32,padding:4,background:"linear-gradient(135deg, #d4a855, #c9705a, #9060b0, #c9705a, #d4a855)",backgroundSize:"300% 300%",animation:"obBorderShift 6s ease infinite",boxShadow:_wMascotShadow}}>
+                <div style={{width:"100%",height:"100%",borderRadius:28,overflow:"hidden",background:_wMascotBg}}>
                   <img src="obubba-happy.png" alt="OBubba" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>{e.target.style.display="none";}}/>
                 </div>
               </div>
             </div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:42,fontWeight:800,letterSpacing:"-0.5px",zIndex:1,background:wBrand,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:4}}>OBubba</div>
-            <div style={{fontSize:15,color:wTag,letterSpacing:"0.5px",zIndex:1,marginBottom:32}}>Parenthood in your pocket</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:34,fontWeight:700,textAlign:"center",lineHeight:1.2,zIndex:1,marginBottom:14,maxWidth:320,color:wTxt}}>Take the guesswork out of <span style={{background:"linear-gradient(135deg, #c9705a, #d4a855)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>parenting.</span></div>
-            <div style={{fontSize:15,lineHeight:1.6,color:wSub,textAlign:"center",maxWidth:340,zIndex:1,marginBottom:28}}>Personalised sleep, feeding, and growth guidance — combining your baby's real patterns with medical recommendations.</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:42,fontWeight:800,letterSpacing:"-0.5px",zIndex:1,background:_wBrand,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:4}}>OBubba</div>
+            <div style={{fontSize:15,color:_wTag,letterSpacing:"0.5px",zIndex:1,marginBottom:32}}>Parenthood in your pocket</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:34,fontWeight:700,textAlign:"center",lineHeight:1.2,zIndex:1,marginBottom:14,maxWidth:320,color:_wTxt}}>Take the guesswork out of <span style={{background:"linear-gradient(135deg, #c9705a, #d4a855)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>parenting.</span></div>
+            <div style={{fontSize:15,lineHeight:1.6,color:_wSub,textAlign:"center",maxWidth:340,zIndex:1,marginBottom:28}}>Personalised sleep, feeding, and growth guidance — combining your baby's real patterns with medical recommendations.</div>
             <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%",maxWidth:360,zIndex:1,marginBottom:28}}>
               {[[["🔮","Sleep predictions","Naps, bedtime & wake"],["🧩","Schedule maker","Build days around events"]],[["📊","Rhythm learning","Gets smarter every day"],["🛡️","Regression alerts","4mo, 8mo, 12mo, 18mo"]],[["🍼","One-tap tracking","Feed, nappy & sleep"],["👨‍👩‍👧","Partner sync","Real-time cloud sharing"]]].map((row,ri)=>(
                 <div key={ri} style={{display:"flex",gap:8}}>
                   {row.map((item,ci)=>(
-                    <div key={ci} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:14,background:wPillBg,border:wPillBd,backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)"}}>
+                    <div key={ci} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:14,background:_wPillBg,border:_wPillBd,backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)"}}>
                       <span style={{fontSize:18,flexShrink:0}}>{item[0]}</span>
-                      <div><div style={{fontSize:12,fontWeight:600,color:wPillTxt,lineHeight:1.3}}>{item[1]}</div><div style={{fontSize:10,fontWeight:400,color:wPillSub,marginTop:1}}>{item[2]}</div></div>
+                      <div><div style={{fontSize:12,fontWeight:600,color:_wPillTxt,lineHeight:1.3}}>{item[1]}</div><div style={{fontSize:10,fontWeight:400,color:_wPillSub,marginTop:1}}>{item[2]}</div></div>
                     </div>
                   ))}
                 </div>
               ))}
             </div>
-            <div style={{fontSize:12,color:wMute,textAlign:"center",zIndex:1,marginBottom:24,lineHeight:1.5,maxWidth:300}}>Built with <strong style={{color:wTrustHi,fontWeight:600}}>NHS</strong>, <strong style={{color:wTrustHi,fontWeight:600}}>AASM</strong>, and <strong style={{color:wTrustHi,fontWeight:600}}>WHO</strong> guidelines, recommendations, and research.</div>
-            <button onClick={()=>setObStep(1)} style={{width:"100%",maxWidth:320,padding:16,border:_bN,borderRadius:99,fontSize:17,fontWeight:700,color:"white",cursor:_cP,zIndex:1,background:"linear-gradient(135deg, #c9705a, #a85a44)",boxShadow:wCtaShadow,marginBottom:12,fontFamily:_fI}}>Start Tracking →</button>
-            <button onClick={()=>setObStep(1)} style={{fontSize:13,color:wMute,zIndex:1,cursor:_cP,border:_bN,background:_bN,fontFamily:_fI,marginBottom:40}}>See how it works →</button>
+            <div style={{fontSize:12,color:_wMute,textAlign:"center",zIndex:1,marginBottom:24,lineHeight:1.5,maxWidth:300}}>Built with <strong style={{color:_wTrustHi,fontWeight:600}}>NHS</strong>, <strong style={{color:_wTrustHi,fontWeight:600}}>AASM</strong>, and <strong style={{color:_wTrustHi,fontWeight:600}}>WHO</strong> guidelines, recommendations, and research.</div>
+            <button onClick={()=>setObStep(1)} style={{width:"100%",maxWidth:320,padding:16,border:_bN,borderRadius:99,fontSize:17,fontWeight:700,color:"white",cursor:_cP,zIndex:1,background:"linear-gradient(135deg, #c9705a, #a85a44)",boxShadow:_wCtaShadow,marginBottom:12,fontFamily:_fI}}>Start Tracking →</button>
+            <button onClick={()=>setObStep(1)} style={{fontSize:13,color:_wMute,zIndex:1,cursor:_cP,border:_bN,background:_bN,fontFamily:_fI,marginBottom:40}}>See how it works →</button>
           </div>
-          );})() : (
+          
+        ) : (
 
           <div style={{width:"100%",maxWidth:430,minHeight:"100vh",display:"flex",flexDirection:"column",padding:"env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)"}}>
             <div style={{padding:"48px 28px 20px",display:"flex",alignItems:"center",gap:12}}>

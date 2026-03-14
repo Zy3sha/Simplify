@@ -3,43 +3,67 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+
+  <!-- SEO Essentials -->
+  <title>OBubba — Smart Baby Tracker | Feed, Sleep, Nap & Milestone Tracking</title>
+  <meta name="description" content="Track your baby's feeds, sleep, naps, growth and milestones with smart predictions. OBubba learns your baby's unique rhythm using NHS and WHO guidance. Free for iPhone and Android."/>
+  <meta name="keywords" content="baby tracker, baby app, feeding tracker, sleep tracker, nap timer, breastfeed timer, milestone tracker, growth chart, NHS baby, newborn tracker, baby schedule, baby routine, nap prediction, bedtime prediction"/>
+  <link rel="canonical" href="https://obubba.com/"/>
+
+  <!-- Open Graph (Facebook, WhatsApp, iMessage link previews) -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://obubba.com/"/>
+  <meta property="og:title" content="OBubba — Smart Baby Tracker"/>
+  <meta property="og:description" content="Track feeds, sleep, naps, milestones & growth with personalised predictions powered by NHS guidance + your baby's unique rhythm."/>
+  <meta property="og:image" content="https://obubba.com/og-image.png"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:site_name" content="OBubba"/>
+  <meta property="og:locale" content="en_GB"/>
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="OBubba — Smart Baby Tracker"/>
+  <meta name="twitter:description" content="The baby app that learns your baby's rhythm. Track feeds, sleep, naps, milestones & growth with personalised predictions."/>
+  <meta name="twitter:image" content="https://obubba.com/og-image.png"/>
+
+  <!-- PWA / Mobile -->
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="OBubba"/>
   <meta name="application-name" content="OBubba"/>
-  <meta name="theme-color" content="#F0DDD6"/>
-  <title>OBubba</title>
+  <meta name="theme-color" content="#f0ddd6"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
   <link rel="manifest" href="manifest.json"/>
   <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
 
-  <!-- Inline splash styles — renders before ANY external resource loads -->
-  <style>
-    #splash{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,'SF Pro Display',system-ui,sans-serif;text-align:center;transition:opacity 0.5s ease,visibility 0.5s ease}
-    #splash.light-splash{background:linear-gradient(135deg,#FFF8F2 0%,#F5E1D8 40%,#F0DDD6 100%)}
-    #splash.dark-splash{background:linear-gradient(170deg,#080e1c 0%,#0c1628 30%,#101d35 55%,#0c1628 100%)}
-    #splash.hide{opacity:0;visibility:hidden;pointer-events:none}
-    @keyframes splashBreathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.02)}}
-    @keyframes splashGlow{0%,100%{opacity:0.5}50%{opacity:1}}
-    .splash-img{width:160px;height:160px;object-fit:contain;animation:splashBreathe 2.5s ease-in-out infinite}
-    .light-splash .splash-img{filter:drop-shadow(0 12px 28px rgba(217,207,243,0.35))}
-    .dark-splash .splash-img{filter:drop-shadow(0 12px 28px rgba(255,180,70,0.20))}
-    .splash-title{font-size:28px;font-weight:700;letter-spacing:-0.02em;margin-top:20px}
-    .light-splash .splash-title{color:#5B4F5F}
-    .dark-splash .splash-title{color:#F0F2F5}
-    .splash-sub{font-size:14px;margin-top:8px;animation:splashGlow 2s ease-in-out infinite}
-    .light-splash .splash-sub{color:#A898AC}
-    .dark-splash .splash-sub{color:#7E8FA0}
-    .splash-bar{width:120px;height:3px;border-radius:99px;overflow:hidden;margin-top:20px}
-    .light-splash .splash-bar{background:rgba(240,210,200,0.30)}
-    .dark-splash .splash-bar{background:rgba(255,180,70,0.12)}
-    .splash-bar-fill{height:100%;border-radius:99px;width:30%}
-    .light-splash .splash-bar-fill{background:linear-gradient(90deg,#F0D0C8,#E8B8B0,#F0D0C8);background-size:300% 100%;animation:splashShimmer 1.8s ease-in-out infinite,splashWidth 2.5s ease-in-out infinite}
-    .dark-splash .splash-bar-fill{background:linear-gradient(90deg,rgba(255,180,70,0.3),rgba(255,150,40,0.6),rgba(255,180,70,0.3));background-size:300% 100%;animation:splashShimmer 1.8s ease-in-out infinite,splashWidth 2.5s ease-in-out infinite}
-    @keyframes splashWidth{0%{width:10%}50%{width:80%}100%{width:10%}}
-    @keyframes splashShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-  </style>
+  <!-- Structured Data — tells Google this is an app -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "OBubba — Smart Baby Tracker",
+    "description": "Smart baby tracker that learns your baby's unique rhythm. Track feeds, sleep, naps, growth and milestones with personalised predictions based on NHS and WHO guidance.",
+    "applicationCategory": "HealthApplication",
+    "operatingSystem": "iOS, Android, Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "GBP"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "OBubba",
+      "url": "https://obubba.com"
+    },
+    "url": "https://obubba.com",
+    "image": "https://obubba.com/obubba-happy.png"
+  }
+  </script>
 
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 
   <!-- External libraries -->
@@ -54,24 +78,6 @@
   <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-
-<!-- ═══ SPLASH SCREEN — visible instantly, hides when React mounts ═══ -->
-<div id="splash">
-  <img class="splash-img" src="data:image/webp;base64,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" alt=""/>
-  <div class="splash-title">OBubba</div>
-  <div class="splash-sub">Getting everything ready...</div>
-  <div class="splash-bar"><div class="splash-bar-fill"></div></div>
-</div>
-
-<script>
-  // Apply correct theme to splash instantly from localStorage
-  (function(){
-    var t;try{t=localStorage.getItem("theme_v1")}catch(e){}
-    var s=document.getElementById("splash");
-    if(s) s.className=(t==="dark")?"dark-splash":"light-splash";
-  })();
-</script>
-
 <div id="root"></div>
 <button id="theme-toggle" aria-label="Toggle theme" onclick="toggleTheme()">🌙</button>
 
@@ -80,6 +86,5 @@
 
 <!-- App loader (fetches app.jsx, compiles, + utilities) -->
 <script src="loader.js"></script>
-
 </body>
 </html>
