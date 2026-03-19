@@ -3175,7 +3175,7 @@ function App(){
       const _minsSinceFeed = _nowM - _lastFeedTime;
       if (_minsSinceFeed >= 150) {
         _dot = "#7aabc4"; _label = "Feed window opening";
-        _timing = "Last feed " + hm(_minsSinceFeed) + " ago · " + _name + " may be getting hungry";
+        _timing = "Last feed " + hm(_minsSinceFeed) + " ago · " + (age && age.totalWeeks < 3 ? "Wake to feed every 2–3h (NHS newborn guidance)" : "offer a feed if " + _name + " shows cues");
       } else {
         _dot = "#7BA68C"; _label = "All good right now";
         _timing = "Awake " + hm(_awakeMin) + " · Enjoying the day";
@@ -6813,7 +6813,7 @@ function App(){
     if (_feeds.length > 0) {
       const _lastFeedTime = Math.max(..._feeds.map(f => timeVal(f)));
       const _feedGap = _nowM - _lastFeedTime;
-      if (_feedGap >= 150) return { text: "Last feed was " + hm(_feedGap) + " ago — " + _n + " may be getting hungry", priority: "med" };
+      if (_feedGap >= 150) return { text: (age && age.totalWeeks < 3) ? "Wake to feed — newborns need feeding every 2–3 hours (NHS)" : "Last feed was " + hm(_feedGap) + " ago — offer a feed if " + _n + " shows cues", priority: "med" };
     } else if (_wakeE && _awakeMin > 30) {
       return { text: "No feeds logged yet — offer a feed", priority: "med" };
     }
@@ -10747,9 +10747,10 @@ function App(){
                     const veryOverdue = effectiveOverdue && fs.gap > fs.threshold * 1.5;
                     return (
                       <div style={{flex:1,background:effectiveOverdue?"rgba(192,112,136,0.06)":"var(--card-bg)",border:`${effectiveOverdue?"1.5px":"1px"} solid ${effectiveOverdue?C.ter+"50":C.blush}`,borderRadius:16,padding:effectiveOverdue?"12px 14px":"10px 12px",transition:"all 0.3s",animation:veryOverdue?"pulse 2s infinite":"none"}}>
-                        <div style={{fontSize:11,fontFamily:_fM,color:effectiveOverdue?C.ter:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4}}>🍼 {effectiveOverdue?"Feed overdue":isSleeping?"Last feed (sleeping)":"Last feed"}</div>
+                        <div style={{fontSize:11,fontFamily:_fM,color:effectiveOverdue?C.ter:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4}}>🍼 {effectiveOverdue?"Feed due":isSleeping?"Last feed (sleeping)":"Last feed"}</div>
                         <div style={{fontSize:effectiveOverdue?15:13,fontWeight:700,color:effectiveOverdue?C.ter:C.mid}}>{hm(fs.gap)} ago</div>
-                        {effectiveOverdue && <div style={{fontSize:11,color:C.ter,marginTop:3,lineHeight:1.4}}>Usually every {hm(fs.threshold)}{veryOverdue?` — ${babyName||"baby"} may be hungry`:""}</div>}
+                        {effectiveOverdue && age && age.totalWeeks < 3 && <div style={{fontSize:11,color:C.ter,marginTop:3,lineHeight:1.4}}>Newborns should be woken to feed every 2–3 hours until birth weight is regained (NHS). If unsure, check with your {_doctor}.</div>}
+                        {effectiveOverdue && (!age || age.totalWeeks >= 3) && <div style={{fontSize:11,color:C.mid,marginTop:3,lineHeight:1.4}}>{isSleeping ? "Try a feed and nappy change if " + (babyName||"baby") + " wakes up" : (babyName||"Baby") + " may be ready for a feed — follow their cues"}</div>}
                         {effectiveOverdue && <div style={{fontSize:9,color:"var(--text-mid)",marginTop:3,fontFamily:_fI,lineHeight:1.5}}>Why? {fs.avgGap ? `Based on ${babyName||"baby"}'s average feed gap of ${hm(fs.avgGap)} over the last 5 days.` : `Age-typical feed spacing for ${fmtAge(age)}.`} Babies show hunger cues like rooting, lip-smacking, and hand-to-mouth.</div>}
                       </div>
                     );
@@ -14148,7 +14149,6 @@ function App(){
                 Delete Account & All Data
               </button>
             </div>
-          </div>
         </div>
       )}
       {/* Beta tester banner */}
