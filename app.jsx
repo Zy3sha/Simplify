@@ -1,3 +1,4 @@
+
 const { useState, useEffect, useRef } = React;
 
 // Remove static splash screen (defined in index.html) once React has mounted
@@ -25,7 +26,8 @@ const STORAGE_KEY = "babyTracker_v6";
 const params = new URLSearchParams(window.location.search);
 const quickAction = params.get("action");
 
-const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const uid = () => { const _id = Date.now().toString(36)+Math.random().toString(36).slice(2,5); if(window._localEntryIds) window._localEntryIds.add(_id); return _id; };
+window._localEntryIds = new Set();
 const fmt12 = t => { if(!t)return""; const[h,m]=t.split(":").map(Number); return`${h%12||12}:${String(m).padStart(2,"0")}${h>=12?"pm":"am"}`; };
 const minDiff = (s,e) => { if(!s||!e)return 0; const[sh,sm]=s.split(":").map(Number),[eh,em]=e.split(":").map(Number); let d=eh*60+em-sh*60-sm; if(d<0)d+=1440; return d; };
 const timeVal = e => { const t=e.time||e.start||"00:00"; const[h,m]=t.split(":").map(Number); return h*60+m; };
@@ -36,7 +38,11 @@ const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${String
 const localDateStr = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const hm = m => { if(!m||m<=0)return"—"; return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`; };
 const fmtSec = s => s>=3600 ? `${Math.floor(s/3600)}:${String(Math.floor((s%3600)/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}` : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
-const haptic=(ms=10)=>{try{navigator.vibrate&&navigator.vibrate(ms);}catch{}};
+const haptic=(ms=10)=>{try{if(window._nativeHaptic){window._nativeHaptic(typeof ms==="string"?ms:"medium");return;}if(navigator.vibrate){navigator.vibrate(typeof ms==="number"?ms:10);}}catch{}};
+// Native keyboard: adjust viewport when keyboard appears
+// Global share function for print overlay buttons
+window._obShare=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html="<!DOCTYPE html><html><head><meta charset=utf-8><style>*{box-sizing:border-box}body{font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:20px}table{border-collapse:collapse}td,th{padding:4px 8px;text-align:left}</style></head><body>"+el.innerHTML+"</body></html>";var blob=new Blob([html],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});navigator.share({title:"Care Guide",files:[file]}).catch(function(){});}catch(e){}};
+if(typeof window!=="undefined"&&window.visualViewport){let _lastFocused=null;document.addEventListener("focusin",function(ev){_lastFocused=ev.target;});window.visualViewport.addEventListener("resize",function(){const kbH=window.innerHeight-window.visualViewport.height;document.documentElement.style.setProperty("--keyboard-height",kbH+"px");if(_lastFocused&&kbH>100){setTimeout(function(){_lastFocused.scrollIntoView({behavior:"smooth",block:"center"});},100);}});window.visualViewport.addEventListener("scroll",function(){document.documentElement.style.setProperty("--vv-offset",window.visualViewport.offsetTop+"px");});}
 const _locale = (navigator.language||"en-GB").toLowerCase();
 const _toothLabels = {"UR-E":"Upper right 2nd molar","UR-D":"Upper right 1st molar","UR-C":"Upper right canine","UR-B":"Upper right lateral","UR-A":"Upper right central","UL-A":"Upper left central","UL-B":"Upper left lateral","UL-C":"Upper left canine","UL-D":"Upper left 1st molar","UL-E":"Upper left 2nd molar","LR-E":"Lower right 2nd molar","LR-D":"Lower right 1st molar","LR-C":"Lower right canine","LR-B":"Lower right lateral","LR-A":"Lower right central","LL-A":"Lower left central","LL-B":"Lower left lateral","LL-C":"Lower left canine","LL-D":"Lower left 1st molar","LL-E":"Lower left 2nd molar"};
 const toothLabel = (id) => _toothLabels[id] || id;
@@ -289,7 +295,7 @@ const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em"
 function Sheet({onClose,title,children}){
   return(
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px 52px",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px calc(80px + var(--keyboard-height, 0px))",width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         <div style={{width:48,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
         {title&&<div style={{fontFamily:"'Playfair Display',serif",fontSize:20,marginBottom:16}}>{title}</div>}
         {children}
@@ -419,7 +425,7 @@ function TimeInput({label, value, onChange, previousMinutes=null, nightOnly=fals
 
 function PBtn({children,onClick,v="pri",style={}}){
   const vs={pri:{background:C.ter,color:"white"},ghost:{background:C.blush,color:C.mid},danger:{background:"#e8574a",color:"white"}};
-  return <button onPointerDown={e=>{e.preventDefault();haptic();onClick&&onClick(e);}} style={{width:"100%",padding:"12px",borderRadius:99,border:_bN,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginTop:6,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",...vs[v],...style}}>{children}</button>;
+  return <button onClick={e=>{haptic();onClick&&onClick(e);}} style={{width:"100%",padding:"12px",borderRadius:99,border:_bN,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginTop:6,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",...vs[v],...style}}>{children}</button>;
 }
 
 function Badge({type,children}){
@@ -920,13 +926,17 @@ const ACT_CATS = [
   { key:"cognitive", label:"Thinking",  icon:"🔆" },
 ];
 
-function calcAge(dob) {
+function calcAge(dob, dueDate) {
   if (!dob) return null;
   const birth = new Date(dob + "T00:00:00");
+  let correctedBirth = birth; let weeksPreterm = 0;
+  if (dueDate) { const due = new Date(dueDate + "T00:00:00"); const diffDays = Math.round((due - birth) / (1000*60*60*24)); if (diffDays > 14) { weeksPreterm = Math.round(diffDays / 7); correctedBirth = due; } }
   const today = new Date();
   const totalDays = Math.floor((today - birth) / (1000*60*60*24));
   if (totalDays < 0) return null;
   const totalWeeks = Math.floor(totalDays / 7);
+  const correctedDays = Math.floor((today - correctedBirth) / (1000*60*60*24));
+  const correctedWeeks = Math.max(0, Math.floor(correctedDays / 7));
   let months = (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth());
   // Safe month addition: handles months where birth day doesn't exist (e.g. Jan 31 + 1mo = Feb 28)
   function addMonthsSafe(date, m) {
@@ -1276,10 +1286,15 @@ function App(){
     });
     const csv=rows.map(r=>r.join(",")).join("\n");
     const blob=new Blob([csv],{type:"text/csv"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    a.href=url;a.download=`${babyName||"baby"}-data-${todayStr()}.csv`;
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    if(window._isNative && navigator.share){
+      const file=new File([blob],`${babyName||"baby"}-data-${todayStr()}.csv`,{type:"text/csv"});
+      navigator.share({title:"OBubba Data Export",files:[file]}).catch(()=>{});
+    } else {
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;a.download=`${babyName||"baby"}-data-${todayStr()}.csv`;
+      document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    }
     trackEvent("data_exported",{format:"csv"});
   }
 
@@ -1320,7 +1335,7 @@ function App(){
           setPhotos(prev=>[...prev,{id:uid(),date:selDay||todayStr(),time:nowTime(),dataUrl,note:""}]);
 
         }
-        try{navigator.vibrate&&navigator.vibrate(30);}catch{}
+        haptic("light")
       };
       img.src=ev.target.result;
     };
@@ -1426,11 +1441,14 @@ function App(){
   const[recapExtraPhoto,setRecapExtraPhoto]=useState(null); // base64 data URL
   const[msSharePrompt,setMsSharePrompt]=useState(null); // {milestoneId, label}
   const[apptForm,setApptForm]=useState({date:"",time:"",title:"",note:"",repeat:"none",travelMins:0});
+  const[editApptId,setEditApptId]=useState(null);
   const[reminderForm,setReminderForm]=useState({text:"",date:"",time:"",trigger:""});
+  const[editRemId,setEditRemId]=useState(null);
   const[reminders,setReminders]=useState(()=>{
     try{const v=localStorage.getItem("reminders_v1");return v?JSON.parse(v):[];}catch{return [];}
   });
   const[pinForm,setPinForm]=useState("");
+  const[editNoteId,setEditNoteId]=useState(null);
   // Carer card data
   const[carerNotes,setCarerNotes]=useState(()=>{try{return localStorage.getItem("carer_notes_v1")||"";}catch{return "";}});
   const[emergencyContacts,setEmergencyContacts]=useState(()=>{try{const v=localStorage.getItem("emergency_contacts_v1");return v?JSON.parse(v):[];}catch{return [];}});
@@ -1452,7 +1470,7 @@ function App(){
       const elapsedMins = (now.getHours()*60+now.getMinutes()) - (nh*60+nm);
       if(elapsedMins >= nappyReminderMins && elapsedMins < nappyReminderMins + 2){
         showToast(`🧷 Nappy check! It's been ${hm(elapsedMins)} since the last change`,4000,2);
-        try{navigator.vibrate&&navigator.vibrate([50,30,50]);}catch{}
+        haptic("medium")
       }
     },60000);
     return()=>clearInterval(nappyReminderRef.current);
@@ -1556,6 +1574,15 @@ function App(){
   const[napPaused,setNapPaused]=useState(()=>{try{return localStorage.getItem("nap_paused")==="1";}catch{return false;}});
   const[napPausedAtSec,setNapPausedAtSec]=useState(()=>{try{return parseInt(localStorage.getItem("nap_paused_sec"))||0;}catch{return 0;}});
   const[showNapStartEdit,setShowNapStartEdit]=useState(false);
+  const[partnerTick,setPartnerTick]=useState(0);
+  // Tick every 30s if there are partner's active entries (forces badge update)
+  React.useEffect(()=>{
+    const entries = days[selDay]||[];
+    const hasPartnerActive = entries.some(e=>e.type==="nap" && (e._active || !e.end || e.start===e.end));
+    if(!hasPartnerActive) return;
+    const iv = setInterval(()=>setPartnerTick(t=>t+1), 1000);
+    return ()=>clearInterval(iv);
+  },[days, selDay]);
   const[napSec,setNapSec]=useState(()=>{
     try{
       const on=localStorage.getItem("nap_on")==="1";
@@ -1723,6 +1750,8 @@ function App(){
   const[obUsernameStatus,setObUsernameStatus]=useState("idle");
   const[familyUsername,setFamilyUsername]=useState(()=>{try{return localStorage.getItem("family_username")||null;}catch{return null;}});
   const[authScreen,setAuthScreen]=useState(()=>{try{const v=localStorage.getItem("auth_verified"),u=localStorage.getItem("family_username");return(u&&!v)?"login":null;}catch{return null;}});
+  const[showBioPrompt,setShowBioPrompt]=useState(false);
+  const bioAttemptedRef=React.useRef(false);
   const[authMode,setAuthMode]=useState("login");
   const[showBetaBanner,setShowBetaBanner]=useState(()=>{
     try{
@@ -1883,6 +1912,8 @@ function App(){
     return n.endsWith("s") ? `${n}'` : `${n}'s`;
   };
   const lsRef = React.useRef(null);
+  const cloudPushRef = React.useRef(null);
+  const cloudSyncedRef = React.useRef(false);
   useEffect(()=>{
     clearTimeout(lsRef.current);
     lsRef.current = setTimeout(()=>{
@@ -1894,6 +1925,8 @@ function App(){
       try{localStorage.setItem("child_sync_codes_v1",JSON.stringify(childSyncCodes));}catch{}
       if(resolvedActiveId)try{localStorage.setItem("active_child",resolvedActiveId);}catch{}
       if(onboarded)try{localStorage.setItem("onboarded_v2","1");}catch{}
+      clearTimeout(cloudPushRef.current);
+      cloudPushRef.current = setTimeout(()=>{ if(backupCodeRef.current && window._fbUid && cloudSyncedRef.current) pushToCloud(backupCodeRef.current, children); }, 500);
     }, 300);
     return ()=>clearTimeout(lsRef.current);
   },[children, childSyncCodes, resolvedActiveId, onboarded]);
@@ -1931,8 +1964,21 @@ function App(){
             return hasEntries || hasWeights;
           }))
         : allChildren;
+      // Clean entries before pushing: strip _active, fix active nap end times
+      const cleanForCloud = JSON.parse(JSON.stringify(childrenToWrite));
+      Object.values(cleanForCloud).forEach(ch => {
+        Object.entries(ch.days || {}).forEach(([dk, dayArr]) => {
+          if(Array.isArray(dayArr)) {
+            ch.days[dk] = dayArr.filter(e => !e._deleted).map(e => {
+              const c = {...e};
+              if(c.type === "nap" && c.start && c.start === c.end) delete c.end;
+              return c;
+            });
+          }
+        });
+      });
       await setDoc(doc(db,"families",code), {
-        children: JSON.stringify(childrenToWrite),
+        children: JSON.stringify(cleanForCloud),
         updatedAt: serverTimestamp(),
         updatedBy: myUid,
         writeToken
@@ -1955,7 +2001,7 @@ function App(){
     if(unsubscribeRef.current) unsubscribeRef.current();
     const {db,doc,onSnapshot} = window._fb;
     unsubscribeRef.current = onSnapshot(doc(db,"families",code),(snap)=>{
-      if(!snap.exists()) return;
+      if(!snap.exists()){ cloudSyncedRef.current = true; return; }
       const d = snap.data();
 
       const myUid = window._fbUid;
@@ -1967,6 +2013,7 @@ function App(){
           setChildren(prev => {
             const merged = mergeChildren(prev, incoming);
 
+            cloudSyncedRef.current = true;
             const incomingCount = countAllEntries(incoming);
             if(incomingCount > cloudEntryCountRef.current) cloudEntryCountRef.current = incomingCount;
             return merged;
@@ -2198,6 +2245,8 @@ function App(){
   const justRestoredRef = React.useRef(false);
   const cloudEntryCountRef = React.useRef(0);
   const deletedDaysRef = React.useRef(new Set());
+  const deletedEntryIdsRef = React.useRef(new Set());
+  const locallyCreatedIdsRef = React.useRef(new Set());
   const childrenRef = React.useRef(children);
   React.useEffect(()=>{ childrenRef.current = children; }, [children]);
   const userDeletedCountRef = React.useRef(0);
@@ -2404,6 +2453,7 @@ function App(){
       try {
         const snap = await getDoc(doc(db,"usernames",normaliseUsername(val)));
         setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
+        if(snap.exists()) try{document.activeElement.blur();}catch{}
       } catch(e) { setAuthUsernameStatus("idle"); }
     }, 500);
   }
@@ -2531,11 +2581,18 @@ function App(){
           const lArr = localDays[date] || [];
           const rArr = remoteDays[date] || [];
           if(!lArr.length) { mergedDays[date] = dedupEntries(rArr); return; }
-          if(!rArr.length) { mergedDays[date] = dedupEntries(lArr); return; }
+          if(!rArr.length) { 
+            // Keep only locally-created entries (partner may have deleted the rest)
+            const kept = lArr.filter(e => (window._localEntryIds && window._localEntryIds.has(e.id)) || e._active || deletedDaysRef.current.has(id + ":" + date));
+            if(kept.length) mergedDays[date] = dedupEntries(kept);
+            return; 
+          }
 
-          const seen = new Set(lArr.map(e=>e.id));
-          const extra = rArr.filter(e=>e.id && !seen.has(e.id));
-          mergedDays[date] = dedupEntries([...lArr, ...extra]);
+          // Use remote as base, add local-only entries that were created this session
+          const remoteIds = new Set(rArr.map(e=>e.id));
+          const localOnly = lArr.filter(e=>e.id && !remoteIds.has(e.id) && !deletedEntryIdsRef.current.has(e.id));
+          const freshLocal = localOnly.filter(e => (window._localEntryIds && window._localEntryIds.has(e.id)) || e._active);
+          mergedDays[date] = dedupEntries([...rArr, ...freshLocal]);
         });
 
         const mergedWeights = [...(merged[id].weights||[])];
@@ -2623,7 +2680,7 @@ function App(){
     if(childSubsRef.current[childId]) childSubsRef.current[childId]();
     const {db, doc, onSnapshot} = window._fb;
     const unsub = onSnapshot(doc(db,"child_syncs",code), (snap) => {
-      if(!snap.exists()) return;
+      if(!snap.exists()){ cloudSyncedRef.current = true; return; }
       const d = snap.data();
 
       if(d.writeToken && d.writeToken === writeTokenRef.current) return;
@@ -2643,7 +2700,7 @@ function App(){
               const local = mergedDays[date] || [];
               if(!local.length){ mergedDays[date] = entries; return; }
               const seen = new Set(local.map(e=>e.id));
-              const extra = (entries||[]).filter(e=>e.id && !seen.has(e.id));
+              const extra = (entries||[]).filter(e=>e.id && !seen.has(e.id) && !deletedEntryIdsRef.current.has(e.id));
               if(extra.length) {
                 const dt2=new Date(date+"T12:00:00"); dt2.setDate(dt2.getDate()-1);
                 const prevD3=dt2.toISOString().slice(0,10);
@@ -2917,7 +2974,7 @@ function App(){
   useEffect(()=>{try{if(breastSide)localStorage.setItem("breast_side",breastSide);else localStorage.removeItem("breast_side");}catch{}},[breastSide]);
   useEffect(()=>{try{localStorage.setItem("breast_sec",JSON.stringify(breastSec));}catch{}},[breastSec]);
   useEffect(()=>{try{localStorage.setItem("breast_active",breastActive?"1":"0");}catch{}},[breastActive]);
-  const age = React.useMemo(() => calcAge(babyDob), [babyDob]);
+  const age = React.useMemo(() => calcAge(babyDob, activeChild.dueDate), [babyDob, activeChild.dueDate]);
   const tickDataRef = React.useRef({});
   React.useEffect(()=>{
     const ageWeeks = age ? age.totalWeeks : null;
@@ -3114,13 +3171,25 @@ function App(){
   // ═══ HERO CARD — Bubba Rhythm ═══
   function renderHeroCard() {
    try {
-    if (!age || !selDay || selDay !== todayStr()) return null;
-    const _today = days[selDay] || [];
-    const _hasWake = _today.some(e => e.type === "wake" && !e.night);
+    if (!age) return null;
+    const _isYesterday = (()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+    const _calToday = todayStr();
+    const _calTodayEntries = days[_calToday] || [];
+    const _todayHasMorningWake = _calTodayEntries.some(e => e.type === "wake" && !e.night);
+    const _heroDay = (() => {
+      if (_todayHasMorningWake) return _calToday;
+      if ((days[_isYesterday]||[]).some(e => e.type === "sleep" && !e.night)) return _isYesterday;
+      if (_calTodayEntries.some(e => e.type === "wake" && !e.night)) return _calToday;
+      return _calToday;
+    })();
+    let _today = days[_heroDay] || [];
+    const _useYesterday = _heroDay === _isYesterday;
+    if (_today.length === 0 && !_todayHasMorningWake && (days[_isYesterday]||[]).length === 0) return null;
+    const _h0 = new Date().getHours();
     const _hasBed = _today.some(e => e.type === "sleep" && !e.night);
+    const _hasWake = _useYesterday ? false : _today.some(e => e.type === "wake" && !e.night);
     const _name = babyName || "Baby";
     const _h = new Date().getHours();
-    const _nowM = _h * 60 + new Date().getMinutes();
     const _naps = _today.filter(e => e.type === "nap" && !e.night);
     const _napsDone = _naps.length;
     const _profile = getAgeNapProfile(age.totalWeeks);
@@ -3143,6 +3212,9 @@ function App(){
 
     // ── Contextual reassurance based on day pattern ──
     const _allFeeds = _today.filter(e => e.type === "feed" && !e.night);
+    // Include night feeds for timing calculations
+    const _prevDayKey = (()=>{const d=new Date(selDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+    const _allFeedsIncNight = [..._allFeeds, ..._today.filter(e=>e.time&&e.night&&(e.type==="feed"||(e.amount||0)>0||e.assistedType==="milk"||e.feedType==="milk")), ...((days[_prevDayKey]||[]).filter(e=>e.time&&e.night&&(e.type==="feed"||(e.amount||0)>0||e.assistedType==="milk"||e.feedType==="milk")))];
     const _totalNapMin = _naps.reduce((s,n) => s + minDiff(n.start, n.end), 0);
     const _isNightTime = _h >= 22 || _h < 5;
     const _isIrregularDay = _napsDone > 0 && _naps.some(n => minDiff(n.start, n.end) < 20) && _allFeeds.length > 6;
@@ -3208,15 +3280,21 @@ function App(){
     try {
       const _hints = [];
       // Find last feed and nappy — prioritise TODAY's entries, only fall back to yesterday's night entries
-      const _prevDay = (()=>{const d=new Date(selDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
-      const _todayFeeds = _today.filter(e=>(e.type==="feed")&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
-      const _todayNappies = _today.filter(e=>e.type==="poop"&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
-      // Yesterday's night entries (sorted by time, ascending)
-      const _nightFeeds = [...(_today.filter(e=>e.type==="feed"&&e.night&&e.time)), ...((days[_prevDay]||[]).filter(e=>e.type==="feed"&&e.night&&e.time))].sort((a,b)=>timeVal(a)-timeVal(b));
-      const _nightNappies = [...(_today.filter(e=>e.type==="poop"&&e.night&&e.time)), ...((days[_prevDay]||[]).filter(e=>e.type==="poop"&&e.night&&e.time))].sort((a,b)=>timeVal(a)-timeVal(b));
-      // Most recent = last today daytime entry, or if none, last night entry
-      const _lastFeed = _todayFeeds.length ? _todayFeeds[_todayFeeds.length-1] : (_nightFeeds.length ? _nightFeeds[_nightFeeds.length-1] : null);
-      const _lastNappy = _todayNappies.length ? _todayNappies[_todayNappies.length-1] : (_nightNappies.length ? _nightNappies[_nightNappies.length-1] : null);
+      const _baseDayForPrev = _useYesterday ? _isYesterday : selDay;
+      const _prevDay = (()=>{const d=new Date(_baseDayForPrev+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
+      // Find most recent feed: any entry with amount>0 or type=feed, across today+yesterday
+      const _todayActual = days[todayStr()]||[];
+      const _allE = [..._today, ...(days[_prevDay]||[]), ...(_useYesterday ? _todayActual : [])];
+      const _lastFeed = (()=>{
+        const _fc = _allE.filter(e=>e.time&&(e.type==="feed"||(e.amount||0)>0||(e.night&&(e.assistedType==="milk"||e.feedType==="milk"))));
+        if(!_fc.length) return null;
+        return _fc.reduce((best,e)=>{ const ge=((_nowM-timeVal(e))+1440)%1440; const gb=((_nowM-timeVal(best))+1440)%1440; return ge<gb?e:best; });
+      })();
+      const _lastNappy = (()=>{
+        const _nc = _allE.filter(e=>e.time&&e.type==="poop");
+        if(!_nc.length) return null;
+        return _nc.reduce((best,e)=>{ const ge=((_nowM-timeVal(e))+1440)%1440; const gb=((_nowM-timeVal(best))+1440)%1440; return ge<gb?e:best; });
+      })();
 
       // Calculate baby's actual average feed interval from recent days (last 5 days)
       let _avgFeedInterval = null;
@@ -3400,10 +3478,11 @@ function App(){
         _dot = "#7BA68C"; _label = "All good right now";
         _timing = "Awake " + hm(_awakeMin) + " · Next nap around " + _napTimeStr + _rhythmTag;
       }
-    } else if (_hasWake && _allFeeds.length > 0) {
+    } else if (_hasWake && _allFeedsIncNight.length > 0) {
       // Check if feed window is opening (2.5h+ since last feed)
-      const _lastFeedTime = Math.max(..._allFeeds.map(e => timeVal(e)));
-      const _minsSinceFeed = _nowM - _lastFeedTime;
+      const _lastFeedTime = Math.max(..._allFeedsIncNight.map(e => { const tv=timeVal(e); return (e.night&&tv<720)?tv+1440:tv; }));
+      let _minsSinceFeed = _nowM - (_lastFeedTime > 1440 ? _lastFeedTime - 1440 : _lastFeedTime);
+      if (_minsSinceFeed < 0) _minsSinceFeed += 1440;
       if (_minsSinceFeed >= 150) {
         _dot = "#7aabc4"; _label = "Feed window opening";
         _timing = "Last feed " + hm(_minsSinceFeed) + " ago · " + (age && age.totalWeeks < 3 ? "little ones this age often need feeding every 2–3h" : _name + " might be getting peckish");
@@ -6046,7 +6125,7 @@ function App(){
   },[measureUnit]);
 
   React.useEffect(()=>{
-    try{localStorage.setItem("appointments_v1",JSON.stringify(appointments));}catch{}
+    try{const _cleanAppts=appointments.filter(a=>{const d=new Date(a.date+"T23:59:59");return d>=new Date(Date.now()-30*24*60*60*1000);});if(_cleanAppts.length!==appointments.length)setAppointments(_cleanAppts);localStorage.setItem("appointments_v1",JSON.stringify(_cleanAppts.length!==appointments.length?_cleanAppts:appointments));}catch{}
   },[appointments]);
 
   React.useEffect(()=>{
@@ -6066,7 +6145,13 @@ function App(){
       const rTime=new Date(r.date+"T"+r.time).getTime();
       if(rTime>now && rTime<now+24*60*60*1000){
         setTimeout(()=>{
-          try{new Notification("OBubba Reminder",{body:r.text,icon:"obubba-happy.png",tag:"rem-"+r.id});}catch{}
+          try{
+            if(window._isNative&&window.Capacitor&&window.Capacitor.Plugins.LocalNotifications){
+              window.Capacitor.Plugins.LocalNotifications.schedule({notifications:[{title:"OBubba Reminder",body:r.text,id:Math.floor(Math.random()*100000),schedule:{at:new Date(rTime)}}]});
+            } else {
+              new Notification("OBubba Reminder",{body:r.text,icon:"obubba-happy.png",tag:"rem-"+r.id});
+            }
+          }catch{}
         },rTime-now);
       }
     });
@@ -6084,11 +6169,14 @@ function App(){
           const delay=t-now;
           setTimeout(()=>{
             try{
-              new Notification("OBubba Reminder",{
-                body:`${t===remindTravel?"Time to leave! ":""}${a.title}${a.time?" at "+fmt12(a.time):""}${a.date===todayStr()?" today":" on "+fmtDate(a.date)}`,
-                icon:"obubba-happy.png",
-                tag:"appt-"+a.id
-              });
+              const _notifBody=`${t===remindTravel?"Time to leave! ":""}${a.title}${a.time?" at "+fmt12(a.time):""}${a.date===todayStr()?" today":" on "+fmtDate(a.date)}`;
+              try{
+                if(window._isNative&&window.Capacitor&&window.Capacitor.Plugins.LocalNotifications){
+                  window.Capacitor.Plugins.LocalNotifications.schedule({notifications:[{title:"OBubba Reminder",body:_notifBody,id:Math.floor(Math.random()*100000),schedule:{at:new Date(t)}}]});
+                } else {
+                  new Notification("OBubba Reminder",{body:_notifBody,icon:"obubba-happy.png",tag:"appt-"+a.id});
+                }
+              }catch{}
             }catch{}
           },delay);
         }
@@ -6357,7 +6445,7 @@ function App(){
     const _today = days[selDay] || [];
     const _naps = _today.filter(e => e.type === "nap" && !e.night);
     const _feeds = _today.filter(e => e.type === "feed");
-    const _nightFeeds = _today.filter(e => e.type === "feed" && e.night);
+    const _nightFeeds = _today.filter(e => e.night && (e.type==="feed"||e.amount>0||e.assistedType==="milk"||e.feedType==="milk"));
     const _wakeE = _today.find(e => e.type === "wake" && !e.night);
     const _bedE = _today.find(e => e.type === "sleep" && !e.night);
     const _nightWakes = _today.filter(e => e.night);
@@ -6785,7 +6873,8 @@ function App(){
     const _topHelp = Object.entries(_recentHelps).sort((a, b) => b[1] - a[1])[0];
 
     // Quick reason from crying analysis
-    const _lastFeed = [..._today.filter(e => e.type === "feed")].sort((a, b) => timeVal(a) - timeVal(b)).pop();
+    const _prevDk = (()=>{const d=new Date(selDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+    const _lastFeed = [..._today, ...(days[_prevDk]||[])].filter(e => e.time && (e.type==="feed" || (e.amount||0)>0 || e.assistedType==="milk" || e.feedType==="milk")).sort((a,b)=>{let ta=timeVal(a),tb=timeVal(b);if(a.night&&ta<720)ta+=1440;if(b.night&&tb<720)tb+=1440;return ta-tb;}).pop();
     const _nowM = new Date().getHours() * 60 + new Date().getMinutes();
     const _feedGap = _lastFeed ? ((_nowM < timeVal(_lastFeed)) ? _nowM + 1440 - timeVal(_lastFeed) : _nowM - timeVal(_lastFeed)) : 999;
     const _feedThreshold = age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 180 : age.totalWeeks < 26 ? 210 : 270;
@@ -7278,6 +7367,7 @@ function App(){
     setModal("entry");
   }
   function delEntry(id){
+    deletedEntryIdsRef.current.add(id);
     userDeletedCountRef.current += 1;
     const dayForEntry = selDay;
     setDays(d=>{
@@ -7701,6 +7791,11 @@ function App(){
     function addAppointment(){
     if(!apptForm.title.trim()||!apptForm.date) return;
     const base={title:apptForm.title.trim(),time:apptForm.time,note:apptForm.note.trim(),repeat:apptForm.repeat||"none",travelMins:parseInt(apptForm.travelMins)||0,reminded:false};
+    if(editApptId){
+      setAppointments(prev=>prev.map(a=>a.id===editApptId?{...a,...base,date:apptForm.date}:a));
+      setEditApptId(null);setShowAddAppt(false);setApptForm({date:"",time:"",title:"",note:"",repeat:"none",travelMins:0});
+      showToast("✓ Appointment updated",1500,1);return;
+    }
     const newAppts=[{...base,id:uid(),date:apptForm.date}];
     // Generate recurring instances
     if(apptForm.repeat&&apptForm.repeat!=="none"){
@@ -7716,15 +7811,20 @@ function App(){
     setAppointments(prev=>[...prev,...newAppts]);
     setApptForm({date:"",time:"",title:"",note:"",repeat:"none",travelMins:0});
     setShowAddAppt(false);
-    try{navigator.vibrate&&navigator.vibrate(30);}catch{}
+    haptic("light")
   }
 
   function addReminder(){
     if(!reminderForm.text.trim()) return;
+    if(editRemId){
+      setReminders(prev=>prev.map(r=>r.id===editRemId?{...r,text:reminderForm.text.trim(),date:reminderForm.date||todayStr(),time:reminderForm.time||"",trigger:reminderForm.trigger||""}:r));
+      setEditRemId(null);setShowAddReminder(false);setReminderForm({text:"",date:"",time:"",trigger:""});
+      showToast("✓ Reminder updated",1500,1);return;
+    }
     setReminders(prev=>[...prev,{id:uid(),text:reminderForm.text.trim(),date:reminderForm.date||todayStr(),time:reminderForm.time||"",trigger:reminderForm.trigger||"",done:false}]);
     setReminderForm({text:"",date:"",time:"",trigger:""});
     setShowAddReminder(false);
-    try{navigator.vibrate&&navigator.vibrate(30);}catch{}
+    haptic("light")
   }
 
   // Fire event-triggered reminders when logging events
@@ -7733,7 +7833,7 @@ function App(){
     if (!active.length) return;
     active.forEach(r => {
       showToast(`🔔 ${r.text}`, 4000, 1);
-      try{navigator.vibrate&&navigator.vibrate([50,30,50,30,50]);}catch{}
+      haptic("success")
     });
   }
 
@@ -7751,10 +7851,15 @@ function App(){
 
   function addPinnedNote(){
     if(!pinForm.trim()) return;
+    if(editNoteId){
+      setPinnedNotes(prev=>prev.map(n=>n.id===editNoteId?{...n,text:pinForm.trim()}:n));
+      setEditNoteId(null);setShowAddPin(false);setPinForm("");
+      showToast("✓ Note updated",1500,1);return;
+    }
     setPinnedNotes(prev=>[...prev,{id:uid(),text:pinForm.trim(),createdDate:todayStr(),pinned:true}]);
     setPinForm("");
     setShowAddPin(false);
-    try{navigator.vibrate&&navigator.vibrate(30);}catch{}
+    haptic("light")
   }
 
   function deletePinnedNote(id){
@@ -7763,9 +7868,19 @@ function App(){
 
   async function requestNotifications(){
     try{
-      const p=await Notification.requestPermission();
-      setNotifPermission(p);
-    }catch{}
+      if(window._isNative){
+        const {PushNotifications} = await import("@capacitor/push-notifications");
+        const perm = await PushNotifications.requestPermissions();
+        if(perm.receive==="granted"){
+          await PushNotifications.register();
+          setNotifPermission("granted");
+          showToast("🔔 Notifications enabled ✓",2000,1);
+        }
+      } else {
+        const p=await Notification.requestPermission();
+        setNotifPermission(p);
+      }
+    }catch(e){ console.warn("Notification request failed:",e); }
   }
 
         function quickAddLog(type, data){
@@ -7791,7 +7906,7 @@ function App(){
     clearTimeout(undoTimeoutRef.current);
     undoTimeoutRef.current = setTimeout(()=>setLastAction(null), 15000);
     setLogPanel(null);
-    try{navigator.vibrate&&navigator.vibrate([35,25,35]);}catch{}
+    haptic("medium")
     const label = type==="feed"?(data.feedType==="breast"?"🤱 Logged":data.feedType==="solids"?"🥕 Logged":"🍼 Logged"):type==="poop"?"💩 Logged":type==="wake"?"☀️ Logged":type==="nap"?"😴 Started":"✓ Logged";
     const timeLabel = data.time ? " at "+fmt12(data.time) : "";
     showToast(label+timeLabel+" · Shake to undo",3000,1);
@@ -8189,7 +8304,7 @@ function App(){
     });
     setShowWakePrompt(false);
     setSelDay(targetDay);
-    try{navigator.vibrate&&navigator.vibrate([35,25,35]);}catch{}
+    haptic("medium")
 
     // Build last night summary from the bedtime day
     const prevEntries = days[bedDay] || [];
@@ -8445,7 +8560,7 @@ function App(){
     try{["breast_side","breast_sec","breast_active","breast_startTime"].forEach(k=>localStorage.removeItem(k));}catch{}
     setDays(d=>{const updated=[...(d[selDay]||[]),entry];const _pd=(()=>{const dt=new Date(selDay+"T12:00:00");dt.setDate(dt.getDate()-1);return dt.toISOString().slice(0,10);})();return{...d,[selDay]:autoClassifyNight(updated,d[_pd]||null)};});
     trackEvent("entry_logged",{type:"breast_feed"});
-    try{navigator.vibrate&&navigator.vibrate([40,30,40]);}catch{}
+    haptic("medium")
     showToast("🤱 Feed Logged ✓",1200,1);
     // ── Breastfeeding Support trigger ──
     const _bfSide = entry.breastR > entry.breastL ? "R" : entry.breastL > 0 ? "L" : null;
@@ -8782,25 +8897,50 @@ function App(){
       <div style="font-size:10px;color:#C0A8B0;margin-top:4px">Carers can log feeds, naps & nappies — you'll review them in the app</div>
     </div>`);
 
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name}'s Care Guide</title><style>*{box-sizing:border-box;margin:0}body{font-family:-apple-system,system-ui,sans-serif;max-width:480px;margin:0 auto;padding:20px;background:#FFFCF9}h2{font-family:Georgia,serif}table{border-collapse:collapse}</style></head><body>${sections.join("")}</body></html>`;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name}'s Care Guide</title><style>*{box-sizing:border-box;margin:0}body{font-family:-apple-system,system-ui,sans-serif;max-width:100%;margin:0;padding:60px 16px 40px;background:#FFFCF9;font-size:15px;line-height:1.5}h2{font-family:Georgia,serif;font-size:17px}table{border-collapse:collapse;width:100%}td,th{padding:4px 8px;font-size:13px;word-break:break-word}img{max-width:100%;height:auto}</style></head><body>${sections.join("")}</body></html>`;
   }
 
-  function shareCarerCard() {
+  async function shareCarerCard() {
     const html = generateCarerCardHTML();
     const name = babyName || "Baby";
+    // Try to embed QR as base64 for offline sharing
+    let finalHtml = html;
+    try {
+      const qrImg = html.match(/src="(https:\/\/api\.qrserver[^"]+)"/);
+      if(qrImg && qrImg[1]){
+        const resp = await fetch(qrImg[1]);
+        const blob = await resp.blob();
+        const b64 = await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});
+        finalHtml = html.replace(qrImg[1], b64);
+      }
+    } catch(e) { /* fallback to URL */ }
 
-    const _closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="window.close();history.back();" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window.print()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
+    const _closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
     // Try native share first (mobile)
     if (navigator.share) {
-      const blob = new Blob([html], { type: "text/html" });
+      const blob = new Blob([finalHtml], { type: "text/html" });
       const file = new File([blob], `${name}-care-guide.html`, { type: "text/html" });
       navigator.share({ title: `${name}'s Care Guide`, files: [file] }).catch(() => {
-        const w = (()=>{try{return window.open("","_blank");}catch{return null;}})();
-        if (w) { w.document.write(html.replace("<body>","<body>"+_closeBar)); w.document.close(); }
+        const w = (()=>{
+              if(window._isNative){
+                const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
+                document.body.appendChild(d);
+                return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
+              }
+              try{return window.open("","_blank");}catch{return null;}
+            })();
+        if (w) { w.document.write(finalHtml.replace("<body>","<body>"+_closeBar)); w.document.close(); }
       });
     } else {
-      const w = (()=>{try{return window.open("","_blank");}catch{return null;}})();
-      if (w) { w.document.write(html.replace("<body>","<body>"+_closeBar)); w.document.close(); }
+      const w = (()=>{
+              if(window._isNative){
+                const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
+                document.body.appendChild(d);
+                return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
+              }
+              try{return window.open("","_blank");}catch{return null;}
+            })();
+      if (w) { w.document.write(finalHtml.replace("<body>","<body>"+_closeBar)); w.document.close(); }
     }
   }
 
@@ -9655,6 +9795,55 @@ function App(){
 
   const tabIcons={day:"📅",insights:"💡",develop:"🧩",settings:"👤"};
   const tabLabels={day:"Today",insights:"Insights",develop:"Development",settings:"Account"};
+  // Register FCM token for push notifications
+  React.useEffect(()=>{
+    if(!window._isNative || !window._fb || !window._fbUid || window._fbUid==="anon") return;
+    (async()=>{
+      try{
+        const {PushNotifications} = await import("@capacitor/push-notifications");
+        const perm = await PushNotifications.requestPermissions();
+        if(perm.receive!=="granted") return;
+        await PushNotifications.register();
+        PushNotifications.addListener("registration",(token)=>{
+          if(!token.value || !window._fb) return;
+          const {db, doc, setDoc, serverTimestamp} = window._fb;
+          setDoc(doc(db,"fcm_tokens",window._fbUid),{
+            token: token.value,
+            updatedAt: serverTimestamp()
+          },{merge:true}).catch(()=>{});
+        });
+      }catch(e){ console.warn("FCM registration error:",e); }
+    })();
+  },[familyCode]);
+
+  // Auto-trigger Face ID on login screen
+  React.useEffect(()=>{
+    if(!authScreen || authMode!=="login" || bioAttemptedRef.current) return;
+    if(!window._isNative || !window._biometricAuth) return;
+    const bioUser = localStorage.getItem("bio_user");
+    const bioPin = localStorage.getItem("bio_pin");
+    const bioEnabled = localStorage.getItem("bio_enabled");
+    if(!bioUser || !bioPin || !bioEnabled) return;
+    bioAttemptedRef.current = true;
+    (async()=>{
+      try{
+        setAuthUsername(bioUser);
+        const result = await window._biometricAuth.authenticate();
+        if(result.success){
+          setAuthLoading(true);
+          const ok = await verifyLogin(bioUser, bioPin);
+          if(ok){
+            try{localStorage.setItem("onboarded_v2","1");}catch{}
+            setOnboarded(true); setAuthScreen(null); setTab("day");
+          } else {
+            setAuthError("Face ID passed but PIN changed — please sign in manually");
+            setAuthLoading(false);
+          }
+        }
+      }catch(e){ console.warn("Bio auth failed:",e); }
+    })();
+  },[authScreen, authMode]);
+
   if (authScreen) {
     const isLogin = authMode === "login";
     const canSubmit = authUsername.trim().length >= 3 && authPin.length === 4 && (!isLogin ? authPin2 === authPin && agreedToTerms : true);
@@ -9668,6 +9857,14 @@ function App(){
         const ok = await verifyLogin(authUsername, pin);
         if(ok) {
           try{ localStorage.setItem("onboarded_v2","1"); }catch{}
+          // Store credentials for Face ID (always store on native, check biometric on re-auth)
+          if(window._isNative){
+            try{
+              localStorage.setItem("bio_user",authUsername);
+              localStorage.setItem("bio_pin",pin);
+              localStorage.setItem("bio_enabled","1");
+            }catch{}
+          }
           setOnboarded(true); setAuthScreen(null); setTab("day");
         } else {
           setAuthError("Wrong PIN — try again");
@@ -9717,6 +9914,7 @@ function App(){
           <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:10}}>
             {isLogin?"PIN":"Choose a PIN"}
           </label>
+
           {authLoading ? (
             <div style={{textAlign:"center",padding:"24px 0",fontSize:13,color:C.mid,fontFamily:_fM}}>⏳ {isLogin?"Signing in…":"Creating account…"}</div>
           ) : (
@@ -10170,12 +10368,13 @@ function App(){
   }
 
   return(
-    <div style={{background:"transparent",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:"var(--text-deep)",paddingBottom:80}}>
+    <div style={{background:"transparent",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:"var(--text-deep)",paddingBottom:80,maxWidth:"100vw",overflowX:"hidden"}}>
       <style>{`
         @keyframes pulse{0%,100%{box-shadow:0 0 0 12px rgba(201,112,90,0.15)}50%{box-shadow:0 0 0 22px rgba(201,112,90,0.04)}}
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        button,a,[role="button"]{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
         @keyframes popIn{from{opacity:0;transform:scale(0.6)}to{opacity:1;transform:scale(1)}}
         @keyframes tutPop{from{opacity:0;transform:translate(-50%,-50%) scale(0.93)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
         @keyframes tutPulse{0%,100%{box-shadow:0 0 0 0 rgba(201,112,90,0.5)}70%{box-shadow:0 0 0 14px rgba(201,112,90,0)}}
@@ -10295,13 +10494,13 @@ function App(){
         );
       })()}
       {/* Hidden photo input for diary/milestones */}
-      <input ref={photoInputRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={handlePhotoCapture}/>
+      <input ref={photoInputRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhotoCapture}/>
       <div
-        style={{background:theme.primary,padding:"16px 16px 0",position:"relative",backdropFilter:"blur(var(--glass-blur)) saturate(var(--glass-saturate))",WebkitBackdropFilter:"blur(var(--glass-blur)) saturate(var(--glass-saturate))",boxShadow:"var(--card-shadow)",borderBottom:"1px solid var(--card-border)"}}
+        style={{background:theme.primary,padding:"16px 16px 0",position:"relative",display:tab==="settings"?"none":"block",backdropFilter:"blur(var(--glass-blur)) saturate(var(--glass-saturate))",WebkitBackdropFilter:"blur(var(--glass-blur)) saturate(var(--glass-saturate))",boxShadow:"var(--card-shadow)",borderBottom:"1px solid var(--card-border)"}}
         onTouchStart={handleSwipeStart}
         onTouchEnd={handleSwipeEnd}
       >
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",marginBottom:6,gap:6}}>
+        <div style={{display:tab==="settings"?"none":"flex",alignItems:"center",justifyContent:"center",marginBottom:6,gap:6}}>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             {childIds.map(cid=>(
               <button key={cid} onClick={()=>{haptic();setActiveChildId(cid);}} style={{
@@ -10309,7 +10508,15 @@ function App(){
                 background:cid===resolvedActiveId?C.ter:"rgba(0,0,0,0.18)",transition:"all 0.25s",padding:0
               }}/>
             ))}
-            <button onClick={()=>setShowAddChild(true)} style={{
+            <button onClick={()=>{
+              // Gate: second child requires premium
+              const childCount = Object.keys(childrenRef.current || {}).length;
+              if (STORE_READY && !isPremium && !trialActive && childCount >= 1) {
+                triggerPaywall("multi_baby");
+                return;
+              }
+              setShowAddChild(true);
+            }} style={{
               width:22,height:22,borderRadius:99,border:"1.5px dashed rgba(0,0,0,0.2)",
               background:"transparent",color:C.mid,cursor:_cP,fontSize:13,
               display:"flex",alignItems:"center",justifyContent:"center"
@@ -10319,7 +10526,7 @@ function App(){
         </div>
         {!nameEdit ? (
           <div onClick={()=>{setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsConfirmDelete(false);setShowChildSettings(true);}} style={{cursor:_cP,marginBottom:2,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-            <div onClick={e=>{e.stopPropagation();if(childPhotoInputRef.current)childPhotoInputRef.current.click();}} style={{width:48,height:48,borderRadius:14,overflow:"hidden",flexShrink:0,border:"2px solid rgba(255,255,255,0.8)",boxShadow:"0 3px 12px rgba(0,0,0,0.15)",cursor:_cP,position:"relative"}}>
+            <div onClick={e=>{e.stopPropagation();if(childPhotoInputRef.current)childPhotoInputRef.current.click();}} onTouchEnd={e=>{e.stopPropagation();e.preventDefault();if(childPhotoInputRef.current)childPhotoInputRef.current.click();}} style={{width:48,height:48,borderRadius:14,overflow:"hidden",flexShrink:0,border:"2px solid rgba(255,255,255,0.8)",boxShadow:"0 3px 12px rgba(0,0,0,0.15)",cursor:_cP,position:"relative"}}>
               <img src={activeChild.photo||"obubba-happy.png"} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
                 onError={e=>{e.target.src="obubba-happy.png";}}/>
               <div style={{position:"absolute",bottom:-1,right:-1,width:16,height:16,borderRadius:99,background:C.ter,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"white",border:"1.5px solid var(--card-bg-solid)"}}>📷</div>
@@ -10402,6 +10609,15 @@ function App(){
                 </div>
               </div>
             )}
+          </div>
+        )}
+        {/* Tummy timer pill */}
+        {tab === "day" && tummyOn && (
+          <div style={{display:"flex",gap:8,marginBottom:10}}>
+            <div onClick={()=>{haptic();saveTummyTime();}} style={{display:"flex",alignItems:"center",gap:5,background:"#7B68EE",borderRadius:99,padding:"5px 14px",cursor:_cP}}>
+              <span style={{fontSize:13,fontFamily:_fM,fontWeight:700,color:"white"}}>🤸 {fmtSec(tummySec)}</span>
+              <button onClick={(e)=>{e.stopPropagation();setTummyOn(false);setTummySec(0);}} style={{background:"rgba(255,255,255,0.25)",border:_bN,borderRadius:99,padding:"3px 8px",fontSize:11,color:"white",cursor:_cP,fontWeight:700}}>✕</button>
+            </div>
           </div>
         )}
         {/* Start Feed + Nap/Bed pill row */}
@@ -10631,7 +10847,7 @@ function App(){
             })()}
           </div>
         )}
-        <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",paddingBottom:14}}>
+        <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:tab==="day"?"flex":"none",gap:6,overflowX:"auto",scrollbarWidth:"none",paddingBottom:14}}>
           <div style={{flexShrink:0}}>
             <button onClick={()=>{setNewDate(todayStr());setModal("addDay");}} style={{background:"var(--card-bg)",border:`1px dashed ${C.lt}`,borderRadius:20,padding:"5px 12px",color:C.mid,fontSize:13,fontWeight:600,cursor:_cP,whiteSpace:"nowrap"}}>+ Date</button>
           </div>
@@ -10665,7 +10881,7 @@ function App(){
         </div>
       )}
 
-      <div style={{padding:"16px 14px 90px",maxWidth:520,margin:"0 auto",animation:"fadeIn 0.3s ease"}}>
+      <div style={{padding:tab==="settings"?"0 14px 90px":"16px 14px 90px",maxWidth:520,margin:"0 auto",animation:"fadeIn 0.3s ease"}}>
         {tab==="day"&&(
           !selDay||!days[selDay]?(
             <div style={{textAlign:"center",padding:"40px 20px",color:C.lt}}>
@@ -10707,7 +10923,7 @@ function App(){
                 // 3am-5:59am: no wake logged → suggest night wake
                 if(h>=0&&h<6&&hasBed&&!today.some(e=>e.night&&timeVal(e)>timeVal(today.find(x=>x.type==="sleep"&&!x.night)))){
                   return(
-                    <button onPointerDown={e=>{e.preventDefault();haptic();setShowNightWake(true);setNwForm({time:nowTime(),ml:"",selfSettled:false,assisted:false,assistedType:"milk",assistedNote:"",assistedDuration:"",settleDuration:"",note:""});}}
+                    <button onClick={()=>{haptic();setShowNightWake(true);setNwForm({time:nowTime(),ml:"",selfSettled:false,assisted:false,assistedType:"milk",assistedNote:"",assistedDuration:"",settleDuration:"",note:""});}}
                       style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:14,border:`1.5px solid rgba(123,104,238,0.25)`,background:"rgba(123,104,238,0.06)",cursor:_cP,marginBottom:8}}>
                       <span style={{fontSize:20}}>🌙</span>
                       <div style={{flex:1,textAlign:"left"}}>
@@ -10720,7 +10936,7 @@ function App(){
                 // 5am-8am: no wake logged → suggest morning wake
                 if(h>=5&&h<=8&&!hasWake){
                   return(
-                    <button onPointerDown={e=>{e.preventDefault();haptic();handleSmartWake();}}
+                    <button onClick={()=>{haptic();handleSmartWake();}}
                       style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:14,border:`1.5px solid ${C.gold}40`,background:"rgba(212,168,85,0.06)",cursor:_cP,marginBottom:8}}>
                       <span style={{fontSize:20}}>☀️</span>
                       <div style={{flex:1,textAlign:"left"}}>
@@ -10745,61 +10961,40 @@ function App(){
               )}
 
               {/* ONE-TAP LOG ROW — below date strip, above age guidance */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"10px 12px",marginBottom:10,gap:2,boxShadow:"var(--card-shadow)"}}>
+              <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"10px 8px",marginBottom:10,gap:1,boxShadow:"var(--card-shadow)",position:"relative",zIndex:2,overflow:"hidden"}}>
                 {[
-                  {emoji:"🍼",label:"Feed",longAction:()=>openLogPanel("feed"),action:()=>{
-                    const hasBed = (days[selDay]||[]).some(e=>e.type==="sleep"&&!e.night);
-                    if(hasBed){
-                      // After bedtime — open night wake form with milk pre-selected
-                      haptic();
-                      setNwForm({time:nowTime(),ml:"",selfSettled:false,assisted:true,assistedType:"milk",assistedNote:"",assistedDuration:"",settleDuration:"",note:""});
-                      setShowNightWake(true);
-                    } else {
-                      quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""});
-                    }
-                  }},
-                  {emoji:"🤱",label:"Breast",longAction:()=>openLogPanel("feed"),action:()=>{
-                    const hasBed = (days[selDay]||[]).some(e=>e.type==="sleep"&&!e.night);
-                    if(hasBed){
-                      haptic();
-                      setNwForm({time:nowTime(),ml:"",selfSettled:false,assisted:true,assistedType:"milk",assistedNote:"breast",assistedDuration:"",settleDuration:"",note:"Breast feed"});
-                      setShowNightWake(true);
-                    } else {
-                      haptic();startBreastTimer("L");
-                    }
-                  }},
+                  {emoji:"🍼",label:"Feed",longAction:()=>openLogPanel("feed"),action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""})},
+                  {emoji:"🤱",label:"Breast",longAction:()=>openLogPanel("feed"),action:()=>{haptic();startBreastTimer("L");}},
                   {emoji:"💩",label:"Nappy",longAction:()=>openLogPanel("nappy"),action:()=>quickAddLog("poop",{type:"poop",time:nowTime(),poopType:"wet",night:false,note:""})},
-                  {emoji:"😴",label:napOn?"Stop":"Nap",longAction:napOn?null:()=>{setShowNapStartPicker(true);setNapCustomStart(nowTime());},action:()=>{
-                    if(napOn){ endNap(); } else { startNap(); }
-                  }},
-                  {emoji:"🫙",label:"Pump",action:()=>openLogPanel("pump")},
+                  {emoji:"😴",label:napOn?"Stop":"Nap",longAction:napOn?null:()=>{setShowNapStartPicker(true);setNapCustomStart(nowTime());},action:()=>{if(napOn){endNap();}else{startNap();}}},
+                  {emoji:"🫙",label:"Pump",longAction:()=>openLogPanel("pump"),action:()=>openLogPanel("pump")},
                   {emoji:"☀️",label:"Wake",action:()=>handleSmartWake()},
-
-                  {emoji:"📷",label:"Photo",action:()=>capturePhoto(null)},
+                  {emoji:"🤸",label:tummyOn?"Stop":"Tummy",action:()=>{if(tummyOn){saveTummyTime();}else{haptic();setTummyOn(true);setTummySec(0);}}},
                   {emoji:"😢",label:"Crying?",action:()=>setShowCryingHelper(true)},
                 ].map(({emoji,label,action,longAction})=>{
-                  let _lpTimer = null;
-                  let _lpFired = false;
                   return (
                   <button key={label}
-                    onPointerDown={e=>{
+                    onTouchStart={(e)=>{
+                      e.stopPropagation();
+                      window._obLp={fired:false,timer:null};
+                      if(longAction){window._obLp.timer=setTimeout(()=>{window._obLp.fired=true;haptic(20);longAction();},700);}
+                    }}
+                    onTouchEnd={(e)=>{
                       e.preventDefault();
-                      _lpFired = false;
-                      if (longAction) {
-                        _lpTimer = setTimeout(()=>{ _lpFired = true; haptic(20); longAction(); }, 500);
-                      }
+                      e.stopPropagation();
+                      const lp=window._obLp||{};
+                      if(lp.timer){clearTimeout(lp.timer);}
+                      if(lp.fired){window._obLp={fired:false,timer:null};return;}
+                      window._obLp={fired:false,timer:null};
+                      action();
                     }}
-                    onPointerUp={e=>{
-                      if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
-                      if (!_lpFired) action();
-                      e.currentTarget.style.background="transparent";e.currentTarget.style.transform="scale(1)";
+                    onTouchCancel={(e)=>{
+                      e.stopPropagation();
+                      const lp=window._obLp||{};
+                      if(lp.timer){clearTimeout(lp.timer);}
+                      window._obLp={fired:false,timer:null};
                     }}
-                    onPointerCancel={e=>{
-                      if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
-                      _lpFired = false;
-                      e.currentTarget.style.background="transparent";e.currentTarget.style.transform="scale(1)";
-                    }}
-                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1,padding:"6px 2px",borderRadius:12,border:"none",background:"transparent",cursor:_cP,transition:"transform 0.1s ease, background 0.1s ease",touchAction:"manipulation",WebkitTapHighlightColor:"transparent"}}
+                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1,padding:"6px 1px",borderRadius:12,border:"none",background:"transparent",cursor:_cP,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",maxHeight:52}}
                   >
                     <span style={{fontSize:22,lineHeight:1}}>{emoji}</span>
                     <span style={{fontSize:10,fontWeight:600,color:napOn&&label==="Stop"?C.ter:C.mid,fontFamily:_fM}}>{label}</span>
@@ -10892,7 +11087,7 @@ function App(){
 
               {/* ═══ Notes & Reminders — collapsible ═══ */}
               {(()=>{
-                const _nrCount = appointments.filter(a=>new Date(a.date+"T23:59:59")>=new Date()).length + reminders.filter(r=>!r.done).length + pinnedNotes.length + (days[selDay]||[]).filter(e=>e.medName||e.temp).length;
+                const _nrCount = appointments.filter(a=>{const d=new Date(a.date+"T23:59:59");return d>=new Date()&&d<=new Date(Date.now()+7*24*60*60*1000);}).length + reminders.filter(r=>!r.done).length + pinnedNotes.length;
                 return (
                   <button onClick={()=>{haptic();setNotesOpen(!notesOpen);}} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:notesOpen?"14px 14px 0 0":14,border:"1px solid var(--card-border)",background:"var(--card-bg)",boxShadow:"var(--card-shadow)",cursor:_cP,marginBottom:notesOpen?0:10}}>
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
@@ -10933,19 +11128,19 @@ function App(){
                   const d=new Date(a.date+"T23:59:59");
                   return d>=new Date()&&d<=new Date(Date.now()+7*24*60*60*1000);
                 }).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-                if(!upcoming.length) return null;
                 return (
                   <div className="glass-card" style={{...card,padding:"12px 14px",marginBottom:10}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                      <div style={{display:"flex",alignItems:"center",gap:4,fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>📅 Upcoming Appointments <HelpBtn title="Appointments" body="Add appointments with optional travel time alerts. OBubba will offer to plan your baby's schedule around tomorrow's appointments. Recurring appointments repeat automatically."/></div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:upcoming.length?8:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:4,fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>📅 Appointments{upcoming.length>0&&<span style={{background:C.ter,color:"white",borderRadius:99,padding:"1px 7px",fontSize:10,fontWeight:700,marginLeft:6}}>{upcoming.length}</span>} <HelpBtn title="Appointments" body="Add appointments with optional travel time alerts. OBubba will offer to plan your baby's schedule around tomorrow's appointments. Recurring appointments repeat automatically."/></div>
                       <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:"",repeat:"none",travelMins:0});setShowAddAppt(true);}} style={{background:_bN,border:_bN,fontSize:11,color:C.ter,cursor:_cP,fontWeight:700,fontFamily:_fM}}>+ Add</button>
                     </div>
+                    {!upcoming.length&&<div style={{fontSize:12,color:C.lt,fontStyle:"italic",padding:"6px 0"}}>No upcoming appointments</div>}
                     {upcoming.map(a=>{
                       const isToday=a.date===todayStr();
                       const isTomorrow=a.date===(()=>{const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);})();
                       const dayLabel=isToday?"Today":isTomorrow?"Tomorrow":fmtLong(a.date);
                       return (
-                        <div key={a.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"7px 0",borderBottom:`1px solid ${C.blush}`}}>
+                        <div key={a.id} onClick={()=>{setApptForm({date:a.date,time:a.time||"",title:a.title,note:a.note||"",repeat:a.repeat||"none",travelMins:a.travelMins||0});setEditApptId(a.id);setShowAddAppt(true);}} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"7px 0",borderBottom:`1px solid ${C.blush}`,cursor:_cP}}>
                           <div style={{width:32,height:32,borderRadius:9,background:isToday?`${C.ter}18`:"var(--chip-bg)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14}}>
                             {isToday?"🔔":"📅"}
                           </div>
@@ -10973,7 +11168,7 @@ function App(){
                     return (
                     <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${C.blush}`}}>
                       <div onClick={()=>toggleReminder(r.id)} style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${C.mint}`,background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,flexShrink:0}}/>
-                      <div style={{flex:1,minWidth:0}}>
+                      <div onClick={()=>{setReminderForm({text:r.text,date:r.date||todayStr(),time:r.time||"",trigger:r.trigger||""});setEditRemId(r.id);setShowAddReminder(true);}} style={{flex:1,minWidth:0,cursor:_cP}}>
                         <div style={{fontSize:13,color:C.deep,lineHeight:1.4}}>{r.text}</div>
                         <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginTop:1}}>
                           {r.trigger && <span style={{fontSize:10,fontFamily:_fM,color:C.ter,background:C.ter+"15",padding:"1px 7px",borderRadius:99}}>{triggerLabels[r.trigger]||r.trigger}</span>}
@@ -11011,7 +11206,7 @@ function App(){
                   {pinnedNotes.map(n=>(
                     <div key={n.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.blush}`}}>
                       <span style={{fontSize:12,flexShrink:0,marginTop:1}}>📌</span>
-                      <div style={{flex:1,fontSize:13,color:C.deep,lineHeight:1.5}}>{n.text}</div>
+                      <div onClick={()=>{setPinForm(n.text);setEditNoteId(n.id);setShowAddPin(true);}} style={{flex:1,fontSize:13,color:C.deep,lineHeight:1.5,cursor:_cP}}>{n.text}</div>
                       <button onClick={()=>deletePinnedNote(n.id)} style={{background:_bN,border:_bN,fontSize:11,color:C.lt,cursor:_cP,padding:"4px"}}>✕</button>
                     </div>
                   ))}
@@ -11062,13 +11257,15 @@ function App(){
                   {id:"sleep", icon:"😴", label:"Sleep"},
                   {id:"pump",  icon:"🫙", label:"Pump"},
                   {id:"wake",  icon:"☀️", label:"Wake Up"},
-                  {id:"tummy", icon:"🤸", label:"Tummy"},
+
                   {id:"med",   icon:"💊", label:"Med/Temp"},
+                  {id:"photo", icon:"📷", label:"Photo"},
                   {id:"paste", icon:"📋", label:"Notes"},
                 ].map(({id,icon,label})=>(
                   <button key={id} onClick={()=>{haptic();
                     if(id==="paste") openPaste();
-                    else if(id==="tummy"){ if(tummyOn){saveTummyTime();}else{setTummyOn(true);setTummySec(0);} }
+                    else if(id==="photo") capturePhoto(null);
+
                     else if(id==="med"){ setMedForm({name:"",dose:"",time:nowTime(),temp:"",note:""});setShowMedForm(true); }
                     else openLogPanel(id);
                   }}
@@ -11678,15 +11875,18 @@ function App(){
                     </div>
                   </div>
                 )}
-                {[...dayE].sort((a,b)=>timeVal(a)-timeVal(b)).map(e=>{
+                {[...dayE].sort((a,b)=>{const ta=timeVal(a),tb=timeVal(b);const ka=ta<5*60?ta+1440:ta;const kb=tb<5*60?tb+1440:tb;return ka-kb;}).map(e=>{
                   const isDragging=dragId===e.id;
                   const isOver=dragOver===e.id;
                   const accentCol=e.type==="feed"?(e.feedType==="solids"?"#b8860b":e.feedType==="breast"?"#c07080":e.feedType==="pump"?"#7090c0":C.ter):e.type==="nap"?C.mint:e.type==="sleep"?C.sky:e.type==="poop"?"#8a7060":e.type==="wake"?C.gold:C.mid;
 
                   // Activity label: "time - Activity (type)" format
                   const actLabel = (() => {
-                    if (e.type === "nap" && e.start && e.end) {
+                    if (e.type === "nap" && e.start && e.end && e.start !== e.end && !e._active) {
                       return `${fmt12(e.start)}-${fmt12(e.end)} - ${e.isBridge ? "Bridge Nap 🌉" : "Nap"}`;
+                    }
+                    if (e.type === "nap" && e.start && (e._active || e.start === e.end || !e.end)) {
+                      return `${fmt12(e.start)} - ${e.isBridge ? "Bridge Nap 🌉" : "Nap"} (ongoing)`;
                     }
                     const timeStr = e.time || e.start || "";
                     const timeDisplay = timeStr ? fmt12(timeStr) : "";
@@ -11742,8 +11942,19 @@ function App(){
                     else if(e.feedType==="solids") badgeVal=null;
                     else badgeVal=e.amount?fmtVol(e.amount,FU):null;
                   } else if(e.type==="nap"){
-                    const dur=e.start&&e.end?minDiff(e.start,e.end):0;
-                    badgeVal=dur>0?hm(dur):null;
+                    if(e._active || !e.end || e.start===e.end){
+                      const [_sh,_sm]=e.start?e.start.split(':').map(Number):[0,0];
+                      const _now=new Date();
+                      const startSec=_sh*3600+_sm*60;
+                      const nowSec=_now.getHours()*3600+_now.getMinutes()*60+_now.getSeconds();
+                      let elSec=nowSec-startSec; if(elSec<0)elSec+=86400;
+                      const elMin=Math.floor(elSec/60);
+                      const elS=elSec%60;
+                      badgeVal=elMin>0?(hm(elMin)+':'+String(elS).padStart(2,'0')+' ⏱'):elS+'s ⏱';
+                    } else {
+                      const dur=e.start&&e.end?minDiff(e.start,e.end):0;
+                      badgeVal=dur>0?hm(dur):null;
+                    }
                   } else if(e.type==="poop"){
                     const raw = e.poopType||"";
                     const isDirty = raw.startsWith("wet + ");
@@ -12168,17 +12379,15 @@ function App(){
               <div style={{fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:12}}>Caring for a baby is hard work. It's important to check in with yourself too.</div>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[["😊","Great"],["🙂","Okay"],["😔","Struggling"],["🆘","Need support"]].map(([emoji,label])=>(
-                  <button key={label} onPointerDown={e=>{
-                    e.preventDefault(); haptic();
+                  <button key={label} onClick={()=>{
+                    haptic();
                     setLastWellbeingDate(todayStr());
                     try{localStorage.setItem("wellbeing_date_v1",todayStr());}catch{};
                     const msg = pick(wellbeingMsgs[label]);
-                    if(label==="Great"){
-                      showMascot("celebration", "💜 "+msg, 5000);
-                    } else if(label==="Struggling"||label==="Need support"){
-                      setShowWellbeing({msg, label});
+                    if(label==="Struggling"||label==="Need support"){
+                      setShowWellbeing({msg: msg + wellbeingResources, label});
                     } else {
-                      showToast("💜 "+msg,5000,3);
+                      showMascot(label==="Great"?"celebration":"happy", "💜 "+msg, 5000);
                     }
                   }} style={{flex:1,minWidth:70,padding:"10px 6px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:3,touchAction:"manipulation"}}>
                     <span style={{fontSize:20}}>{emoji}</span>
@@ -12253,7 +12462,7 @@ function App(){
                   {id:"growth",label:"Growth",icon:"📏"},
                   {id:"reports",label:"Reports",icon:"📊"},
                 ].map(f=>(
-                  <button key={f.id} onPointerDown={e=>{e.preventDefault();haptic(8);setInsightFilter(f.id);}}
+                  <button key={f.id} onClick={()=>{haptic(8);setInsightFilter(f.id);}}
                     style={{display:"flex",alignItems:"center",gap:4,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${insightFilter===f.id?C.ter:C.blush}`,background:insightFilter===f.id?C.ter+"12":"var(--card-bg)",color:insightFilter===f.id?C.ter:C.mid,fontSize:12,fontWeight:600,cursor:_cP,whiteSpace:"nowrap",flexShrink:0,fontFamily:_fI,transition:"all 0.15s"}}>
                     <span style={{fontSize:13}}>{f.icon}</span>{f.label}
                   </button>
@@ -13235,7 +13444,7 @@ function App(){
                       }
                       if(saved){
                         setGrowthForm({date:todayStr(),kg:""});setHeightForm({date:todayStr(),cm:""});
-                        try{navigator.vibrate&&navigator.vibrate([30,20,30]);}catch{}
+                        haptic("light")
                       }
                     }} style={{marginTop:2}}>Save Measurements</PBtn>
                   </div>
@@ -13285,6 +13494,17 @@ function App(){
                   </div>
 
                   {/* ── Export & Print ── */}
+                  {STORE_READY && !isPremium && !trialActive ? (
+                    <div style={{display:"flex",gap:8,marginBottom:16}}>
+                      <button onClick={()=>triggerPaywall("export")} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
+                        <span style={{fontSize:16}}>🔒</span>
+                        <div style={{textAlign:"left"}}>
+                          <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Export Data <span style={{fontSize:10,color:C.ter}}>PREMIUM</span></div>
+                          <div style={{fontSize:10,color:C.lt}}>Unlock to download CSV or print reports</div>
+                        </div>
+                      </button>
+                    </div>
+                  ) : (
                   <div style={{display:"flex",gap:8,marginBottom:16}}>
                     <button onClick={()=>exportCSV()} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
                       <span style={{fontSize:16}}>📊</span>
@@ -13294,27 +13514,28 @@ function App(){
                       </div>
                     </button>
                     <button onClick={()=>{
-                      const w=(()=>{try{return window.open("","_blank");}catch{return null;}})();
+                      const w=(()=>{if(window._isNative){const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";document.body.appendChild(d);return{document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};} try{return window.open("","_blank");}catch{return null;}})();
                       if(!w)return;
                       const rEntries2=(days[selDay]||[]).filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
                       const rNight2=(days[selDay]||[]).filter(e=>e.night);
-                      let html2="<html><head><title>"+(babyName||"Baby")+" Report</title><style>body{font-family:system-ui;max-width:600px;margin:40px auto;padding:0 20px}h1{color:#c9705a}h2{color:#666;border-bottom:1px solid #ddd;padding-bottom:4px}table{width:100%;border-collapse:collapse}td{padding:6px 8px;border-bottom:1px solid #eee;font-size:14px}</style></head><body>";
+                      let html2="<html><head><title>"+(babyName||"Baby")+" Report</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:100%;margin:0;padding:60px 16px 40px;box-sizing:border-box;font-size:15px;line-height:1.5;color:#333}h1{color:#c9705a;font-size:18px;margin:0 0 4px}h2{color:#666;border-bottom:1px solid #ddd;padding-bottom:4px;font-size:15px}table{width:100%;border-collapse:collapse}td{padding:6px 8px;border-bottom:1px solid #eee;font-size:13px;word-break:break-word}</style></head><body>";
                       html2+="<h1>"+fmtLong(selDay)+" — "+(babyName||"Baby")+"</h1>";
                       html2+="<p style='color:#999'>Age: "+fmtAge(age)+" | OBubba</p><h2>Daytime</h2><table>";
                       rEntries2.forEach(e=>{if(e.type==="wake")html2+="<tr><td>☀️ Wake</td><td>"+fmt12(e.time)+"</td></tr>";else if(e.type==="feed")html2+="<tr><td>🍼 Feed</td><td>"+fmt12(e.time)+"</td><td>"+fmtVol(e.amount,FU)+"</td></tr>";else if(e.type==="nap")html2+="<tr><td>😴 Nap</td><td>"+fmt12(e.start)+" — "+fmt12(e.end)+"</td><td>"+hm(minDiff(e.start,e.end))+"</td></tr>";else if(e.type==="sleep")html2+="<tr><td>🌙 Bed</td><td>"+fmt12(e.time)+"</td></tr>";});
                       html2+="</table>";
                       if(rNight2.length){html2+="<h2>Night</h2><table>";rNight2.forEach((e,i)=>{html2+="<tr><td>"+(e.amount>0?"🍼":"🌟")+" "+(i+1)+"</td><td>"+fmt12(e.time)+"</td><td>"+(e.amount?fmtVol(e.amount,FU):"")+(e.selfSettled?" Self settled":"")+"</td></tr>";});html2+="</table>";}
                       html2+="<br><p style='color:#999;font-size:12px'>OBubba — obubba.com</p></body></html>";
-                      const closeBar2=`<div style="position:sticky;top:0;z-index:99;background:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee"><button onclick="window.close();history.back();" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:system-ui">← Back</button><button onclick="window.print()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #ddd;background:white;color:#555;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui">🖨️ Print</button></div>`;
+                      const closeBar2=`<div style="position:sticky;top:0;z-index:99;background:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:system-ui">← Back</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #ddd;background:white;color:#555;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui">🖨️ Print</button></div>`;
                       w.document.write(html2.replace("<body>","<body>"+closeBar2));w.document.close();
                     }} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
                       <span style={{fontSize:16}}>🖨️</span>
                       <div style={{textAlign:"left"}}>
-                        <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Print Report</div>
-                        <div style={{fontSize:10,color:C.lt}}>Save as PDF</div>
+                        <div style={{fontSize:13,fontWeight:700,color:C.deep}}>📋 View Report</div>
+                        <div style={{fontSize:10,color:C.lt}}>Preview & share</div>
                       </div>
                     </button>
                   </div>
+                  )}
 
                   {/* ── Trends sub-section ── */}
                   <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:8}}>📈 Trends</div>
@@ -13680,7 +13901,7 @@ function App(){
                   {id:"teething",label:"Teeth",icon:"🦷"},
                   {id:"weaning",label:"Weaning",icon:"🥄"},
                 ].map(f=>(
-                  <button key={f.id} onPointerDown={e=>{e.preventDefault();haptic(8);setDevFilter(f.id);}}
+                  <button key={f.id} onClick={()=>{haptic(8);setDevFilter(f.id);}}
                     style={{display:"flex",alignItems:"center",gap:4,padding:"7px 14px",borderRadius:99,border:`1.5px solid ${devFilter===f.id?C.ter:C.blush}`,background:devFilter===f.id?C.ter+"12":"var(--card-bg)",color:devFilter===f.id?C.ter:C.mid,fontSize:12,fontWeight:600,cursor:_cP,whiteSpace:"nowrap",flexShrink:0,fontFamily:_fI,transition:"all 0.15s"}}>
                     <span style={{fontSize:13}}>{f.icon}</span>{f.label}
                   </button>
@@ -14202,7 +14423,7 @@ function App(){
       </div>
       
             {tab==="settings"&&(
-        <div style={{padding:"0 16px 100px",maxWidth:520,margin:"0 auto"}}>
+        <div style={{padding:"0 16px 100px",maxWidth:520,margin:"0 auto",marginTop:-16}}>  
 
           {/* ═══ 1. PROFILE ═══ */}
           <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8,marginTop:4}}>👤 Account</div>
@@ -14215,14 +14436,15 @@ function App(){
                 <div style={{fontSize:14,fontWeight:700,color:C.deep}}>OBubba Free</div>
                 <div style={{fontSize:11,color:C.lt}}>Logging + basic guidance</div>
               </div>
-              <button onClick={()=>{haptic();showToast("🚀 Premium coming soon!",2000,1);}} style={{background:"linear-gradient(135deg,"+C.ter+",#a85a44)",border:"none",borderRadius:99,padding:"9px 18px",color:"white",fontSize:12,fontWeight:700,cursor:_cP}}>
+              <button onClick={()=>{haptic();triggerPaywall("general");}} style={{background:"linear-gradient(135deg,"+C.ter+",#a85a44)",border:"none",borderRadius:99,padding:"9px 18px",color:"white",fontSize:12,fontWeight:700,cursor:_cP}}>
                 Understand your baby's rhythm →
               </button>
             </div>
           </div>}
 
           {/* ═══ 2. FAMILY & SHARING ═══ */}
-          <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8,marginTop:18}}>👨‍👩‍👧 Family & Sharing</div>
+          <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8,marginTop:10}}>👨‍👩‍👧 Family & Sharing</div>
+          <div>
           <div style={{fontSize:12,color:C.lt,fontStyle:"italic",marginBottom:10}}>Share the load — keep everyone in sync</div>
           <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
             <button onClick={()=>setShowFamilyModal(true)} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
@@ -14232,7 +14454,7 @@ function App(){
                 <div style={{fontSize:12,color:C.lt,marginTop:2}}>{familyCode?"Manage sync & backup":"Connect with partner or restore data"}</div>
               </div>
             </button>
-            <button onClick={()=>setShowCarerCard(true)} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
+            <button onClick={()=>{setShowCarerCard(true);restartCarerSession();}} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
               <span style={{fontSize:24}}>👩‍🍼</span>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:4,fontSize:15,fontWeight:700,color:C.deep}}>Carer Card <HelpBtn title="Carer Card & Portal" body={"Generate a shareable care guide for anyone looking after "+( babyName||"your baby")+" — babysitters, grandparents, nursery.\n\n📋 The Care Guide includes feeding info, sleep windows, safe sleep guidance, emergency contacts, and your pinned notes.\n\n📱 The QR code opens a Carer Portal where carers can log feeds, naps, and nappy changes from their own phone.\n\n🔒 Carers can only see what they log — they never have access to your data, history, or app.\n\n✓ You'll see their entries under 'Carer Activity' below and can accept them into "+(babyName||"baby")+"'s day log, or dismiss them.\n\nEach child has their own QR code — switch children before sharing."}/></div>
@@ -14271,6 +14493,7 @@ function App(){
                 </div>
               </button>
             )}
+          </div>
           </div>
 
           {/* ═══ 3. PREFERENCES ═══ */}
@@ -14443,7 +14666,7 @@ function App(){
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {items.map((item,i)=>(
-                    <button key={i} onClick={()=>{try{window.open(item.url,"_blank");}catch{}}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg-alt)",cursor:_cP,textAlign:"left",width:"100%"}}>
+                    <button key={i} onClick={()=>{if(window._isNative){window.location.href=item.url;}else{try{window.open(item.url,"_blank");}catch{}}}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg-alt)",cursor:_cP,textAlign:"left",width:"100%"}}>
                       <span style={{fontSize:16}}>{item.emoji}</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:12,fontWeight:600,color:C.deep}}>{item.label}</div>
@@ -14552,7 +14775,7 @@ function App(){
         </div>
       )}
 
-      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"var(--nav-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderTop:"1px solid var(--nav-border)",display:"flex",justifyContent:"space-evenly",alignItems:"center",boxShadow:"var(--nav-shadow)",maxWidth:520,margin:"0 auto",borderRadius:"22px 22px 0 0",padding:"4px 8px env(safe-area-inset-bottom,0)",willChange:"transform",WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}>
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"var(--nav-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderTop:"1px solid var(--nav-border)",display:"flex",justifyContent:"space-evenly",alignItems:"center",boxShadow:"var(--nav-shadow)",maxWidth:520,margin:"0 auto",borderRadius:"22px 22px 0 0",padding:"4px 8px calc(env(safe-area-inset-bottom,0px) + 8px)",willChange:"transform",WebkitTransform:"translateZ(0)",transform:"translateZ(0)"}}>
         {["day","insights","develop","settings"].map(t=>(
           <button key={t} onClick={()=>{haptic();setTab(t);setLogPanel(null);setTodayPlanOpen(false);setNotesOpen(false);setHeroWhyOpen(false);setInsightSection({trends:false,sleep:false,feeding:false,reports:false});setMsShowPastMs(false);}} style={tabSt(t)}>
             <span style={{fontSize:14,transition:"transform 0.15s",transform:tab===t?"scale(1.1)":"scale(1)"}}>{tabIcons[t]}</span>
@@ -14730,7 +14953,7 @@ function App(){
         <Sheet onClose={()=>setLogPanel(null)} title="😴 Log Sleep">
           <div style={{display:"flex",gap:8,marginBottom:16}}>
             {[{v:"nap",label:"😴 Nap"},{v:"bed",label:"🌙 Bedtime"}].map(({v,label})=>(
-              <button key={v} onPointerDown={()=>{haptic();setLogForm(f=>({...f,sleepType:v}));}}
+              <button key={v} onClick={()=>{haptic();setLogForm(f=>({...f,sleepType:v}));}}
                 style={{flex:1,padding:"12px 4px",borderRadius:12,border:`2px solid ${logForm.sleepType===v?C.ter:C.blush}`,background:logForm.sleepType===v?"var(--chip-bg-active)":C.warm,fontSize:14,fontWeight:700,color:logForm.sleepType===v?C.ter:C.mid,cursor:_cP,fontFamily:_fI,WebkitTapHighlightColor:"transparent"}}>
                 {label}
               </button>
@@ -14799,7 +15022,7 @@ function App(){
                     setDays(d=>({...d,[nextDay]:[...(d[nextDay]||[]),entry]}));
                     setLogPanel(null);
                     setSelDay(nextDay);
-                    try{navigator.vibrate&&navigator.vibrate([35,25,35]);}catch{}
+                    haptic("medium")
                     showToast("☀️ Wake logged on "+fmtDate(nextDay),1500,1);
                     fireEventReminders("after_wake");
                   }}>☀️ Start of New Day</PBtn>
@@ -14927,8 +15150,13 @@ function App(){
                     const entries = (d[selDay]||[]).map(e=>e.id===entryId?{...e,start:startT,end:startT,duration:0,_active:true}:e);
                     return{...d,[selDay]:entries};
                   });
-                  try{localStorage.setItem("nap_startT",startT);localStorage.setItem("nap_on","1");localStorage.setItem("nap_sec","0");localStorage.setItem("nap_entry_id",entryId);}catch{}
-                  setNapStartT(startT);setNapSec(0);setNapOn(true);setNapEntryId(entryId);setTimerMode("activeSleep");
+                  const [sh,sm]=startT.split(":").map(Number);
+                  const startMins=sh*60+sm;
+                  const nowM=new Date().getHours()*60+new Date().getMinutes();
+                  let elapsedSec=(nowM-startMins)*60+new Date().getSeconds();
+                  if(elapsedSec<0) elapsedSec+=86400;
+                  try{localStorage.setItem("nap_startT",startT);localStorage.setItem("nap_on","1");localStorage.setItem("nap_sec",String(elapsedSec));localStorage.setItem("nap_entry_id",entryId);}catch{}
+                  setNapStartT(startT);setNapSec(elapsedSec);setNapOn(true);setNapEntryId(entryId);setTimerMode("activeSleep");
                   setModal(null);setEditEntry(null);
                   showToast("⏱ Nap timer started from " + fmt12(startT),2000,1);
                 }} style={{width:"100%",padding:"14px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#50a888,#3a8870)",color:"white",fontSize:15,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:12,boxShadow:"0 4px 12px rgba(80,168,136,0.35)"}}>
@@ -15343,13 +15571,13 @@ function App(){
               <button onClick={()=>{setShowPaywall(false);if(window._purchases)window._purchases.purchase&&window._purchases.getOfferings().then(o=>o&&o.annual&&window._purchases.purchase(o.annual));else showToast("🚀 Premium coming soon!",2000,1);}} style={{width:"100%",padding:"14px",borderRadius:99,border:"none",background:"linear-gradient(135deg,"+C.ter+",#a85a44)",color:"white",fontSize:16,fontWeight:700,cursor:_cP}}>
                 Try free for 14 days
               </button>
-              <div style={{fontSize:12,color:C.lt}}>Then £4.99/month or £29.99/year</div>
-              <div style={{fontSize:11,color:C.lt}}>Less than a coffee a month ☕ · Cancel anytime</div>
+              <div style={{fontSize:12,color:C.lt}}>Then £4.99/month or £39.99/year</div>
+              <div style={{fontSize:11,color:C.lt}}>For the price of a coffee a month, give yourself the gift of understanding your baby's rhythm ☕</div>
             </div>
             <div style={{display:"flex",gap:12,justifyContent:"center",fontSize:11,color:C.lt}}>
               <span>£4.99/mo</span>
-              <span style={{color:C.ter,fontWeight:700}}>£29.99/yr (save 50%)</span>
-              <span>£59.99 lifetime</span>
+              <span style={{color:C.ter,fontWeight:700}}>£39.99/yr (save 33%) ★ BEST VALUE</span>
+              <span>£79.99 lifetime</span>
             </div>
             {window._purchases && <button onClick={()=>{setShowPaywall(false);window._purchases.restore().then(r=>{if(r.isPremium)showToast("✅ Premium restored!",2000,1);else showToast("No active subscription found",2000,1);});}} style={{marginTop:12,background:"none",border:"none",color:C.lt,fontSize:11,cursor:_cP,textDecoration:"underline"}}>Restore purchases</button>}
           </div>
@@ -15369,7 +15597,7 @@ function App(){
                 <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep}}>🎵 Sound Machine</div>
                 <div style={{fontSize:12,color:C.lt,marginTop:2}}>Calming sounds for sleep & soothing</div>
               </div>
-              {soundPlaying&&<button onPointerDown={e=>{e.preventDefault();stopSound();haptic();}} style={{padding:"8px 16px",borderRadius:99,border:_bN,background:"#e8574a",color:"white",fontSize:12,fontWeight:700,cursor:_cP}}>⏹ Stop</button>}
+              {soundPlaying&&<button onClick={()=>{stopSound();haptic();}} style={{padding:"8px 16px",borderRadius:99,border:_bN,background:"#e8574a",color:"white",fontSize:12,fontWeight:700,cursor:_cP}}>⏹ Stop</button>}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
               {[
@@ -15380,8 +15608,8 @@ function App(){
                 {id:"heartbeat",emoji:"💓",label:"Heartbeat",desc:"Womb-like rhythm"},
                 {id:"shush",emoji:"🤫",label:"Shush",desc:"Rhythmic shushing"},
               ].map(s=>(
-                <button key={s.id} onPointerDown={e=>{
-                  e.preventDefault();haptic();
+                <button key={s.id} onClick={()=>{
+                  haptic();
                   if(soundPlaying===s.id){stopSound();}
                   else{playSound(s.id,soundVolume,soundTimer);}
                 }} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"14px 8px",borderRadius:16,border:`2px solid ${soundPlaying===s.id?C.mint:C.blush}`,background:soundPlaying===s.id?C.mint+"12":"var(--card-bg)",cursor:_cP,transition:"all 0.15s"}}>
@@ -15412,7 +15640,7 @@ function App(){
               <div style={{fontSize:11,fontFamily:_fM,color:C.lt,marginBottom:6}}>Auto-stop timer</div>
               <div style={{display:"flex",gap:6}}>
                 {[0,15,30,45,60].map(m=>(
-                  <button key={m} onPointerDown={e=>{e.preventDefault();setSoundTimer(m);haptic(8);
+                  <button key={m} onClick={()=>{setSoundTimer(m);haptic(8);
                     if(soundPlaying){
                       if(soundTimerRef.current){clearTimeout(soundTimerRef.current);soundTimerRef.current=null;}
                       if(m>0) soundTimerRef.current=setTimeout(()=>{stopSound();showToast("🔇 Sound machine stopped",2000,1);},m*60000);
@@ -15557,8 +15785,8 @@ function App(){
             </div>
             <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>Notes</div>
             <input placeholder="e.g. spotted by doctor" value={teethingForm.note} onChange={e=>setTeethingForm(f=>({...f,note:e.target.value}))} style={{width:"100%",fontSize:14,padding:"10px 12px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,marginBottom:18,boxSizing:_bBB,fontFamily:_fI}}/>
-            <button onPointerDown={e=>{
-              e.preventDefault(); haptic();
+            <button onClick={()=>{
+              haptic();
               if(!teethingForm.tooth&&!teethingForm.note) return;
               setTeething(prev=>[...prev,{id:uid(),tooth:teethingForm.tooth,date:teethingForm.date||todayStr(),symptoms:teethingForm.symptoms,note:teethingForm.note}]);
               setShowTeethingForm(false);
@@ -15642,8 +15870,8 @@ Mild reactions: localised rash, slight swelling around mouth — contact your . 
 Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy — call  immediately. Do not wait.</div>
               </div>
             )}
-            <button onPointerDown={e=>{
-              e.preventDefault(); haptic();
+            <button onClick={()=>{
+              haptic();
               if(!weaningForm.food.trim()) return;
               setWeaning(prev=>[...prev,{id:uid(),food:weaningForm.food.trim(),date:weaningForm.date||todayStr(),reaction:weaningForm.reaction,note:weaningForm.note,liked:weaningForm.liked,allergens:detectAllergens(weaningForm.food)}]);
               setShowWeaningForm(false);
@@ -15667,7 +15895,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
         const topScore = _isFreeUser ? 0 : (reasons.length ? reasons[0].score : 0);
         const lowConf = topScore < 50;
         return (
-        <div onPointerDown={e=>{if(e.target===e.currentTarget){setShowCryingHelper(false);setCryingResult(null);}}} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.55)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end"}}>
+        <div onClick={e=>{if(e.target===e.currentTarget){setShowCryingHelper(false);setCryingResult(null);}}} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.55)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end"}}>
           <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",width:"100%",boxSizing:_bBB,maxHeight:"80vh",overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
             <div style={{position:"sticky",top:0,zIndex:2,display:"flex",justifyContent:"flex-end",marginBottom:-16}}>
               <button onClick={()=>{setShowCryingHelper(false);setCryingResult(null);}} style={{width:36,height:36,borderRadius:"50%",border:_bN,background:"var(--card-bg-solid)",color:C.deep,fontSize:18,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>✕</button>
@@ -15738,8 +15966,8 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
                 <div style={{fontSize:13,fontWeight:700,color:C.deep,textAlign:"center",marginBottom:8}}>What helped?</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center"}}>
                   {[["🍼","Hungry","hungry"],["😴","Tired/sleep","overtired"],["💨","Wind/gas","wind_or_gas"],["🧷","Nappy change","wet_or_dirty_nappy"],["🦷","Teething","teething_pain"],["🌡️","Temperature","too_hot_or_cold"],["🫣","Overstimulated","overstimulated"],["🤱","Comfort/cuddle","comfort"],["🛁","Bath","bath"],["🚶","Walk/fresh air","walk"]].map(([emoji,label,key],i)=>(
-                    <button key={i} onPointerDown={e=>{
-                      e.preventDefault(); haptic();
+                    <button key={i} onClick={()=>{
+                      haptic();
                       setCryingHelps(prev=>({...prev,[key]:(prev[key]||0)+1}));
                       setCryingResult(label);
                       setTimeout(()=>{setShowCryingHelper(false);setCryingResult(null);},800);
@@ -15747,7 +15975,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
                       {emoji} {label}
                     </button>
                   ))}
-                  <button onPointerDown={e=>{e.preventDefault();setCryingResult("none");}} style={{padding:"7px 12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg-solid)",fontSize:12,fontWeight:600,color:C.lt,cursor:_cP}}>
+                  <button onClick={()=>{setCryingResult("none");}} style={{padding:"7px 12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg-solid)",fontSize:12,fontWeight:600,color:C.lt,cursor:_cP}}>
                     🤷 Nothing yet
                   </button>
                 </div>
@@ -15908,11 +16136,18 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             <button onClick={()=>{
               haptic();
               const html = generateCarerCardHTML();
-              const closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="window.close();history.back();" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window.print()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
-              const w = (()=>{try{return window.open("","_blank");}catch{return null;}})();
+              const closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
+              const w = (()=>{
+              if(window._isNative){
+                const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
+                document.body.appendChild(d);
+                return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
+              }
+              try{return window.open("","_blank");}catch{return null;}
+            })();
               if(w){ w.document.write(html.replace("<body>","<body>"+closeBar)); w.document.close(); }
             }} style={{width:"100%",padding:"13px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
-              🖨️ Preview / Print
+              📋 Preview
             </button>
             <button onClick={()=>setShowCarerCard(false)} style={{width:"100%",padding:"12px",borderRadius:99,border:_bN,background:C.blush,color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
               Close
@@ -16033,7 +16268,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
                 setDays(d=>({...d,[nextDay]:[...(d[nextDay]||[]),newEntry]}));
                 setWakeEditEntry(null);
                 setSelDay(nextDay);
-                try{navigator.vibrate&&navigator.vibrate([35,25,35]);}catch{}
+                haptic("medium")
                 showToast("☀️ Moved to "+fmtDate(nextDay),1500,1);
               }} style={{width:"100%",padding:"14px",borderRadius:99,border:_bN,background:C.ter,color:"white",fontSize:15,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
                 ☀️ Morning Wake (Next Day)
@@ -16057,7 +16292,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
       )}
             {showNightWake&&(
         <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.55)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end"}} onClick={e=>{if(e.target===e.currentTarget){setShowNightWake(false);setNightEditId(null);}}}>
-          <div onPointerDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()} onTouchStart={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",width:"100%",boxSizing:_bBB,maxHeight:"92vh",overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",width:"100%",boxSizing:_bBB,maxHeight:"92vh",overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
             <div style={{position:"sticky",top:0,zIndex:2,display:"flex",justifyContent:"flex-end",marginBottom:-16}}>
               <button onClick={()=>{setShowNightWake(false);setNightEditId(null);}} style={{width:36,height:36,borderRadius:"50%",border:_bN,background:"var(--card-bg-solid)",color:C.deep,fontSize:18,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>✕</button>
             </div>
@@ -16234,8 +16469,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               onChange={e=>setNwForm(f=>({...f,note:e.target.value}))}
               style={{width:"100%",fontSize:15,padding:"12px 14px",borderRadius:14,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",color:C.deep,outline:_oN,fontFamily:_fI,marginBottom:20,boxSizing:_bBB}}/>
 
-            <button onPointerDown={e=>{
-              e.preventDefault();
+            <button onClick={()=>{
               haptic(20);
               const saveTime = nwForm.time || nowTime();
               const isMilkAssisted = nwForm.assisted && nwForm.assistedType==="milk";
@@ -16245,10 +16479,11 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
                 : nwForm.assisted
                   ? [isMilkAssisted?"Assisted – milk":("Assisted – "+(nwForm.assistedNote||"assisted")), nwForm.note].filter(Boolean).join(" · ")
                   : (nwForm.note||"");
-              // Always log as "wake" — feed amount is embedded in the entry
+              // Log as "feed" if milk was given, "wake" otherwise
+              const hadMilk = isMilkAssisted || mlVal > 0;
               const entry = {
-                id: nightEditId || uid(), type: "wake", time: saveTime, amount: mlVal,
-                feedType: mlVal > 0 ? "milk" : undefined, night: true, nightLocked: true,
+                id: nightEditId || uid(), type: hadMilk ? "feed" : "wake", time: saveTime, amount: mlVal,
+                feedType: hadMilk ? "milk" : undefined, night: true, nightLocked: true,
                 selfSettled: !!nwForm.selfSettled, assisted: !!nwForm.assisted,
                 note: noteStr,
               };
@@ -16276,7 +16511,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               setShowNightWake(false);
               setNightEditId(null);
               showToast(nightEditId?"🌟 Night Wake Updated ✓":"🌟 Night Wake Logged ✓",1200,1);
-            }} style={{width:"100%",padding:"15px",borderRadius:99,border:_bN,background:`linear-gradient(135deg,#7b68ee,#5040a0)`,color:"white",fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,WebkitTapHighlightColor:"transparent"}}>
+            }} style={{width:"100%",padding:"15px",borderRadius:99,border:_bN,background:`linear-gradient(135deg,#7b68ee,#5040a0)`,color:"white",fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,WebkitTapHighlightColor:"transparent",touchAction:"manipulation"}}>
               {nightEditId ? "Update Wake ✦" : "Save Wake ✦"}
             </button>
           </div>
@@ -16514,7 +16749,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
 
             {/* ═══ Add Appointment Modal ═══ */}
       {showAddAppt&&(
-        <div style={{position:"fixed",inset:0,zIndex:9990,background:"var(--sheet-overlay)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowAddAppt(false)}>
+        <div style={{position:"fixed",inset:0,zIndex:9990,background:"var(--sheet-overlay)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>{setShowAddAppt(false);setEditApptId(null);}}>
           <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(30px) saturate(1.6)",WebkitBackdropFilter:"blur(30px) saturate(1.6)",borderRadius:24,padding:"24px 20px",maxWidth:360,width:"100%",maxHeight:"85vh",overflowY:"auto",boxShadow:"0 20px 60px rgba(0,0,0,0.4)",border:"1px solid var(--card-border)"}}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:16}}>📅 Add Appointment</div>
             <Inp label="Title" type="text" placeholder="e.g. Health visitor, GP, vaccination" value={apptForm.title} onChange={e=>setApptForm(f=>({...f,title:e.target.value}))}/>
@@ -16551,7 +16786,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               </button>
             )}
             <PBtn onClick={addAppointment}>Save Appointment</PBtn>
-            <button onClick={()=>setShowAddAppt(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:"1px solid var(--card-border)",background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
+            <button onClick={()=>{setShowAddAppt(false);setEditApptId(null);}} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:"1px solid var(--card-border)",background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
           </div>
         </div>
       )}
@@ -16565,7 +16800,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             <textarea value={pinForm} onChange={e=>setPinForm(e.target.value)} placeholder={"e.g. CMPA — confirmed by GP\nBorn 3 weeks early — adjusted age\nReflux — keep upright 20min after feeds"}
               style={{width:"100%",fontSize:15,padding:"12px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--input-bg)",color:C.deep,outline:_oN,fontFamily:_fI,resize:"vertical",minHeight:80,boxSizing:_bBB}}/>
             <div style={{marginTop:10}}><PBtn onClick={addPinnedNote}>Pin Note</PBtn></div>
-            <button onClick={()=>setShowAddPin(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:"1px solid var(--card-border)",background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
+            <button onClick={()=>{setShowAddPin(false);setEditNoteId(null);setPinForm("");}} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:"1px solid var(--card-border)",background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
           </div>
         </div>
       )}
@@ -16610,7 +16845,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               </button>
             )}
             <PBtn onClick={addReminder}>Save Reminder</PBtn>
-            <button onClick={()=>setShowAddReminder(false)} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:"1px solid var(--card-border)",background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
+            <button onClick={()=>{setShowAddReminder(false);setEditRemId(null);}} style={{width:"100%",marginTop:6,padding:"10px",borderRadius:12,border:"1px solid var(--card-border)",background:"var(--card-bg)",cursor:_cP,fontSize:13,fontWeight:600,color:C.lt,fontFamily:_fI}}>Cancel</button>
           </div>
         </div>
       )}
@@ -16734,7 +16969,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
                         {/* ═══ Schedule Maker Modal ═══ */}
       {showScheduleMaker && (
         <div style={{position:"fixed",inset:0,zIndex:9990,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>{setShowScheduleMaker(false);setSmResult(null);}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px 52px",width:"100%",maxWidth:520,maxHeight:"92vh",overflowY:"auto",position:"relative"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px 80px",width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
             <div style={{position:"sticky",top:0,zIndex:2,display:"flex",justifyContent:"flex-end",marginBottom:-16}}>
               <button onClick={()=>{setShowScheduleMaker(false);setSmResult(null);}} style={{width:36,height:36,borderRadius:"50%",border:_bN,background:"var(--card-bg-solid)",color:C.deep,fontSize:18,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>✕</button>
             </div>
@@ -16751,7 +16986,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:6}}>Does baby need to be…</label>
               <div style={{display:"flex",borderRadius:12,overflow:"hidden",border:`1.5px solid ${C.blush}`}}>
                 {[["awake","☀️ Awake"],["asleep","😴 Asleep"]].map(([id,label])=>(
-                  <button key={id} onPointerDown={e=>{e.preventDefault();haptic(8);setSmEvent(f=>({...f,mode:id}));setSmResult(null);}}
+                  <button key={id} onClick={()=>{haptic(8);setSmEvent(f=>({...f,mode:id}));setSmResult(null);}}
                     style={{flex:1,padding:"10px 8px",border:"none",background:smEvent.mode===id?(id==="awake"?"rgba(212,168,85,0.15)":"rgba(111,168,152,0.15)"):"var(--card-bg)",color:smEvent.mode===id?(id==="awake"?C.gold:C.mint):C.lt,fontSize:13,fontWeight:700,cursor:_cP,fontFamily:_fI,transition:"all 0.15s"}}>
                     {label}
                   </button>
@@ -16766,7 +17001,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:6}}>How long for?</label>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {[30,45,60,90,120].map(d=>(
-                  <button key={d} onPointerDown={()=>setSmEvent(f=>({...f,duration:d}))}
+                  <button key={d} onClick={()=>setSmEvent(f=>({...f,duration:d}))}
                     style={{padding:"8px 14px",borderRadius:10,border:`1.5px solid ${smEvent.duration===d?C.ter:C.blush}`,background:smEvent.duration===d?"var(--chip-bg-active)":"var(--card-bg)",color:smEvent.duration===d?C.ter:C.mid,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
                     {d>=60?`${d/60}h${d%60?` ${d%60}m`:""}`:d+"m"}
                   </button>
@@ -16875,8 +17110,8 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               left:cropOffset.x||0,top:cropOffset.y||0,
               cursor:"grab"
             }}
-            onPointerDown={e=>{
-              e.preventDefault();
+            onClick={()=>{
+              
               const startX=e.clientX,startY=e.clientY;
               const ox=cropOffset.x||0,oy=cropOffset.y||0;
               const move=ev=>{setCropOffset(c=>({...c,x:ox+(ev.clientX-startX),y:oy+(ev.clientY-startY)}));};
@@ -16936,7 +17171,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             <div style={{fontSize:13,fontWeight:700,color:C.deep,marginBottom:8}}>How long should this last?</div>
             <div style={{display:"flex",gap:8,marginBottom:16}}>
               {[["today","Today only"],["permanent","Every day"]].map(([v,l])=>(
-                <button key={v} onPointerDown={()=>setAdjForm(f=>({...f,duration:v}))}
+                <button key={v} onClick={()=>setAdjForm(f=>({...f,duration:v}))}
                   style={{flex:1,padding:"10px",borderRadius:12,border:`2px solid ${adjForm.duration===v?C.ter:C.blush}`,background:adjForm.duration===v?"var(--chip-bg-active)":"var(--card-bg)",color:adjForm.duration===v?C.ter:C.mid,fontSize:13,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
                   {v==="today"?"📅 Today only":"🔁 Every day"}
                 </button>
@@ -16971,7 +17206,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
           </div>
           <div onClick={ev=>ev.stopPropagation()} style={{marginTop:16,display:"flex",gap:12}}>
             <button onClick={()=>setViewPhoto(null)} style={{padding:"10px 28px",borderRadius:99,background:"rgba(255,255,255,0.15)",border:"1.5px solid rgba(255,255,255,0.25)",color:"white",fontSize:14,fontWeight:700,cursor:_cP,fontFamily:"inherit"}}>Close</button>
-            <button onClick={()=>{setPhotos(prev=>prev.filter(x=>x.id!==viewPhoto.id));setViewPhoto(null);try{navigator.vibrate&&navigator.vibrate(30);}catch{}}} style={{padding:"10px 28px",borderRadius:99,background:"rgba(224,96,112,0.25)",border:"1.5px solid rgba(224,96,112,0.45)",color:"#ff8a95",fontSize:14,fontWeight:700,cursor:_cP,fontFamily:"inherit"}}>Delete Photo</button>
+            <button onClick={()=>{setPhotos(prev=>prev.filter(x=>x.id!==viewPhoto.id));setViewPhoto(null);haptic("light")}} style={{padding:"10px 28px",borderRadius:99,background:"rgba(224,96,112,0.25)",border:"1.5px solid rgba(224,96,112,0.45)",color:"#ff8a95",fontSize:14,fontWeight:700,cursor:_cP,fontFamily:"inherit"}}>Delete Photo</button>
           </div>
         </div>
       )}
@@ -17102,12 +17337,12 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               @keyframes mascotTextIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
             `}</style>
             <img
-              src={mascotPopup.type==="celebration"?"obubba-celebration.png":mascotPopup.type==="loading"?"obubba-loading.png":"obubba-thinking.png"}
+              src={mascotPopup.type==="celebration"?"obubba-celebration.png":mascotPopup.type==="happy"?"obubba-happy.png":mascotPopup.type==="loading"?"obubba-loading.png":"obubba-thinking.png"}
               alt=""
               style={{width:220,height:220,objectFit:"contain",animation:"mascotFloat 2s ease-in-out 0.5s infinite",filter:"drop-shadow(0 16px 36px rgba(217,207,243,0.45))"}}
             />
-            <div className="mascot-pill" style={{marginTop:14,background:document.body.classList.contains("dark-mode")?"rgba(30,40,60,0.92)":"rgba(255,255,255,0.95)",borderRadius:99,padding:"12px 28px",boxShadow:"0 0 28px rgba(246,221,227,0.50), 0 4px 20px rgba(217,207,243,0.30), inset 0 1px 0 rgba(255,255,255,0.25)",display:"inline-block",border:"1.5px solid rgba(255,255,255,0.18)",animation:"mascotTextIn 0.4s ease 0.3s both"}}>
-              <div style={{fontSize:16,fontWeight:700,color:document.body.classList.contains("dark-mode")?"#F0F2F5":"#5B4F5F",fontFamily:"'DM Sans',sans-serif",letterSpacing:"0.01em"}}>{mascotPopup.message}</div>
+            <div className="mascot-pill" style={{marginTop:14,background:isDark?"rgba(30,40,60,0.92)":"rgba(255,255,255,0.95)",borderRadius:99,padding:"12px 28px",boxShadow:"0 0 28px rgba(246,221,227,0.50), 0 4px 20px rgba(217,207,243,0.30), inset 0 1px 0 rgba(255,255,255,0.25)",display:"inline-block",border:"1.5px solid rgba(255,255,255,0.18)",animation:"mascotTextIn 0.4s ease 0.3s both"}}>
+              <div style={{fontSize:16,fontWeight:700,color:isDark?"#F0F2F5":"#5B4F5F",fontFamily:"'DM Sans',sans-serif",letterSpacing:"0.01em"}}>{mascotPopup.message}</div>
             </div>
           </div>
         </div>
