@@ -1642,6 +1642,8 @@ function App(){
   // ── Breastfeeding Support Layer ──
   const[bfSupport,setBfSupport]=useState(null);
   const bfSupportShownRef=useRef(false);
+  const[showBfHub,setShowBfHub]=useState(false);
+  const[bfHubSection,setBfHubSection]=useState(null);
   const[lastBreastSide,setLastBreastSide]=useState(()=>{try{return localStorage.getItem("last_breast_side")||null;}catch{return null;}});
   // ── 4-tier Wellbeing Check-in ──
   const[wellbeingResponse,setWellbeingResponse]=useState(()=>{try{const v=JSON.parse(localStorage.getItem("wb_response_v1")||"null");if(v&&v.date===todayStr())return v.key;return null;}catch{return null;}});
@@ -1734,6 +1736,50 @@ function App(){
     if(!lastWellbeingDate) return true;
     return lastWellbeingDate !== todayStr();
   })();
+  // Wellbeing response history — last 7 days
+  const wellbeingHistory = React.useMemo(()=>{
+    try{ return JSON.parse(localStorage.getItem("wellbeing_history_v1")||"[]"); }catch{ return []; }
+  },[lastWellbeingDate]);
+  const saveWellbeingHistory = (label) => {
+    try{
+      const history = JSON.parse(localStorage.getItem("wellbeing_history_v1")||"[]");
+      history.push({date:todayStr(),label});
+      const recent = history.slice(-14); // keep 14 days
+      localStorage.setItem("wellbeing_history_v1", JSON.stringify(recent));
+    }catch{}
+  };
+  // Pattern-based stress detection — 3+ hard days in last 7
+  const wellbeingStressPattern = React.useMemo(()=>{
+    const recent = wellbeingHistory.slice(-7);
+    const hardDays = recent.filter(r => r.label==="Struggling" || r.label==="Need support").length;
+    return hardDays >= 2;
+  },[wellbeingHistory]);
+  // Partner check-in due (monthly)
+  const[lastPartnerCheckDate,setLastPartnerCheckDate]=useState(()=>{try{return localStorage.getItem("partner_check_v1")||"";}catch{return "";}});
+  const partnerCheckDue = (()=>{
+    if(!lastPartnerCheckDate) return true;
+    const last = new Date(lastPartnerCheckDate);
+    const now = new Date();
+    return (now - last) > 28*24*60*60*1000;
+  })();
+  const[showPartnerCheck,setShowPartnerCheck]=useState(false);
+  // Data-driven stress signal — 5+ consecutive nights with 3+ wakes
+  const wellbeingDataSignal = React.useMemo(()=>{
+    try{
+      const _dk = Object.keys(days).sort().slice(-7);
+      if(_dk.length < 5) return false;
+      const hardNights = _dk.filter(d => {
+        const nextD = (()=>{const dt=new Date(d+"T12:00:00");dt.setDate(dt.getDate()+1);return dt.toISOString().slice(0,10);})();
+        const wakes = (days[nextD]||[]).filter(e=>e.night&&(e.type==="wake"||e.type==="feed")).length;
+        return wakes >= 3;
+      }).length;
+      return hardNights >= 5;
+    }catch{return false;}
+  },[days]);
+  // Signal shown today
+  const[dataSignalShownToday,setDataSignalShownToday]=useState(()=>{
+    try{return localStorage.getItem("data_signal_date")=== new Date().toISOString().slice(0,10);}catch{return false;}
+  });
   useEffect(()=>{try{localStorage.setItem("carer_notes_v1",carerNotes);}catch{}},[carerNotes]);
   useEffect(()=>{try{localStorage.setItem("emergency_contacts_v1",JSON.stringify(emergencyContacts));}catch{}},[emergencyContacts]);
   useEffect(()=>{try{localStorage.setItem("carer_comfort_v1",carerComfort);}catch{}},[carerComfort]);
@@ -2180,6 +2226,7 @@ function App(){
   const[csName,setCsName]=useState("");
   const[csDob,setCsDob]=useState("");
   const[csSex,setCsSex]=useState("");
+  const[csDueDate,setCsDueDate]=useState("");
   const[csConfirmDelete,setCsConfirmDelete]=useState(false);
   const[joinError,setJoinError]=useState("");
   const[fbReady,setFbReady]=useState(false);
@@ -3565,20 +3612,32 @@ function App(){
     try {
     const _parentNudgeShown = (()=>{try{return localStorage.getItem("parent_nudge_date")===todayStr();}catch{return false;}})();
     const _selfCareNudges = [
-      "💧 Have you had water today? You matter too.",
-      "🍽️ Remember to have a bite to eat — you need fuel too.",
-      "🫁 Take three slow breaths. You're doing enough.",
-      "☀️ Step outside for a minute if you can. Fresh air resets everything.",
-      "🤍 Be kind to yourself today. You're showing up every day and that's everything.",
-      "💪 You're stronger than you think. Give yourself credit.",
-      "📱 Put your phone down for 5 minutes and just be with " + _name + ".",
-      "🧡 Have you spoken to another adult today? Connection matters.",
-      "🛁 When " + _name + " naps, do something just for you. Even 10 minutes counts.",
-      "💜 You don't have to be perfect. You just have to be there.",
+      "💧 Have you had water today? Not coffee — actual water. You matter too.",
+      "🍽️ Have you eaten a proper meal today? Your body needs fuel to do this.",
+      "🫁 Three slow breaths right now. In for 4, hold for 4, out for 6. You've got this.",
+      "☀️ Step outside for five minutes if you can. Even just the doorstep. Fresh air is real medicine.",
+      "🤍 You're doing a hard job with no days off, no training, and very little sleep. Be kind to yourself.",
+      "💪 Think of one thing you did well today. Just one. You deserve to notice.",
+      "🧡 Have you spoken to another adult today? Even a text counts. Connection matters more than you think.",
+      "🛁 " + _name + " is looked after. For the next 10 minutes — what would feel good for you?",
+      "💜 The mess can wait. The to-do list can wait. Rest is not a reward, it's a necessity.",
+      "🌙 You've been up a lot. Cumulative sleep debt is real and it affects everything. Even one extra nap matters.",
+      "☕ You've been going all day. Whatever you need right now — do that thing.",
+      "🫶 Parenting a baby is one of the most isolating things a person can do. You're not alone, even when it feels that way.",
     ];
-    _selfCareNudge = (!_parentNudgeShown && !_isNightTime && _h >= 10)
-      ? _selfCareNudges[Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000) % _selfCareNudges.length]
-      : null;
+    // Nap-triggered nudge: if baby has been napping for 40+ mins, suggest the parent does something
+    const _napOn = napOn;
+    const _napElapsed = napSec ? Math.floor(napSec / 60) : 0;
+    const _napNudgeKey = "nap_nudge_" + selDay;
+    const _napNudgeShown = (()=>{try{return localStorage.getItem(_napNudgeKey)==="1";}catch{return false;}})();
+    if(_napOn && _napElapsed >= 40 && !_napNudgeShown && !_isNightTime) {
+      _selfCareNudge = "😴 " + _name + " has been napping " + _napElapsed + " minutes. Put the phone down — do something just for you right now.";
+      try{localStorage.setItem(_napNudgeKey, "1");}catch{}
+    } else {
+      _selfCareNudge = (!_parentNudgeShown && !_isNightTime && _h >= 10)
+        ? _selfCareNudges[Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000) % _selfCareNudges.length]
+        : null;
+    }
     } catch(e) { _selfCareNudge = null; }
 
     // ── Feed & nappy gentle context (computed early, used in all card variants) ──
@@ -10991,7 +11050,7 @@ function App(){
 
         </div>
         {!nameEdit ? (
-          <div onClick={()=>{setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsConfirmDelete(false);setShowChildSettings(true);}} style={{cursor:_cP,marginBottom:2,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+          <div onClick={()=>{setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsDueDate(activeChild.dueDate||"");setCsConfirmDelete(false);setShowChildSettings(true);}} style={{cursor:_cP,marginBottom:2,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
             <div onClick={e=>{e.stopPropagation();if(childPhotoInputRef.current)childPhotoInputRef.current.click();}} onTouchEnd={e=>{e.stopPropagation();e.preventDefault();if(childPhotoInputRef.current)childPhotoInputRef.current.click();}} style={{width:48,height:48,borderRadius:14,overflow:"hidden",flexShrink:0,border:"2px solid rgba(255,255,255,0.8)",boxShadow:"0 3px 12px rgba(0,0,0,0.15)",cursor:_cP,position:"relative"}}>
               <img src={activeChild.photo||"obubba-happy.png"} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
                 onError={e=>{e.target.src="obubba-happy.png";}}/>
@@ -12851,9 +12910,10 @@ function App(){
                     haptic();
                     setLastWellbeingDate(todayStr());
                     try{localStorage.setItem("wellbeing_date_v1",todayStr());}catch{};
+                    saveWellbeingHistory(label);
                     const msg = pick(wellbeingMsgs[label]);
                     if(label==="Struggling"||label==="Need support"){
-                      setShowWellbeing({msg: msg + wellbeingResources, label});
+                      setShowWellbeing({msg, label, resources: wellbeingResources});
                     } else {
                       showMascot(label==="Great"?"celebration":"happy", "💜 "+msg, 5000);
                     }
@@ -12878,6 +12938,136 @@ function App(){
 
           return (
             <div>
+              {/* ── Data-driven stress signal ── */}
+              {wellbeingDataSignal && !dataSignalShownToday && (()=>{
+                const _aw = age ? age.totalWeeks : 0;
+                return (
+                  <div style={{background:"linear-gradient(135deg,rgba(123,104,238,0.1),rgba(192,112,136,0.08))",border:"1.5px solid rgba(123,104,238,0.25)",borderRadius:18,padding:"16px",marginBottom:14}}>
+                    <div style={{fontSize:15,fontWeight:700,color:C.deep,marginBottom:8}}>💜 You've had a tough run lately</div>
+                    <div style={{fontSize:13,color:C.mid,lineHeight:1.7,marginBottom:12}}>
+                      {babyName||"Baby"}'s had a lot of night wakes this week. That level of sleep disruption is genuinely exhausting — it affects mood, decision-making, and how you feel about everything. It's not just tiredness, it's cumulative stress.
+                    </div>
+                    <div style={{fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:12}}>
+                      How are <em>you</em> doing with it?
+                    </div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+                      {[["😓","Struggling"],["😐","Getting through it"],["💪","I'm okay"]].map(([emoji,label])=>(
+                        <button key={label} onClick={()=>{
+                          haptic();
+                          setDataSignalShownToday(true);
+                          try{localStorage.setItem("data_signal_date",new Date().toISOString().slice(0,10));}catch{}
+                          if(label==="Struggling"){
+                            saveWellbeingHistory("Struggling");
+                            setShowWellbeing({msg:"It's brave to admit that. You're not alone — many parents feel exactly this way, and it doesn't mean you're failing.", label:"Struggling", resources:wellbeingResources});
+                          } else {
+                            showMascot("happy", "💜 You're doing brilliantly even when it's hard.", 4000);
+                          }
+                        }} style={{flex:1,minWidth:80,padding:"10px 8px",borderRadius:12,border:`1.5px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                          <span style={{fontSize:20}}>{emoji}</span>
+                          <span style={{fontSize:10,fontWeight:600,color:C.mid,textAlign:"center"}}>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={()=>{setDataSignalShownToday(true);try{localStorage.setItem("data_signal_date",new Date().toISOString().slice(0,10));}catch{}}}
+                      style={{fontSize:11,color:C.lt,background:_bN,border:_bN,cursor:_cP}}>Dismiss</button>
+                  </div>
+                );
+              })()}
+
+              {/* ── Stress pattern card — 2+ hard check-ins in 7 days ── */}
+              {wellbeingStressPattern && wellbeingDue && (
+                <div style={{background:"linear-gradient(135deg,rgba(192,112,136,0.1),rgba(212,168,85,0.06))",border:"1.5px solid rgba(192,112,136,0.3)",borderRadius:18,padding:"16px",marginBottom:14}}>
+                  <div style={{fontSize:15,fontWeight:700,color:C.deep,marginBottom:8}}>💜 Checking in on you</div>
+                  <div style={{fontSize:13,color:C.mid,lineHeight:1.7,marginBottom:12}}>
+                    You've mentioned feeling tough a couple of times recently. That's worth paying attention to — not because something is wrong, but because you deserve support too.
+                  </div>
+                  <div style={{fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:12}}>
+                    Prolonged parenting stress is real. It's not weakness — it's a signal your mind and body need care. One conversation with your GP or health visitor can make a genuine difference.
+                  </div>
+                  <button onClick={()=>setShowWellbeing({msg:"Please don't carry this alone. Your health visitor or GP genuinely wants to hear from you — this is exactly what they're there for. You don't need to be in crisis to reach out.", label:"Need support", resources:wellbeingResources})}
+                    style={{width:"100%",padding:"10px",borderRadius:99,border:"none",background:"rgba(123,104,238,0.15)",color:"#7b68ee",fontSize:13,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
+                    💜 See support resources
+                  </button>
+                  <button onClick={()=>{setLastWellbeingDate(todayStr());try{localStorage.setItem("wellbeing_date_v1",todayStr());}catch{}}}
+                    style={{fontSize:11,color:C.lt,background:_bN,border:_bN,cursor:_cP}}>I'm okay, dismiss</button>
+                </div>
+              )}
+
+              {/* ── Proactive hard moment cards by age ── */}
+              {age && (()=>{
+                const _aw = age.totalWeeks;
+                const _shownKey = `hard_moment_${Math.floor(_aw/2)}`;
+                const _shown = (()=>{try{return localStorage.getItem(_shownKey)==="1";}catch{return true;}})();
+                if(_shown) return null;
+                let _hardCard = null;
+                if(_aw >= 5 && _aw <= 8) _hardCard = {
+                  emoji:"😭",
+                  title:`Week ${Math.round(_aw)} — this is the peak`,
+                  body:`Crying peaks at 6–8 weeks for every single baby. What you're going through right now is the hardest it gets. It is not because you're doing anything wrong. It is not colic necessarily. It is PURPLE crying — developmental, predictable, and temporary. It ends around 12 weeks. You are not alone in this.`,
+                  sub:"Based on data from thousands of families. This phase passes.",
+                };
+                else if(_aw >= 15 && _aw <= 19) _hardCard = {
+                  emoji:"🌊",
+                  title:"The 4-month regression is here",
+                  body:`This is the most significant sleep change in the first year. ${babyName||"Baby"}'s sleep architecture is permanently rewiring from newborn cycles to adult-type cycles. It feels like going backwards — it isn't. Most families find it lasts 2–6 weeks. Your instinct to comfort them is right. You're not creating bad habits.`,
+                  sub:"Affects virtually all babies. Your data shows this lines up with the known window.",
+                };
+                else if(_aw >= 34 && _aw <= 42) _hardCard = {
+                  emoji:"🧗",
+                  title:"The 8–10 month regression — it's real",
+                  body:`Separation anxiety has arrived. ${babyName||"Baby"} is not going backwards — they're developing a new understanding of the world. The night wakes, the clinginess, the nap refusals — they're all signs of a brain making huge leaps. This is also one of the most exhausting stretches for parents. You're allowed to find it hard.`,
+                  sub:"Typically lasts 2–6 weeks. Consistent routine and extra comfort are the right call.",
+                };
+                else if(_aw >= 26 && _aw <= 29) _hardCard = {
+                  emoji:"🥄",
+                  title:"Weaning anxiety is completely normal",
+                  body:`If you're feeling overwhelmed by weaning, allergens, and all the things you're "supposed" to do — you're not alone. The research is clear: exposure, variety, and following baby's lead matter far more than doing it perfectly. There is no perfect. There's just trying, and you're already doing that.`,
+                  sub:"Based on NHS and BSACI guidance. This is meant to be messy.",
+                };
+                if(!_hardCard) return null;
+                return (
+                  <div style={{background:"var(--card-bg-alt)",border:`1.5px solid ${C.blush}`,borderRadius:18,padding:"16px",marginBottom:14}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                      <span style={{fontSize:24}}>{_hardCard.emoji}</span>
+                      <div style={{fontSize:14,fontWeight:700,color:C.deep}}>{_hardCard.title}</div>
+                    </div>
+                    <div style={{fontSize:13,color:C.mid,lineHeight:1.7,marginBottom:8}}>{_hardCard.body}</div>
+                    <div style={{fontSize:11,color:C.lt,fontStyle:"italic",marginBottom:12}}>{_hardCard.sub}</div>
+                    <button onClick={()=>{try{localStorage.setItem(_shownKey,"1");}catch{} setLastWellbeingDate(todayStr());try{localStorage.setItem("wellbeing_date_v1",todayStr());}catch{}}}
+                      style={{padding:"8px 18px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.mid,fontSize:12,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                      Thanks — got it 🤍
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {/* ── Partner check-in (monthly) ── */}
+              {partnerCheckDue && !wellbeingDue && ageWeeks && ageWeeks < 52 && (
+                <div style={{background:"linear-gradient(135deg,rgba(122,171,196,0.08),rgba(111,168,152,0.08))",border:`1.5px solid rgba(122,171,196,0.25)`,borderRadius:18,padding:"16px",marginBottom:14}}>
+                  <div style={{fontSize:15,fontWeight:700,color:C.deep,marginBottom:8}}>🫂 How's your partner doing?</div>
+                  <div style={{fontSize:13,color:C.mid,lineHeight:1.7,marginBottom:12}}>
+                    Parental stress affects both parents. Paternal postnatal depression affects around 1 in 10 dads — and it often goes unrecognised because it looks different to maternal PPD. It can show up as irritability, withdrawal, or throwing themselves into work rather than sadness.
+                  </div>
+                  <div style={{fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:12}}>
+                    A simple "how are you actually doing?" can open a door.
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    <button onClick={()=>{
+                      setLastPartnerCheckDate(todayStr());
+                      try{localStorage.setItem("partner_check_v1",todayStr());}catch{}
+                      setShowPartnerCheck(false);
+                      showMascot("happy","💙 That matters. A small check-in can mean everything.",4000);
+                    }} style={{flex:1,padding:"10px",borderRadius:99,border:"none",background:"rgba(122,171,196,0.2)",color:C.sky,fontSize:12,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
+                      I'll check in 💙
+                    </button>
+                    <button onClick={()=>{setLastPartnerCheckDate(todayStr());try{localStorage.setItem("partner_check_v1",todayStr());}catch{}}}
+                      style={{padding:"10px 16px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.lt,fontSize:12,cursor:_cP,fontFamily:_fI}}>
+                      Not now
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Parent wellbeing check-in (weekly) */}
               {wellbeingCard}
               {/* Empty state for new users */}
@@ -13663,6 +13853,63 @@ function App(){
               })()}
 
               {/* ── FEEDING & NUTRITION (collapsible) ── */}
+              {/* ── Breastfeeding Hub (shows when BF feeds detected, under 12 months) ── */}
+              {(insightFilter==="feeding") && age && age.totalWeeks < 52 && (()=>{
+                const _recentFeeds = Object.keys(days).sort().slice(-3).flatMap(d=>(days[d]||[]).filter(e=>e.type==="feed"&&e.feedType==="breast"));
+                if(!_recentFeeds.length) return null;
+                const _aw = age.totalWeeks;
+                // Growth spurt windows
+                const _spurts = [
+                  {week:3, label:"3-week spurt", desc:"Cluster feeding for 2-3 days. Your supply is responding perfectly — don't supplement unless advised by your health visitor."},
+                  {week:6, label:"6-week spurt", desc:"The most intense spurt. Feeds may feel constant for 3-4 days. This is peak supply-building time — your body is doing exactly what it should."},
+                  {week:12, label:"3-month spurt", desc:"Often coincides with the end of PURPLE crying. Feeds intensify again briefly before settling into a more predictable pattern."},
+                  {week:19, label:"4-month spurt", desc:"Coincides with the 4-month sleep regression. Increased night feeding is normal and temporary — it's not a supply problem."},
+                  {week:26, label:"6-month spurt", desc:"Happens as weaning begins. Milk remains the main nutrition — continue breastfeeding alongside solids."},
+                ];
+                const _nearSpurt = _spurts.find(s => Math.abs(_aw - s.week) <= 1);
+                const _upcomingSpurt = _spurts.find(s => s.week > _aw && s.week - _aw <= 3);
+                return (
+                  <div className="glass-card" style={{padding:"14px 16px",marginBottom:12}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <span style={{fontSize:16}}>🤱</span>
+                        <span style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>Breastfeeding Support</span>
+                      </div>
+                      <button onClick={()=>setShowBfHub(true)} style={{fontSize:11,color:C.ter,fontWeight:600,background:_bN,border:_bN,cursor:_cP,fontFamily:_fI}}>Full guide →</button>
+                    </div>
+
+                    {/* Growth spurt alert */}
+                    {_nearSpurt && (
+                      <div style={{background:"rgba(212,168,85,0.07)",border:"1px solid rgba(212,168,85,0.25)",borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:4}}>⚡ {_nearSpurt.label} — feeds may intensify</div>
+                        <div style={{fontSize:12,color:C.mid,lineHeight:1.6}}>{_nearSpurt.desc}</div>
+                      </div>
+                    )}
+                    {!_nearSpurt && _upcomingSpurt && (
+                      <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                        <div style={{fontSize:12,fontWeight:600,color:C.mid,marginBottom:2}}>📅 {_upcomingSpurt.label} in ~{_upcomingSpurt.week - _aw} week{_upcomingSpurt.week - _aw !== 1 ? "s" : ""}</div>
+                        <div style={{fontSize:11,color:C.lt,lineHeight:1.5}}>{_upcomingSpurt.desc}</div>
+                      </div>
+                    )}
+
+                    {/* Quick links */}
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                      {[
+                        {label:"Cluster feeding",key:"cluster"},
+                        {label:"Supply worries",key:"supply"},
+                        {label:"Tongue tie signs",key:"tongue"},
+                        {label:"When to get help",key:"help"},
+                      ].map(item=>(
+                        <button key={item.key} onClick={()=>{setBfHubSection(item.key);setShowBfHub(true);}}
+                          style={{padding:"5px 12px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",fontSize:11,color:C.mid,cursor:_cP,fontFamily:_fI,fontWeight:600}}>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {(insightFilter==="feeding") && <div>
               {collHead("feeding","🍼","Feeding & Nutrition")}
               {insightSection.feeding && (
@@ -15856,6 +16103,107 @@ Once introduced with no reaction, keep giving each allergen regularly — at lea
             </div>
 
 
+          {/* ═══ 7. VACCINATIONS ═══ */}
+          {babyDob && (()=>{
+            const _aw = age ? age.totalWeeks : 0;
+            const _dob = new Date(babyDob+"T00:00:00");
+            const _addWeeks = (w) => { const d = new Date(_dob); d.setDate(d.getDate() + w*7); return d; };
+            const _addMonths = (m) => { const d = new Date(_dob); d.setMonth(d.getMonth()+m); return d; };
+            const _fmt = (d) => d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+            const _today = new Date();
+            const _vaccKey = "vaccs_done_v1_" + resolvedActiveId;
+            const _vaccDone = (()=>{try{return JSON.parse(localStorage.getItem(_vaccKey)||"[]");}catch{return [];}})();
+            const _toggleVacc = (id) => {
+              const current = (()=>{try{return JSON.parse(localStorage.getItem(_vaccKey)||"[]");}catch{return [];}})();
+              const next = current.includes(id) ? current.filter(x=>x!==id) : [...current, id];
+              try{localStorage.setItem(_vaccKey, JSON.stringify(next));}catch{}
+              window.dispatchEvent(new Event("storage"));
+            };
+
+            // UK vaccination schedule (NHS)
+            const _schedule = [
+              {id:"8w", label:"8 weeks", due:_addWeeks(8), vaccines:["6-in-1 (DTaP/IPV/Hib/HepB)","Rotavirus (oral)","MenB"]},
+              {id:"12w", label:"12 weeks", due:_addWeeks(12), vaccines:["6-in-1 (2nd dose)","Rotavirus (2nd dose, oral)","PCV (pneumococcal)"]},
+              {id:"16w", label:"16 weeks", due:_addWeeks(16), vaccines:["6-in-1 (3rd dose)","MenB (2nd dose)"]},
+              {id:"1yr", label:"1 year", due:_addMonths(12), vaccines:["Hib/MenC","MMR (measles, mumps, rubella)","PCV (2nd dose)","MenB (booster)"]},
+              {id:"3yr4m", label:"3 years 4 months", due:_addMonths(40), vaccines:["4-in-1 pre-school booster (DTaP/IPV)","MMR (2nd dose)"]},
+            ];
+
+            // US schedule (AAP) - simplified
+            const _scheduleUS = [
+              {id:"birth", label:"At birth", due:_dob, vaccines:["Hepatitis B (1st dose)"]},
+              {id:"2mo", label:"2 months", due:_addMonths(2), vaccines:["DTaP","IPV","Hib","PCV15 or PCV20","RV (rotavirus)","HepB (2nd dose)"]},
+              {id:"4mo", label:"4 months", due:_addMonths(4), vaccines:["DTaP","IPV","Hib","PCV","RV (2nd dose)"]},
+              {id:"6mo", label:"6 months", due:_addMonths(6), vaccines:["DTaP","IPV","Hib","PCV","RV (3rd dose if needed)","HepB (3rd dose)","Annual flu vaccine"]},
+              {id:"12mo", label:"12 months", due:_addMonths(12), vaccines:["MMR","Varicella","HepA (1st dose)","PCV (booster)","Hib (booster)"]},
+            ];
+
+            const _sched = _isUS ? _scheduleUS : _schedule;
+            const [_vaccOpen, _setVaccOpen] = React.useState(false);
+
+            // Next due
+            const _next = _sched.filter(v => !_vaccDone.includes(v.id) && v.due >= _today).sort((a,b)=>a.due-b.due)[0];
+            const _overdue = _sched.filter(v => !_vaccDone.includes(v.id) && v.due < _today);
+
+            return (
+              <div style={{marginBottom:14}}>
+                <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>💉 Vaccinations</div>
+                <div style={{background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:16,overflow:"hidden"}}>
+                  {/* Summary row */}
+                  <button onClick={()=>_setVaccOpen(v=>!v)} style={{width:"100%",padding:"14px 16px",background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:_cP,fontFamily:_fI}}>
+                    <div style={{textAlign:"left"}}>
+                      <div style={{fontSize:14,fontWeight:700,color:C.deep}}>
+                        {_overdue.length > 0 ? `⚠️ ${_overdue.length} overdue` : _next ? `Next: ${_next.label}` : "All done ✓"}
+                      </div>
+                      <div style={{fontSize:11,color:C.lt,marginTop:2}}>
+                        {_overdue.length > 0 ? "Contact your GP surgery to book" :
+                         _next ? `Due ${_fmt(_next.due)}` :
+                         `${_sched.filter(v=>v.due<=_today).length} jabs completed`}
+                      </div>
+                    </div>
+                    <span style={{color:C.lt,fontSize:12,transition:"transform 0.2s",transform:_vaccOpen?"rotate(180deg)":"none"}}>▼</span>
+                  </button>
+
+                  {/* Full schedule */}
+                  {_vaccOpen && (
+                    <div style={{borderTop:`1px solid ${C.blush}`,padding:"12px 16px"}}>
+                      <div style={{fontSize:11,color:C.lt,marginBottom:12,lineHeight:1.5}}>
+                        {_isUS ? "Based on AAP/CDC recommended schedule" : "Based on NHS UK vaccination schedule"} — tap to mark as given. Always follow your {_doctor}'s advice.
+                      </div>
+                      {_sched.map((v,i)=>{
+                        const _done = _vaccDone.includes(v.id);
+                        const _od = !_done && v.due < _today;
+                        const _upcoming = !_done && v.due >= _today && v.due <= new Date(_today.getTime()+28*24*60*60*1000);
+                        return (
+                          <div key={v.id} style={{padding:"10px 0",borderTop:i?`1px solid ${C.blush}`:"none",display:"flex",gap:12,alignItems:"flex-start"}}>
+                            <button onClick={()=>_toggleVacc(v.id)}
+                              style={{width:24,height:24,borderRadius:"50%",border:`2px solid ${_done?C.mint:_od?"#c04040":C.blush}`,background:_done?C.mint:"transparent",flexShrink:0,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",marginTop:1}}>
+                              {_done && <span style={{color:"white",fontSize:12,fontWeight:700}}>✓</span>}
+                            </button>
+                            <div style={{flex:1}}>
+                              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
+                                <span style={{fontSize:13,fontWeight:700,color:_done?C.lt:_od?"#c04040":C.deep}}>{v.label}</span>
+                                {_od && <span style={{fontSize:9,background:"rgba(232,87,74,0.12)",color:"#c04040",padding:"1px 6px",borderRadius:99,fontWeight:700}}>OVERDUE</span>}
+                                {_upcoming && <span style={{fontSize:9,background:"rgba(212,168,85,0.12)",color:C.gold,padding:"1px 6px",borderRadius:99,fontWeight:700}}>SOON</span>}
+                              </div>
+                              <div style={{fontSize:11,color:C.lt,marginBottom:4}}>{_fmt(v.due)}</div>
+                              {v.vaccines.map((vx,j)=>(
+                                <div key={j} style={{fontSize:11,color:_done?C.lt:C.mid,padding:"1px 0"}}>• {vx}</div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div style={{marginTop:10,padding:"8px 10px",borderRadius:10,background:"var(--card-bg-alt)",fontSize:11,color:C.lt,lineHeight:1.5}}>
+                        OBubba shows the standard {_isUS?"US":"UK"} schedule for reference only. Your GP or health visitor manages your child's actual vaccination record. Always book through your surgery.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ═══ 8. SIGN OUT ═══ */}
           {familyUsername&&(
             <button onClick={logout} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%",marginTop:14}}>
@@ -16823,6 +17171,142 @@ Once introduced with no reaction, keep giving each allergen regularly — at lea
         </div>
       )}
 
+      {/* ═══ Breastfeeding Hub Modal ═══ */}
+      {showBfHub && (
+        <div onClick={()=>setShowBfHub(false)} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.55)",backdropFilter:"blur(5px)",zIndex:200,display:"flex",alignItems:"flex-end"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"24px 20px 48px",width:"100%",maxWidth:520,margin:"0 auto",maxHeight:"88vh",overflowY:"auto"}}>
+            <div style={{width:36,height:4,borderRadius:99,background:"var(--card-border)",margin:"0 auto 16px"}}/>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep}}>🤱 Breastfeeding Guide</div>
+              <button onClick={()=>setShowBfHub(false)} style={{fontSize:18,color:C.lt,background:_bN,border:_bN,cursor:_cP}}>✕</button>
+            </div>
+
+            {/* Section tabs */}
+            <div style={{display:"flex",gap:6,marginBottom:16,overflowX:"auto",paddingBottom:2}}>
+              {[{k:"cluster",l:"Cluster"},{k:"supply",l:"Supply"},{k:"tongue",l:"Tongue tie"},{k:"help",l:"Get help"},{k:"spurts",l:"Growth spurts"}].map(s=>(
+                <button key={s.k} onClick={()=>setBfHubSection(s.k)}
+                  style={{padding:"6px 14px",borderRadius:99,border:`1.5px solid ${bfHubSection===s.k?C.ter:C.blush}`,background:bfHubSection===s.k?C.ter+"12":"var(--card-bg)",color:bfHubSection===s.k?C.ter:C.mid,fontSize:11,fontWeight:600,cursor:_cP,whiteSpace:"nowrap",fontFamily:_fI,flexShrink:0}}>
+                  {s.l}
+                </button>
+              ))}
+            </div>
+
+            {/* Cluster feeding */}
+            {(bfHubSection==="cluster"||!bfHubSection) && (
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:8}}>What is cluster feeding?</div>
+                <div style={{fontSize:13,color:C.mid,lineHeight:1.75,marginBottom:10}}>
+                  Cluster feeding is when baby wants to feed very frequently — sometimes every 20-30 minutes — often for hours at a stretch. It typically happens in the evenings and during growth spurts.
+                </div>
+                <div style={{background:"rgba(80,200,120,0.06)",border:"1px solid rgba(80,200,120,0.2)",borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.mint,marginBottom:6}}>✓ It is NOT a sign of low supply</div>
+                  {["Your body produces milk on a supply-and-demand basis — more feeding = more milk production","Baby is topping up and building your supply for a growth spurt","Evenings are normal — prolactin (milk hormone) works differently at night","It ends. Usually after 2-3 days."].map((t,i)=>(
+                    <div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>
+                  ))}
+                </div>
+                <div style={{fontSize:13,color:C.mid,lineHeight:1.75}}>
+                  What helps: stay hydrated, eat well, accept help from others, feed in a comfortable position, and remind yourself this is temporary and it means your supply is responding.
+                </div>
+              </div>
+            )}
+
+            {/* Supply worries */}
+            {bfHubSection==="supply" && (
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:8}}>Is my supply okay?</div>
+                <div style={{fontSize:13,color:C.mid,lineHeight:1.75,marginBottom:10}}>
+                  Most mothers who worry about low supply actually have plenty. The most common reason parents stop breastfeeding is a perceived supply issue, not an actual one.
+                </div>
+                <div style={{background:"rgba(80,200,120,0.06)",border:"1px solid rgba(80,200,120,0.2)",borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.mint,marginBottom:6}}>✓ Signs your supply IS fine</div>
+                  {["6+ wet nappies in 24 hours","Baby is gaining weight as expected by health visitor","Baby seems satisfied after most feeds","You can hear swallowing during feeds","Breasts feel softer after feeds"].map((t,i)=>(<div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>))}
+                </div>
+                <div style={{background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>⚠️ Speak to your health visitor if</div>
+                  {["Fewer than 6 wet nappies a day consistently","Baby is losing weight or not regaining birth weight","Feeds always seem to leave baby unsettled","Baby is jaundiced and feeding poorly","You're in significant pain during every feed"].map((t,i)=>(<div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>))}
+                </div>
+                <div style={{fontSize:12,color:C.lt,lineHeight:1.6,fontStyle:"italic"}}>Breast size, not feeling full, leaking stopping, and baby feeding more at night are NOT signs of low supply.</div>
+              </div>
+            )}
+
+            {/* Tongue tie */}
+            {bfHubSection==="tongue" && (
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:8}}>Tongue tie (ankyloglossia)</div>
+                <div style={{fontSize:13,color:C.mid,lineHeight:1.75,marginBottom:10}}>
+                  Tongue tie affects around 4-11% of babies. It's when the strip of skin connecting the tongue to the floor of the mouth (the frenulum) is shorter or tighter than usual, restricting tongue movement.
+                </div>
+                <div style={{background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",borderRadius:12,padding:"10px 12px",marginBottom:10}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>Signs to watch for during feeding</div>
+                  {["Significant pain for you throughout feeds — not just at latch","Baby makes clicking sounds while feeding","Baby slips off the breast frequently","Baby seems to feed for a very long time without seeming satisfied","Poor weight gain despite frequent feeding","Baby can't stick tongue out past their lower lip","Baby's tongue looks heart-shaped when they cry"].map((t,i)=>(<div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>))}
+                </div>
+                <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:12,padding:"10px 12px"}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.deep,marginBottom:4}}>What to do</div>
+                  <div style={{fontSize:12,color:C.mid,lineHeight:1.6}}>Ask your midwife, health visitor, or GP to check for tongue tie. They can refer you to a specialist. Treatment (a simple snip called a frenotomy) is quick and can transform feeding. An IBCLC lactation consultant can also assess and support you.</div>
+                </div>
+              </div>
+            )}
+
+            {/* Growth spurts */}
+            {bfHubSection==="spurts" && (
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:12}}>Growth spurt timeline</div>
+                {[
+                  {week:3,label:"3 weeks",desc:"First major spurt. Cluster feeding for 2-3 days. Trust your body."},
+                  {week:6,label:"6 weeks",desc:"The most intense. Feeds feel almost constant. This is peak supply-building — the most important spurt."},
+                  {week:12,label:"3 months",desc:"Often coincides with peak crying ending. Feeds intensify briefly then settle significantly."},
+                  {week:19,label:"4 months",desc:"Alongside the sleep regression. More night feeds expected — not a supply issue."},
+                  {week:26,label:"6 months",desc:"As weaning begins. Milk remains primary nutrition — feed first, then offer solids."},
+                ].map((s,i)=>{
+                  const _aw = age ? age.totalWeeks : 0;
+                  const _past = _aw > s.week + 2;
+                  const _current = Math.abs(_aw - s.week) <= 1;
+                  return (
+                    <div key={i} style={{display:"flex",gap:10,padding:"10px 0",borderTop:i?`1px solid ${C.blush}`:"none",alignItems:"flex-start"}}>
+                      <div style={{width:36,height:36,borderRadius:"50%",background:_current?C.ter:_past?"rgba(80,200,120,0.15)":"var(--card-bg-alt)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:12,fontWeight:700,color:_current?"white":_past?C.mint:C.lt}}>
+                        {_past?"✓":s.week<10?s.week+"w":s.week+"w"}
+                      </div>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:_current?C.ter:C.deep}}>{s.label} {_current&&"← you're here"}</div>
+                        <div style={{fontSize:12,color:C.mid,lineHeight:1.5,marginTop:2}}>{s.desc}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Get help */}
+            {bfHubSection==="help" && (
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:12}}>When and how to get support</div>
+                <div style={{fontSize:13,color:C.mid,lineHeight:1.75,marginBottom:12}}>Breastfeeding support is one of the most underprovided services in the UK. You often have to ask for it.</div>
+                {[
+                  {who:"Health visitor",when:"Always your first call — they can assess weight, feeding position, latch, and refer you on",how:"Call your GP surgery and ask to speak to the health visitor"},
+                  {who:"Midwife (first 10-28 days)",when:"Pain, latch issues, engorgement, blocked ducts, mastitis",how:"Call your maternity unit or community midwife"},
+                  {who:"IBCLC Lactation Consultant",when:"Persistent pain, tongue tie assessment, low supply concerns, returning to work",how:"Find one at lcgb.org — some NHS trusts provide free access"},
+                  {who:"National Breastfeeding Helpline",when:"Any time, day or night",how:"0300 100 0212 (9:30am–9:30pm daily)"},
+                  {who:"La Leche League",when:"Peer support, local groups, overnight helpline",how:"laleche.org.uk — free helpline 0345 120 2918"},
+                ].map((r,i)=>(
+                  <div key={i} style={{padding:"10px 0",borderTop:i?`1px solid ${C.blush}`:"none"}}>
+                    <div style={{fontSize:13,fontWeight:700,color:C.deep,marginBottom:2}}>{r.who}</div>
+                    <div style={{fontSize:12,color:C.mid,marginBottom:3,lineHeight:1.5}}>{r.when}</div>
+                    <div style={{fontSize:11,color:C.lt,lineHeight:1.4}}>{r.how}</div>
+                  </div>
+                ))}
+                <div style={{marginTop:10,padding:"10px 12px",borderRadius:12,background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",fontSize:12,color:C.gold,lineHeight:1.6}}>
+                  ⚠️ Mastitis symptoms (hot, red, painful area of breast + flu-like symptoms) need same-day GP treatment. Don't wait.
+                </div>
+              </div>
+            )}
+
+            <div style={{marginTop:16,fontSize:11,color:C.lt,lineHeight:1.6,fontStyle:"italic"}}>
+              Based on NHS, UNICEF BFI, and La Leche League guidance. Not medical advice — speak to your health visitor or IBCLC for personal support.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ Allergen Safety Gate ═══ */}
       {showAllergenGate && (()=>{
         const [_eczema, _setEczema] = React.useState("");
@@ -17033,42 +17517,63 @@ Once introduced with no reaction, keep giving each allergen regularly — at lea
 
       {/* ═══ Wellbeing Support Popup ═══ */}
       {showWellbeing&&(
-        <div onClick={()=>setShowWellbeing(false)} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.6)",backdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:24,padding:"28px 22px",maxWidth:360,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{textAlign:"center",marginBottom:16}}>
-              <div style={{fontSize:40,marginBottom:8}}>{showWellbeing.label==="Need support"?"💜":"🤗"}</div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:C.deep,lineHeight:1.3,marginBottom:8}}>{showWellbeing.label==="Need support"?"We're here for you":"You're not alone"}</div>
-              <div style={{fontSize:14,color:C.mid,lineHeight:1.6}}>{showWellbeing.msg}</div>
+        <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.65)",backdropFilter:"blur(8px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"28px 28px 0 0",padding:"28px 22px 48px",maxWidth:520,width:"100%",maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{width:36,height:4,borderRadius:99,background:"var(--card-border)",margin:"0 auto 20px"}}/>
+
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{fontSize:44,marginBottom:10}}>💜</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,lineHeight:1.3,marginBottom:12}}>
+                {showWellbeing.label==="Need support" ? "You reached out. That took courage." : "You're not alone in this."}
+              </div>
+              <div style={{fontSize:14,color:C.mid,lineHeight:1.8}}>{showWellbeing.msg}</div>
             </div>
-            <div style={{background:"linear-gradient(135deg,rgba(123,104,238,0.06),rgba(111,168,152,0.06))",border:`1.5px solid rgba(123,104,238,0.15)`,borderRadius:16,padding:"14px",marginBottom:14}}>
-              <div style={{fontSize:12,fontFamily:_fM,color:"#7b68ee",textTransform:"uppercase",letterSpacing:_ls08,marginBottom:10}}>Talk to someone now</div>
+
+            {/* One clear first step */}
+            <div style={{background:"rgba(123,104,238,0.06)",border:"1.5px solid rgba(123,104,238,0.2)",borderRadius:18,padding:"16px",marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#7b68ee",marginBottom:12,letterSpacing:"0.04em",textTransform:"uppercase"}}>
+                {showWellbeing.label==="Need support" ? "🫂 Start here — one call" : "💬 Talk to someone"}
+              </div>
               {(_isUS ? [
-                {name:"Postpartum Support International",num:"1-800-944-4773",hours:""},
-                {name:"988 Suicide & Crisis Lifeline",num:"988",hours:"24/7"},
-                {name:"SAMHSA Helpline",num:"1-800-662-4357",hours:"24/7"},
+                {name:"Postpartum Support International",num:"1-800-944-4773",hours:"Helpline + text support",primary:true},
+                {name:"988 Suicide & Crisis Lifeline",num:"988",hours:"24/7 — call or text",primary:false},
+                {name:"SAMHSA Helpline",num:"1-800-662-4357",hours:"24/7, free, confidential",primary:false},
               ] : _isAU ? [
-                {name:"PANDA",num:"1300 726 306",hours:"Mon–Fri 9am–7:30pm"},
-                {name:"Beyond Blue",num:"1300 22 4636",hours:"24/7"},
-                {name:"Lifeline",num:"13 11 14",hours:"24/7"},
+                {name:"PANDA",num:"1300 726 306",hours:"Mon–Fri 9am–7:30pm AEST",primary:true},
+                {name:"Beyond Blue",num:"1300 22 4636",hours:"24/7",primary:false},
+                {name:"Lifeline",num:"13 11 14",hours:"24/7",primary:false},
               ] : [
-                {name:"PANDAS Foundation",num:"0808 196 1776",hours:"Mon–Fri 11am–10pm"},
-                {name:"Samaritans",num:"116 123",hours:"Free, 24/7"},
-                {name:"NHS Talking Therapies",num:"nhs.uk",hours:"Self-refer online"},
-                {name:"Health visitor",num:"Your GP surgery",hours:"Ask to be connected"},
+                {name:"PANDAS Foundation",num:"0808 196 1776",hours:"Mon–Fri 11am–10pm — free, confidential",primary:true},
+                {name:"Samaritans",num:"116 123",hours:"Free, 24/7 — any reason, any time",primary:false},
+                {name:"NHS Talking Therapies",num:"nhs.uk/talking-therapies",hours:"Self-refer online — no GP needed",primary:false},
               ]).map((r,i)=>(
-                <a key={i} href={r.num.match(/^\d/)?`tel:${r.num.replace(/\s/g,"")}`:(r.num.includes("nhs")?"https://www.nhs.uk/mental-health/talking-therapies-medicine-treatments/talking-therapies-and-counselling/nhs-talking-therapies/":undefined)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 0",borderTop:i?`1px solid rgba(123,104,238,0.1)`:"none",textDecoration:"none",cursor:"pointer"}}>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:600,color:C.deep}}>{r.name}</div>
-                    {r.hours&&<div style={{fontSize:11,color:C.lt}}>{r.hours}</div>}
+                <a key={i} href={r.num.match(/^[\d-]/) ? `tel:${r.num.replace(/[^\d+]/g,"")}` : `https://www.nhs.uk/mental-health/talking-therapies-medicine-treatments/talking-therapies-and-counselling/nhs-talking-therapies/`}
+                  style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderTop:i?`1px solid rgba(123,104,238,0.1)`:"none",textDecoration:"none",cursor:"pointer"}}>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:r.primary?700:600,color:r.primary?C.deep:C.mid}}>{r.name}</div>
+                    <div style={{fontSize:11,color:C.lt,marginTop:2}}>{r.hours}</div>
                   </div>
-                  <div style={{fontSize:14,fontWeight:700,color:"#7b68ee",fontFamily:_fM}}>{r.num.match(/^\d/)?`📞 ${r.num}`:r.num.includes("nhs")?"🌐 Visit":"📞 Call"}</div>
+                  <div style={{padding:"6px 12px",borderRadius:99,background:r.primary?"rgba(123,104,238,0.15)":"var(--card-bg-alt)",fontSize:13,fontWeight:700,color:r.primary?"#7b68ee":C.lt,whiteSpace:"nowrap",marginLeft:8}}>
+                    {r.num.match(/^[\d-]/) ? `📞 ${r.num}` : "🌐 Visit"}
+                  </div>
                 </a>
               ))}
             </div>
-            <div style={{fontSize:12,color:C.mid,lineHeight:1.6,textAlign:"center",marginBottom:14}}>
-              You don't have to go through this alone. These services are confidential and free. Your baby needs you to be okay too. 💜
+
+            {/* Health visitor nudge */}
+            <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"12px 14px",marginBottom:16,border:`1px solid ${C.blush}`}}>
+              <div style={{fontSize:13,fontWeight:600,color:C.deep,marginBottom:4}}>🏥 Your {_doctor} wants to hear from you</div>
+              <div style={{fontSize:12,color:C.mid,lineHeight:1.6}}>
+                You don't need to be in crisis to book a GP appointment. Postnatal distress, sleep deprivation, and anxiety are all valid reasons to go. Mention how you're feeling — they can refer you to the right support quickly.
+              </div>
             </div>
-            <button onClick={()=>setShowWellbeing(false)} style={{width:"100%",padding:"14px",borderRadius:99,border:_bN,background:"linear-gradient(135deg,#7b68ee,#5040a0)",color:"white",fontSize:15,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
+
+            <div style={{fontSize:11,color:C.lt,lineHeight:1.6,textAlign:"center",marginBottom:16}}>
+              Everything you share is confidential. You are not failing. You are a parent under enormous pressure, and asking for support is the strongest thing you can do. 💜
+            </div>
+
+            <button onClick={()=>setShowWellbeing(false)}
+              style={{width:"100%",padding:"14px",borderRadius:99,border:_bN,background:"linear-gradient(135deg,#7b68ee,#5040a0)",color:"white",fontSize:15,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
               Thank you 💜
             </button>
           </div>
