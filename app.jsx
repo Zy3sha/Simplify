@@ -3420,7 +3420,7 @@ function App(){
       // Bug 1: clamp minsUntilBed to 0 (no negative)
       const minsUntilBed = bedMins !== null ? Math.max(0, bedMins - nowMins) : null;
 
-      const bedtimeConditionMet = napsComplete && !hasBedtime && bed && !bed.estimated;
+      const bedtimeConditionMet = (napsComplete || (bed && bed.napsRemaining === 0)) && !hasBedtime && bed && !bed.estimated;
 
       if (hasBedtime) {
         setNapCountdown(null);
