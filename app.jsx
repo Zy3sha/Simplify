@@ -11488,18 +11488,19 @@ function App(){
                 );
               }
               const isBed = bedCountdown !== null;
+              // Shared state for all users
+              const _todayE2 = (days[selDay]||[]).filter(e=>!e.night);
+              const _wakeE2 = _todayE2.find(e=>e.type==="wake");
+              const _napsE2 = _todayE2.filter(e=>e.type==="nap"&&e.end);
+              let _lastAwake2 = _wakeE2 ? timeVal(_wakeE2) : null;
+              _napsE2.forEach(n=>{if(n.end){const t=timeVal({time:n.end});if(t>(_lastAwake2||0))_lastAwake2=t;}});
+              if (_lastAwake2 === null && _todayE2.length > 0) _lastAwake2 = timeVal(_todayE2[0]);
+              const _nowM2 = new Date().getHours()*60+new Date().getMinutes();
+              const _awakeMins2 = _lastAwake2!==null ? _nowM2 - _lastAwake2 : 0;
               // Premium gate: countdown pill shows live countdown for premium, basic info for free
               if (STORE_READY && !isPremium && !trialActive) {
                 // Free: show basic awake time or generic wake window
                 const _wwLabel = age ? getWakeWindow(age.totalWeeks).label : "";
-                const _todayE2 = (days[selDay]||[]).filter(e=>!e.night);
-                const _wakeE2 = _todayE2.find(e=>e.type==="wake");
-                const _napsE2 = _todayE2.filter(e=>e.type==="nap"&&e.end);
-                let _lastAwake2 = _wakeE2 ? timeVal(_wakeE2) : null;
-                _napsE2.forEach(n=>{if(n.end){const t=timeVal({time:n.end});if(t>(_lastAwake2||0))_lastAwake2=t;}});
-                if (_lastAwake2 === null && _todayE2.length > 0) _lastAwake2 = timeVal(_todayE2[0]);
-                const _nowM2 = new Date().getHours()*60+new Date().getMinutes();
-                const _awakeMins2 = _lastAwake2!==null ? _nowM2 - _lastAwake2 : 0;
                 if (!_wakeE2 && _todayE2.length === 0) {
                   return (
                     <button onClick={()=>{setInlineWakeTime(nowTime());setShowWakeInline(v=>!v);}}
