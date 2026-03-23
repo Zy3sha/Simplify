@@ -3654,24 +3654,33 @@ function App(){
       const _baseDayForPrev = _useYesterday ? _isYesterday : selDay;
       const _prevDay = (()=>{const d=new Date(_baseDayForPrev+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
       const _todayActual = days[todayStr()]||[];
-      const _allE = [..._today, ...(days[_prevDay]||[]), ...(_useYesterday ? _todayActual : [])];
-      // Safe gap-from-now: negative gap means entry is from earlier day
-      const _gapFromNow = (e) => {
-        let gap = _nowM - timeVal(e);
-        if (gap < -60) gap += 1440;
-        else if (gap < 0) gap = Math.abs(gap);
-        return gap;
-      };
+      // Find last feed and nappy: search TODAY first, only fall back to previous days if nothing today
+      const _todayFeeds = _today.filter(e=>e.time&&(e.type==="feed"||(e.amount||0)>0||(e.night&&(e.assistedType==="milk"||e.feedType==="milk"))));
+      const _prevDayEntries = [...(days[_prevDay]||[]), ...(_useYesterday ? _todayActual : [])];
+      const _prevDayFeeds = _prevDayEntries.filter(e=>e.time&&(e.type==="feed"||(e.amount||0)>0||(e.night&&(e.assistedType==="milk"||e.feedType==="milk"))));
+      const _todayNappies = _today.filter(e=>e.time&&e.type==="poop");
+      const _prevDayNappies = _prevDayEntries.filter(e=>e.time&&e.type==="poop");
+      // For same-day entries, simple gap from now works
+      const _sameDayGap = (e) => { let g = _nowM - timeVal(e); if (g < 0) g += 1440; return g; };
+      // Pick most recent from today; if none, most recent from yesterday (add 1440 for correct gap)
       const _lastFeed = (()=>{
-        const _fc = _allE.filter(e=>e.time&&(e.type==="feed"||(e.amount||0)>0||(e.night&&(e.assistedType==="milk"||e.feedType==="milk"))));
-        if(!_fc.length) return null;
-        return _fc.reduce((best,e)=>{ const ge=_gapFromNow(e); const gb=_gapFromNow(best); return ge<gb?e:best; });
+        if (_todayFeeds.length > 0) return { entry: _todayFeeds.reduce((best,e) => _sameDayGap(e) < _sameDayGap(best) ? e : best), fromPrev: false };
+        if (_prevDayFeeds.length > 0) return { entry: _prevDayFeeds.reduce((best,e) => _sameDayGap(e) < _sameDayGap(best) ? e : best), fromPrev: true };
+        return null;
       })();
       const _lastNappy = (()=>{
-        const _nc = _allE.filter(e=>e.time&&e.type==="poop");
-        if(!_nc.length) return null;
-        return _nc.reduce((best,e)=>{ const ge=_gapFromNow(e); const gb=_gapFromNow(best); return ge<gb?e:best; });
+        if (_todayNappies.length > 0) return { entry: _todayNappies.reduce((best,e) => _sameDayGap(e) < _sameDayGap(best) ? e : best), fromPrev: false };
+        if (_prevDayNappies.length > 0) return { entry: _prevDayNappies.reduce((best,e) => _sameDayGap(e) < _sameDayGap(best) ? e : best), fromPrev: true };
+        return null;
       })();
+      // Actual gap in minutes, accounting for which day the entry is from
+      const _realGap = (item) => {
+        if (!item) return 9999;
+        let g = _nowM - timeVal(item.entry);
+        if (g < 0) g += 1440;
+        if (item.fromPrev) g += 1440; // yesterday's entry is at least 24h-ish old
+        return g;
+      };
 
       // Average feed interval from last 7 days with anomaly detection
       let _avgFeedInterval = null;
@@ -3725,10 +3734,11 @@ function App(){
       let _smartFeedNote = null;
       try {
         if (_lastFeed) {
-          const _lfAmount = _lastFeed.amount || 0;
-          const _lfIsBreast = _lastFeed.feedType === "breast";
-          const _lfBreastSec = (_lastFeed.breastL || 0) + (_lastFeed.breastR || 0);
-          const _lfMins = timeVal(_lastFeed);
+          const _lfe = _lastFeed.entry;
+          const _lfAmount = _lfe.amount || 0;
+          const _lfIsBreast = _lfe.feedType === "breast";
+          const _lfBreastSec = (_lfe.breastL || 0) + (_lfe.breastR || 0);
+          const _lfMins = timeVal(_lfe);
           const w = age ? age.totalWeeks : 12;
 
           // Per-feed target: use actual weight (150ml/kg/day ÷ feeds/day) when available
@@ -3800,22 +3810,25 @@ function App(){
       _feedThreshM = Math.min(_feedThreshM, Math.round(_ageThreshM * 1.25));
 
       if (_lastFeed) {
-        let _feedGapM = _gapFromNow(_lastFeed);
-        if (_feedGapM >= _feedThreshM && _feedGapM < 900) {
-          _hints.push("might be ready for a feed — last one " + hm(_feedGapM) + " ago");
+        let _feedGapM = _realGap(_lastFeed);
+        if (_feedGapM >= _feedThreshM && _feedGapM < 1500) {
+          _hints.push("might be ready for a feed — last one " + hm(Math.min(_feedGapM, 900)) + " ago");
           if (_smartFeedNote) _hints.push(_smartFeedNote);
-        } else if (_feedGapM >= 0 && _feedGapM < 900) {
-          const [fh,fm]=_lastFeed.time.split(":").map(Number);
+        } else if (_feedGapM >= 0 && _feedGapM < _feedThreshM && !_lastFeed.fromPrev) {
+          // Only show predicted time for today's feeds (yesterday's time-of-day is misleading)
+          const [fh,fm]=_lastFeed.entry.time.split(":").map(Number);
           const t=fh*60+fm+_feedThreshM;
           _hints.push("next feed ~" + fmt12(`${String(Math.floor(t/60)%24).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`) + " (based on " + (_avgFeedInterval ? _name + "'s rhythm" : "age guideline") + ")");
           if (_smartFeedNote) _hints.push(_smartFeedNote);
+        } else if (_lastFeed.fromPrev) {
+          _hints.push("could be ready for a feed soon");
         }
       } else {
         _hints.push("could be ready for a feed soon");
       }
       if (_lastNappy) {
-        let _nappyGapM = _gapFromNow(_lastNappy);
-        if (_nappyGapM >= 150 && _nappyGapM < 900) _hints.push("a fresh nappy might help — last one " + hm(_nappyGapM) + " ago");
+        let _nappyGapM = _realGap(_lastNappy);
+        if (_nappyGapM >= 150 && _nappyGapM < 1500) _hints.push("a fresh nappy might help — last one " + hm(Math.min(_nappyGapM, 900)) + " ago");
         else if (_nappyGapM >= 0 && _nappyGapM < 900) _hints.push("nappy changed " + hm(_nappyGapM) + " ago");
       } else {
         _hints.push("a fresh nappy could be nice");
@@ -3824,6 +3837,18 @@ function App(){
     } catch(e) { _feedNappyHint = null; }
 
     // ── "Right now" action line (expanded) ──
+
+    // Newborn (<6wk) or pre-birthweight regain: NEEDS scheduled night feeds every 2-3h
+    // Everyone else: night wakes are responsive, don't predict times
+    const _needsScheduledNightFeeds = age && (age.totalWeeks < 6 || (weights && weights.length >= 2 && weights[weights.length-1].kg < weights[0].kg));
+    const _nightFeedHint = _needsScheduledNightFeeds
+      ? "Feed every 2–3 hours — " + _name + " needs regular feeds to gain weight"
+      : (()=>{
+          const _parts = [];
+          if (age && age.totalWeeks < 26) _parts.push("Night wakes are completely normal at this age");
+          _parts.push("If " + _name + " wakes, offer a gentle feed" + (age && age.totalWeeks < 52 ? " and check the nappy" : ""));
+          return _parts.join(". ");
+        })();
 
     // ── Morning: no wake logged ──
     if (!_hasWake && _h >= 5 && _h <= 10) {
@@ -3860,7 +3885,8 @@ function App(){
           <button onClick={()=>{haptic();setShowNightWake(true);setNwForm({time:nowTime(),ml:"",selfSettled:false,assisted:false,assistedType:"milk",assistedNote:"",assistedDuration:"",settleDuration:"",note:""});}} style={{width:"100%",padding:"12px",borderRadius:12,border:"1.5px solid rgba(123,104,238,0.25)",background:"rgba(123,104,238,0.06)",color:C.deep,fontSize:14,fontWeight:600,cursor:_cP}}>
             Log night wake
           </button>
-          <div style={{fontSize:12,color:C.lt,fontStyle:"italic",marginTop:10,textAlign:"center"}}>{_h >= 0 && _h < 4 ? "You're not alone — this part is hard. Try to rest." : "You're doing wonderfully. Try to rest."}</div>
+          <div style={{fontSize:11,color:C.lt,marginTop:8,textAlign:"center",lineHeight:1.5}}>{_nightFeedHint}</div>
+          <div style={{fontSize:12,color:C.lt,fontStyle:"italic",marginTop:6,textAlign:"center"}}>{_h >= 0 && _h < 4 ? "You're not alone — this part is hard. Try to rest." : "You're doing wonderfully. Try to rest."}</div>
         </div>
       );
     }
@@ -3883,7 +3909,7 @@ function App(){
         // This is bedtime, not a nap — show night sleep messaging
         _dot = "#7B68EE"; _label = "Sleeping for the night 🌙";
         _timing = "Sleeping " + _napMins + " min · Sweet dreams, " + _name;
-        if (_feedNappyHint) _feedNappyHint = "If " + _name + " stirs, " + _feedNappyHint;
+        _feedNappyHint = _nightFeedHint;
         _rightNow = null;
       } else if (_isBridgeNap) {
         _dot = "#D4A855"; _label = "Bridge nap 🌉";
@@ -3911,7 +3937,7 @@ function App(){
       _timing = nightElapsed !== null && nightElapsed > 0
         ? "Sleeping since " + (_bedEntry2 ? fmt12(_bedEntry2.time) : "") + " · " + Math.floor(nightElapsed/3600) + "h " + Math.floor((nightElapsed%3600)/60) + "m"
         : "";
-      if (_feedNappyHint) _feedNappyHint = "If " + _name + " stirs, " + _feedNappyHint;
+      _feedNappyHint = _nightFeedHint;
     } else if (_pred && _pred.isOverdue) {
       _dot = "#E8937A"; _label = "Winding down soon";
       _timing = "Awake " + hm(_awakeMin) + " · Past the nap window — settling time";
@@ -3963,13 +3989,17 @@ function App(){
         _timing = "Awake " + hm(_awakeMin) + " · Next nap around " + _napTimeStr + _rhythmTag;
       }
     } else if (_hasWake && _allFeedsIncNight.length > 0) {
-      // Find most recent feed by smallest gap from now
-      const _lastFeedEntry = _allFeedsIncNight.reduce((best, e) => {
+      // Find most recent feed — prioritise today's entries over yesterday's night feeds
+      const _todayFeedsInc = _allFeedsIncNight.filter(e => !e.night || (e.night && timeVal(e) < 720 && _nowM < 720));
+      const _srcFeeds = _todayFeedsInc.length > 0 ? _todayFeedsInc : _allFeedsIncNight;
+      const _lastFeedEntry = _srcFeeds.reduce((best, e) => {
         const gE = ((_nowM - timeVal(e)) + 1440) % 1440;
         const gB = ((_nowM - timeVal(best)) + 1440) % 1440;
         return gE < gB ? e : best;
       });
       let _minsSinceFeed = ((_nowM - timeVal(_lastFeedEntry)) + 1440) % 1440;
+      // Sanity check: if gap seems impossibly small for a yesterday entry, it's cross-day confusion
+      if (_minsSinceFeed < 10 && !_today.includes(_lastFeedEntry)) _minsSinceFeed += 1440;
       if (_minsSinceFeed >= 150) {
         _dot = "#7aabc4"; _label = "Feed window opening";
         _timing = "Last feed " + hm(_minsSinceFeed) + " ago · " + (age && age.totalWeeks < 3 ? "little ones this age often need feeding every 2–3h" : _name + " might be getting peckish");
