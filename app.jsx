@@ -1,7 +1,3 @@
-import React from "react";
-import * as ReactDOM from "react-dom";
-import { createRoot } from "react-dom/client";
-
 const { useState, useEffect, useRef } = React;
 
 // Remove static splash screen (defined in index.html) once React has mounted
@@ -3637,17 +3633,31 @@ function App(){
       const _baseDayForPrev = _useYesterday ? _isYesterday : selDay;
       const _prevDay = (()=>{const d=new Date(_baseDayForPrev+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
       // Find most recent feed: any entry with amount>0 or type=feed, across today+yesterday
+      // Tag entries with _dayOffset so time gap calculation accounts for which day they're from
       const _todayActual = days[todayStr()]||[];
-      const _allE = [..._today, ...(days[_prevDay]||[]), ...(_useYesterday ? _todayActual : [])];
+      const _calToday2 = todayStr();
+      const _tagDay = (arr, dayKey) => arr.map(e => {
+        const isToday = dayKey === _calToday2;
+        const isPrev = !isToday;
+        return {...e, _isPrevDay: isPrev};
+      });
+      const _allE = [..._tagDay(_today, _heroDay), ..._tagDay(days[_prevDay]||[], _prevDay), ...(_useYesterday ? _tagDay(_todayActual, _calToday2) : [])];
+      // Gap from now: for previous-day entries, add 1440 to avoid modulo wrapping
+      const _gapFromNow = (e) => {
+        let gap = _nowM - timeVal(e);
+        if (e._isPrevDay) gap += 1440;
+        else if (gap < 0) gap += 1440;
+        return gap;
+      };
       const _lastFeed = (()=>{
         const _fc = _allE.filter(e=>e.time&&(e.type==="feed"||(e.amount||0)>0||(e.night&&(e.assistedType==="milk"||e.feedType==="milk"))));
         if(!_fc.length) return null;
-        return _fc.reduce((best,e)=>{ const ge=((_nowM-timeVal(e))+1440)%1440; const gb=((_nowM-timeVal(best))+1440)%1440; return ge<gb?e:best; });
+        return _fc.reduce((best,e)=>{ const ge=_gapFromNow(e); const gb=_gapFromNow(best); return ge<gb?e:best; });
       })();
       const _lastNappy = (()=>{
         const _nc = _allE.filter(e=>e.time&&e.type==="poop");
         if(!_nc.length) return null;
-        return _nc.reduce((best,e)=>{ const ge=((_nowM-timeVal(e))+1440)%1440; const gb=((_nowM-timeVal(best))+1440)%1440; return ge<gb?e:best; });
+        return _nc.reduce((best,e)=>{ const ge=_gapFromNow(e); const gb=_gapFromNow(best); return ge<gb?e:best; });
       })();
 
       // Calculate baby's actual average feed interval from recent days (last 5 days)
@@ -3666,25 +3676,102 @@ function App(){
       } catch {}
       // Blend baby's average with age guideline (favour baby's rhythm when we have enough data)
       const _ageThreshM = age ? (age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 180 : 210) : 180;
-      const _feedThreshM = _avgFeedInterval ? Math.round(_avgFeedInterval * 0.7 + _ageThreshM * 0.3) : _ageThreshM;
+      let _feedThreshM = _avgFeedInterval ? Math.round(_avgFeedInterval * 0.7 + _ageThreshM * 0.3) : _ageThreshM;
+
+      // ── Smart feed prediction: last session + age guideline + time-of-day pattern ──
+      let _smartFeedNote = null;
+      try {
+        if (_lastFeed) {
+          const _lfMins = timeVal(_lastFeed);
+          const _lfAmount = _lastFeed.amount || 0;
+          const _lfIsBreast = _lastFeed.feedType === "breast";
+          const _lfBreastSec = (_lastFeed.breastL || 0) + (_lastFeed.breastR || 0);
+
+          // Age-appropriate per-feed target (ml for bottle)
+          const w = age ? age.totalWeeks : 12;
+          const _perFeedTarget = w < 4 ? 70 : w < 8 ? 95 : w < 13 ? 125 : w < 26 ? 170 : w < 39 ? 175 : w < 52 ? 200 : 200;
+
+          // Baby's historical feeds at similar time of day (±2h window, last 7 days)
+          const _histDays = Object.keys(days).sort().slice(-7);
+          const _timeWindow = 120; // ±2 hours
+          const _simFeeds = [];
+          const _simIntervals = [];
+          _histDays.forEach(dk => {
+            const _dFeeds = (days[dk]||[]).filter(e=>e.type==="feed"&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
+            _dFeeds.forEach((e, i) => {
+              const diff = Math.abs(timeVal(e) - _lfMins);
+              if (diff <= _timeWindow || diff >= (1440 - _timeWindow)) {
+                _simFeeds.push(e);
+                // Also grab the interval to NEXT feed from this time slot
+                if (i < _dFeeds.length - 1) {
+                  const gap = timeVal(_dFeeds[i+1]) - timeVal(e);
+                  if (gap > 20 && gap < 600) _simIntervals.push(gap);
+                }
+              }
+            });
+          });
+
+          // Average amount and interval at this time of day
+          const _simAmounts = _simFeeds.filter(e=>(e.amount||0)>0).map(e=>e.amount);
+          const _avgAmountAtTime = _simAmounts.length >= 2 ? Math.round(_simAmounts.reduce((s,v)=>s+v,0)/_simAmounts.length) : null;
+          const _avgIntervalAtTime = _simIntervals.length >= 2 ? Math.round(_simIntervals.reduce((s,v)=>s+v,0)/_simIntervals.length) : null;
+
+          // For breast feeds: average duration at this time
+          const _simBreastSecs = _simFeeds.filter(e=>e.feedType==="breast"&&((e.breastL||0)+(e.breastR||0))>0).map(e=>(e.breastL||0)+(e.breastR||0));
+          const _avgBreastSecAtTime = _simBreastSecs.length >= 2 ? Math.round(_simBreastSecs.reduce((s,v)=>s+v,0)/_simBreastSecs.length) : null;
+
+          // Adjust feed interval based on how full the last feed was
+          let _adjustRatio = 1.0;
+          if (_lfIsBreast && _avgBreastSecAtTime && _lfBreastSec > 0) {
+            // Breast: compare duration to typical
+            _adjustRatio = Math.min(1.3, Math.max(0.6, _lfBreastSec / _avgBreastSecAtTime));
+          } else if (!_lfIsBreast && _lfAmount > 0) {
+            // Bottle: compare amount to typical (use time-of-day avg or age guideline)
+            const _typicalAmount = _avgAmountAtTime || _perFeedTarget;
+            _adjustRatio = Math.min(1.3, Math.max(0.6, _lfAmount / _typicalAmount));
+          }
+
+          // Best interval estimate: prefer time-of-day pattern, fall back to overall average, then age guideline
+          const _baseInterval = _avgIntervalAtTime || _avgFeedInterval || _ageThreshM;
+          _feedThreshM = Math.round(_baseInterval * _adjustRatio);
+
+          // Build context note
+          if (!_lfIsBreast && _lfAmount > 0) {
+            const _typicalAmount = _avgAmountAtTime || _perFeedTarget;
+            const _pct = Math.round((_lfAmount / _typicalAmount) * 100);
+            if (_pct < 70) {
+              _smartFeedNote = "last feed was " + _lfAmount + "ml (" + _pct + "% of typical " + _typicalAmount + "ml) — may be hungry sooner";
+            } else if (_pct > 115) {
+              _smartFeedNote = "last feed was a big one (" + _lfAmount + "ml vs typical " + _typicalAmount + "ml)";
+            }
+          } else if (_lfIsBreast && _lfBreastSec > 0 && _avgBreastSecAtTime) {
+            const _pct = Math.round((_lfBreastSec / _avgBreastSecAtTime) * 100);
+            const _durStr = Math.floor(_lfBreastSec/60) + "m" + (_lfBreastSec%60>0 ? String(_lfBreastSec%60).padStart(2,"0") + "s" : "");
+            if (_pct < 70) {
+              _smartFeedNote = "shorter feed (" + _durStr + " vs usual " + Math.floor(_avgBreastSecAtTime/60) + "min) — may be hungry sooner";
+            }
+          }
+        }
+      } catch {}
 
       if (_lastFeed) {
-        const _lfMins = timeVal(_lastFeed);
-        let _feedGapM = _nowM - _lfMins;
-        if (_feedGapM < 0) _feedGapM += 1440;
-        if (_feedGapM >= _feedThreshM && _feedGapM < 900) _hints.push("might be ready for a feed — last one " + hm(_feedGapM) + " ago");
-        else if (_feedGapM >= 0 && _feedGapM < 900) {
+        let _feedGapM = _gapFromNow(_lastFeed);
+        if (_feedGapM >= _feedThreshM && _feedGapM < 900) {
+          _hints.push("might be ready for a feed — last one " + hm(_feedGapM) + " ago");
+          if (_smartFeedNote) _hints.push(_smartFeedNote);
+        } else if (_feedGapM >= 0 && _feedGapM < 900) {
           const [fh,fm]=_lastFeed.time.split(":").map(Number);
           const t=fh*60+fm+_feedThreshM;
-          _hints.push("next feed predicted ~" + fmt12(`${String(Math.floor(t/60)%24).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`) + (_avgFeedInterval ? " (based on " + _name + "'s rhythm)" : ""));
+          const _predTime = fmt12(`${String(Math.floor(t/60)%24).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`);
+          let _basis = _avgFeedInterval ? _name + "'s rhythm" : "age guideline";
+          _hints.push("next feed ~" + _predTime + " (based on " + _basis + ")");
+          if (_smartFeedNote) _hints.push(_smartFeedNote);
         }
       } else {
         _hints.push("could be ready for a feed soon");
       }
       if (_lastNappy) {
-        const _lnMins = timeVal(_lastNappy);
-        let _nappyGapM = _nowM - _lnMins;
-        if (_nappyGapM < 0) _nappyGapM += 1440;
+        let _nappyGapM = _gapFromNow(_lastNappy);
         if (_nappyGapM >= 150 && _nappyGapM < 900) _hints.push("a fresh nappy might help — last one " + hm(_nappyGapM) + " ago");
         else if (_nappyGapM >= 0 && _nappyGapM < 900) _hints.push("nappy changed " + hm(_nappyGapM) + " ago");
       } else {
@@ -3834,9 +3921,15 @@ function App(){
       }
     } else if (_hasWake && _allFeedsIncNight.length > 0) {
       // Check if feed window is opening (2.5h+ since last feed)
-      const _lastFeedTime = Math.max(..._allFeedsIncNight.map(e => { const tv=timeVal(e); return (e.night&&tv<720)?tv+1440:tv; }));
-      let _minsSinceFeed = _nowM - (_lastFeedTime > 1440 ? _lastFeedTime - 1440 : _lastFeedTime);
-      if (_minsSinceFeed < 0) _minsSinceFeed += 1440;
+      // Find most recent feed by smallest gap from now (handles cross-midnight correctly)
+      const _lastFeedEntry = _allFeedsIncNight.reduce((best, e) => {
+        const gE = ((_nowM - timeVal(e)) + 1440) % 1440;
+        const gB = ((_nowM - timeVal(best)) + 1440) % 1440;
+        // For night entries from previous day, the modulo gap is correct
+        // For daytime entries, also correct. Pick smallest non-zero gap.
+        return gE < gB ? e : best;
+      });
+      let _minsSinceFeed = ((_nowM - timeVal(_lastFeedEntry)) + 1440) % 1440;
       if (_minsSinceFeed >= 150) {
         _dot = "#7aabc4"; _label = "Feed window opening";
         _timing = "Last feed " + hm(_minsSinceFeed) + " ago · " + (age && age.totalWeeks < 3 ? "little ones this age often need feeding every 2–3h" : _name + " might be getting peckish");
