@@ -40,8 +40,7 @@ const fmtSec = s => s>=3600 ? `${Math.floor(s/3600)}:${String(Math.floor((s%3600
 const haptic=(ms=10)=>{try{if(window._nativeHaptic){window._nativeHaptic(typeof ms==="string"?ms:"medium");return;}if(navigator.vibrate){navigator.vibrate(typeof ms==="number"?ms:10);}}catch{}};
 // Native keyboard: adjust viewport when keyboard appears
 // Global share function for print overlay buttons
-window._obShare=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html=el.outerHTML;var blob=new Blob(["<!DOCTYPE html><html><head><meta charset=utf-8><style>@media print{.no-print{display:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>"+html+"</body></html>"],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});if(navigator.share){navigator.share({title:"Care Guide",files:[file]}).catch(function(){});}else{var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="OBubba-Care-Guide.html";a.click();}}catch(e){}};
-window._obPrint=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html=el.innerHTML;var fullHtml="<!DOCTYPE html><html><head><meta charset=utf-8><style>*{box-sizing:border-box}body{font-family:-apple-system,sans-serif;max-width:100%;margin:0;padding:20px;font-size:14px;line-height:1.5}@media print{.no-print{display:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>"+html+"</body></html>";var blob=new Blob([fullHtml],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});if(navigator.share){navigator.share({title:"Save as PDF",files:[file]}).catch(function(){});}else{var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="OBubba-Care-Guide.html";a.click();}}catch(e){}};
+window._obShare=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html="<!DOCTYPE html><html><head><meta charset=utf-8><style>*{box-sizing:border-box}body{font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:20px}table{border-collapse:collapse}td,th{padding:4px 8px;text-align:left}</style></head><body>"+el.innerHTML+"</body></html>";var blob=new Blob([html],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});navigator.share({title:"Care Guide",files:[file]}).catch(function(){});}catch(e){}};
 if(typeof window!=="undefined"&&window.visualViewport){let _lastFocused=null;document.addEventListener("focusin",function(ev){_lastFocused=ev.target;});window.visualViewport.addEventListener("resize",function(){const kbH=window.innerHeight-window.visualViewport.height;document.documentElement.style.setProperty("--keyboard-height",kbH+"px");if(_lastFocused&&kbH>100){setTimeout(function(){_lastFocused.scrollIntoView({behavior:"smooth",block:"center"});},100);}});window.visualViewport.addEventListener("scroll",function(){document.documentElement.style.setProperty("--vv-offset",window.visualViewport.offsetTop+"px");});}
 const _locale = (navigator.language||"en-GB").toLowerCase();
 const _toothLabels = {"UR-E":"Upper right 2nd molar","UR-D":"Upper right 1st molar","UR-C":"Upper right canine","UR-B":"Upper right lateral","UR-A":"Upper right central","UL-A":"Upper left central","UL-B":"Upper left lateral","UL-C":"Upper left canine","UL-D":"Upper left 1st molar","UL-E":"Upper left 2nd molar","LR-E":"Lower right 2nd molar","LR-D":"Lower right 1st molar","LR-C":"Lower right canine","LR-B":"Lower right lateral","LR-A":"Lower right central","LL-A":"Lower left central","LL-B":"Lower left lateral","LL-C":"Lower left canine","LL-D":"Lower left 1st molar","LL-E":"Lower left 2nd molar"};
@@ -929,24 +928,12 @@ const ACT_CATS = [
 function calcAge(dob, dueDate) {
   if (!dob) return null;
   const birth = new Date(dob + "T00:00:00");
-  // Corrected/adjusted age for premature babies
-  // If dueDate is set and baby was born early, use corrected age for predictions
-  let correctedBirth = birth;
-  let weeksPreterm = 0;
-  if (dueDate) {
-    const due = new Date(dueDate + "T00:00:00");
-    const diffDays = Math.round((due - birth) / (1000*60*60*24));
-    // Only apply correction if born more than 2 weeks early (≤37 weeks gestation)
-    if (diffDays > 14) {
-      weeksPreterm = Math.round(diffDays / 7);
-      correctedBirth = due; // Use due date as the "corrected birth date" for age
-    }
-  }
+  let correctedBirth = birth; let weeksPreterm = 0;
+  if (dueDate) { const due = new Date(dueDate + "T00:00:00"); const diffDays = Math.round((due - birth) / (1000*60*60*24)); if (diffDays > 14) { weeksPreterm = Math.round(diffDays / 7); correctedBirth = due; } }
   const today = new Date();
   const totalDays = Math.floor((today - birth) / (1000*60*60*24));
   if (totalDays < 0) return null;
   const totalWeeks = Math.floor(totalDays / 7);
-  // Corrected age in weeks (for premature babies)
   const correctedDays = Math.floor((today - correctedBirth) / (1000*60*60*24));
   const correctedWeeks = Math.max(0, Math.floor(correctedDays / 7));
   let months = (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth());
@@ -997,7 +984,7 @@ function UsernameSetForm({ normaliseUsername, reserveUsername, C }) {
             try{
             if(!window._fb){setSt("idle");return;}
             const {db,doc,getDoc}=window._fb;
-            const snap=await fsGet("usernames", normaliseUsername(e.target.value));
+            const snap=await getDoc(doc(db,"usernames",normaliseUsername(e.target.value)));
             setSt(snap.exists()?"taken":"available");
             }catch{setSt("idle");}
           },600);
@@ -1309,7 +1296,6 @@ function App(){
     }
     trackEvent("data_exported",{format:"csv"});
   }
-
 
   function importFromCSV(csvText) {
     const lines = csvText.split(/\r?\n/).filter(l => l.trim());
@@ -1850,14 +1836,7 @@ function App(){
   const[nameEdit,setNameEdit]=useState(false);
   const[nameIn,setNameIn]=useState("");
   const[confirmDialog,setConfirmDialog]=useState(null); // {title, message, onConfirm, confirmLabel, danger}
-  const showConfirm = (title, message, onConfirm, confirmLabel="OK", danger=false) => {
-    try{document.body.classList.add("has-confirm");}catch{}
-    setConfirmDialog({title, message, onConfirm, confirmLabel, danger});
-  };
-  const dismissConfirm = () => {
-    try{document.body.classList.remove("has-confirm");}catch{}
-    setConfirmDialog(null);
-  };
+  const showConfirm = (title, message, onConfirm, confirmLabel="OK", danger=false) => setConfirmDialog({title, message, onConfirm, confirmLabel, danger});
   const[helpTip,setHelpTip]=useState(null); // {title, body}
   const HelpBtn = ({title,body}) => (
     <button onClick={e=>{e.stopPropagation();setHelpTip({title,body});}}
@@ -1923,26 +1902,19 @@ function App(){
   const[obDueDate,setObDueDate]=useState("");
   const[showImportAfterSetup,setShowImportAfterSetup]=useState(false);
   const[showFirstLogQ,setShowFirstLogQ]=useState(false);
-  const[fqStep,setFqStep]=useState(0); // 0=wake, 1=naps, 2=feed, 3=nappy, 4=done
+  // Aliases for questionnaire state setters (PWA uses Q*, native uses Fq*)
+  const[fqStep,setFqStep]=useState(0);
   const[fqWakeTime,setFqWakeTime]=useState("");
-  const[fqHasNap,setFqHasNap]=useState(null); // null|true|false
+  const[fqHasNap,setFqHasNap]=useState(null);
   const[fqNapStart,setFqNapStart]=useState("");
   const[fqNapEnd,setFqNapEnd]=useState("");
   const[fqFeedTime,setFqFeedTime]=useState("");
   const[fqFeedAmount,setFqFeedAmount]=useState("");
   const[fqNappyTime,setFqNappyTime]=useState("");
   const[fqNappyType,setFqNappyType]=useState("wet");
+  const[showImportModal,setShowImportModal]=useState(false);
+  const[importResult,setImportResult]=useState(null);
   const[needsChildSetup,setNeedsChildSetup]=useState(false);
-  const[showQuestionnaire,setShowQuestionnaire]=useState(false);
-  const[qStep,setQStep]=useState(0); // 0=wake, 1=naps, 2=feed, 3=nappy, 4=done
-  const[qWakeTime,setQWakeTime]=useState("");
-  const[qHadNap,setQHadNap]=useState(null); // null|true|false
-  const[qNaps,setQNaps]=useState([{start:"",end:""}]);
-  const[qFeedTime,setQFeedTime]=useState("");
-  const[qFeedAmount,setQFeedAmount]=useState("");
-  const[qNappyTime,setQNappyTime]=useState("");
-  const[qNappyType,setQNappyType]=useState("wet");
-  const[qChildData,setQChildData]=useState(null);
   const[obUsername,setObUsername]=useState("");
   const[obUsernameStatus,setObUsernameStatus]=useState("idle");
   const[familyUsername,setFamilyUsername]=useState(()=>{try{return localStorage.getItem("family_username")||null;}catch{return null;}});
@@ -2088,8 +2060,6 @@ function App(){
   useEffect(()=>{backupCodeRef.current=backupCode;},[backupCode]);
   const[syncStatus,setSyncStatus]=useState("idle");
   const[showFamilyModal,setShowFamilyModal]=useState(false);
-  const[showImportModal,setShowImportModal]=useState(false);
-  const[importResult,setImportResult]=useState(null); // {imported, skipped, message}
   const[recoveryWordInput,setRecoveryWordInput]=useState("");
   const[recoveryWordSaving,setRecoveryWordSaving]=useState(false);
   const[recoveryWordStatus,setRecoveryWordStatus]=useState(null);
@@ -2100,7 +2070,6 @@ function App(){
   const[cropOffset,setCropOffset]=useState({x:0,y:0,scale:1});
   const[csName,setCsName]=useState("");
   const[csDob,setCsDob]=useState("");
-  const[csDueDate,setCsDueDate]=useState("");
   const[csSex,setCsSex]=useState("");
   const[csConfirmDelete,setCsConfirmDelete]=useState(false);
   const[joinError,setJoinError]=useState("");
@@ -2177,7 +2146,7 @@ function App(){
           }
         });
       });
-      await fsSet("families", code, {
+      await setDoc(doc(db,"families",code), {
         children: JSON.stringify(cleanForCloud),
         updatedAt: serverTimestamp(),
         updatedBy: myUid,
@@ -2186,7 +2155,7 @@ function App(){
 
       if(myUid && myUid !== "anon") {
         try{
-          await fsSet("uid_to_backup", myUid, {backupCode: code, updatedAt: serverTimestamp()}, true);
+          await setDoc(doc(db,"uid_to_backup",myUid), {backupCode: code, updatedAt: serverTimestamp()}, {merge:true});
         }catch(e){ console.warn("uid_to_backup write error",e); }
       }
       setSyncStatus("synced");
@@ -2335,7 +2304,7 @@ function App(){
           if(uname) {
             const key = uname.toLowerCase().replace(/[^a-z0-9_]/g,"");
             try {
-              const uSnap = await fsGet("usernames", key);
+              const uSnap = await getDoc(doc(db,"usernames",key));
               if(uSnap.exists()) {
                 const uData = uSnap.data();
                 code = uData.backupCode || uData.familyCode || null;
@@ -2365,7 +2334,7 @@ function App(){
         }
         if(code) {
           try {
-            const snap = await fsGet("families", code);
+            const snap = await getDoc(doc(db,"families",code));
             if(snap.exists()) {
               const d = snap.data();
               if(d.children) {
@@ -2425,7 +2394,7 @@ function App(){
               let newCode, exists = true;
               while(exists){
                 newCode = "BK"+Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
-                try{ const s = await fsGet("families", newCode); exists = s.exists(); }
+                try{ const s = await getDoc(doc(db,"families",newCode)); exists = s.exists(); }
                 catch{ exists = false; }
               }
               setBackupCode(newCode);
@@ -2521,7 +2490,7 @@ function App(){
     const {db, doc, getDoc} = window._fb;
     const clean = code.trim().toUpperCase();
     try {
-      const snap = await fsGet("families", clean);
+      const snap = await getDoc(doc(db,"families",clean));
       if(!snap.exists()) return false;
       const d = snap.data();
       if(d.children) {
@@ -2552,81 +2521,6 @@ function App(){
     } catch(e){}
   }
   const normaliseUsername = (u) => u.trim().toLowerCase().replace(/[^a-z0-9_-]/g,"");
-
-  // Firestore REST read via CapacitorHttp — bypasses WKWebView CORS block
-  // Falls back to fetch (works in browser). Mirrors getDoc() snap interface.
-  async function fsGet(collection, docId) {
-    try {
-      const _user = window._fb?.auth?.currentUser;
-      const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
-      const _url = `https://firestore.googleapis.com/v1/projects/obubba-d9ccc/databases/(default)/documents/${collection}/${encodeURIComponent(docId)}`;
-      const _headers = _token ? {"Authorization":`Bearer ${_token}`} : {};
-      const _capHttp = window.Capacitor?.Plugins?.CapacitorHttp;
-      let _data, _status;
-      if(_capHttp) {
-        const _r = await _capHttp.get({url:_url, headers:_headers}).catch(()=>null);
-        _status = _r?.status; _data = _r?.data;
-      } else {
-        const _r = await fetch(_url, {headers:_headers}).catch(()=>null);
-        _status = _r?.status; _data = _r ? await _r.json().catch(()=>null) : null;
-      }
-      if(_status === 404 || !_data || _data.error) return {exists:()=>false, data:()=>({})};
-      const fields = _data.fields || {};
-      const parsed = {};
-      for(const [k,v] of Object.entries(fields)) {
-        if(v.stringValue !== undefined) parsed[k] = v.stringValue;
-        else if(v.booleanValue !== undefined) parsed[k] = v.booleanValue;
-        else if(v.integerValue !== undefined) parsed[k] = parseInt(v.integerValue);
-        else if(v.nullValue !== undefined) parsed[k] = null;
-        else if(v.mapValue) parsed[k] = v.mapValue;
-        else parsed[k] = v;
-      }
-      return {exists:()=>true, data:()=>parsed};
-    } catch(e) { return {exists:()=>false, data:()=>({})}; }
-  }
-
-  // Firestore REST write via CapacitorHttp — bypasses WKWebView CORS block
-  async function fsSet(collection, docId, data, merge=false) {
-    try {
-      const _user = window._fb?.auth?.currentUser;
-      const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
-      if(!_token) return false;
-      // Convert JS object to Firestore REST fields format
-      const toField = (v) => {
-        if(v === null || v === undefined) return {nullValue: null};
-        if(typeof v === 'boolean') return {booleanValue: v};
-        if(typeof v === 'number') return Number.isInteger(v) ? {integerValue: String(v)} : {doubleValue: v};
-        if(typeof v === 'string') return {stringValue: v};
-        if(v && typeof v === 'object' && v._methodName === 'serverTimestamp') return {timestampValue: new Date().toISOString()};
-        if(typeof v === 'object') {
-          const fields = {};
-          for(const [k,val] of Object.entries(v)) fields[k] = toField(val);
-          return {mapValue: {fields}};
-        }
-        return {stringValue: String(v)};
-      };
-      const fields = {};
-      for(const [k,v] of Object.entries(data)) fields[k] = toField(v);
-      const body = JSON.stringify({fields});
-      let url = `https://firestore.googleapis.com/v1/projects/obubba-d9ccc/databases/(default)/documents/${collection}/${encodeURIComponent(docId)}`;
-      if(merge) {
-        const mask = Object.keys(data).map(k=>`updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
-        url += `?${mask}`;
-      }
-      const headers = {"Content-Type":"application/json","Authorization":`Bearer ${_token}`};
-      const _capHttp = window.Capacitor?.Plugins?.CapacitorHttp;
-      let status;
-      if(_capHttp) {
-        const r = await _capHttp.patch({url, headers, data: body}).catch(()=>null);
-        status = r?.status;
-      } else {
-        const r = await fetch(url, {method:'PATCH', headers, body}).catch(()=>null);
-        status = r?.status;
-      }
-      return status >= 200 && status < 300;
-    } catch(e) { console.warn('fsSet error', e); return false; }
-  }
-
   const hashPin = (pin) => { let h=5381; for(let i=0;i<pin.length;i++) h=((h<<5)+h)+pin.charCodeAt(i); return (h>>>0).toString(16); };
   async function verifyLogin(username, pin) {
     if(!window._fb) { setAuthError("Not connected — check your internet"); return false; }
@@ -2635,10 +2529,9 @@ function App(){
     if(!key) { setAuthError("Enter a username"); return false; }
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
-      const snap = await fsGet("usernames", key);
+      const snap = await getDoc(doc(db,"usernames",key));
       if(!snap.exists()) { setAuthError("Username not found"); return false; }
       const data = snap.data();
-      if(data.deleted) { setAuthError("Username not found"); return false; }
       if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN"); return false; }
       const resolvedBackup = data.backupCode || null;
       if(resolvedBackup) {
@@ -2648,7 +2541,7 @@ function App(){
       const code = resolvedBackup || data.familyCode;
       if(code) {
         try {
-          const fSnap = await fsGet("families", code);
+          const fSnap = await getDoc(doc(db,"families",code));
           if(fSnap.exists()) {
             const d = fSnap.data();
             if(d.children) {
@@ -2710,9 +2603,8 @@ function App(){
       if(!window._fb) { setObUsernameStatus("idle"); return; }
       const {db, doc, getDoc} = window._fb;
       try {
-        const snap = await fsGet("usernames", normaliseUsername(val));
-        const _taken = snap.exists() && !snap.data()?.deleted;
-        setObUsernameStatus(_taken ? "taken" : "available");
+        const snap = await getDoc(doc(db,"usernames",normaliseUsername(val)));
+        setObUsernameStatus(snap.exists() ? "taken" : "available");
       } catch(e) { setObUsernameStatus("idle"); }
     }, 600);
   }
@@ -2728,10 +2620,9 @@ function App(){
       if(!window._fb) { setAuthUsernameStatus("idle"); return; }
       const {db, doc, getDoc} = window._fb;
       try {
-        const snap = await fsGet("usernames", normaliseUsername(val));
-        const _exists = snap.exists() && !snap.data()?.deleted;
-        setAuthUsernameStatus(_exists ? "found" : "notfound");
-        if(_exists) try{document.activeElement.blur();}catch{}
+        const snap = await getDoc(doc(db,"usernames",normaliseUsername(val)));
+        setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
+        if(snap.exists()) try{document.activeElement.blur();}catch{}
       } catch(e) { setAuthUsernameStatus("idle"); }
     }, 500);
   }
@@ -2749,15 +2640,15 @@ function App(){
     if(_isReclaim) { try{localStorage.removeItem("reclaim_username");}catch{} }
     try {
       if(!_isReclaim) {
-        const snap = await fsGet("usernames", key);
-        if(snap.exists() && !snap.data()?.deleted) return false;
+        const snap = await getDoc(doc(db,"usernames",key));
+        if(snap.exists()) return false;
       }
       // Generate a fresh backup code for this new account — NEVER reuse existing codes
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       let newCode;
       for(let attempt=0;attempt<20;attempt++){
         newCode = "BK"+Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
-        const codeSnap = await fsGet("families", newCode);
+        const codeSnap = await getDoc(doc(db,"families",newCode));
         if(!codeSnap.exists()) break;
       }
       // Clear any previous account data from this device — CRITICAL for multi-account safety
@@ -2768,14 +2659,13 @@ function App(){
       try{ localStorage.removeItem("family_code"); }catch{}
       setBackupCode(newCode);
       try{ localStorage.setItem("backup_code", newCode); }catch{}
-      const _written = await fsSet("usernames", key, {
+      await setDoc(doc(db,"usernames",key), {
         pinHash: hashPin(pin||"0000"),
         backupCode: newCode,
         familyCode: null,
         createdAt: serverTimestamp(),
         displayName: username.trim()
       });
-      if(!_written) throw new Error("Failed to write username doc");
       setFamilyUsername(username.trim());
       setFamilyCode(null);
       try{ localStorage.setItem("family_username", username.trim()); }catch{}
@@ -2790,7 +2680,7 @@ function App(){
     const {db, doc, setDoc} = window._fb;
     const key = normaliseUsername(familyUsername);
     try {
-      await fsSet("usernames", key, {recoveryHash: hashPin(word.trim().toLowerCase())}, true);
+      await setDoc(doc(db,"usernames",key), {recoveryHash: hashPin(word.trim().toLowerCase())}, {merge:true});
       return true;
     } catch(e) { console.warn("Save recovery word error", e); return false; }
   }
@@ -2799,14 +2689,14 @@ function App(){
     const {db, doc, getDoc, setDoc} = window._fb;
     const key = normaliseUsername(username);
     try {
-      const snap = await fsGet("usernames", key);
+      const snap = await getDoc(doc(db,"usernames",key));
       if(!snap.exists()) return {ok:false, error:"Username not found"};
       const data = snap.data();
       const codeMatch = (data.backupCode||data.familyCode||"").toUpperCase() === wordOrCode.trim().toUpperCase();
       const wordMatch = data.recoveryHash && data.recoveryHash === hashPin(wordOrCode.trim().toLowerCase());
       if(!codeMatch && !wordMatch)
         return {ok:false, error:"That doesn't match — check your recovery word"};
-      await fsSet("usernames", key, {pinHash: hashPin(newPin)}, true);
+      await setDoc(doc(db,"usernames",key), {pinHash: hashPin(newPin)}, {merge:true});
       return {ok:true};
     } catch(e) { return {ok:false, error:"Something went wrong — try again"}; }
   }
@@ -2818,7 +2708,7 @@ function App(){
       const {db, doc, setDoc} = window._fb;
       const key = normaliseUsername(familyUsername);
       try {
-        await fsSet("usernames", key, {familyCode}, true);
+        await setDoc(doc(db,"usernames",key), {familyCode}, {merge:true});
       } catch(e){}
     })();
   },[fbReady, familyUsername, familyCode]);
@@ -3240,42 +3130,6 @@ function App(){
       clearInterval(periodicSnap);
     };
   },[napOn, napPaused, napStartT, breastActive, breastStartTime, breastSide]);
-
-  // ── Drain pending logs from widget buttons / Siri on app resume ──
-  useEffect(()=>{
-    async function drainPendingLogs() {
-      try {
-        const plug = window.Capacitor?.Plugins?.PendingLogsPlugin;
-        if (!plug) return;
-        const { logs = [], widgetActions = [] } = await plug.getPendingLogs();
-        // Handle widget button actions first
-        widgetActions.forEach(action => {
-          if (action === "start_nap" && !napOn) { startNap(); }
-          else if (action === "stop_nap" && napOn) { endNap(); }
-        });
-        // Then process any voice/Siri logs
-        if (logs.length > 0) {
-          logs.forEach(log => {
-            if (log.type === "feed") {
-              quickAddLog("feed", {type:"feed", time:log.time||nowTime(), feedType:log.feedType||"milk", amount:parseFloat(log.amount)||0, note:log.note||""});
-            } else if (log.type === "poop") {
-              quickAddLog("poop", {type:"poop", time:log.time||nowTime(), poopType:log.poopType||"wet", note:log.note||""});
-            } else if (log.type === "nap") {
-              quickAddLog("nap", {type:"nap", start:log.start||nowTime(), end:log.end||nowTime(), note:log.note||""});
-            } else if (log.type === "tummy") {
-              quickAddLog("tummy", {type:"tummy", time:log.time||nowTime(), note:log.note||""});
-            }
-          });
-          showToast(`📥 ${logs.length} log${logs.length>1?"s":""} added`, 2000, 1);
-        }
-      } catch(e) {}
-    }
-    function onResume() { drainPendingLogs(); }
-    document.addEventListener("resume", onResume);
-    document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") drainPendingLogs(); });
-    drainPendingLogs(); // Also drain on mount
-    return ()=>{ document.removeEventListener("resume", onResume); };
-  }, []);
   useEffect(()=>{
     if(breastActive && breastSide){
       breastRef.current=setInterval(()=>{
@@ -3296,11 +3150,6 @@ function App(){
   useEffect(()=>{try{localStorage.setItem("breast_sec",JSON.stringify(breastSec));}catch{}},[breastSec]);
   useEffect(()=>{try{localStorage.setItem("breast_active",breastActive?"1":"0");}catch{}},[breastActive]);
   const age = React.useMemo(() => calcAge(babyDob, activeChild.dueDate), [babyDob, activeChild.dueDate]);
-  // For sleep/nap predictions: use corrected age if premature, otherwise regular age
-  const ageWeeksForPrediction = React.useMemo(() => {
-    if (!age) return null;
-    return age.isPreterm ? age.correctedWeeks : age.totalWeeks;
-  }, [age]);
   const tickDataRef = React.useRef({});
   React.useEffect(()=>{
     const ageWeeks = age ? age.totalWeeks : null;
@@ -3511,7 +3360,6 @@ function App(){
     let _today = days[_heroDay] || [];
     const _useYesterday = _heroDay === _isYesterday;
     if (_today.length === 0 && !_todayHasMorningWake && (days[_isYesterday]||[]).length === 0) {
-      // Brand new account — show a welcome card with first steps
       return (
         <div className="glass-card" style={{padding:"20px 18px",marginBottom:12}}>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
@@ -3521,14 +3369,13 @@ function App(){
           <div style={{fontSize:13,color:C.mid,marginBottom:14,lineHeight:1.6}}>
             {age ? `Start tracking ${_name}'s day by tapping ☀️ Wake above.` : `Tap ${_name}'s name above to add a date of birth — this unlocks nap predictions, wake windows and milestones.`}
           </div>
-          {age && (
+          {age ? (
             <div style={{background:"rgba(201,112,90,0.08)",borderRadius:12,padding:"12px 14px",fontSize:13,color:C.mid,lineHeight:1.5}}>
-              <strong>First step:</strong> Tap <strong>☀️ Wake</strong> to log when {_name} woke up this morning. OBubba will start predicting nap times right away.
+              <strong>First step:</strong> Tap <strong>☀️ Wake</strong> to log when {_name} woke up this morning.
             </div>
-          )}
-          {!age && (
+          ) : (
             <div style={{background:"rgba(123,104,238,0.08)",borderRadius:12,padding:"12px 14px",fontSize:13,color:C.mid,lineHeight:1.5}}>
-              <strong>First step:</strong> Tap <strong>{_name}'s name</strong> at the top to add their date of birth. Without it, OBubba can't calculate wake windows or nap predictions.
+              <strong>First step:</strong> Tap <strong>{_name}'s name</strong> at the top to add their date of birth.
             </div>
           )}
         </div>
@@ -3630,24 +3477,15 @@ function App(){
     let _chaoticDays = [];
     try {
       const _hints = [];
-      // Find last feed and nappy — prioritise TODAY's entries, only fall back to yesterday's night entries
       const _baseDayForPrev = _useYesterday ? _isYesterday : selDay;
       const _prevDay = (()=>{const d=new Date(_baseDayForPrev+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
-      // Find most recent feed: any entry with amount>0 or type=feed, across today+yesterday
-      // Tag entries with _dayOffset so time gap calculation accounts for which day they're from
       const _todayActual = days[todayStr()]||[];
-      const _calToday2 = todayStr();
-      const _tagDay = (arr, dayKey) => arr.map(e => {
-        const isToday = dayKey === _calToday2;
-        const isPrev = !isToday;
-        return {...e, _isPrevDay: isPrev};
-      });
-      const _allE = [..._tagDay(_today, _heroDay), ..._tagDay(days[_prevDay]||[], _prevDay), ...(_useYesterday ? _tagDay(_todayActual, _calToday2) : [])];
-      // Gap from now: for previous-day entries, add 1440 to avoid modulo wrapping
+      const _allE = [..._today, ...(days[_prevDay]||[]), ...(_useYesterday ? _todayActual : [])];
+      // Safe gap-from-now: negative gap means entry is from earlier day
       const _gapFromNow = (e) => {
         let gap = _nowM - timeVal(e);
-        if (e._isPrevDay) gap += 1440;
-        else if (gap < 0) gap += 1440;
+        if (gap < -60) gap += 1440;
+        else if (gap < 0) gap = Math.abs(gap);
         return gap;
       };
       const _lastFeed = (()=>{
@@ -3661,170 +3499,98 @@ function App(){
         return _nc.reduce((best,e)=>{ const ge=_gapFromNow(e); const gb=_gapFromNow(best); return ge<gb?e:best; });
       })();
 
-      // Calculate baby's actual average feed interval from recent days (last 7 days)
-      // with anomaly detection — chaotic days excluded from average
+      // Average feed interval from last 7 days with anomaly detection
       let _avgFeedInterval = null;
-      _chaoticDays = [];
       try {
         const _recentDayKeys = Object.keys(days).sort().slice(-7);
-        // Build per-day stats
-        const _dayStats = _recentDayKeys.map(dk => {
+        const _dayStats = [];
+        _recentDayKeys.forEach(dk => {
           const _dayFeeds = (days[dk]||[]).filter(e=>e.type==="feed"&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
-          const gaps = [];
+          if (_dayFeeds.length < 2) return;
+          const dGaps = [];
           for (let i=1; i<_dayFeeds.length; i++) {
             const gap = timeVal(_dayFeeds[i]) - timeVal(_dayFeeds[i-1]);
-            if (gap > 20 && gap < 360) gaps.push(gap);
+            if (gap > 20 && gap < 360) dGaps.push(gap);
           }
-          const count = _dayFeeds.length;
-          const mean = gaps.length ? Math.round(gaps.reduce((s,v)=>s+v,0)/gaps.length) : null;
-          // Variance: how spread out the intervals are
-          const variance = gaps.length >= 2 ? Math.round(gaps.reduce((s,v)=>s+(v-mean)*(v-mean),0)/gaps.length) : 0;
-          return { dk, count, gaps, mean, variance };
-        }).filter(d => d.count >= 2); // need at least 2 feeds to be useful
-
+          const mean = dGaps.length > 0 ? Math.round(dGaps.reduce((s,v)=>s+v,0)/dGaps.length) : 0;
+          const variance = dGaps.length >= 2 ? Math.round(dGaps.reduce((s,v)=>s+((v-mean)*(v-mean)),0)/dGaps.length) : 0;
+          _dayStats.push({ dk, count: _dayFeeds.length, gaps: dGaps, mean, variance });
+        });
         if (_dayStats.length >= 3) {
-          // Median feed count and mean interval across days
           const _counts = _dayStats.map(d=>d.count).sort((a,b)=>a-b);
           const _medCount = _counts[Math.floor(_counts.length/2)];
-          const _means = _dayStats.filter(d=>d.mean!==null).map(d=>d.mean).sort((a,b)=>a-b);
-          const _medMean = _means.length ? _means[Math.floor(_means.length/2)] : null;
+          const _means = _dayStats.filter(d=>d.mean>0).map(d=>d.mean).sort((a,b)=>a-b);
+          const _medMean = _means.length > 0 ? _means[Math.floor(_means.length/2)] : 0;
           const _variances = _dayStats.filter(d=>d.variance>0).map(d=>d.variance).sort((a,b)=>a-b);
-          const _medVar = _variances.length ? _variances[Math.floor(_variances.length/2)] : 0;
-
-          // Flag chaotic days: feed count way off, intervals wildly inconsistent, or mean shifted heavily
+          const _medVar = _variances.length > 0 ? _variances[Math.floor(_variances.length/2)] : 0;
           _dayStats.forEach(d => {
-            let chaotic = false;
-            let reasons = [];
-            // Feed count >50% different from median
-            if (_medCount > 0 && Math.abs(d.count - _medCount) / _medCount > 0.5) {
-              chaotic = true;
-              reasons.push(d.count > _medCount ? "unusually frequent feeds" : "fewer feeds than normal");
-            }
-            // Interval variance >2.5x the median variance (very erratic spacing)
-            if (_medVar > 0 && d.variance > _medVar * 2.5) {
-              chaotic = true;
-              reasons.push("erratic feed spacing");
-            }
-            // Mean interval >40% different from median
-            if (_medMean && d.mean && Math.abs(d.mean - _medMean) / _medMean > 0.4) {
-              chaotic = true;
-              reasons.push(d.mean > _medMean ? "longer gaps than usual" : "shorter gaps than usual");
-            }
-            if (chaotic) {
-              d._chaotic = true;
-              d._reasons = reasons;
-              _chaoticDays.push({ date: d.dk, reasons });
-            }
+            let chaotic = false; const reasons = [];
+            if (_medCount > 0 && Math.abs(d.count - _medCount) / _medCount > 0.5) { chaotic = true; reasons.push(d.count > _medCount ? "unusually frequent feeds" : "fewer feeds than normal"); }
+            if (_medVar > 0 && d.variance > _medVar * 2.5) { chaotic = true; reasons.push("erratic feed spacing"); }
+            if (_medMean > 0 && d.mean > 0 && Math.abs(d.mean - _medMean) / _medMean > 0.4) { chaotic = true; reasons.push(d.mean > _medMean ? "longer gaps than usual" : "shorter gaps than usual"); }
+            if (chaotic) { d._chaotic = true; _chaoticDays.push({ date: d.dk, reasons }); }
           });
-
-          // Build average from non-chaotic days only
           const _goodDays = _dayStats.filter(d => !d._chaotic);
           const _goodIntervals = [];
-          _goodDays.forEach(d => _goodIntervals.push(...d.gaps));
-          if (_goodIntervals.length >= 3) {
-            _avgFeedInterval = Math.round(_goodIntervals.reduce((s,v)=>s+v,0) / _goodIntervals.length);
-          } else {
-            // Not enough good days — use all data but note it
-            const _allIntervals = [];
-            _dayStats.forEach(d => _allIntervals.push(...d.gaps));
-            if (_allIntervals.length >= 3) _avgFeedInterval = Math.round(_allIntervals.reduce((s,v)=>s+v,0) / _allIntervals.length);
-          }
+          (_goodDays.length >= 2 ? _goodDays : _dayStats).forEach(d => _goodIntervals.push(...d.gaps));
+          if (_goodIntervals.length >= 3) _avgFeedInterval = Math.round(_goodIntervals.reduce((s,v)=>s+v,0) / _goodIntervals.length);
         } else {
-          // Fewer than 3 days of data — use everything
-          const _allIntervals = [];
-          _dayStats.forEach(d => _allIntervals.push(...d.gaps));
-          if (_allIntervals.length >= 3) _avgFeedInterval = Math.round(_allIntervals.reduce((s,v)=>s+v,0) / _allIntervals.length);
+          const _allI = []; _dayStats.forEach(d => _allI.push(...d.gaps));
+          if (_allI.length >= 3) _avgFeedInterval = Math.round(_allI.reduce((s,v)=>s+v,0) / _allI.length);
         }
-      } catch {}
-      // Blend baby's average with age guideline (strongly favour baby's own data when available)
-      // Age-based DAYTIME feed interval guidelines (NHS feeds/day mapped to waking hours)
-      // <4wk: 8-12/day ≈ every 2h, <8wk: 7-8 ≈ 2.5h, <17wk: 6-7 ≈ 2.5-3h,
-      // <26wk: 5-6 ≈ 2.5h, <39wk: 4-5 milk+solids ≈ 3h, <52wk: 3-4 ≈ 3h, 52+: 3h+
+      } catch(ex) { /* anomaly detection failed — use age guideline */ }
+
+      // NHS-aligned daytime feed interval guidelines
       const _ageThreshM = age ? (
-        age.totalWeeks < 4 ? 120 :
-        age.totalWeeks < 8 ? 150 :
-        age.totalWeeks < 17 ? 160 :
-        age.totalWeeks < 26 ? 150 :
-        age.totalWeeks < 39 ? 180 :
-        age.totalWeeks < 52 ? 180 : 210
+        age.totalWeeks < 4 ? 120 : age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 160 :
+        age.totalWeeks < 26 ? 150 : age.totalWeeks < 39 ? 180 : age.totalWeeks < 52 ? 180 : 210
       ) : 160;
       let _feedThreshM = _avgFeedInterval ? Math.round(_avgFeedInterval * 0.85 + _ageThreshM * 0.15) : _ageThreshM;
 
-      // ── Smart feed prediction: last session + age guideline + time-of-day pattern ──
+      // Smart feed prediction: last session size + time-of-day pattern
       let _smartFeedNote = null;
       try {
         if (_lastFeed) {
-          const _lfMins = timeVal(_lastFeed);
           const _lfAmount = _lastFeed.amount || 0;
           const _lfIsBreast = _lastFeed.feedType === "breast";
           const _lfBreastSec = (_lastFeed.breastL || 0) + (_lastFeed.breastR || 0);
-
-          // Age-appropriate per-feed target (ml for bottle)
+          const _lfMins = timeVal(_lastFeed);
           const w = age ? age.totalWeeks : 12;
-          const _perFeedTarget = w < 4 ? 70 : w < 8 ? 95 : w < 13 ? 125 : w < 26 ? 170 : w < 39 ? 175 : w < 52 ? 200 : 200;
-
-          // Baby's historical feeds at similar time of day (±2h window, last 7 days)
+          const _perFeedTarget = w < 4 ? 70 : w < 8 ? 95 : w < 13 ? 125 : w < 26 ? 170 : w < 39 ? 175 : 200;
+          // Historical feeds at similar time of day (±2h, last 7 days)
           const _histDays = Object.keys(days).sort().slice(-7);
-          const _timeWindow = 120; // ±2 hours
-          const _simFeeds = [];
-          const _simIntervals = [];
+          const _simFeeds = []; const _simIntervals = [];
           _histDays.forEach(dk => {
             const _dFeeds = (days[dk]||[]).filter(e=>e.type==="feed"&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
             _dFeeds.forEach((e, i) => {
               const diff = Math.abs(timeVal(e) - _lfMins);
-              if (diff <= _timeWindow || diff >= (1440 - _timeWindow)) {
+              if (diff <= 120 || diff >= 1320) {
                 _simFeeds.push(e);
-                // Also grab the interval to NEXT feed from this time slot
-                if (i < _dFeeds.length - 1) {
-                  const gap = timeVal(_dFeeds[i+1]) - timeVal(e);
-                  if (gap > 20 && gap < 360) _simIntervals.push(gap);
-                }
+                if (i < _dFeeds.length - 1) { const g = timeVal(_dFeeds[i+1]) - timeVal(e); if (g > 20 && g < 360) _simIntervals.push(g); }
               }
             });
           });
-
-          // Average amount and interval at this time of day
           const _simAmounts = _simFeeds.filter(e=>(e.amount||0)>0).map(e=>e.amount);
           const _avgAmountAtTime = _simAmounts.length >= 2 ? Math.round(_simAmounts.reduce((s,v)=>s+v,0)/_simAmounts.length) : null;
           const _avgIntervalAtTime = _simIntervals.length >= 2 ? Math.round(_simIntervals.reduce((s,v)=>s+v,0)/_simIntervals.length) : null;
-
-          // For breast feeds: average duration at this time
           const _simBreastSecs = _simFeeds.filter(e=>e.feedType==="breast"&&((e.breastL||0)+(e.breastR||0))>0).map(e=>(e.breastL||0)+(e.breastR||0));
           const _avgBreastSecAtTime = _simBreastSecs.length >= 2 ? Math.round(_simBreastSecs.reduce((s,v)=>s+v,0)/_simBreastSecs.length) : null;
-
-          // Adjust feed interval based on how full the last feed was
           let _adjustRatio = 1.0;
-          if (_lfIsBreast && _avgBreastSecAtTime && _lfBreastSec > 0) {
-            // Breast: compare duration to typical
-            _adjustRatio = Math.min(1.3, Math.max(0.6, _lfBreastSec / _avgBreastSecAtTime));
-          } else if (!_lfIsBreast && _lfAmount > 0) {
-            // Bottle: compare amount to typical (use time-of-day avg or age guideline)
-            const _typicalAmount = _avgAmountAtTime || _perFeedTarget;
-            _adjustRatio = Math.min(1.3, Math.max(0.6, _lfAmount / _typicalAmount));
-          }
-
-          // Best interval estimate: prefer time-of-day pattern, fall back to overall average, then age guideline
+          if (_lfIsBreast && _avgBreastSecAtTime && _lfBreastSec > 0) _adjustRatio = Math.min(1.3, Math.max(0.6, _lfBreastSec / _avgBreastSecAtTime));
+          else if (!_lfIsBreast && _lfAmount > 0) _adjustRatio = Math.min(1.3, Math.max(0.6, _lfAmount / (_avgAmountAtTime || _perFeedTarget)));
           const _baseInterval = _avgIntervalAtTime || _avgFeedInterval || _ageThreshM;
           _feedThreshM = Math.round(_baseInterval * _adjustRatio);
-
-          // Build context note
           if (!_lfIsBreast && _lfAmount > 0) {
-            const _typicalAmount = _avgAmountAtTime || _perFeedTarget;
-            const _pct = Math.round((_lfAmount / _typicalAmount) * 100);
-            if (_pct < 70) {
-              _smartFeedNote = "last feed was " + _lfAmount + "ml (" + _pct + "% of typical " + _typicalAmount + "ml) — may be hungry sooner";
-            } else if (_pct > 115) {
-              _smartFeedNote = "last feed was a big one (" + _lfAmount + "ml vs typical " + _typicalAmount + "ml)";
-            }
+            const _typ = _avgAmountAtTime || _perFeedTarget;
+            const _pct = Math.round((_lfAmount / _typ) * 100);
+            if (_pct < 70) _smartFeedNote = "last feed " + _lfAmount + "ml (" + _pct + "% of typical " + _typ + "ml) — may be hungry sooner";
+            else if (_pct > 115) _smartFeedNote = "last feed was a big one (" + _lfAmount + "ml vs typical " + _typ + "ml)";
           } else if (_lfIsBreast && _lfBreastSec > 0 && _avgBreastSecAtTime) {
             const _pct = Math.round((_lfBreastSec / _avgBreastSecAtTime) * 100);
-            const _durStr = Math.floor(_lfBreastSec/60) + "m" + (_lfBreastSec%60>0 ? String(_lfBreastSec%60).padStart(2,"0") + "s" : "");
-            if (_pct < 70) {
-              _smartFeedNote = "shorter feed (" + _durStr + " vs usual " + Math.floor(_avgBreastSecAtTime/60) + "min) — may be hungry sooner";
-            }
+            if (_pct < 70) _smartFeedNote = "shorter feed (" + Math.floor(_lfBreastSec/60) + "min vs usual " + Math.floor(_avgBreastSecAtTime/60) + "min) — may be hungry sooner";
           }
         }
-      } catch {}
+      } catch(ex) { /* smart prediction failed */ }
 
       if (_lastFeed) {
         let _feedGapM = _gapFromNow(_lastFeed);
@@ -3834,9 +3600,7 @@ function App(){
         } else if (_feedGapM >= 0 && _feedGapM < 900) {
           const [fh,fm]=_lastFeed.time.split(":").map(Number);
           const t=fh*60+fm+_feedThreshM;
-          const _predTime = fmt12(`${String(Math.floor(t/60)%24).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`);
-          let _basis = _avgFeedInterval ? _name + "'s rhythm" : "age guideline";
-          _hints.push("next feed ~" + _predTime + " (based on " + _basis + ")");
+          _hints.push("next feed ~" + fmt12(`${String(Math.floor(t/60)%24).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`) + " (based on " + (_avgFeedInterval ? _name + "'s rhythm" : "age guideline") + ")");
           if (_smartFeedNote) _hints.push(_smartFeedNote);
         }
       } else {
@@ -3992,13 +3756,10 @@ function App(){
         _timing = "Awake " + hm(_awakeMin) + " · Next nap around " + _napTimeStr + _rhythmTag;
       }
     } else if (_hasWake && _allFeedsIncNight.length > 0) {
-      // Check if feed window is opening (2.5h+ since last feed)
-      // Find most recent feed by smallest gap from now (handles cross-midnight correctly)
+      // Find most recent feed by smallest gap from now
       const _lastFeedEntry = _allFeedsIncNight.reduce((best, e) => {
         const gE = ((_nowM - timeVal(e)) + 1440) % 1440;
         const gB = ((_nowM - timeVal(best)) + 1440) % 1440;
-        // For night entries from previous day, the modulo gap is correct
-        // For daytime entries, also correct. Pick smallest non-zero gap.
         return gE < gB ? e : best;
       });
       let _minsSinceFeed = ((_nowM - timeVal(_lastFeedEntry)) + 1440) % 1440;
@@ -4061,19 +3822,6 @@ function App(){
         <div style={{fontSize:13,color:C.mid,marginBottom:_rightNow?4:8,paddingLeft:20}}>{_timing}</div>
         {_rightNow && <div style={{fontSize:12,color:C.ter,fontWeight:600,paddingLeft:20,marginBottom:6}}>{_rightNow}</div>}
         {_feedNappyHint && <div style={{fontSize:11,color:C.lt,paddingLeft:20,marginBottom:6,fontFamily:_fM}}>🍼 {_feedNappyHint}</div>}
-        {_chaoticDays.length > 0 && _avgFeedInterval && (
-          <button onClick={()=>{
-            const _detail = _chaoticDays.map(d => {
-              const _dt = new Date(d.date+"T12:00:00");
-              const _dayName = _dt.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
-              return _dayName + " (" + d.reasons.join(", ") + ")";
-            }).join("\n");
-            showConfirm("Unusual days excluded", _chaoticDays.length + " day" + (_chaoticDays.length>1?"s":"") + " excluded from feed predictions because feeding patterns were unusual:\n\n" + _detail + "\n\nThis helps keep predictions accurate. If " + (_chaoticDays.length>1?"these days were":"this day was") + " normal for your routine, you can ignore this.", ()=>{}, "Got it");
-          }} style={{background:"none",border:"none",padding:"0 0 0 20px",marginBottom:4,cursor:_cP,display:"flex",alignItems:"center",gap:4}}>
-            <span style={{fontSize:10,color:"#b88a20"}}>📊 {_chaoticDays.length} unusual day{_chaoticDays.length>1?"s":""} excluded from prediction</span>
-            <span style={{fontSize:9,color:C.lt}}>ⓘ</span>
-          </button>
-        )}
         {_feedNappyHint && _allFeeds.length >= 6 && !napOn && !_hasBed && !microReassureRef.current && (()=>{
           microReassureRef.current = true;
           const _microMsgs = [
@@ -5465,9 +5213,8 @@ function App(){
         const g = timeVal(dFeeds[i]) - timeVal(dFeeds[i - 1]);
         if (g > 30 && g < 360) dg.push(g);
       }
-      return { gaps: dg, count: dFeeds.length, mean: dg.length ? dg.reduce((a,b)=>a+b,0)/dg.length : null };
+      return { gaps: dg, count: dFeeds.length };
     }).filter(d => d.count >= 2);
-    // Exclude outlier days (feed count >50% from median)
     let gaps = [];
     if (_perDayGaps.length >= 3) {
       const _counts = _perDayGaps.map(d=>d.count).sort((a,b)=>a-b);
@@ -8458,7 +8205,6 @@ function App(){
     if (type === "feed") fireEventReminders("after_feed");
     else if (type === "wake" && !data.night) fireEventReminders("after_wake");
     else if (type === "poop") fireEventReminders("after_nappy");
-    try { setTimeout(()=>{ const _td=days[selDay]||[]; const _feeds=_td.filter(e=>e.type==="feed"&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b)); const _poops=_td.filter(e=>e.type==="poop"&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b)); const _naps=_td.filter(e=>e.type==="nap"&&!e.night); const _lf=_feeds[_feeds.length-1]; const _lp=_poops[_poops.length-1]; const _nowM2=new Date().getHours()*60+new Date().getMinutes(); const _nm=_naps.reduce((s,n)=>s+minDiff(n.start,n.end),0); const _ln=_naps[_naps.length-1]; const _wPlug = window.Capacitor?.Plugins?.PendingLogsPlugin; if(_wPlug) _wPlug.updateWidgetData({babyName:babyName||'Baby',lastFeedTime:_lf?fmt12(_lf.time):'--',lastFeedAgo:_lf?hm((_nowM2-timeVal(_lf)+1440)%1440)+' ago':'No feeds yet',nextFeedDue:'--',lastNappyAgo:_lp?hm((_nowM2-timeVal(_lp)+1440)%1440)+' ago':'--',napStatus:napOn?'Napping now':_ln?'Last nap '+fmt12(_ln.start):'No nap yet',todayNapTotal:_nm>0?hm(_nm)+' today':'--'}).catch(()=>{}); },500); } catch(e) {}
   }
 
   function saveLogFeed(){
@@ -9441,56 +9187,25 @@ function App(){
       <div style="font-size:10px;color:#C0A8B0;margin-top:4px">Carers can log feeds, naps & nappies — you'll review them in the app</div>
     </div>`);
 
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name}'s Care Guide</title><style>
-*{box-sizing:border-box;margin:0}
-body{font-family:-apple-system,system-ui,sans-serif;max-width:100%;margin:0;padding:60px 16px 40px;background:#FFFCF9;font-size:15px;line-height:1.5}
-h2{font-family:Georgia,serif;font-size:17px}
-table{border-collapse:collapse;width:100%}
-td,th{padding:4px 8px;font-size:13px;word-break:break-word}
-img{max-width:100%;height:auto}
-@media print {
-  body{padding:20px;background:white;font-size:13px}
-  .no-print{display:none!important}
-  img{max-width:150px}
-  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  @page{margin:1cm;size:A4 portrait}
-}
-</style></head><body>${sections.join("")}</body></html>`;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name}'s Care Guide</title><style>*{box-sizing:border-box;margin:0}body{font-family:-apple-system,system-ui,sans-serif;max-width:100%;margin:0;padding:60px 16px 40px;background:#FFFCF9;font-size:15px;line-height:1.5}h2{font-family:Georgia,serif;font-size:17px}table{border-collapse:collapse;width:100%}td,th{padding:4px 8px;font-size:13px;word-break:break-word}img{max-width:100%;height:auto}</style></head><body>${sections.join("")}</body></html>`;
   }
 
   async function shareCarerCard() {
     const html = generateCarerCardHTML();
     const name = babyName || "Baby";
-    // Embed QR as base64 so it shows when shared/printed offline
-    // Use CapacitorHttp on native to bypass WKWebView CORS block
+    // Try to embed QR as base64 for offline sharing
     let finalHtml = html;
     try {
       const qrImg = html.match(/src="(https:\/\/api\.qrserver[^"]+)"/);
       if(qrImg && qrImg[1]){
-        const _capHttp = window.Capacitor?.Plugins?.CapacitorHttp;
-        let b64 = null;
-        if(_capHttp) {
-          // CapacitorHttp returns base64 for binary — request as blob via responseType
-          const _r = await _capHttp.get({url: qrImg[1], responseType: "blob"}).catch(()=>null);
-          if(_r?.data) b64 = `data:image/png;base64,${_r.data}`;
-        }
-        if(!b64) {
-          // Browser fallback
-          const resp = await fetch(qrImg[1]);
-          const blob = await resp.blob();
-          b64 = await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});
-        }
-        if(b64) finalHtml = html.replace(qrImg[1], b64);
+        const resp = await fetch(qrImg[1]);
+        const blob = await resp.blob();
+        const b64 = await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});
+        finalHtml = html.replace(qrImg[1], b64);
       }
     } catch(e) { /* fallback to URL */ }
 
-    const _closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0">
-      <button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button>
-      <div style="display:flex;gap:8px">
-        <button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print / Save PDF</button>
-        <button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button>
-      </div>
-    </div>`;
+    const _closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
     // Try native share first (mobile)
     if (navigator.share) {
       const blob = new Blob([finalHtml], { type: "text/html" });
@@ -10520,9 +10235,6 @@ img{max-width:100%;height:auto}
                   I agree to the <a href="https://obubba.com/terms" target="_blank" style={{color:C.ter,fontWeight:600,textDecoration:"underline"}}>Terms & Conditions</a> and <a href="https://obubba.com/privacy" target="_blank" style={{color:C.ter,fontWeight:600,textDecoration:"underline"}}>Privacy Policy</a>
                 </div>
               </div>
-              {!agreedToTerms && authUsername.trim().length>=3 && authPin.length===4 && authPin2===authPin && (
-                <div style={{fontSize:11,color:"#e8574a",textAlign:"center",marginBottom:4}}>Please agree to the Terms & Conditions to continue</div>
-              )}
               <button onClick={()=>handleAuth(authPin,authPin2)} disabled={!canSubmit}
                 style={{width:"100%",background:canSubmit&&!authLoading?`linear-gradient(135deg,#c9705a,#a85a44)`:"#f2d9cc",
                   border:_bN,borderRadius:99,padding:"13px",color:canSubmit&&!authLoading?"white":"#b89890",
@@ -10565,7 +10277,7 @@ img{max-width:100%;height:auto}
                   if(!window._fb){setForgotPinError("Not connected");setForgotPinLoading(false);return;}
                   const {db,doc,getDoc}=window._fb;
                   try{
-                    const snap=await fsGet("usernames", normaliseUsername(authUsername));
+                    const snap=await getDoc(doc(db,"usernames",normaliseUsername(authUsername)));
                     if(!snap.exists()){setForgotPinError("Username not found");setForgotPinLoading(false);return;}
                     const data=snap.data();
                     const wordHash=hashPin(forgotPinWord.trim().toLowerCase());
@@ -10894,28 +10606,6 @@ img{max-width:100%;height:auto}
               </div>
               <input type="date" value={obDob} onChange={e=>setObDob(e.target.value)}
                 style={{width:"100%",fontSize:16,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.blush}`,background:"var(--card-bg-solid)",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:10,boxSizing:_bBB}}/>
-              <div onClick={()=>{setObBornEarly(v=>!v);setObDueDate("");}} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:12,border:`2px solid ${obBornEarly?C.ter:C.blush}`,background:obBornEarly?"var(--chip-bg-active)":"white",cursor:_cP,marginBottom:obBornEarly?8:10,transition:"all 0.2s"}}>
-                <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${obBornEarly?C.ter:C.blush}`,background:obBornEarly?C.ter:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  {obBornEarly && <span style={{color:"white",fontSize:13,fontWeight:700}}>✓</span>}
-                </div>
-                <div>
-                  <div style={{fontSize:13,fontWeight:700,color:obBornEarly?C.ter:C.mid}}>👶 Born early (premature)</div>
-                  <div style={{fontSize:11,color:C.lt}}>OBubba will use adjusted age for predictions</div>
-                </div>
-              </div>
-              {obBornEarly && (
-                <div style={{marginBottom:10}}>
-                  <div style={{fontSize:12,color:C.lt,marginBottom:6,paddingLeft:2}}>Original due date</div>
-                  <input type="date" value={obDueDate} onChange={e=>setObDueDate(e.target.value)}
-                    placeholder="Due date"
-                    style={{width:"100%",fontSize:16,padding:"12px 16px",borderRadius:14,border:`2px solid ${C.ter}`,background:"var(--card-bg-solid)",outline:_oN,fontFamily:_fI,textAlign:"center",marginBottom:4,boxSizing:_bBB}}/>
-                  {obDueDate && obDob && (()=>{
-                    const diff = Math.round((new Date(obDueDate+"T00:00:00")-new Date(obDob+"T00:00:00"))/(1000*60*60*24*7));
-                    if(diff>2) return <div style={{fontSize:12,color:"#7B68EE",paddingLeft:4}}>✅ {diff} weeks early — predictions will use corrected age</div>;
-                    return null;
-                  })()}
-                </div>
-              )}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:16}}>
                 {[["boy","👦","Boy","#eaf3fb","#3d6a8a"],["girl","👧","Girl","#fde7e4","#a85070"],["","⬜","Not set","#f0e8e0","#7a5c52"]].map(([v,emoji,l,accent,col])=>(
                   <button key={v} onClick={()=>setObSex(v)}
@@ -10924,12 +10614,9 @@ img{max-width:100%;height:auto}
                   </button>
                 ))}
               </div>
-              <button onClick={()=>finishChildSetup({name:obName,dob:obDob,sex:obSex,dueDate:obBornEarly&&obDueDate?obDueDate:null})}
+              <button onClick={()=>finishChildSetup({name:obName,dob:obDob,sex:obSex})}
                 style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:_bN,borderRadius:99,padding:"14px",color:"white",fontSize:16,fontWeight:700,cursor:_cP,boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:10,fontFamily:_fI}}>
                 {obName.trim()||obDob ? "Let's go! →" : "Continue →"}
-              </button>
-              <button onClick={()=>{setNeedsChildSetup(false);setTimeout(()=>setShowImportAfterSetup(true),100);}} style={{width:"100%",padding:"12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:13,color:C.mid,marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                📥 Import data from another app
               </button>
               <button onClick={()=>finishChildSetup(null)} style={{width:"100%",background:_bN,border:_bN,color:C.lt,fontSize:14,cursor:_cP,fontFamily:_fI}}>
                 Skip — I'll add details later
@@ -10994,7 +10681,7 @@ img{max-width:100%;height:auto}
             <div style={{fontSize:36,marginBottom:12}}>🎉</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:8}}>You're getting the hang of it!</div>
             <div style={{fontSize:14,color:C.mid,lineHeight:1.6,marginBottom:20}}>Want a quick 60-second tour of everything OBubba can do?</div>
-            <button onTouchEnd={e=>e.stopPropagation()} onClick={()=>{setShowTutPrompt(false);setTutStep(0);}} style={{width:"100%",padding:"13px",borderRadius:14,border:"none",background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:15,fontWeight:700,cursor:_cP,marginBottom:8,fontFamily:_fI}}>Show me the tour →</button>
+            <button onClick={()=>{setShowTutPrompt(false);setTutStep(0);}} style={{width:"100%",padding:"13px",borderRadius:14,border:"none",background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:15,fontWeight:700,cursor:_cP,marginBottom:8,fontFamily:_fI}}>Show me the tour →</button>
             <button onClick={()=>{setShowTutPrompt(false);try{localStorage.setItem("tut_v2","1");}catch{}}} style={{width:"100%",padding:"11px",borderRadius:14,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.lt,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>Maybe later</button>
           </div>
         </div>
@@ -11134,8 +10821,8 @@ img{max-width:100%;height:auto}
 
         </div>
         {!nameEdit ? (
-          <div onClick={()=>{setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsDueDate(activeChild.dueDate||"");setCsConfirmDelete(false);setShowChildSettings(true);}} style={{cursor:_cP,marginBottom:2,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-            <div onClick={e=>{e.stopPropagation();if(childPhotoInputRef.current)childPhotoInputRef.current.click();}} onTouchEnd={e=>e.stopPropagation()} style={{width:48,height:48,borderRadius:14,overflow:"hidden",flexShrink:0,border:"2px solid rgba(255,255,255,0.8)",boxShadow:"0 3px 12px rgba(0,0,0,0.15)",cursor:_cP,position:"relative"}}>
+          <div onClick={()=>{setCsName(babyName||"");setCsDob(activeChild.dob||"");setCsSex(activeChild.sex||"");setCsConfirmDelete(false);setShowChildSettings(true);}} style={{cursor:_cP,marginBottom:2,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+            <div onClick={e=>{e.stopPropagation();if(childPhotoInputRef.current)childPhotoInputRef.current.click();}} onTouchEnd={e=>{e.stopPropagation();e.preventDefault();if(childPhotoInputRef.current)childPhotoInputRef.current.click();}} style={{width:48,height:48,borderRadius:14,overflow:"hidden",flexShrink:0,border:"2px solid rgba(255,255,255,0.8)",boxShadow:"0 3px 12px rgba(0,0,0,0.15)",cursor:_cP,position:"relative"}}>
               <img src={activeChild.photo||"obubba-happy.png"} alt="" style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
                 onError={e=>{e.target.src="obubba-happy.png";}}/>
               <div style={{position:"absolute",bottom:-1,right:-1,width:16,height:16,borderRadius:99,background:C.ter,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"white",border:"1.5px solid var(--card-bg-solid)"}}>📷</div>
@@ -11174,7 +10861,7 @@ img{max-width:100%;height:auto}
               return <div style={{background:"var(--card-bg)",borderRadius:99,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:5,fontSize:14,color:C.deep,fontWeight:700}}>🤰 {daysUntil > 0 ? `Due in ${daysUntil} days` : "Due any day!"}</div>;
             }
             if (!age) return null;
-            return <div style={{background:"var(--card-bg)",borderRadius:99,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:5,fontSize:14,color:C.deep,fontWeight:700}}>🎂 {fmtAge(age)}{age.months >= 1 ? ` · ${age.totalWeeks}wk` : ""}{age.isPreterm ? <span style={{fontSize:11,color:"#7B68EE",fontWeight:600,marginLeft:3}}>(adj {age.correctedWeeks}wk)</span> : null}</div>;
+            return <div style={{background:"var(--card-bg)",borderRadius:99,padding:"5px 14px",display:"inline-flex",alignItems:"center",gap:5,fontSize:14,color:C.deep,fontWeight:700}}>🎂 {fmtAge(age)}{age.months >= 1 ? ` · ${age.totalWeeks}wk` : ""}</div>;
           })()}
         </div>
         {/* ── Header utility buttons: Sound Machine + Crying Helper ── */}
@@ -11491,7 +11178,7 @@ img{max-width:100%;height:auto}
         </div>
       )}
 
-      <div style={{padding:tab==="settings"?"0 14px 90px":"16px 14px 90px",maxWidth:520,margin:"0 auto",animation:"fadeIn 0.3s ease",WebkitOverflowScrolling:"touch"}}>
+      <div style={{padding:tab==="settings"?"0 14px 90px":"16px 14px 90px",maxWidth:520,margin:"0 auto",animation:"fadeIn 0.3s ease"}}>
         {tab==="day"&&(
           !selDay||!days[selDay]?(
             <div style={{textAlign:"center",padding:"40px 20px",color:C.lt}}>
@@ -11571,7 +11258,7 @@ img{max-width:100%;height:auto}
               )}
 
               {/* ONE-TAP LOG ROW — below date strip, above age guidance */}
-              <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"10px 8px",marginBottom:10,gap:1,boxShadow:"var(--card-shadow)",position:"relative",zIndex:2,overflow:"visible"}}>
+              <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"10px 8px",marginBottom:10,gap:1,boxShadow:"var(--card-shadow)",position:"relative",zIndex:2,overflow:"hidden"}}>
                 {[
                   {emoji:"🍼",label:"Feed",longAction:()=>openLogPanel("feed"),action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""})},
                   {emoji:"🤱",label:"Breast",longAction:()=>openLogPanel("feed"),action:()=>{haptic();startBreastTimer("L");}},
@@ -11699,7 +11386,7 @@ img{max-width:100%;height:auto}
               {(()=>{
                 const _nrCount = appointments.filter(a=>{const d=new Date(a.date+"T23:59:59");return d>=new Date()&&d<=new Date(Date.now()+7*24*60*60*1000);}).length + reminders.filter(r=>!r.done).length + pinnedNotes.length;
                 return (
-                  <button onTouchEnd={e=>e.stopPropagation()} onClick={()=>{haptic();setNotesOpen(!notesOpen);}} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:notesOpen?"14px 14px 0 0":14,border:"1px solid var(--card-border)",background:"var(--card-bg)",boxShadow:"var(--card-shadow)",cursor:_cP,marginBottom:notesOpen?0:10}}>
+                  <button onClick={()=>{haptic();setNotesOpen(!notesOpen);}} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:notesOpen?"14px 14px 0 0":14,border:"1px solid var(--card-border)",background:"var(--card-bg)",boxShadow:"var(--card-shadow)",cursor:_cP,marginBottom:notesOpen?0:10}}>
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
                       <span style={{fontSize:13,fontWeight:700,color:C.deep}}>📋 Notes & Reminders</span>
                       {_nrCount > 0 && <span style={{background:C.ter,color:"white",borderRadius:99,padding:"1px 7px",fontSize:10,fontWeight:700}}>{_nrCount}</span>}
@@ -11708,12 +11395,12 @@ img{max-width:100%;height:auto}
                   </button>
                 );
               })()}
-              <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:notesOpen?"block":"none",border:"1px solid var(--card-border)",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"10px 0 2px",marginBottom:10,background:"var(--card-bg-solid)"}}>
+              <div style={{display:notesOpen?"block":"none",border:"1px solid var(--card-border)",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"10px 0 2px",marginBottom:10,background:"var(--card-bg-solid)"}}>
 
               {/* ═══ Planner ═══ */}
               {/* Dashed add buttons — only show for empty sections */}
               {(appointments.filter(a=>new Date(a.date+"T23:59:59")>=new Date()).length===0||reminders.filter(r=>!r.done).length===0||pinnedNotes.length===0)&&(
-                <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
+                <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
                   {appointments.filter(a=>new Date(a.date+"T23:59:59")>=new Date()).length===0&&(
                     <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:"",repeat:"none",travelMins:0});setShowAddAppt(true);}} style={{flex:1,minWidth:85,padding:"9px 8px",borderRadius:16,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:11,fontWeight:600,color:C.mid,fontFamily:_fI}}>
                       📅 Appointment
@@ -11750,7 +11437,7 @@ img{max-width:100%;height:auto}
                       const isTomorrow=a.date===(()=>{const d=new Date();d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);})();
                       const dayLabel=isToday?"Today":isTomorrow?"Tomorrow":fmtLong(a.date);
                       return (
-                        <div key={a.id} onTouchEnd={e=>e.stopPropagation()} onClick={()=>{setApptForm({date:a.date,time:a.time||"",title:a.title,note:a.note||"",repeat:a.repeat||"none",travelMins:a.travelMins||0});setEditApptId(a.id);setShowAddAppt(true);}} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"7px 0",borderBottom:`1px solid ${C.blush}`,cursor:_cP}}>
+                        <div key={a.id} onClick={()=>{setApptForm({date:a.date,time:a.time||"",title:a.title,note:a.note||"",repeat:a.repeat||"none",travelMins:a.travelMins||0});setEditApptId(a.id);setShowAddAppt(true);}} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"7px 0",borderBottom:`1px solid ${C.blush}`,cursor:_cP}}>
                           <div style={{width:32,height:32,borderRadius:9,background:isToday?`${C.ter}18`:"var(--chip-bg)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14}}>
                             {isToday?"🔔":"📅"}
                           </div>
@@ -11777,8 +11464,8 @@ img{max-width:100%;height:auto}
                     const triggerLabels = {after_nap:"😴 After nap only",after_feed:"🍼 After feed",after_wake:"☀️ Every wake",after_nappy:"🧷 After nappy",after_bedtime:"🌙 At bedtime"};
                     return (
                     <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0",borderBottom:`1px solid ${C.blush}`}}>
-                      <div onTouchEnd={e=>e.stopPropagation()} onClick={()=>toggleReminder(r.id)} style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${C.mint}`,background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,flexShrink:0}}/>
-                      <div onTouchEnd={e=>e.stopPropagation()} onClick={()=>{setReminderForm({text:r.text,date:r.date||todayStr(),time:r.time||"",trigger:r.trigger||""});setEditRemId(r.id);setShowAddReminder(true);}} style={{flex:1,minWidth:0,cursor:_cP}}>
+                      <div onClick={()=>toggleReminder(r.id)} style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${C.mint}`,background:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,flexShrink:0}}/>
+                      <div onClick={()=>{setReminderForm({text:r.text,date:r.date||todayStr(),time:r.time||"",trigger:r.trigger||""});setEditRemId(r.id);setShowAddReminder(true);}} style={{flex:1,minWidth:0,cursor:_cP}}>
                         <div style={{fontSize:13,color:C.deep,lineHeight:1.4}}>{r.text}</div>
                         <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginTop:1}}>
                           {r.trigger && <span style={{fontSize:10,fontFamily:_fM,color:C.ter,background:C.ter+"15",padding:"1px 7px",borderRadius:99}}>{triggerLabels[r.trigger]||r.trigger}</span>}
@@ -11794,7 +11481,7 @@ img{max-width:100%;height:auto}
                       <div style={{fontSize:10,color:C.lt,fontFamily:_fM,marginBottom:3}}>Done</div>
                       {reminders.filter(r=>r.done).map(r=>(
                         <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"3px 0",opacity:0.45}}>
-                          <div onTouchEnd={e=>e.stopPropagation()} onClick={()=>toggleReminder(r.id)} style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${C.mint}`,background:C.mint,display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,flexShrink:0}}>
+                          <div onClick={()=>toggleReminder(r.id)} style={{width:20,height:20,borderRadius:"50%",border:`2px solid ${C.mint}`,background:C.mint,display:"flex",alignItems:"center",justifyContent:"center",cursor:_cP,flexShrink:0}}>
                             <span style={{color:"white",fontSize:10,fontWeight:700}}>✓</span>
                           </div>
                           <div style={{flex:1,fontSize:12,color:C.lt,textDecoration:"line-through"}}>{r.text}</div>
@@ -11816,7 +11503,7 @@ img{max-width:100%;height:auto}
                   {pinnedNotes.map(n=>(
                     <div key={n.id} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 0",borderBottom:`1px solid ${C.blush}`}}>
                       <span style={{fontSize:12,flexShrink:0,marginTop:1}}>📌</span>
-                      <div onTouchEnd={e=>e.stopPropagation()} onClick={()=>{setPinForm(n.text);setEditNoteId(n.id);setShowAddPin(true);}} style={{flex:1,fontSize:13,color:C.deep,lineHeight:1.5,cursor:_cP}}>{n.text}</div>
+                      <div onClick={()=>{setPinForm(n.text);setEditNoteId(n.id);setShowAddPin(true);}} style={{flex:1,fontSize:13,color:C.deep,lineHeight:1.5,cursor:_cP}}>{n.text}</div>
                       <button onClick={()=>deletePinnedNote(n.id)} style={{background:_bN,border:_bN,fontSize:11,color:C.lt,cursor:_cP,padding:"4px"}}>✕</button>
                     </div>
                   ))}
@@ -12597,8 +12284,8 @@ img{max-width:100%;height:auto}
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
                           {badgeVal&&<Badge type={e.type}>{badgeVal}</Badge>}
-                          <button onTouchEnd={ev=>{ev.stopPropagation();ev.preventDefault();openEdit(e);}} onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1px solid var(--card-border)",borderRadius:"50%",width:28,height:28,color:C.ter,cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
-                          <button onTouchEnd={ev=>{ev.stopPropagation();ev.preventDefault();delEntry(e.id);}} onClick={()=>delEntry(e.id)} style={{background:"var(--card-bg-solid)",border:"1px solid var(--card-border)",borderRadius:"50%",width:28,height:28,color:"#e06070",cursor:_cP,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                          <button onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1px solid var(--card-border)",borderRadius:"50%",width:28,height:28,color:C.ter,cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
+                          <button onClick={()=>delEntry(e.id)} style={{background:"var(--card-bg-solid)",border:"1px solid var(--card-border)",borderRadius:"50%",width:28,height:28,color:"#e06070",cursor:_cP,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                         </div>
                       </div>
                     </div>
@@ -12648,7 +12335,7 @@ img{max-width:100%;height:auto}
                             </div>
                             <div style={{display:"flex",alignItems:"center",gap:7}}>
                               {e.amount>0&&<span style={{background:"var(--chip-bg)",color:C.gold,fontFamily:_fM,fontSize:15,padding:"2px 7px",borderRadius:99}}>{fmtVol(e.amount,FU)}</span>}
-                              <button onTouchEnd={ev=>{ev.stopPropagation();ev.preventDefault();openEdit(e);}} onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1.5px solid rgba(123,104,238,0.30)",borderRadius:"50%",width:28,height:28,color:"#7b68ee",cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 8px rgba(123,104,238,0.20)"}}>✎</button>
+                              <button onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1.5px solid rgba(123,104,238,0.30)",borderRadius:"50%",width:28,height:28,color:"#7b68ee",cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 8px rgba(123,104,238,0.20)"}}>✎</button>
                               <button onClick={()=>delEntry(e.id)} style={{background:"var(--card-bg-solid)",border:"1.5px solid var(--card-border)",borderRadius:"50%",width:28,height:28,color:"#e06070",cursor:_cP,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                             </div>
                           </div>
@@ -12691,7 +12378,7 @@ img{max-width:100%;height:auto}
                             </div>
                             <div style={{display:"flex",alignItems:"center",gap:7}}>
                               {e.amount>0&&<span style={{background:"var(--chip-bg)",color:C.gold,fontFamily:_fM,fontSize:15,padding:"2px 7px",borderRadius:99}}>{fmtVol(e.amount,FU)}</span>}
-                              <button onTouchEnd={ev=>{ev.stopPropagation();ev.preventDefault();openEdit(e);}} onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1.5px solid rgba(123,104,238,0.30)",borderRadius:"50%",width:28,height:28,color:"#7b68ee",cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 8px rgba(123,104,238,0.20)"}}>✎</button>
+                              <button onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1.5px solid rgba(123,104,238,0.30)",borderRadius:"50%",width:28,height:28,color:"#7b68ee",cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 8px rgba(123,104,238,0.20)"}}>✎</button>
                               <button onClick={()=>delEntry(e.id)} style={{background:"var(--card-bg-solid)",border:"1.5px solid var(--card-border)",borderRadius:"50%",width:28,height:28,color:"#e06070",cursor:_cP,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                             </div>
                           </div>
@@ -14116,14 +13803,7 @@ img{max-width:100%;height:auto}
                     </div>
                   ) : (
                   <div style={{display:"flex",gap:8,marginBottom:16}}>
-                    <button onClick={()=>setShowImportModal(true)} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
-                        <span style={{fontSize:20}}>📥</span>
-                        <div>
-                          <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Import Data</div>
-                          <div style={{fontSize:11,color:C.lt}}>From CSV file</div>
-                        </div>
-                      </button>
-                      <button onClick={()=>exportCSV()} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
+                    <button onClick={()=>exportCSV()} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
                       <span style={{fontSize:16}}>📊</span>
                       <div style={{textAlign:"left"}}>
                         <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Export Data</div>
@@ -14135,20 +13815,14 @@ img{max-width:100%;height:auto}
                       if(!w)return;
                       const rEntries2=(days[selDay]||[]).filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
                       const rNight2=(days[selDay]||[]).filter(e=>e.night);
-                      let html2="<html><head><title>"+(babyName||"Baby")+" Report</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:100%;margin:0;padding:60px 16px 40px;box-sizing:border-box;font-size:15px;line-height:1.5;color:#333}h1{color:#c9705a;font-size:18px;margin:0 0 4px}h2{color:#666;border-bottom:1px solid #ddd;padding-bottom:4px;font-size:15px}table{width:100%;border-collapse:collapse}td{padding:6px 8px;border-bottom:1px solid #eee;font-size:13px;word-break:break-word}@media print{.no-print{display:none!important}body{padding:10px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>";
+                      let html2="<html><head><title>"+(babyName||"Baby")+" Report</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:100%;margin:0;padding:60px 16px 40px;box-sizing:border-box;font-size:15px;line-height:1.5;color:#333}h1{color:#c9705a;font-size:18px;margin:0 0 4px}h2{color:#666;border-bottom:1px solid #ddd;padding-bottom:4px;font-size:15px}table{width:100%;border-collapse:collapse}td{padding:6px 8px;border-bottom:1px solid #eee;font-size:13px;word-break:break-word}</style></head><body>";
                       html2+="<h1>"+fmtLong(selDay)+" — "+(babyName||"Baby")+"</h1>";
                       html2+="<p style='color:#999'>Age: "+fmtAge(age)+" | OBubba</p><h2>Daytime</h2><table>";
                       rEntries2.forEach(e=>{if(e.type==="wake")html2+="<tr><td>☀️ Wake</td><td>"+fmt12(e.time)+"</td></tr>";else if(e.type==="feed")html2+="<tr><td>🍼 Feed</td><td>"+fmt12(e.time)+"</td><td>"+fmtVol(e.amount,FU)+"</td></tr>";else if(e.type==="nap")html2+="<tr><td>😴 Nap</td><td>"+fmt12(e.start)+" — "+fmt12(e.end)+"</td><td>"+hm(minDiff(e.start,e.end))+"</td></tr>";else if(e.type==="sleep")html2+="<tr><td>🌙 Bed</td><td>"+fmt12(e.time)+"</td></tr>";});
                       html2+="</table>";
                       if(rNight2.length){html2+="<h2>Night</h2><table>";rNight2.forEach((e,i)=>{html2+="<tr><td>"+(e.amount>0?"🍼":"🌟")+" "+(i+1)+"</td><td>"+fmt12(e.time)+"</td><td>"+(e.amount?fmtVol(e.amount,FU):"")+(e.selfSettled?" Self settled":"")+"</td></tr>";});html2+="</table>";}
                       html2+="<br><p style='color:#999;font-size:12px'>OBubba — obubba.com</p></body></html>";
-                      const closeBar2=`<div class="no-print" style="position:sticky;top:0;z-index:99;background:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee">
-        <button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:system-ui">← Back</button>
-        <div style="display:flex;gap:8px">
-          <button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #ddd;background:white;color:#555;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui">🖨️ Print / Save PDF</button>
-          <button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #ddd;background:white;color:#555;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui">📤 Share</button>
-        </div>
-      </div>`;
+                      const closeBar2=`<div style="position:sticky;top:0;z-index:99;background:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:system-ui">← Back</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #ddd;background:white;color:#555;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui">🖨️ Print</button></div>`;
                       w.document.write(html2.replace("<body>","<body>"+closeBar2));w.document.close();
                     }} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
                       <span style={{fontSize:16}}>🖨️</span>
@@ -15345,55 +15019,31 @@ img{max-width:100%;height:auto}
             <div style={{marginTop:14,textAlign:"center"}}>
               <button onClick={()=>{
                 showConfirm("Delete All Data?", "This will permanently delete all of your data from this device and the cloud. This cannot be undone.", async ()=>{
-                  // Save username for reclaim before clearing
-                  const _savedUsername = familyUsername ? normaliseUsername(familyUsername) : null;
-
-                  // Use a raw DOM overlay — survives localStorage.clear() + React re-render
-                  const _showNativeToast = (msg) => {
-                    let el = document.getElementById("_obubba_delete_toast");
-                    if(!el) {
-                      el = document.createElement("div");
-                      el.id = "_obubba_delete_toast";
-                      el.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(44,31,26,0.92);color:#fff;padding:18px 28px;border-radius:20px;font-size:16px;font-weight:600;z-index:999999;text-align:center;pointer-events:none;backdrop-filter:blur(8px);";
-                      document.body.appendChild(el);
-                    }
-                    el.textContent = msg;
-                  };
-
-                  _showNativeToast("Deleting account...");
-
-                  // Call Cloud Function via CapacitorHttp (bypasses WKWebView CORS)
-                  let _cloudDeleteOk = false;
-                  try {
-                    const _user = window._fb?.auth?.currentUser;
-                    const _token = _user ? await _user.getIdToken(true).catch(()=>null) : null;
-                    if(_token && _savedUsername) {
-                      const _fnUrl = "https://us-central1-obubba-d9ccc.cloudfunctions.net/deleteAccount";
-                      const _body = JSON.stringify({data: {username: _savedUsername}});
-                      const _headers = {"Content-Type":"application/json","Authorization":`Bearer ${_token}`};
-                      const _capHttp = window.Capacitor?.Plugins?.CapacitorHttp;
-                      let _res;
-                      if(_capHttp) {
-                        _res = await _capHttp.post({url:_fnUrl, headers:_headers, data:_body}).catch(()=>null);
-                        _cloudDeleteOk = !!(_res && (_res.status === 200 || _res.status === 204));
-                      } else {
-                        const _fr = await fetch(_fnUrl, {method:"POST", headers:_headers, body:_body}).catch(()=>null);
-                        _cloudDeleteOk = !!(_fr && (_fr.status === 200 || _fr.status === 204));
+                  // 1. Delete all Firebase data
+                  if(window._fb && window._fb.db && window._fb.deleteDoc){
+                    try{
+                      const {db,doc,deleteDoc}=window._fb;
+                      const dels=[];
+                      if(backupCode) dels.push(deleteDoc(doc(db,"families",backupCode)));
+                      if(backupCode) dels.push(deleteDoc(doc(db,"child_syncs",backupCode)));
+                      if(window._fbUid) dels.push(deleteDoc(doc(db,"uid_to_backup",window._fbUid)));
+                      if(familyUsername){
+                        const ukey=normaliseUsername(familyUsername);
+                        dels.push(deleteDoc(doc(db,"usernames",ukey)));
                       }
-                      if(!_cloudDeleteOk) console.warn("OBubba: cloud fn status", _res?.status);
-                    }
-                  } catch(e) { console.warn("OBubba: delete error", e); }
-
-                  // Show result in native toast — still visible after React wipe
-                  _showNativeToast(_cloudDeleteOk ? "Account deleted ✔" : "Couldn't reach server — clearing local data");
-
-                  // Wipe local data
+                      await Promise.allSettled(dels);
+                    }catch(err){console.warn("FB delete err",err);}
+                    // Sign out — try multiple approaches
+                    try{
+                      if(window._fbAuth && window._fbSignOut) await window._fbSignOut(window._fbAuth).catch(()=>{});
+                      else if(window._fb && window._fb.auth) await window._fb.auth.signOut().catch(()=>{});
+                    }catch{}
+                  }
+                  // 2. Wipe local storage
                   try{localStorage.clear();}catch{}
                   try{sessionStorage.clear();}catch{}
-
-                  // Wait for user to read toast, then reload
-                  await new Promise(r => setTimeout(r, 2200));
-                  window.location.reload();
+                  showToast("Account deleted",2000,1);
+                  setTimeout(()=>window.location.reload(),2000);
                 }, "Delete", true);
               }} style={{background:"none",border:"none",color:"#e8574a",fontSize:12,cursor:_cP,fontFamily:_fI,padding:"8px 16px",textDecoration:"underline",touchAction:"manipulation"}}>
                 Delete Account & All Data
@@ -16792,13 +16442,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             <button onClick={()=>{
               haptic();
               const html = generateCarerCardHTML();
-              const closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0">
-        <button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button>
-        <div style="display:flex;gap:8px">
-          <button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print / Save PDF</button>
-          <button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button>
-        </div>
-      </div>`;
+              const closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
               const w = (()=>{
               if(window._isNative){
                 const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
@@ -17293,311 +16937,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
           </div>
         </div>
       )}
-      {showFirstLogQ && (
-        <div style={{position:"fixed",inset:0,background:"var(--bg-grad)",zIndex:9999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"env(safe-area-inset-top,30px) 24px calc(env(safe-area-inset-bottom,0px) + 40px)",fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box",overflowY:"auto"}}>
-          <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}`}</style>
-          
-          {/* Progress bar */}
-          <div style={{position:"absolute",top:"env(safe-area-inset-top,20px)",left:24,right:24,height:4,background:"var(--card-bg-alt)",borderRadius:99}}>
-            <div style={{height:"100%",width:`${((fqStep)/4)*100}%`,background:"linear-gradient(90deg,#c9705a,#e0825f)",borderRadius:99,transition:"width 0.4s ease"}}/>
-          </div>
 
-          <div key={fqStep} style={{animation:"slideUp 0.35s ease",width:"100%",maxWidth:360,textAlign:"center"}}>
-            
-            {/* Step 0: Wake time */}
-            {fqStep===0 && (
-              <div>
-                <div style={{fontSize:48,marginBottom:16}}>☀️</div>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.deep,marginBottom:8}}>
-                  What time did {babyName||"your baby"} wake up?
-                </div>
-                <div style={{fontSize:14,color:C.lt,marginBottom:28}}>This starts the day and unlocks nap predictions</div>
-                <TimeInput value={fqWakeTime} onChange={t=>setFqWakeTime(t)}
-                  style={{marginBottom:20}}
-                  inputStyle={{fontSize:32,padding:"16px",borderRadius:16,textAlign:"center",fontWeight:700}}/>
-                <button onClick={()=>{
-                  if(fqWakeTime) quickAddLog("wake",{type:"wake",time:fqWakeTime,night:false,note:""});
-                  setFqStep(1);
-                }} style={{width:"100%",background:"linear-gradient(135deg,#c9705a,#a85a44)",border:"none",borderRadius:99,padding:"16px",color:"white",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:12}}>
-                  Continue →
-                </button>
-                <button onClick={()=>setFqStep(1)} style={{width:"100%",background:"none",border:"none",color:C.lt,fontSize:14,cursor:"pointer"}}>Not sure — skip</button>
-              </div>
-            )}
-
-            {/* Step 1: Naps */}
-            {fqStep===1 && (
-              <div>
-                <div style={{fontSize:48,marginBottom:16}}>😴</div>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.deep,marginBottom:8}}>
-                  Any naps today so far?
-                </div>
-                <div style={{fontSize:14,color:C.lt,marginBottom:28}}>Even a short one counts</div>
-                <div style={{display:"flex",gap:12,marginBottom:20}}>
-                  <button onClick={()=>setFqHasNap(true)} style={{flex:1,padding:"20px",borderRadius:16,border:`2px solid ${fqHasNap===true?C.ter:C.blush}`,background:fqHasNap===true?"var(--chip-bg-active)":"white",cursor:"pointer",fontSize:15,fontWeight:700,color:fqHasNap===true?C.ter:C.mid}}>
-                    Yes 😴
-                  </button>
-                  <button onClick={()=>setFqHasNap(false)} style={{flex:1,padding:"20px",borderRadius:16,border:`2px solid ${fqHasNap===false?C.ter:C.blush}`,background:fqHasNap===false?"var(--chip-bg-active)":"white",cursor:"pointer",fontSize:15,fontWeight:700,color:fqHasNap===false?C.ter:C.mid}}>
-                    Not yet ☀️
-                  </button>
-                </div>
-                {fqHasNap===true && (
-                  <div style={{background:"var(--card-bg)",borderRadius:16,padding:"16px",marginBottom:16,border:`1px solid ${C.blush}`}}>
-                    <div style={{fontSize:13,color:C.lt,marginBottom:8}}>Nap time</div>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <TimeInput value={fqNapStart} onChange={t=>setFqNapStart(t)} style={{flex:1,marginBottom:0}}/>
-                      <span style={{color:C.lt}}>→</span>
-                      <TimeInput value={fqNapEnd} onChange={t=>setFqNapEnd(t)} style={{flex:1,marginBottom:0}}/>
-                    </div>
-                  </div>
-                )}
-                <button onClick={()=>{
-                  if(fqHasNap===true && fqNapStart && fqNapEnd) {
-                    quickAddLog("nap",{type:"nap",start:fqNapStart,end:fqNapEnd,night:false,note:""});
-                  }
-                  setFqStep(2);
-                }} disabled={fqHasNap===null} style={{width:"100%",background:fqHasNap===null?"#f2d9cc":"linear-gradient(135deg,#c9705a,#a85a44)",border:"none",borderRadius:99,padding:"16px",color:fqHasNap===null?"#b89890":"white",fontSize:16,fontWeight:700,cursor:fqHasNap===null?"not-allowed":"pointer",boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:12}}>
-                  Continue →
-                </button>
-                <button onClick={()=>setFqStep(2)} style={{width:"100%",background:"none",border:"none",color:C.lt,fontSize:14,cursor:"pointer"}}>Skip</button>
-              </div>
-            )}
-
-            {/* Step 2: Feed */}
-            {fqStep===2 && (
-              <div>
-                <div style={{fontSize:48,marginBottom:16}}>🍼</div>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.deep,marginBottom:8}}>
-                  When was the last feed?
-                </div>
-                <div style={{fontSize:14,color:C.lt,marginBottom:28}}>Helps predict the next feed time</div>
-                <TimeInput value={fqFeedTime} onChange={t=>setFqFeedTime(t)}
-                  style={{marginBottom:12}}
-                  inputStyle={{fontSize:28,padding:"14px",borderRadius:16,textAlign:"center",fontWeight:700}}/>
-                <input
-                  type="number" placeholder="Amount in ml (optional)"
-                  value={fqFeedAmount} onChange={e=>setFqFeedAmount(e.target.value)}
-                  style={{width:"100%",fontSize:16,padding:"14px",borderRadius:14,border:`2px solid ${C.blush}`,outline:"none",fontFamily:"inherit",textAlign:"center",marginBottom:20,boxSizing:"border-box",background:"var(--card-bg-solid)"}}/>
-                <button onClick={()=>{
-                  if(fqFeedTime) quickAddLog("feed",{type:"feed",time:fqFeedTime,feedType:"milk",amount:parseFloat(fqFeedAmount)||0,night:false,note:""});
-                  setFqStep(3);
-                }} style={{width:"100%",background:"linear-gradient(135deg,#c9705a,#a85a44)",border:"none",borderRadius:99,padding:"16px",color:"white",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:12}}>
-                  Continue →
-                </button>
-                <button onClick={()=>setFqStep(3)} style={{width:"100%",background:"none",border:"none",color:C.lt,fontSize:14,cursor:"pointer"}}>Skip</button>
-              </div>
-            )}
-
-            {/* Step 3: Nappy */}
-            {fqStep===3 && (
-              <div>
-                <div style={{fontSize:48,marginBottom:16}}>💩</div>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,fontWeight:700,color:C.deep,marginBottom:8}}>
-                  Last nappy change?
-                </div>
-                <div style={{fontSize:14,color:C.lt,marginBottom:20}}>Optional — helps spot patterns</div>
-                <div style={{display:"flex",gap:8,marginBottom:16}}>
-                  {[["wet","💧 Wet"],["dirty","💩 Dirty"],["both","💧💩 Both"],["dry","⬜ Dry"]].map(([v,l])=>(
-                    <button key={v} onClick={()=>setFqNappyType(v)} style={{flex:1,padding:"10px 4px",borderRadius:12,border:`2px solid ${fqNappyType===v?C.ter:C.blush}`,background:fqNappyType===v?"var(--chip-bg-active)":"white",cursor:"pointer",fontSize:11,fontWeight:700,color:fqNappyType===v?C.ter:C.mid}}>
-                      {l}
-                    </button>
-                  ))}
-                </div>
-                <TimeInput value={fqNappyTime} onChange={t=>setFqNappyTime(t)}
-                  style={{marginBottom:20}}
-                  inputStyle={{fontSize:28,padding:"14px",borderRadius:16,textAlign:"center",fontWeight:700}}/>
-                <button onClick={()=>{
-                  if(fqNappyTime) quickAddLog("poop",{type:"poop",time:fqNappyTime,poopType:fqNappyType,night:false,note:""});
-                  setFqStep(4);
-                }} style={{width:"100%",background:"linear-gradient(135deg,#c9705a,#a85a44)",border:"none",borderRadius:99,padding:"16px",color:"white",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:12}}>
-                  Continue →
-                </button>
-                <button onClick={()=>setFqStep(4)} style={{width:"100%",background:"none",border:"none",color:C.lt,fontSize:14,cursor:"pointer"}}>Skip</button>
-              </div>
-            )}
-
-            {/* Step 4: Done */}
-            {fqStep===4 && (
-              <div>
-                <img src="obubba-happy.png" style={{width:100,height:100,borderRadius:20,marginBottom:16,boxShadow:"0 8px 24px rgba(0,0,0,0.1)"}}/>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:700,color:C.deep,marginBottom:8}}>
-                  You're all set! 🎉
-                </div>
-                <div style={{fontSize:14,color:C.lt,marginBottom:28,lineHeight:1.6}}>
-                  {babyName||"Your baby"}'s day is ready. OBubba is already working out the next nap window.
-                </div>
-                <button onClick={()=>{
-                  setShowFirstLogQ(false);
-                  showMascot("celebration",`${babyName||"Baby"}'s tracker is ready! 🎉`,3000);
-                }} style={{width:"100%",background:"linear-gradient(135deg,#c9705a,#a85a44)",border:"none",borderRadius:99,padding:"18px",color:"white",fontSize:18,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 24px rgba(201,112,90,0.5)",marginBottom:16}}>
-                  Start tracking →
-                </button>
-                <button onClick={()=>{setShowFirstLogQ(false);setShowImportAfterSetup(true);}} style={{width:"100%",background:"none",border:`1px solid ${C.blush}`,borderRadius:99,padding:"14px",color:C.mid,fontSize:14,cursor:"pointer",marginBottom:"env(safe-area-inset-bottom, 20px)"}}>
-                  📥 Import from another app instead
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {showQuestionnaire && (()=>{
-        const _qName = (qChildData?.name||babyName||"Baby").trim();
-        const _qNames = _qName + "'s";
-        const stepTitles = [
-          `What time did ${_qName} wake up today? ☀️`,
-          `Any naps so far today? 😴`,
-          `When was the last feed? 🍼`,
-          `Last nappy change? 💩`,
-          `All set! Here's ${_qNames} day so far 🎉`
-        ];
-        const stepSubs = [
-          "This starts the day and unlocks nap predictions straight away.",
-          "Add any naps that already happened — OBubba will predict the next one.",
-          "Optional — helps predict the next feed time.",
-          "Optional — helps track nappy patterns.",
-          `${_qName} is all set up. Predictions will start learning from today.`
-        ];
-        const progress = (qStep / 4) * 100;
-
-        function completeQuestionnaire() {
-          // Log all the data they provided
-          const t = todayStr();
-          if (qWakeTime) {
-            quickAddLog("wake", {type:"wake", time:qWakeTime, night:false, note:""});
-          }
-          if (qHadNap && qNaps.length > 0) {
-            qNaps.forEach(n => {
-              if (n.start) quickAddLog("nap", {type:"nap", start:n.start, end:n.end||n.start, night:false, note:""});
-            });
-          }
-          if (qFeedTime) {
-            const ml = parseFloat(qFeedAmount) || 0;
-            quickAddLog("feed", {type:"feed", time:qFeedTime, feedType:"milk", amount:ml, night:false, note:""});
-          }
-          if (qNappyTime) {
-            quickAddLog("poop", {type:"poop", time:qNappyTime, poopType:qNappyType, night:false, note:""});
-          }
-          setShowQuestionnaire(false);
-          showMascot("celebration", `${_qName}'s tracker is ready! 🎉`, 3000);
-        }
-
-        return (
-          <div style={{position:"fixed",inset:0,background:"var(--bg-grad)",zIndex:9800,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"env(safe-area-inset-top,30px) 24px 40px",fontFamily:"'DM Sans',sans-serif",boxSizing:_bBB,overflowY:"auto"}}>
-            <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}`}</style>
-            {/* Progress bar */}
-            <div style={{position:"fixed",top:0,left:0,right:0,height:3,background:"var(--card-bg-alt)"}}>
-              <div style={{height:"100%",width:`${progress}%`,background:`linear-gradient(90deg,#c9705a,#e0825f)`,borderRadius:99,transition:"width 0.4s ease"}}/>
-            </div>
-            <div key={qStep} style={{animation:"fadeUp 0.3s ease",width:"100%",maxWidth:380,textAlign:"center"}}>
-              <img src="obubba-happy.png" style={{width:72,height:72,borderRadius:16,marginBottom:16,boxShadow:"0 6px 20px rgba(0,0,0,0.1)"}}/>
-              <div style={{fontSize:12,color:C.lt,fontFamily:_fM,marginBottom:8}}>{qStep+1} of 5</div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.deep,lineHeight:1.3,marginBottom:8}}>{stepTitles[qStep]}</div>
-              <div style={{fontSize:13,color:C.lt,marginBottom:24,lineHeight:1.5}}>{stepSubs[qStep]}</div>
-
-              {/* Step 0: Wake time */}
-              {qStep===0 && (
-                <div>
-                  <TimeInput value={qWakeTime} onChange={t=>setQWakeTime(t)} style={{marginBottom:20}} inputStyle={{fontSize:28,padding:"16px",textAlign:"center",borderRadius:16,border:`2px solid ${C.blush}`}}/>
-                  <button onClick={()=>setQStep(1)} style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:_bN,borderRadius:99,padding:"15px",color:"white",fontSize:16,fontWeight:700,cursor:_cP,boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:10}}>Continue →</button>
-                  <button onClick={()=>{setQWakeTime("");setQStep(1);}} style={{width:"100%",background:_bN,border:_bN,color:C.lt,fontSize:14,cursor:_cP}}>Skip</button>
-                </div>
-              )}
-
-              {/* Step 1: Naps */}
-              {qStep===1 && (
-                <div>
-                  <div style={{display:"flex",gap:10,marginBottom:20}}>
-                    {[[true,"Yes, we had naps 😴"],[false,"No naps yet ☀️"]].map(([v,l])=>(
-                      <button key={String(v)} onClick={()=>setQHadNap(v)}
-                        style={{flex:1,padding:"14px 8px",borderRadius:14,border:`2px solid ${qHadNap===v?C.ter:C.blush}`,background:qHadNap===v?"var(--chip-bg-active)":"white",color:qHadNap===v?C.ter:C.mid,fontWeight:700,fontSize:13,cursor:_cP,transition:"all 0.2s"}}>
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                  {qHadNap===true && (
-                    <div style={{marginBottom:16}}>
-                      {qNaps.map((nap,i)=>(
-                        <div key={i} style={{background:"var(--card-bg)",borderRadius:14,padding:"12px 14px",marginBottom:8,border:`1px solid ${C.blush}`}}>
-                          <div style={{fontSize:12,color:C.lt,marginBottom:8}}>Nap {i+1}</div>
-                          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                            <TimeInput value={nap.start} onChange={t=>setQNaps(prev=>prev.map((n,j)=>j===i?{...n,start:t}:n))} style={{flex:1}} inputStyle={{fontSize:15,padding:"8px"}}/>
-                            <span style={{color:C.lt,fontSize:13}}>→</span>
-                            <TimeInput value={nap.end} onChange={t=>setQNaps(prev=>prev.map((n,j)=>j===i?{...n,end:t}:n))} style={{flex:1}} inputStyle={{fontSize:15,padding:"8px"}}/>
-                          </div>
-                        </div>
-                      ))}
-                      <button onClick={()=>setQNaps(prev=>[...prev,{start:"",end:""}])} style={{width:"100%",padding:"10px",borderRadius:12,border:`1px dashed ${C.blush}`,background:"transparent",color:C.lt,fontSize:13,cursor:_cP,marginBottom:4}}>+ Add another nap</button>
-                    </div>
-                  )}
-                  {qHadNap!==null && (
-                    <button onClick={()=>setQStep(2)} style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:_bN,borderRadius:99,padding:"15px",color:"white",fontSize:16,fontWeight:700,cursor:_cP,boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:10}}>Continue →</button>
-                  )}
-                  <button onClick={()=>setQStep(2)} style={{width:"100%",background:_bN,border:_bN,color:C.lt,fontSize:14,cursor:_cP}}>Skip</button>
-                </div>
-              )}
-
-              {/* Step 2: Feed */}
-              {qStep===2 && (
-                <div>
-                  <div style={{display:"flex",gap:10,marginBottom:16,alignItems:"flex-start"}}>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:12,color:C.lt,marginBottom:6}}>Time</div>
-                      <TimeInput value={qFeedTime} onChange={t=>setQFeedTime(t)} inputStyle={{fontSize:16,padding:"12px",textAlign:"center"}}/>
-                    </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:12,color:C.lt,marginBottom:6}}>Amount (ml) — optional</div>
-                      <input type="number" value={qFeedAmount} onChange={e=>setQFeedAmount(e.target.value)} placeholder="e.g. 180"
-                        style={{width:"100%",fontSize:16,padding:"12px",borderRadius:12,border:`2px solid ${C.blush}`,background:"var(--card-bg-solid)",outline:_oN,fontFamily:_fI,textAlign:"center",boxSizing:_bBB}}/>
-                    </div>
-                  </div>
-                  <button onClick={()=>setQStep(3)} style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:_bN,borderRadius:99,padding:"15px",color:"white",fontSize:16,fontWeight:700,cursor:_cP,boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:10}}>Continue →</button>
-                  <button onClick={()=>{setQFeedTime("");setQStep(3);}} style={{width:"100%",background:_bN,border:_bN,color:C.lt,fontSize:14,cursor:_cP}}>Skip</button>
-                </div>
-              )}
-
-              {/* Step 3: Nappy */}
-              {qStep===3 && (
-                <div>
-                  <div style={{display:"flex",gap:8,marginBottom:16}}>
-                    {[["wet","💧 Wet"],["dirty","💩 Dirty"],["both","Both"]].map(([v,l])=>(
-                      <button key={v} onClick={()=>setQNappyType(v)}
-                        style={{flex:1,padding:"12px 6px",borderRadius:12,border:`2px solid ${qNappyType===v?C.ter:C.blush}`,background:qNappyType===v?"var(--chip-bg-active)":"white",color:qNappyType===v?C.ter:C.mid,fontWeight:700,fontSize:13,cursor:_cP,transition:"all 0.2s"}}>
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                  <TimeInput value={qNappyTime} onChange={t=>setQNappyTime(t)} style={{marginBottom:16}} inputStyle={{fontSize:16,padding:"12px",textAlign:"center"}}/>
-                  <button onClick={()=>setQStep(4)} style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:_bN,borderRadius:99,padding:"15px",color:"white",fontSize:16,fontWeight:700,cursor:_cP,boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:10}}>Continue →</button>
-                  <button onClick={()=>{setQNappyTime("");setQStep(4);}} style={{width:"100%",background:_bN,border:_bN,color:C.lt,fontSize:14,cursor:_cP}}>Skip</button>
-                </div>
-              )}
-
-              {/* Step 4: Done */}
-              {qStep===4 && (
-                <div>
-                  <div style={{background:"var(--card-bg)",borderRadius:16,padding:"16px",marginBottom:20,textAlign:"left",border:`1px solid ${C.blush}`}}>
-                    {qWakeTime && <div style={{fontSize:13,color:C.mid,marginBottom:8}}>☀️ Wake at {fmt12(qWakeTime)}</div>}
-                    {qHadNap && qNaps.filter(n=>n.start).map((n,i)=>(
-                      <div key={i} style={{fontSize:13,color:C.mid,marginBottom:8}}>😴 Nap {i+1}: {fmt12(n.start)}{n.end?" → "+fmt12(n.end):""}</div>
-                    ))}
-                    {qFeedTime && <div style={{fontSize:13,color:C.mid,marginBottom:8}}>🍼 Feed at {fmt12(qFeedTime)}{qFeedAmount?" — "+qFeedAmount+"ml":""}</div>}
-                    {qNappyTime && <div style={{fontSize:13,color:C.mid}}>💩 {qNappyType} nappy at {fmt12(qNappyTime)}</div>}
-                    {!qWakeTime && !qFeedTime && !qNappyTime && <div style={{fontSize:13,color:C.lt}}>No data entered — you can log entries any time.</div>}
-                  </div>
-                  <button onClick={completeQuestionnaire} style={{width:"100%",background:`linear-gradient(135deg,#c9705a,#a85a44)`,border:_bN,borderRadius:99,padding:"15px",color:"white",fontSize:17,fontWeight:700,cursor:_cP,boxShadow:"0 4px 20px rgba(201,112,90,0.4)",marginBottom:10}}>
-                    Let's go! 🚀
-                  </button>
-                </div>
-              )}
-
-              {/* Back button */}
-              {qStep > 0 && qStep < 4 && (
-                <button onClick={()=>setQStep(s=>s-1)} style={{marginTop:8,background:_bN,border:_bN,color:C.lt,fontSize:13,cursor:_cP}}>← Back</button>
-              )}
-            </div>
-          </div>
-        );
-      })()}
       {(showImportModal || showImportAfterSetup) && (
         <div style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",zIndex:9900,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>{setShowImportModal(false);setShowImportAfterSetup(false);setImportResult(null);}}>
           <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg-solid)",borderRadius:"24px 24px 0 0",padding:"28px 24px 48px",width:"100%",maxWidth:480,boxShadow:"0 -8px 40px rgba(0,0,0,0.15)"}}>
@@ -18347,18 +17687,18 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
 
       {/* ═══ Inline Confirm Dialog ═══ */}
       {confirmDialog&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24,pointerEvents:"auto"}}>
-          <style>{`body.has-confirm{overflow:hidden;pointer-events:none;}.obconfirm-wrap{pointer-events:auto;}`}</style>
-          <div className="obconfirm-wrap" style={{background:"var(--picker-bg)",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,0.3)",textAlign:"center",position:"relative",zIndex:10000}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+          <style>{`.obconfirm-btn:active{transform:scale(0.97);opacity:0.9;}.obconfirm-btn{transition:transform 0.1s,opacity 0.1s;}`}</style>
+          <div style={{background:"var(--picker-bg)",borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,0.3)",textAlign:"center"}}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:10}}>{confirmDialog.title}</div>
             <div style={{fontSize:14,color:C.mid,marginBottom:24,lineHeight:1.5,whiteSpace:"pre-line"}}>{confirmDialog.message}</div>
             <div style={{display:"flex",flexDirection:"column",gap:12}}>
               <button className="obconfirm-btn" style={{width:"100%",padding:"20px",borderRadius:99,border:"none",background:confirmDialog.danger?"#e8574a":`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:17,fontWeight:700,cursor:"pointer",fontFamily:_fI,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",minHeight:60}}
-                onClick={(ev)=>{ev.stopPropagation();const fn=confirmDialog.onConfirm;dismissConfirm();fn();}}>
+                onClick={(ev)=>{ev.stopPropagation();const fn=confirmDialog.onConfirm;setConfirmDialog(null);fn();}}>
                 {confirmDialog.confirmLabel||"OK"}
               </button>
               <button style={{width:"100%",height:52,borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:_fI,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",flexShrink:0,WebkitAppearance:"none"}}
-                onClick={(ev)=>{ev.stopPropagation();dismissConfirm();}}>
+                onClick={(ev)=>{ev.stopPropagation();setConfirmDialog(null);}}>
                 Cancel
               </button>
             </div>
