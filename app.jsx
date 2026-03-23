@@ -4031,6 +4031,16 @@ function App(){
       _whyLines.push("🔒 " + _name + "'s personal rhythm is forming — unlock Bubba Rhythm to see it.");
     }
     _whyLines.push("Sleep timing based on NHS Start4Life, AASM (American Academy of Sleep Medicine), and WHO Infant Health guidelines for " + fmtAge(age) + ". Always follow your baby's individual cues.");
+    // Feed & nappy prediction explanation
+    const _latestWt = weights && weights.length > 0 ? weights[weights.length-1].kg : null;
+    if (_latestWt) {
+      const _dailyMl = Math.round(_latestWt * 150);
+      const _fpd = age.totalWeeks < 4 ? 10 : age.totalWeeks < 8 ? 7 : age.totalWeeks < 13 ? 6 : age.totalWeeks < 26 ? 5 : age.totalWeeks < 39 ? 4 : 3;
+      _whyLines.push("🍼 Feed prediction: NHS recommends ~150ml per kg per day. At " + _latestWt + "kg that's ~" + _dailyMl + "ml/day or ~" + Math.round(_dailyMl/_fpd) + "ml per feed across " + _fpd + " feeds. Predictions adjust based on " + _name + "'s last feed size and usual rhythm at this time of day.");
+    } else {
+      _whyLines.push("🍼 Feed prediction: Based on NHS age-appropriate guidelines and " + _name + "'s feeding rhythm over the last 7 days. Add " + _name + "'s weight in settings to get personalised per-feed targets (NHS 150ml/kg/day).");
+    }
+    _whyLines.push("Feed and nappy times are gentle estimates — not medical advice. Every baby is different. Always follow " + _name + "'s hunger cues (rooting, lip smacking, fussiness) over any prediction. Unusual days are automatically excluded from the average. If you have concerns about feeding or weight gain, speak to your health visitor or GP.");
 
     // ── Premium gate: strip prediction details for free users ──
     if (STORE_READY && !isPremium && !trialActive) {
@@ -11456,16 +11466,6 @@ function App(){
             <div>
               {/* ═══ HERO CARD — Bubba Rhythm ═══ */}
               {renderHeroCard()}
-
-              {/* ═══ FEED PREDICTION DISCLAIMER ═══ */}
-              {age && selDay===todayStr() && (
-                <div style={{padding:"0 18px 8px",marginTop:-4}}>
-                  <button onClick={()=>showConfirm("About feed predictions", "OBubba's feed predictions are estimates based on:\n\n" + (weights && weights.length > 0 ? "• " + (babyName||"Baby") + "'s weight (" + weights[weights.length-1].kg + "kg) and NHS guideline of 150ml per kg per day\n" : "• NHS age-appropriate feeding guidelines\n") + "• " + (babyName||"Baby") + "'s recent feeding rhythm (last 7 days, excluding unusual days)\n• How much was taken at the last feed vs typical\n• Time-of-day feeding patterns\n\nThese are gentle suggestions — not medical advice. Every baby is different. Always follow " + (babyName||"your baby") + "'s hunger cues (rooting, lip smacking, fussiness) over any prediction.\n\nIf you have concerns about feeding or weight gain, speak to your health visitor or GP.", ()=>{}, "Got it")} style={{background:"none",border:"none",padding:0,cursor:_cP,display:"flex",alignItems:"center",gap:4}}>
-                    <span style={{fontSize:10,color:C.lt,fontStyle:"italic"}}>Feed & nappy predictions are estimates — tap for details</span>
-                    <span style={{fontSize:9,color:C.lt}}>ⓘ</span>
-                  </button>
-                </div>
-              )}
 
               {/* ═══ DISRUPTION DIAGNOSTIC — what's going on? ═══ */}
               {selDay===todayStr()&&(()=>{
