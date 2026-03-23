@@ -3558,6 +3558,7 @@ function App(){
     const _bed = bedtimePrediction();
     const _adjustedExpected = _profile.expectedNaps + (bridgeNapScheduled ? 1 : 0);
     const _napsComplete = _napsDone >= _adjustedExpected;
+    const _dailySleepMax = _profile.idealTotalMax || 300;
     // Awake time
     const _dayE = _today.filter(e => !e.night).sort((a, b) => timeVal(a) - timeVal(b));
     let _awakeMin = 0;
@@ -3903,11 +3904,22 @@ function App(){
       const _activeEntry = napEntryId ? _today.find(e => e.id === napEntryId) : null;
       const _isBridgeNap = _activeEntry && _activeEntry.isBridge;
       
-      // Check if this is actually bedtime — nap timer running but all naps done + it's evening
-      const _isLikelyBedtime = _napsComplete && _h >= 17 && !_isBridgeNap;
-      
+      // Only treat as bedtime if: all naps done AND it's genuinely evening (7pm+)
+      // A long nap at 1:34pm–5pm is NOT bedtime even if all expected naps are done
+      const _bedPredMins = _bed && _bed.time ? (()=>{ const [bh,bm]=_bed.time.split(":").map(Number); return bh*60+bm; })() : null;
+      const _earliestBedMins = _bedPredMins ? Math.max(_bedPredMins - 30, 19*60) : 19*60; // Never before 7pm
+      const _isLikelyBedtime = _napsComplete && _nowM >= _earliestBedMins && !_isBridgeNap;
+
+      // Detect long nap: significantly over typical duration
+      const _expDur = Math.round((_profile.idealNapDurMin + _profile.idealNapDurMax) / 2);
+      const _isLongNap = _napMins > _expDur * 1.5 && _napMins > 60;
+      // Total day sleep so far including this nap
+      const _totalDaySleepSoFar = _totalNapMin + _napMins;
+      // If this nap pushes total day sleep near/past the max, last nap may need skipping
+      const _shouldSkipLastNap = !_napsComplete && _totalDaySleepSoFar >= _dailySleepMax * 0.85;
+
       if (_isLikelyBedtime) {
-        // This is bedtime, not a nap — show night sleep messaging
+        // Genuinely bedtime
         _dot = "#7B68EE"; _label = "Sleeping for the night 🌙";
         _timing = "Sleeping " + _napMins + " min · Sweet dreams, " + _name;
         _feedNappyHint = _nightFeedHint;
@@ -3915,7 +3927,6 @@ function App(){
       } else if (_isBridgeNap) {
         _dot = "#D4A855"; _label = "Bridge nap 🌉";
         const _bridgeTarget = 20;
-        const _rem = Math.max(0, _bridgeTarget - _napMins);
         if (_napMins < _bridgeTarget) {
           _timing = "Sleeping " + _napMins + " min · Gently wake " + _name + " around " + _bridgeTarget + " min";
         } else if (_napMins < 30) {
@@ -3926,19 +3937,107 @@ function App(){
         }
         if (_feedNappyHint) _feedNappyHint = "When " + _name + " wakes, " + _feedNappyHint;
       } else {
-        _dot = "#7B68EE"; _label = "Sleeping peacefully";
-        const _expDur = Math.round((_profile.idealNapDurMin + _profile.idealNapDurMax) / 2);
-        const _rem = Math.max(0, _expDur - _napMins);
-        _timing = "Sleeping " + _napMins + " min" + (_rem > 0 ? " · Expected wake ~" + _rem + " min" : " · May wake soon");
-        if (_feedNappyHint) _feedNappyHint = "When " + _name + " wakes, " + _feedNappyHint;
+        // Normal nap — show nap count with progressive wake guidance
+        const _napMax = _profile.idealNapDurMax; // Age-appropriate max (e.g. 120 min at 5mo)
+        const _wakeNudgeAt = Math.round(_napMax * 0.85); // Nudge at 85% of max (e.g. 102 min)
+
+        if (_napMins >= _napMax + 30) {
+          // Way over max — strongly suggest waking
+          _dot = "#E8937A"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected + " — very long";
+          _timing = "Sleeping " + hm(_napMins) + " · Well past the typical " + _napMax + " min max for " + fmtAge(age);
+          if (_shouldSkipLastNap) {
+            _rightNow = "Right now: Total day sleep is " + hm(_totalDaySleepSoFar) + " (max ~" + hm(_dailySleepMax) + "). Consider gently waking " + _name + ", skip the last nap and bring bedtime earlier";
+          } else {
+            _rightNow = "Right now: Consider gently waking " + _name + " — very long naps can steal from overnight sleep and make the next nap harder. " + _name + " may not need all " + _adjustedExpected + " naps today";
+          }
+        } else if (_napMins >= _napMax) {
+          // Over max — suggest waking
+          _dot = "#D4A855"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected + " — long";
+          _timing = "Sleeping " + hm(_napMins) + " · Past the typical " + _napMax + " min max";
+          if (_shouldSkipLastNap) {
+            _rightNow = "Right now: Big nap — total day sleep approaching " + hm(_totalDaySleepSoFar) + ". You may want to skip the last nap and bring bedtime earlier";
+          } else {
+            _rightNow = "Right now: This nap has hit the age-appropriate max (" + _napMax + " min). It's OK to gently wake " + _name + " to protect the next wake window and bedtime";
+          }
+        } else if (_napMins >= _wakeNudgeAt) {
+          // Approaching max — gentle heads up
+          _dot = "#7B68EE"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected;
+          const _rem = _napMax - _napMins;
+          _timing = "Sleeping " + _napMins + " min · ~" + _rem + " min until typical max (" + _napMax + " min)";
+          if (_feedNappyHint) _feedNappyHint = "When " + _name + " wakes, " + _feedNappyHint;
+        } else {
+          // Normal nap, under typical range
+          _dot = "#7B68EE"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected;
+          const _rem = Math.max(0, _expDur - _napMins);
+          _timing = "Sleeping " + _napMins + " min" + (_rem > 0 ? " · Expected wake ~" + _rem + " min" : " · May wake soon");
+          if (_feedNappyHint) _feedNappyHint = "When " + _name + " wakes, " + _feedNappyHint;
+        }
       }
-    } else if (_hasBed) {
+    } else if (_hasBed && (_h >= 19 || _h < 5) && _napsComplete) {
+      // Only show "sleeping for the night" if genuinely evening AND all naps done
       _dot = "#7B68EE"; _label = "Sleeping for the night";
       const _bedEntry2 = _today.find(e => e.type === "sleep" && !e.night);
       _timing = nightElapsed !== null && nightElapsed > 0
         ? "Sleeping since " + (_bedEntry2 ? fmt12(_bedEntry2.time) : "") + " · " + Math.floor(nightElapsed/3600) + "h " + Math.floor((nightElapsed%3600)/60) + "m"
         : "";
       _feedNappyHint = _nightFeedHint;
+    } else if (_hasBed && !_napsComplete) {
+      // Bedtime logged but baby still has naps remaining — this is likely a mislog or early nap end
+      _dot = "#7BA68C"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected + " still expected";
+      _timing = "Awake " + hm(_awakeMin) + " · " + _name + " usually has " + _adjustedExpected + " naps at this age";
+      _rightNow = "A bedtime entry was logged but " + _name + " still has " + (_adjustedExpected - _napsDone) + " nap" + ((_adjustedExpected - _napsDone) !== 1 ? "s" : "") + " expected today. If this was a nap, you can edit the entry.";
+    } else if (_hasBed) {
+      // Bedtime logged during day, all naps done but too early for night
+      _dot = "#7BA68C"; _label = "All naps complete — waiting for bedtime";
+      _timing = "Awake " + hm(_awakeMin) + " · " + (_bed ? "Bedtime at ~" + fmt12(_bed.time) : "Bedtime soon");
+    }
+    // ── Dynamic skip-nap check ──
+    // Even if profile says more naps expected, check if another nap TODAY would push bedtime too late
+    // Based on: paediatric sleep consultant consensus — protect the 7-8pm bedtime window,
+    // an early bedtime (even 6pm) is better than a late nap that delays bedtime past 8pm
+    let _shouldSkipNextNap = false;
+    let _skipNapReason = "";
+    let _earlyBedSuggestion = null;
+    if (!napOn && !_hasBed && !_napsComplete && _napsDone >= 1) {
+      try {
+        // Find when the last nap ended
+        const _lastNapEntry = _naps.sort((a,b) => timeVal({time:b.end||b.start}) - timeVal({time:a.end||a.start}))[0];
+        const _lastNapEndM = _lastNapEntry && _lastNapEntry.end ? timeVal({time:_lastNapEntry.end}) : null;
+        if (_lastNapEndM !== null) {
+          // Calculate: if baby napped at earliest opportunity, would bedtime be too late?
+          const _settleTime = 15; // minutes to settle before next nap
+          const _minNapDur = _profile.idealNapDurMin; // shortest reasonable nap
+          const _wwAfterNap = _ww.min; // minimum wake window before bed
+          const _earliestNapStart = Math.max(_nowM, _lastNapEndM + _ww.min);
+          const _earliestNapEnd = _earliestNapStart + _minNapDur;
+          const _earliestBedtime = _earliestNapEnd + _wwAfterNap;
+          const _latestAcceptableBed = 20 * 60; // 8pm = 1200 min
+          // Also check total day sleep — would another nap exceed daily max?
+          const _totalWithMinNap = _totalNapMin + _minNapDur;
+
+          if (_earliestBedtime > _latestAcceptableBed || _totalWithMinNap > _dailySleepMax) {
+            _shouldSkipNextNap = true;
+            // Calculate ideal early bedtime: last nap end + appropriate WW
+            const _idealEarlyBed = _lastNapEndM + Math.round((_ww.min + _ww.max) / 2);
+            const _earlyBedStr = fmt12(`${String(Math.floor(_idealEarlyBed/60)%24).padStart(2,"0")}:${String(_idealEarlyBed%60).padStart(2,"0")}`);
+            _earlyBedSuggestion = _earlyBedStr;
+
+            if (_totalWithMinNap > _dailySleepMax) {
+              _skipNapReason = _name + " has had " + hm(_totalNapMin) + " of day sleep (max ~" + hm(_dailySleepMax) + " at this age). Another nap would exceed the daily limit and could disrupt overnight sleep.";
+            } else {
+              const _bedIfNapped = fmt12(`${String(Math.floor(_earliestBedtime/60)%24).padStart(2,"0")}:${String(_earliestBedtime%60).padStart(2,"0")}`);
+              _skipNapReason = "Even the shortest nap (" + _minNapDur + " min) would push bedtime to ~" + _bedIfNapped + ". An earlier bedtime (around " + _earlyBedStr + ") protects overnight sleep better than a late nap.";
+            }
+          }
+        }
+      } catch {}
+    }
+
+    if (_shouldSkipNextNap && !napOn && !_hasBed) {
+      // Override nap prediction — advise skipping and doing early bedtime
+      _dot = "#6B5B95"; _label = "Skip nap " + (_napsDone+1) + " today — early bedtime";
+      _timing = _napsDone + " of " + _adjustedExpected + " naps done · Aim for bedtime ~" + (_earlyBedSuggestion || "6:30pm");
+      _rightNow = _skipNapReason + " Sleep consultants recommend: when in doubt, protect bedtime. An early bedtime (even 6pm) won't cause early morning waking — it actually helps overnight consolidation.";
     } else if (_pred && _pred.isOverdue) {
       _dot = "#E8937A"; _label = "Winding down soon";
       _timing = "Awake " + hm(_awakeMin) + " · Past the nap window — settling time";
@@ -3976,18 +4075,19 @@ function App(){
       const _isPersonal = _pred.sourceLabel && _pred.sourceLabel.includes("pattern");
       const _rhythmTag = _isPersonal ? " · OBubba Rhythm" : "";
       const _napTimeStr = fmt12(_pred.napStart_min);
+      const _napCountTag = " · Nap " + (_napsDone+1) + " of " + _adjustedExpected;
       if (_minsUntilNap <= 10) {
-        _dot = "#D4A855"; _label = "Nap window open";
+        _dot = "#D4A855"; _label = "Nap " + (_napsDone+1) + " of " + _adjustedExpected + " — window open";
         _timing = "Awake " + hm(_awakeMin) + " · Ready for a nap now" + _rhythmTag;
       } else if (_minsUntilNap <= 20) {
-        _dot = "#D4A855"; _label = "Ready for a nap";
+        _dot = "#D4A855"; _label = "Nap " + (_napsDone+1) + " of " + _adjustedExpected + " approaching";
         _timing = "Awake " + hm(_awakeMin) + " · Nap at ~" + _napTimeStr + _rhythmTag;
       } else if (_minsUntilNap <= 30) {
         _dot = "#D4A855"; _label = "Settling time";
-        _timing = "Awake " + hm(_awakeMin) + " · Nap at ~" + _napTimeStr + " — sleepy cues may start soon" + _rhythmTag;
+        _timing = "Awake " + hm(_awakeMin) + " · Nap " + (_napsDone+1) + " at ~" + _napTimeStr + " — sleepy cues may start soon" + _rhythmTag;
       } else {
         _dot = "#7BA68C"; _label = "All good right now";
-        _timing = "Awake " + hm(_awakeMin) + " · Next nap around " + _napTimeStr + _rhythmTag;
+        _timing = "Awake " + hm(_awakeMin) + " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " around " + _napTimeStr + _rhythmTag;
       }
     } else if (_hasWake && _allFeedsIncNight.length > 0) {
       // Find most recent feed — prioritise today's entries over yesterday's night feeds
@@ -4006,11 +4106,11 @@ function App(){
         _timing = "Last feed " + hm(_minsSinceFeed) + " ago · " + (age && age.totalWeeks < 3 ? "little ones this age often need feeding every 2–3h" : _name + " might be getting peckish");
       } else {
         _dot = "#7BA68C"; _label = "All good right now";
-        _timing = "Awake " + hm(_awakeMin) + " · Enjoying the day";
+        _timing = "Awake " + hm(_awakeMin) + (!_napsComplete ? " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " still to come" : " · Enjoying the day");
       }
     } else if (_hasWake) {
       _dot = "#7BA68C"; _label = "All good right now";
-      _timing = "Awake " + hm(_awakeMin) + " · Enjoying the day";
+      _timing = "Awake " + hm(_awakeMin) + (!_napsComplete ? " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " still to come" : " · Enjoying the day");
     } else {
       _dot = "#A89898"; _label = "Ready to start";
       _timing = "Log a wake to start tracking " + _name + "'s day";
@@ -7753,7 +7853,7 @@ function App(){
     // Overdue
     if (_pred && _pred.isOverdue) return { text: "Past the nap window — a quiet, dim space might help", priority: "high" };
 
-    // Bedtime approaching
+    // Bedtime approaching — ONLY if all expected naps are done
     if (_naps.length >= _profile.expectedNaps) {
       const _bed = bedtimePrediction();
       if (_bed && !_bed.estimated) {
@@ -11210,7 +11310,7 @@ function App(){
               const _napsDone3 = (days[selDay]||[]).filter(e => e.type==="nap" && !e.night && e.id !== napEntryId && minDiff(e.start,e.end) >= 5).length;
               const _napsComplete3 = _napsDone3 >= _napProfile3.expectedNaps;
               const _h3 = new Date().getHours();
-              const _isLikelyBedtime = _napsComplete3 && _h3 >= 17 && !_isBridgeTimer;
+              const _isLikelyBedtime = _napsComplete3 && _h3 >= 19 && !_isBridgeTimer;
 
               if (_isLikelyBedtime) {
                 // Bedtime mode — calm purple pill, no warnings, no expected wake
