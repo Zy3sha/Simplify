@@ -11044,8 +11044,9 @@ img{max-width:100%;height:auto}
         {tab === "day" && !breastStartTime && (
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:10}}>
             {!napOn && (
-              <button onClick={()=>{haptic();startBreastTimer("L");}} style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"5px 14px",fontSize:13,color:C.ter,cursor:_cP,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
-                🤱 Start Feed{lastBreastSide && selDay===todayStr() && !breastStartTime ? <span style={{fontSize:10,fontWeight:400,opacity:0.8,display:"block",marginTop:1}}>{lastBreastSide==="L"?"Start: Right ➡️":"Start: Left ⬅️"}</span> : null}
+              <button onClick={()=>{haptic();startBreastTimer(lastBreastSide==="L"?"R":lastBreastSide==="R"?"L":"L");}} style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"5px 14px",fontSize:13,color:C.ter,cursor:_cP,fontWeight:700,display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
+                <span>🤱 Start Feed</span>
+                {lastBreastSide && selDay===todayStr() && (<span style={{fontSize:10,fontWeight:400,color:C.lt}}>{"Next: "+(lastBreastSide==="L"?"Right ➡️":"Left ⬅️")}</span>)}
               </button>
             )}
             {/* Active nap timer */}
