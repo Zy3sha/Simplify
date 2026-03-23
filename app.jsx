@@ -3312,6 +3312,7 @@ function App(){
   useEffect(()=>{try{localStorage.setItem("breast_sec",JSON.stringify(breastSec));}catch{}},[breastSec]);
   useEffect(()=>{try{localStorage.setItem("breast_active",breastActive?"1":"0");}catch{}},[breastActive]);
   const age = React.useMemo(() => calcAge(babyDob, activeChild.dueDate), [babyDob, activeChild.dueDate]);
+  const ageWeeks = age ? age.totalWeeks : null;
   const tickDataRef = React.useRef({});
   React.useEffect(()=>{
     const ageWeeks = age ? age.totalWeeks : null;
