@@ -3669,14 +3669,14 @@ function App(){
           const _dayFeeds = (days[dk]||[]).filter(e=>e.type==="feed"&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
           for (let i=1; i<_dayFeeds.length; i++) {
             const gap = timeVal(_dayFeeds[i]) - timeVal(_dayFeeds[i-1]);
-            if (gap > 30 && gap < 600) _intervals.push(gap); // Only count reasonable gaps
+            if (gap > 30 && gap < 360) _intervals.push(gap); // Only count daytime feed-to-feed gaps, cap 6h
           }
         });
         if (_intervals.length >= 3) _avgFeedInterval = Math.round(_intervals.reduce((s,v)=>s+v,0) / _intervals.length);
       } catch {}
-      // Blend baby's average with age guideline (favour baby's rhythm when we have enough data)
+      // Blend baby's average with age guideline (strongly favour baby's own data when available)
       const _ageThreshM = age ? (age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 180 : 210) : 180;
-      let _feedThreshM = _avgFeedInterval ? Math.round(_avgFeedInterval * 0.7 + _ageThreshM * 0.3) : _ageThreshM;
+      let _feedThreshM = _avgFeedInterval ? Math.round(_avgFeedInterval * 0.85 + _ageThreshM * 0.15) : _ageThreshM;
 
       // ── Smart feed prediction: last session + age guideline + time-of-day pattern ──
       let _smartFeedNote = null;
@@ -3705,7 +3705,7 @@ function App(){
                 // Also grab the interval to NEXT feed from this time slot
                 if (i < _dFeeds.length - 1) {
                   const gap = timeVal(_dFeeds[i+1]) - timeVal(e);
-                  if (gap > 20 && gap < 600) _simIntervals.push(gap);
+                  if (gap > 20 && gap < 360) _simIntervals.push(gap);
                 }
               }
             });
@@ -12501,7 +12501,7 @@ img{max-width:100%;height:auto}
                         </div>
                         <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
                           {badgeVal&&<Badge type={e.type}>{badgeVal}</Badge>}
-                          <button onTouchEnd={e=>{e.stopPropagation();e.preventDefault();openEdit(e.currentTarget._entry);}} onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1px solid var(--card-border)",borderRadius:"50%",width:28,height:28,color:C.ter,cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
+                          <button onTouchEnd={ev=>{ev.stopPropagation();ev.preventDefault();openEdit(e);}} onClick={()=>openEdit(e)} style={{background:"var(--card-bg-solid)",border:"1px solid var(--card-border)",borderRadius:"50%",width:28,height:28,color:C.ter,cursor:_cP,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>✎</button>
                           <button onTouchEnd={ev=>{ev.stopPropagation();ev.preventDefault();delEntry(e.id);}} onClick={()=>delEntry(e.id)} style={{background:"var(--card-bg-solid)",border:"1px solid var(--card-border)",borderRadius:"50%",width:28,height:28,color:"#e06070",cursor:_cP,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                         </div>
                       </div>
