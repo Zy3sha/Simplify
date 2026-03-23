@@ -15268,9 +15268,7 @@ function App(){
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>
                         🛡️ Allergen Tracker
-                        <HelpBtn title="Allergen Tracker" body={"Early introduction of the 14 major allergens significantly reduces the risk of food allergy. The LEAP study found early peanut introduction reduced peanut allergy risk by 81%.
-
-Once introduced with no reaction, keep giving each allergen regularly — at least once a week — to maintain tolerance. OBubba tracks which you've done and flags any that need a top-up."}/>
+                        <HelpBtn title="Allergen Tracker" body={"Early introduction of the 14 major allergens significantly reduces the risk of food allergy. The LEAP study found early peanut introduction reduced peanut allergy risk by 81%.\n\nOnce introduced with no reaction, keep giving each allergen regularly — at least once a week — to maintain tolerance. OBubba tracks which you've done and flags any that need a top-up."}/>
                       </div>
                       <span style={{fontSize:11,color:C.lt}}>{_introduced.length}/14 done</span>
                     </div>
