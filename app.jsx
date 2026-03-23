@@ -260,6 +260,91 @@ function detectAllergens(food) {
   return Object.entries(ALLERGENS).filter(([,words])=>words.some(w=>lower.includes(w))).map(([name])=>name);
 }
 
+// 14 allergen checklist with introduction priority, prep guide, and risk notes
+const ALLERGEN_GUIDE = [
+  {id:"peanuts",   label:"Peanut",     emoji:"🥜", priority:1, risk:"high",
+   prep:"Mix smooth peanut butter (¼ tsp) into puree or porridge. Never whole nuts.",
+   maintain:"Mix into oatmeal, offer on toast fingers, add to sauces.",
+   note:"Early introduction significantly reduces allergy risk (LEAP study). Introduce in the morning so you can watch for 2 hours."},
+  {id:"eggs",      label:"Egg",        emoji:"🥚", priority:2, risk:"high",
+   prep:"Hard boil and mash, or scramble well. Use Lion-stamped eggs. Start with a tiny amount (¼ tsp).",
+   maintain:"Scrambled egg, French toast fingers, egg in pasta.",
+   note:"Introduce well-cooked egg first. Raw or lightly cooked eggs carry salmonella risk for babies."},
+  {id:"milk",      label:"Cow's milk", emoji:"🥛", priority:3, risk:"medium",
+   prep:"Full-fat yoghurt or cheese are easiest first. Cow's milk as a drink is only suitable from 12 months.",
+   maintain:"Cheese sticks, yoghurt, milk in porridge or sauces.",
+   note:"Fine in cooking and dairy products from 6 months. Not as a main drink until 12 months."},
+  {id:"wheat",     label:"Wheat",      emoji:"🍞", priority:4, risk:"medium",
+   prep:"Soft toast fingers, porridge fingers, or pasta shapes. Cook until very soft.",
+   maintain:"Toast, pasta, porridge, cereal.",
+   note:"Gluten is introduced via wheat. If family history of coeliac disease, speak to GP first."},
+  {id:"fish",      label:"Fish",       emoji:"🐟", priority:5, risk:"medium",
+   prep:"Steam or bake, flake carefully and check thoroughly for bones. Start with mild white fish.",
+   maintain:"Flaked salmon, cod fingers, tuna pasta.",
+   note:"Aim for 2 portions of fish per week including 1 oily. Avoid shark, swordfish, marlin (high mercury)."},
+  {id:"tree nuts", label:"Tree nuts",  emoji:"🌰", priority:6, risk:"high",
+   prep:"Finely ground or as smooth nut butter mixed into food. Never whole nuts (choking hazard until 5).",
+   maintain:"Almond butter on toast, crushed walnuts in yoghurt.",
+   note:"Introduce each nut separately if possible. Cashew, almond, walnut are most common."},
+  {id:"soy",       label:"Soy",        emoji:"🫘", priority:7, risk:"low",
+   prep:"Plain tofu mashed into food, or a little soy sauce in cooking (watch salt content).",
+   maintain:"Tofu pieces, edamame (very soft cooked), small amounts in cooking.",
+   note:"Lower risk than peanut or egg. Introduce once higher-priority allergens are established."},
+  {id:"sesame",    label:"Sesame",     emoji:"🫙", priority:8, risk:"medium",
+   prep:"Tahini mixed into hummus or puree. A tiny amount at first.",
+   maintain:"Hummus, tahini mixed into food, sesame seeds ground into meals.",
+   note:"Increasingly common allergy. Introduce separately from other tree nuts."},
+  {id:"shellfish", label:"Shellfish",  emoji:"🦐", priority:9, risk:"medium",
+   prep:"Thoroughly cooked only. Prawn or crab mashed into food. Check carefully for shells.",
+   maintain:"Cooked prawn pieces, crab in pasta.",
+   note:"Raw shellfish is a risk of food poisoning. Must be thoroughly cooked."},
+  {id:"mustard",   label:"Mustard",    emoji:"🌿", priority:10, risk:"low",
+   prep:"A tiny amount in cooking or sauces.",
+   maintain:"Small amounts in cooking.",
+   note:"Lower priority. Introduce once main allergens established."},
+  {id:"celery",    label:"Celery",     emoji:"🥬", priority:11, risk:"low",
+   prep:"Cooked until very soft in soups or stews.",
+   maintain:"In soups and stews.",
+   note:"Lower priority. Fine to introduce in cooking once main allergens done."},
+  {id:"lupin",     label:"Lupin",      emoji:"🌸", priority:12, risk:"low",
+   prep:"Found in some flours and pasta. Check labels.",
+   maintain:"Check labels on bread, pasta, flour products.",
+   note:"Less common but legally required labelling allergen. Cross-reactive with peanut allergy."},
+  {id:"molluscs",  label:"Molluscs",   emoji:"🐚", priority:13, risk:"low",
+   prep:"Thoroughly cooked squid or octopus mashed into food.",
+   maintain:"Small amounts well cooked.",
+   note:"Similar guidance to shellfish. Thoroughly cooked only."},
+  {id:"sulphites", label:"Sulphites",  emoji:"🍇", priority:14, risk:"low",
+   prep:"Found in dried fruit. Offer small amounts of soft dried fruit.",
+   maintain:"Small amounts of dried fruit in meals.",
+   note:"Found in dried fruit, vinegar, some processed foods. Lower allergy risk than other allergens."},
+];
+
+// Check if an allergen has been introduced in weaning log
+function allergenIntroduced(weaningLog, allergenId) {
+  return (weaningLog||[]).some(w => {
+    const detected = detectAllergens(w.food);
+    return detected.includes(allergenId);
+  });
+}
+
+// Check if allergen has been given recently (within 7 days)
+function allergenRecent(weaningLog, allergenId) {
+  const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString().slice(0,10);
+  return (weaningLog||[]).some(w => {
+    const detected = detectAllergens(w.food);
+    return detected.includes(allergenId) && w.date >= sevenDaysAgo;
+  });
+}
+
+// Days since allergen was last given
+function daysSinceAllergen(weaningLog, allergenId) {
+  const entries = (weaningLog||[]).filter(w => detectAllergens(w.food).includes(allergenId));
+  if (!entries.length) return null;
+  const latest = entries.reduce((a,b) => a.date > b.date ? a : b);
+  return Math.floor((Date.now() - new Date(latest.date).getTime()) / (1000*60*60*24));
+}
+
 // Theme-aware colors — reads CSS custom properties so dark mode works
 function getC(){
   const s=getComputedStyle(document.body);
@@ -1660,8 +1745,32 @@ function App(){
     const[growthLogOpen,setGrowthLogOpen]=useState(false);
   const[insightSection,setInsightSection]=useState({trends:false,sleep:false,feeding:false,reports:false});
   const[insightFilter,setInsightFilter]=useState("sleep");
-  const[devFilter,setDevFilter]=useState("activities");
+  const[devFilter,setDevFilter]=useState(()=>{
+    try{
+      const _aw = age ? age.totalWeeks : null;
+      if(_aw !== null && _aw < 13) return "newborn";
+    }catch{}
+    return "activities";
+  });
   const toggleInsight=(k)=>setInsightSection(p=>({...p,[k]:!p[k]}));
+  const[showMealPicker,setShowMealPicker]=useState(false);
+  // Allergen safety gate — stored per child
+  const allergenProfile = React.useMemo(()=>{
+    try{ return JSON.parse(localStorage.getItem("allergen_profile_v1")||"null"); }catch{ return null; }
+  },[]);
+  const [showAllergenGate, setShowAllergenGate] = useState(false);
+  const [showAllergenEmergency, setShowAllergenEmergency] = useState(false);
+  const saveAllergenProfile = (profile) => {
+    try{ localStorage.setItem("allergen_profile_v1", JSON.stringify(profile)); }catch{}
+    window.location.reload();
+  };
+  const[show6moTransition,setShow6moTransition]=useState(()=>{
+    try{
+      const _aw = age ? age.totalWeeks : 0;
+      const _shown = localStorage.getItem("transition_6mo_v1");
+      return _aw >= 26 && _aw < 30 && !_shown;
+    }catch{return false;}
+  });
   const[heightForm,setHeightForm]=useState({date:todayStr(),cm:""});
   const[devActFilter,setDevActFilter]=useState("motor");
   const[modal,setModal]=useState(null);
@@ -3556,7 +3665,15 @@ function App(){
           const _lfBreastSec = (_lastFeed.breastL || 0) + (_lastFeed.breastR || 0);
           const _lfMins = timeVal(_lastFeed);
           const w = age ? age.totalWeeks : 12;
-          const _perFeedTarget = w < 4 ? 70 : w < 8 ? 95 : w < 13 ? 125 : w < 26 ? 170 : w < 39 ? 175 : 200;
+
+          // Per-feed target: use actual weight (150ml/kg/day ÷ feeds/day) when available
+          // NHS guideline: 150ml per kg of body weight per day
+          const _latestWeight = weights && weights.length > 0 ? weights[weights.length-1].kg : null;
+          const _feedsPerDay = w < 4 ? 10 : w < 8 ? 7 : w < 13 ? 6 : w < 26 ? 5 : w < 39 ? 4 : w < 52 ? 3 : 3;
+          const _perFeedTarget = _latestWeight
+            ? Math.round((_latestWeight * 150) / _feedsPerDay) // weight-based: 150ml/kg/day
+            : (w < 4 ? 60 : w < 8 ? 90 : w < 13 ? 125 : w < 26 ? 180 : w < 39 ? 180 : 200); // age-only fallback
+
           // Historical feeds at similar time of day (±2h, last 7 days)
           const _histDays = Object.keys(days).sort().slice(-7);
           const _simFeeds = []; const _simIntervals = [];
@@ -3575,22 +3692,47 @@ function App(){
           const _avgIntervalAtTime = _simIntervals.length >= 2 ? Math.round(_simIntervals.reduce((s,v)=>s+v,0)/_simIntervals.length) : null;
           const _simBreastSecs = _simFeeds.filter(e=>e.feedType==="breast"&&((e.breastL||0)+(e.breastR||0))>0).map(e=>(e.breastL||0)+(e.breastR||0));
           const _avgBreastSecAtTime = _simBreastSecs.length >= 2 ? Math.round(_simBreastSecs.reduce((s,v)=>s+v,0)/_simBreastSecs.length) : null;
+
+          // Adjust interval based on how full the last feed was vs the per-feed target
           let _adjustRatio = 1.0;
-          if (_lfIsBreast && _avgBreastSecAtTime && _lfBreastSec > 0) _adjustRatio = Math.min(1.3, Math.max(0.6, _lfBreastSec / _avgBreastSecAtTime));
-          else if (!_lfIsBreast && _lfAmount > 0) _adjustRatio = Math.min(1.3, Math.max(0.6, _lfAmount / (_avgAmountAtTime || _perFeedTarget)));
-          const _baseInterval = _avgIntervalAtTime || _avgFeedInterval || _ageThreshM;
+          if (_lfIsBreast && _avgBreastSecAtTime && _lfBreastSec > 0) {
+            _adjustRatio = Math.min(1.2, Math.max(0.5, _lfBreastSec / _avgBreastSecAtTime));
+          } else if (!_lfIsBreast && _lfAmount > 0) {
+            // Compare to per-feed target (weight-based when available) — NOT to historical avg at this time
+            _adjustRatio = Math.min(1.2, Math.max(0.5, _lfAmount / _perFeedTarget));
+          }
+
+          // Best interval: prefer baby's overall rhythm, use time-of-day only if close to overall average
+          // This prevents one long nap-gap from inflating the prediction
+          let _baseInterval = _avgFeedInterval || _ageThreshM;
+          if (_avgIntervalAtTime && _avgFeedInterval) {
+            // Only use time-of-day interval if it's within 30% of overall average (otherwise it's an outlier)
+            if (Math.abs(_avgIntervalAtTime - _avgFeedInterval) / _avgFeedInterval <= 0.3) {
+              _baseInterval = _avgIntervalAtTime;
+            }
+          }
           _feedThreshM = Math.round(_baseInterval * _adjustRatio);
+
+          // Hard cap: never predict more than 25% beyond age guideline
+          _feedThreshM = Math.min(_feedThreshM, Math.round(_ageThreshM * 1.25));
+
+          // Build context note
           if (!_lfIsBreast && _lfAmount > 0) {
-            const _typ = _avgAmountAtTime || _perFeedTarget;
-            const _pct = Math.round((_lfAmount / _typ) * 100);
-            if (_pct < 70) _smartFeedNote = "last feed " + _lfAmount + "ml (" + _pct + "% of typical " + _typ + "ml) — may be hungry sooner";
-            else if (_pct > 115) _smartFeedNote = "last feed was a big one (" + _lfAmount + "ml vs typical " + _typ + "ml)";
+            const _pct = Math.round((_lfAmount / _perFeedTarget) * 100);
+            if (_pct < 75) {
+              _smartFeedNote = "last feed " + _lfAmount + "ml (" + _pct + "% of " + _perFeedTarget + "ml target" + (_latestWeight ? " for " + _latestWeight + "kg" : "") + ") — may be hungry sooner";
+            } else if (_pct > 120) {
+              _smartFeedNote = "big feed (" + _lfAmount + "ml vs " + _perFeedTarget + "ml target)";
+            }
           } else if (_lfIsBreast && _lfBreastSec > 0 && _avgBreastSecAtTime) {
             const _pct = Math.round((_lfBreastSec / _avgBreastSecAtTime) * 100);
             if (_pct < 70) _smartFeedNote = "shorter feed (" + Math.floor(_lfBreastSec/60) + "min vs usual " + Math.floor(_avgBreastSecAtTime/60) + "min) — may be hungry sooner";
           }
         }
       } catch(ex) { /* smart prediction failed */ }
+
+      // Final safety cap on _feedThreshM
+      _feedThreshM = Math.min(_feedThreshM, Math.round(_ageThreshM * 1.25));
 
       if (_lastFeed) {
         let _feedGapM = _gapFromNow(_lastFeed);
@@ -3871,9 +4013,11 @@ function App(){
   function getAgeStage(){
     if(!age) return null;
     const w=age.totalWeeks;
-    if(w<6)   return{stage:"newborn",label:"Newborn",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"Multiple naps",feedGoal:"8-12 feeds/day",nightNote:"Wake every 2-3h is normal",tip:"Tiny tummy — feed on demand. Wake windows just 30–60 min."};
-    if(w<13)  return{stage:"infant",label:"Young Infant",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"~4 naps",feedGoal:"6-8 feeds/day",nightNote:"Stretches of 3-4h emerging",tip:"Watch for wake windows of 45–90 min."};
-    if(w<26)  return{stage:"3to6mo",label:"3–6 Months",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"~3 naps",feedGoal:"5-6 feeds/day",nightNote:"Some babies sleep 5-6h stretches",tip:"Consolidation beginning — longer naps likely."};
+    if(w<2)   return{stage:"newborn0",label:"Just Arrived",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"Multiple short naps",feedGoal:"8-12 feeds/day",nightNote:"Waking every 2-3h is normal and needed",tip:"Your baby is brand new. Feed on demand, day and night. Wake windows are just 30–45 min. You're doing amazingly.",isNewborn:true};
+    if(w<4)   return{stage:"newborn1",label:"2–4 Weeks",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"Multiple naps",feedGoal:"8-12 feeds/day",nightNote:"Night feeds every 2-3h still normal",tip:"Still finding your feet — that's completely normal. Feed on demand. Wake windows 30–60 min.",isNewborn:true};
+    if(w<6)   return{stage:"newborn2",label:"4–6 Weeks",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"Multiple naps",feedGoal:"7-10 feeds/day",nightNote:"Crying often peaks around 6 weeks — this is normal",tip:"Crying may be peaking right now — this is the hardest week for many parents. It gets better after 12 weeks.",isNewborn:true};
+    if(w<13)  return{stage:"infant",label:"6–12 Weeks",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"~4 naps",feedGoal:"6-8 feeds/day",nightNote:"Stretches of 3-4h emerging",tip:"The 6-week peak is passing. Wake windows 45–90 min. Smiles and social responses appearing.",isNewborn:false};
+    if(w<26)  return{stage:"3to6mo",label:"3–6 Months",weeks:w,feedUnit:"ml",showSolids:false,napGoal:"~3 naps",feedGoal:"5-6 feeds/day",nightNote:"Some babies sleep 5-6h stretches",tip:"Consolidation beginning — longer naps likely.",isNewborn:false};
     if(w<39)  return{stage:"6to9mo",label:"6–9 Months",weeks:w,feedUnit:"ml",showSolids:true,napGoal:"2-3 naps",feedGoal:"4-5 milk + solids 1-2x",nightNote:"Night feeds reducing — waking still normal",tip:"Starting solids! Log meals separately from milk."};
     if(w<52)  return{stage:"9to12mo",label:"9–12 Months",weeks:w,feedUnit:"ml",showSolids:true,napGoal:"~2 naps",feedGoal:"3-4 milk + solids 3x",nightNote:"Night wakes reducing — still normal",tip:"Nap consolidation to 2 naps likely."};
     if(w<78)  return{stage:"1year",label:"1–1.5 Years",weeks:w,feedUnit:"g/portion",showSolids:true,napGoal:"1-2 naps",feedGoal:"3 meals + 2 snacks",nightNote:"Occasional wakes still normal",tip:"Watch for 2→1 nap transition around 15-18 months."};
@@ -4811,10 +4955,16 @@ function App(){
     ];
     const match = transitions.find(t => w >= t.ageRange[0] && w <= t.ageRange[1] && profile.expectedNaps === t.from);
     if (!match || daysWithFewer < 4) return null;
+    const _adviceByTrans = {
+      "3-2": `Stretch the morning wake window gradually — add 15 minutes every few days until it reaches 2.5–3 hours. The 3rd nap will start shortening naturally. When it disappears, shift the afternoon nap slightly earlier. Use a 6–6:30pm bedtime on days the 3rd nap is skipped — overtiredness causes more night wakes, not fewer. Give it 2–4 weeks. Some days will still need 3 naps and that's fine.`,
+      "2-1": `Push the morning nap 15 minutes later every few days until it sits around 12–12:30pm. The afternoon nap will naturally shorten and drop. During the transition (which can take 4–6 weeks), some days will be 2-nap days and some 1-nap — that's normal. On 1-nap days, bedtime may need to move as early as 6pm. Watch for overtiredness signs: clinginess, eye-rubbing, falling asleep in the car.`,
+      "4-3": `Extend the first wake window by 15–30 minutes over a week. The 4th nap will start shortening and eventually drop. Keep bedtime consistent at 7–7:30pm. On days the 4th nap is skipped, bring bedtime forward by 15 minutes.`
+    };
+    const _transKey = match.from + "-" + match.to;
     return {
       from: match.from, to: match.to, ww: match.ww, daysWithFewer,
-      message: `${name} may be ready to transition from ${match.from} naps to ${match.to}. In ${daysWithFewer} of the last ${dk.length} days, fewer than ${match.from} naps were taken.`,
-      advice: `Gradually extend wake windows toward ${match.ww}. Expect 2–4 weeks of adjustment — some days will feel messy, and that's completely normal. Use an earlier bedtime (as early as 6pm) on short-nap days. Nap transitions are one of the trickiest phases — you're not doing anything wrong.`
+      message: `${name} may be ready to transition from ${match.from} naps to ${match.to}. In ${daysWithFewer} of the last ${dk.length} days, fewer than ${match.from} naps were taken. Nap transitions can take 4–6 weeks — it's normal to go back and forth.`,
+      advice: _adviceByTrans[_transKey] || `Gradually extend wake windows toward ${match.ww}. Expect 2–4 weeks of adjustment — some days will feel messy, and that's completely normal. Use an earlier bedtime (as early as 6pm) on short-nap days. Nap transitions are one of the trickiest phases — you're not doing anything wrong.`
     };
   }
 
@@ -6788,7 +6938,10 @@ function App(){
     }
 
     // ── Nap summary ──
-    if (_naps.length > 0) {
+    // Filter out ongoing nap (no end time yet or end === start) before reporting
+    const _completedNaps = _naps.filter(n => n.end && n.end !== n.start && minDiff(n.start, n.end) > 1);
+    if (_completedNaps.length > 0) {
+      const _naps = _completedNaps; // shadow with completed only
       const _napDurs = _naps.map(n => minDiff(n.start, n.end));
       const _totalNapMin = _napDurs.reduce((a, b) => a + b, 0);
       const _avgNapRecent = (()=>{const ns=_recent7.flatMap(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night).map(n=>minDiff(n.start,n.end)));return ns.length?Math.round(ns.reduce((a,b)=>a+b,0)/ns.length):0;})();
@@ -7099,13 +7252,21 @@ function App(){
     }
 
     // Longest stretch improvement
+    // Morning wake is stored on the SAME day in OBubba's model (day starts at morning wake)
+    // Pass same day entries as both args so morning wake is found correctly
     const _recentLongest = _recent.map(d => {
-      const nw = getNightWindows(days[d] || [], days[_dk[_dk.indexOf(d) + 1]] || []);
-      return nw.length ? Math.max(...nw.map(w => w.mins)) : 0;
+      const _nextD = _dk[_dk.indexOf(d) + 1];
+      const nw = getNightWindows(days[d] || [], days[d] || []);
+      const nw2 = _nextD ? getNightWindows(days[d] || [], days[_nextD] || []) : [];
+      const allStretches = [...nw, ...nw2];
+      return allStretches.length ? Math.max(...allStretches.map(w => w.mins)) : 0;
     }).filter(v => v > 60);
     const _prevLongest = _prev.map(d => {
-      const nw = getNightWindows(days[d] || [], days[_dk[_dk.indexOf(d) + 1]] || []);
-      return nw.length ? Math.max(...nw.map(w => w.mins)) : 0;
+      const _nextD = _dk[_dk.indexOf(d) + 1];
+      const nw = getNightWindows(days[d] || [], days[d] || []);
+      const nw2 = _nextD ? getNightWindows(days[d] || [], days[_nextD] || []) : [];
+      const allStretches = [...nw, ...nw2];
+      return allStretches.length ? Math.max(...allStretches.map(w => w.mins)) : 0;
     }).filter(v => v > 60);
     if (_recentLongest.length >= 3 && _prevLongest.length >= 3) {
       const avgNow = Math.round(_recentLongest.reduce((a, b) => a + b, 0) / _recentLongest.length);
@@ -8764,6 +8925,15 @@ function App(){
     if (already) return;
     quickAddLog("sleep",{type:"sleep",time:nowTime(),night:false,note:""});
     fireEventReminders("after_bedtime");
+    // One-time safe sleep signpost for babies under 6 months
+    try {
+      const _aw = age ? age.totalWeeks : 99;
+      const _safeSleepShown = localStorage.getItem("safe_sleep_shown_v1");
+      if(_aw < 26 && !_safeSleepShown) {
+        localStorage.setItem("safe_sleep_shown_v1", "1");
+        setTimeout(()=>showToast("🛏️ Safe sleep guide is in Insights → Sleep tab — back to sleep, clear cot, same room for 6 months", 6000, 1), 2000);
+      }
+    } catch {}
     // "What went well" analysis after bedtime
     setTimeout(()=>{
       try {
@@ -11268,6 +11438,7 @@ function App(){
                   {emoji:"☀️",label:"Wake",action:()=>handleSmartWake()},
                   {emoji:"🤸",label:tummyOn?"Stop":"Tummy",action:()=>{if(tummyOn){saveTummyTime();}else{haptic();setTummyOn(true);setTummySec(0);}}},
                   {emoji:"😢",label:"Crying?",action:()=>setShowCryingHelper(true)},
+                  ...(ageWeeks >= 26 ? [{emoji:"🥕",label:"Meal",action:()=>{haptic();setShowMealPicker(true);}}] : []),
                 ].map(({emoji,label,action,longAction})=>{
                   return (
                   <button key={label}
@@ -13573,6 +13744,42 @@ function App(){
                       </div>
                     );
                   })()}
+                  {/* ── Milk vs Solids Balance (6-12 months) ── */}
+                  {age && age.totalWeeks >= 26 && age.totalWeeks < 52 && (()=>{
+                    const _aw = age.totalWeeks;
+                    const _milkFeeds = (days[selDay]||[]).filter(e=>e.type==="feed"&&e.feedType!=="solids"&&!e.night);
+                    const _solidFeeds = (days[selDay]||[]).filter(e=>e.type==="feed"&&e.feedType==="solids");
+                    const _totalMilkMl = _milkFeeds.reduce((s,f)=>s+(f.amount||0),0);
+                    const _minMilk = _aw < 39 ? 500 : 400; // NHS: 500-600ml at 6-9mo, 400ml at 9-12mo
+                    const _milkOk = _totalMilkMl >= _minMilk * 0.7 || _milkFeeds.length >= (_aw < 39 ? 3 : 2);
+                    const _hasSolids = _solidFeeds.length > 0;
+                    const _h = new Date().getHours();
+                    if(_h < 14) return null; // only show after lunchtime
+                    return (
+                      <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:14,padding:"12px 14px",marginBottom:10}}>
+                        <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>🥛 Milk & Solids Balance</div>
+                        <div style={{display:"flex",gap:8,marginBottom:8}}>
+                          <div style={{flex:1,background:"var(--card-bg)",borderRadius:10,padding:"8px 10px",textAlign:"center"}}>
+                            <div style={{fontSize:11,color:C.lt,marginBottom:3}}>Milk today</div>
+                            <div style={{fontSize:16,fontWeight:700,color:_milkOk?C.mint:C.gold}}>{_totalMilkMl>0?fmtVol(_totalMilkMl,FU):_milkFeeds.length+" feeds"}</div>
+                            <div style={{fontSize:10,color:C.lt}}>min {fmtVol(_minMilk,FU)}</div>
+                          </div>
+                          <div style={{flex:1,background:"var(--card-bg)",borderRadius:10,padding:"8px 10px",textAlign:"center"}}>
+                            <div style={{fontSize:11,color:C.lt,marginBottom:3}}>Solids today</div>
+                            <div style={{fontSize:16,fontWeight:700,color:_hasSolids?C.mint:C.gold}}>{_solidFeeds.length} meal{_solidFeeds.length!==1?"s":""}</div>
+                            <div style={{fontSize:10,color:C.lt}}>{_aw<39?"aim 1-2x":"aim 3x"}</div>
+                          </div>
+                        </div>
+                        <div style={{fontSize:11,color:C.mid,lineHeight:1.5}}>
+                          {!_milkOk && _aw < 39 && "Milk is still the main nutrition at 6-9 months — offer milk before solids. "}
+                          {!_milkOk && _aw >= 39 && "Milk remains important at 9-12 months — aim for 400ml+ per day. "}
+                          {_milkOk && _hasSolids && "Looking balanced today ✓"}
+                          {_milkOk && !_hasSolids && _h >= 16 && "Good milk intake — don't forget to log any solids given today."}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* Night Feed Trend */}
                   {(()=>{
                     const nft = getNightFeedTrend();
@@ -14193,6 +14400,7 @@ function App(){
               {/* Development category filter bar */}
               <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:2}}>
                 {[
+                  ...(ageWeeks < 13 ? [{id:"newborn",label:"Newborn",icon:"👶"}] : []),
                   {id:"activities",label:"Activities",icon:"🎯"},
                   {id:"milestones",label:"Milestones",icon:"🏆"},
                   {id:"teething",label:"Teeth",icon:"🦷"},
@@ -14204,6 +14412,140 @@ function App(){
                   </button>
                 ))}
               </div>
+
+              {/* ── Newborn Guide (0-12 weeks) ── */}
+              {devFilter==="newborn" && ageWeeks < 13 && (()=>{
+                const [_expandedQ, _setExpandedQ] = React.useState(null);
+                const _isBrand = ageWeeks < 2;
+                const _isPurpleWindow = ageWeeks >= 4 && ageWeeks < 14;
+
+                const _normalQs = [
+                  {q:"Grunting and straining", a:"Very normal — especially in the first few weeks. Babies grunt when moving stool because they haven't yet learned to relax their pelvic floor. It's not pain, it's effort. If there's no stool after several days or baby seems distressed, mention it to your health visitor."},
+                  {q:"Sneezing constantly", a:"Completely normal. Babies sneeze to clear their tiny nasal passages. It doesn't mean they have a cold. Newborns are obligate nose-breathers so they sneeze often to keep the airway clear."},
+                  {q:"Cross-eyed or eyes going in different directions", a:"Normal under 4 months. Eye muscles are still developing and it takes time for both eyes to track together. If it continues beyond 4 months or one eye is always turned in, mention it to your GP."},
+                  {q:"Breathing fast then pausing", a:"This is called periodic breathing and is normal in newborns. Breathing may speed up, slow down, or pause for up to 10 seconds. If a pause lasts longer than 15-20 seconds or baby turns blue or pale, call 999."},
+                  {q:"Skin peeling or flaking", a:"Normal — especially in babies born at or after 40 weeks. The outer layer of skin that was protected by vernix in the womb sheds in the first 2 weeks. No lotion needed unless skin looks very dry."},
+                  {q:"Soft spot on head (fontanelle)", a:"The soft spots are gaps between skull bones — there's one at the front (closes 9-18 months) and one at the back (closes at 6-8 weeks). It's normal to see it pulse with heartbeat. See a doctor if it bulges when baby isn't crying, or is sunken."},
+                  {q:"Hiccups all the time", a:"Normal and harmless. The diaphragm is immature and easily triggered. Feed slowly and pause to wind if they happen during feeds. They stop on their own."},
+                  {q:"Jerky movements or startle reflex", a:"Normal — this is the Moro reflex and all healthy newborns have it. Baby throws arms out when startled. It disappears around 3-4 months. Swaddling can help calm babies who startle themselves awake."},
+                  {q:"Jaundice (yellow skin or eyes)", a:"Common in the first week — affects around 60% of newborns. Mild jaundice usually clears by 2 weeks. If baby looks very yellow, is difficult to wake for feeds, or jaundice appears in the first 24 hours after birth, contact your midwife or GP promptly."},
+                  {q:"Poo colour — green, yellow, black", a:"Black/dark green in first 2 days (meconium) is normal. Then changes to yellow/seedy (breastfed) or tan/yellow (formula). Green can be normal but if persistent with other symptoms, mention to health visitor. White, pale or chalky poo needs same-day GP attention."},
+                  {q:"Not focusing eyes or looking at me", a:"Normal under 6-8 weeks. Newborns can see clearly about 20-30cm — roughly the distance to your face during feeding. By 6-8 weeks they start making real eye contact and smiling."},
+                  {q:"Cluster feeding — feeding constantly", a:"Completely normal, especially in evenings. Cluster feeding is not a sign of low milk supply — it's baby topping up, stimulating supply, and preparing for a longer stretch. It typically eases by 12 weeks."},
+                ];
+
+                return (
+                  <div>
+                    {/* Stage banner */}
+                    <div className="glass-card" style={{padding:"14px 16px",marginBottom:12,textAlign:"center"}}>
+                      <div style={{fontSize:28,marginBottom:6}}>{_isBrand?"👶":"🌱"}</div>
+                      <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:C.deep,marginBottom:6}}>
+                        {_isBrand ? "You just did something extraordinary" : ageWeeks < 6 ? "The fourth trimester" : "You're past the hardest part"}
+                      </div>
+                      <div style={{fontSize:12,color:C.mid,lineHeight:1.6}}>
+                        {_isBrand
+                          ? "Your baby has been in the world for less than 2 weeks. There's no manual for this. Feed on demand, rest when you can, and trust your instincts — you know your baby."
+                          : ageWeeks < 6
+                          ? "Weeks 4-8 are often the hardest. Crying is peaking, sleep is fragmented, and everything feels uncertain. That's not a sign you're doing it wrong — it's just this stage. It does get easier."
+                          : "The peak crying window is behind you. Things are starting to settle into a rhythm. You've survived the hardest weeks — that's everything."}
+                      </div>
+                    </div>
+
+                    {/* PURPLE Crying card — 4-12 weeks */}
+                    {_isPurpleWindow && (
+                      <div style={{background:"rgba(123,104,238,0.05)",border:"1.5px solid rgba(123,104,238,0.2)",borderRadius:16,padding:"14px 16px",marginBottom:12}}>
+                        <div style={{fontSize:12,fontFamily:_fM,color:"#7b68ee",textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>😭 PURPLE Crying — Why your baby cries so much right now</div>
+                        <div style={{fontSize:13,color:C.deep,fontWeight:700,marginBottom:6}}>This is a developmental phase, not a problem</div>
+                        <div style={{fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:10}}>
+                          PURPLE crying is the medical term for the intense crying phase all healthy newborns go through. It peaks around 6-8 weeks and resolves by 3 months.
+                        </div>
+                        {[
+                          {letter:"P", word:"Peak pattern", desc:"Crying peaks at 6-8 weeks then decreases"},
+                          {letter:"U", word:"Unexpected", desc:"Comes and goes with no obvious reason"},
+                          {letter:"R", word:"Resists soothing", desc:"Baby may not stop even when you do everything right"},
+                          {letter:"P", word:"Pain-like face", desc:"Baby looks distressed even without pain"},
+                          {letter:"L", word:"Long lasting", desc:"Can last 5 hours a day at peak"},
+                          {letter:"E", word:"Evening", desc:"Often worse in the late afternoon and evening"},
+                        ].map((item,i)=>(
+                          <div key={i} style={{display:"flex",gap:10,padding:"4px 0",borderTop:i?`1px solid rgba(123,104,238,0.1)`:"none"}}>
+                            <div style={{width:22,height:22,borderRadius:"50%",background:"rgba(123,104,238,0.12)",color:"#7b68ee",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{item.letter}</div>
+                            <div style={{fontSize:12,color:C.mid}}><strong style={{color:C.deep}}>{item.word}:</strong> {item.desc}</div>
+                          </div>
+                        ))}
+                        <div style={{marginTop:10,padding:"8px 10px",background:"var(--card-bg)",borderRadius:10,fontSize:11,color:C.mid,lineHeight:1.5}}>
+                          💜 <strong>You haven't done anything wrong.</strong> If you need to put baby down safely and take a breath, that's the right thing to do. Never shake a baby.
+                        </div>
+                        <div style={{marginTop:6,fontSize:11,color:C.lt,lineHeight:1.5}}>
+                          If crying is accompanied by fever, vomiting, a bulging fontanelle, or baby is very pale or limp — contact your {_doctor} immediately.
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Is this normal? */}
+                    <div style={{marginBottom:12}}>
+                      <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>
+                        🔍 Is this normal?
+                      </div>
+                      <div style={{fontSize:12,color:C.mid,marginBottom:10,lineHeight:1.5}}>
+                        Tap anything you've noticed — quick answers based on NHS guidance.
+                      </div>
+                      {_normalQs.map((item,i)=>(
+                        <div key={i} style={{marginBottom:6,borderRadius:12,border:`1px solid ${_expandedQ===i?C.ter:C.blush}`,overflow:"hidden",background:"var(--card-bg)"}}>
+                          <button onClick={()=>_setExpandedQ(_expandedQ===i?null:i)}
+                            style={{width:"100%",padding:"10px 14px",background:"none",border:"none",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:_cP,fontFamily:_fI,textAlign:"left"}}>
+                            <span style={{fontSize:13,fontWeight:600,color:_expandedQ===i?C.ter:C.deep}}>{item.q}</span>
+                            <span style={{fontSize:11,color:C.lt,flexShrink:0,marginLeft:8}}>{_expandedQ===i?"▲":"▼"}</span>
+                          </button>
+                          {_expandedQ===i && (
+                            <div style={{padding:"0 14px 12px",fontSize:12,color:C.mid,lineHeight:1.65,borderTop:`1px solid ${C.blush}`}}>
+                              <div style={{paddingTop:10}}>{item.a}</div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div style={{fontSize:11,color:C.lt,marginTop:8,lineHeight:1.5,fontStyle:"italic"}}>
+                        Based on NHS guidance. Not medical advice — always contact your {_doctor} if you're worried about your baby.
+                      </div>
+                    </div>
+
+                    {/* Safe sleep signpost */}
+                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:12,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,marginBottom:12}}>
+                      <span style={{fontSize:18}}>🛏️</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:13,fontWeight:600,color:C.deep}}>Safe sleep guidance</div>
+                        <div style={{fontSize:11,color:C.lt,marginTop:2}}>Lullaby Trust guidelines — find it in Insights → Sleep tab</div>
+                      </div>
+                    </div>
+
+                    {/* Feed confidence for under 12 weeks */}
+                    {(()=>{
+                      const _todayFeeds = (days[selDay]||[]).filter(e=>e.type==="feed"&&!e.night);
+                      const _wetNappies = (days[selDay]||[]).filter(e=>e.type==="poop"&&(e.poopType||"wet").includes("wet")).length;
+                      const _h = new Date().getHours();
+                      if(_h < 15 || !_todayFeeds.length) return null;
+                      const _feedCount = _todayFeeds.length;
+                      const _targetFeeds = ageWeeks < 4 ? 8 : ageWeeks < 13 ? 6 : 5;
+                      const _onTrack = _feedCount >= Math.round(_targetFeeds * (_h/24) * 0.8);
+                      const _wetOk = _wetNappies >= 4;
+                      return (
+                        <div style={{padding:"10px 14px",borderRadius:12,border:`1px solid ${_onTrack&&_wetOk?"rgba(80,200,120,0.3)":"rgba(212,168,85,0.3)"}`,background:_onTrack&&_wetOk?"rgba(80,200,120,0.05)":"rgba(212,168,85,0.05)",marginBottom:12}}>
+                          <div style={{fontSize:12,fontWeight:700,color:_onTrack&&_wetOk?C.mint:C.gold,marginBottom:4}}>
+                            {_onTrack&&_wetOk?"✓ Feeding looks on track today":"Worth keeping an eye on today"}
+                          </div>
+                          <div style={{fontSize:11,color:C.mid,lineHeight:1.5}}>
+                            {_feedCount} feed{_feedCount!==1?"s":""} logged · {_wetNappies} wet napp{_wetNappies!==1?"ies":"y"}
+                            {!_onTrack && ` — aim for ${_targetFeeds}+ feeds in 24h`}
+                            {_onTrack && !_wetOk && " — aim for 6+ wet nappies in 24h"}
+                          </div>
+                          <div style={{fontSize:10,color:C.lt,marginTop:4,fontStyle:"italic"}}>
+                            If you're worried about feeding, speak to your {_doctor} or health visitor.
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                );
+              })()}
 
               {/* THIS WEEK — label is inside Let's Play card */}
 
@@ -14381,51 +14723,252 @@ function App(){
                 </div>
               )}
 
-              {/* ═══ First Tastes — daily weaning suggestion ═══ */}
+              {/* ═══ First Tastes + Try Tomorrow suggestion ═══ */}
               {age && age.totalWeeks >= 26 && (devFilter==="activities"||devFilter==="weaning") && (()=>{
-                // NHS recommends vegetables first to avoid sweet preference
-                const _ftFoods = [
-                  {food:"Steamed carrot 🥕",note:"Soft, gentle, easy first food",prep:"Steam until very soft, cut into finger-length strips",cat:"veg"},
-                  {food:"Steamed broccoli 🥦",note:"Great for tiny hands to hold",prep:"Steam florets until soft — the stem makes a natural handle",cat:"veg"},
-                  {food:"Courgette sticks 🥒",note:"Mild and gentle on tummy",prep:"Steam or roast until soft, cut into finger-length strips",cat:"veg"},
-                  {food:"Sweet potato 🍠",note:"Naturally sweet and soft",prep:"Steam or roast until very soft, cut into wedges",cat:"veg"},
-                  {food:"Mashed avocado 🥑",note:"Creamy, nutritious, mild flavour",prep:"Mash half a ripe avocado with a fork — no need to cook",cat:"veg"},
-                  {food:"Steamed cauliflower 🥬",note:"Soft and mild — easy to mash or hold",prep:"Steam florets until very soft",cat:"veg"},
-                  {food:"Mashed peas 🟢",note:"Iron-rich and bright — babies love the colour",prep:"Steam and lightly mash with a fork — leave some texture",cat:"veg"},
-                  {food:"Banana slices 🍌",note:"Sweet and easy to hold",prep:"Peel and cut lengthways into strips for easy grip",cat:"fruit"},
-                  {food:"Porridge fingers 🥣",note:"Warm, filling, easy texture",prep:"Cook oats thick, spread on tray, cool, cut into strips",cat:"grain"},
-                  {food:"Well-cooked egg 🥚",note:"Great protein — introduce early to reduce allergy risk",prep:"Hard boil and mash, or scramble soft. Use Lion-stamped eggs (UK)",cat:"allergen"},
-                  {food:"Smooth peanut butter on toast 🥜",note:"Early introduction may reduce peanut allergy risk",prep:"Spread very thinly on toast fingers — never give whole nuts",cat:"allergen"},
-                  {food:"Plain yoghurt 🥛",note:"Full-fat, no added sugar — good calcium source",prep:"Offer on a pre-loaded spoon or mix with mashed fruit",cat:"dairy"},
-                  {food:"Soft cooked salmon 🐟",note:"Rich in omega-3 for brain development",prep:"Steam or bake, flake carefully and check for bones",cat:"protein"},
-                  {food:"Lentil dhal 🍲",note:"Iron-rich, soft, perfect texture",prep:"Cook red lentils until very soft with mild spices (cumin, turmeric)",cat:"protein"},
-                ];
-                // Phase-based filtering per NHS: veg first 2 weeks, then add fruit/grain, then protein/allergens
                 const _wksSinceWean = Math.max(0, age.totalWeeks - 26);
-                const _ftFiltered = _wksSinceWean < 2 
-                  ? _ftFoods.filter(f => f.cat === "veg")
-                  : _wksSinceWean < 4 
-                    ? _ftFoods.filter(f => ["veg","fruit","grain"].includes(f.cat))
-                    : _ftFoods; // 4+ weeks: all foods including protein and allergens
+                const _allFoods = [
+                  // Phase 1 — first 2 weeks: veg only (NHS recommends starting with vegetables)
+                  {food:"Steamed carrot",emoji:"🥕",note:"Soft, gentle, easy first food — a classic starting point",
+                   blw:"Steam until very soft (15-20 min). Cut into finger-length strips — thick enough to grip with a fist. Should squish easily between your fingers.",
+                   puree:"Steam until very soft, blend with a little cooled boiled water or breast milk until completely smooth.",
+                   cat:"veg",phase:1,iron:false},
+                  {food:"Steamed broccoli",emoji:"🥦",note:"Great for tiny hands — the floret is easy to hold by the stem",
+                   blw:"Steam florets for 8-10 min until soft but not falling apart. The stem makes a natural handle for baby to hold.",
+                   puree:"Steam 10-12 min, blend with water or breast milk until smooth.",
+                   cat:"veg",phase:1,iron:false},
+                  {food:"Courgette",emoji:"🥒",note:"Mild, watery, gentle on tummy — great second or third food",
+                   blw:"Cut into finger-length sticks, steam or roast until soft (10-12 min). Should bend slightly without snapping.",
+                   puree:"Steam until very soft, blend until smooth. Very mild flavour — mix with carrot or sweet potato.",
+                   cat:"veg",phase:1,iron:false},
+                  {food:"Sweet potato",emoji:"🍠",note:"Naturally sweet and soft — one of the most popular first foods",
+                   blw:"Bake at 200°C for 45 min or steam wedges for 15-20 min. Cut into wedges. The natural sweetness makes it a hit.",
+                   puree:"Steam or bake until very soft, mash with a fork or blend. Freezes well in ice cube trays.",
+                   cat:"veg",phase:1,iron:false},
+                  {food:"Mashed avocado",emoji:"🥑",note:"Creamy, nutritious, packed with healthy fats — no cooking needed",
+                   blw:"Cut a slice, peel 2/3 of the skin leaving the bottom as a handle. Or roll in baby rice or ground oats to make it less slippery.",
+                   puree:"Mash ripe avocado with a fork. Add a little breast milk or formula for a creamier texture. Serve immediately.",
+                   cat:"veg",phase:1,iron:false},
+                  {food:"Steamed peas",emoji:"🟢",note:"Iron-rich and bright — babies love the colour and the pop",
+                   blw:"Lightly mash to prevent whole peas being a choking risk. Or mix into mashed potato for texture.",
+                   puree:"Steam and blend with a little water. The bright green colour often fascinates babies.",
+                   cat:"veg",phase:1,iron:true},
+                  // Phase 2 — weeks 2-4: add fruit and grains
+                  {food:"Banana",emoji:"🍌",note:"Sweet, soft, easy to hold — no preparation needed",
+                   blw:"Peel halfway and leave the bottom peel on as a handle. Cut lengthways for strips. Ripe banana is safest — very soft.",
+                   puree:"Mash with a fork until smooth. Mix with avocado or yoghurt for a creamy combo.",
+                   cat:"fruit",phase:2,iron:false},
+                  {food:"Porridge fingers",emoji:"🥣",note:"Warm, filling, iron-fortified — a great early breakfast food",
+                   blw:"Cook oats thick with water or breast milk. Spread 1cm thick in a baking tray, cool completely, cut into strips. Will firm up as it cools.",
+                   puree:"Serve as smooth runny porridge on a pre-loaded spoon. Add mashed fruit for sweetness.",
+                   cat:"grain",phase:2,iron:true},
+                  {food:"Steamed apple",emoji:"🍎",note:"Classic fruity flavour — sweet and smooth when steamed",
+                   blw:"Steam thick wedges for 6-8 min until just tender but holding shape. Sprinkle with a pinch of cinnamon.",
+                   puree:"Steam until very soft, blend until smooth. Add a pinch of cinnamon. Freezes well.",
+                   cat:"fruit",phase:2,iron:false},
+                  {food:"Toast fingers",emoji:"🍞",note:"Great for practising self-feeding — introduces wheat gently",
+                   blw:"Lightly toast bread, cut into strips. Add a thin scraping of unsalted butter or smooth nut butter (at 6+ months).",
+                   puree:"Soften in water or milk for spoon feeding if needed.",
+                   cat:"grain",phase:2,iron:false},
+                  // Phase 3 — 4+ weeks: protein and allergens
+                  {food:"Scrambled egg",emoji:"🥚",note:"Excellent protein — introduce early to reduce allergy risk",
+                   blw:"Cook soft, fluffy scrambles in a little butter. Serve in small pieces. Use Lion-stamped eggs (UK).",
+                   puree:"Blend soft scrambled egg with a little breast milk or formula until smooth.",
+                   cat:"allergen",phase:3,iron:false,allergenId:"eggs"},
+                  {food:"Peanut butter on toast",emoji:"🥜",note:"Early introduction significantly reduces peanut allergy risk (LEAP study)",
+                   blw:"Spread VERY thinly on toast fingers — a thin scraping only, never a thick dollop. Give in the morning so you can watch for 2 hours.",
+                   puree:"Mix a tiny amount (¼ tsp) into smooth porridge or mashed banana.",
+                   cat:"allergen",phase:3,iron:false,allergenId:"peanuts",morningOnly:true},
+                  {food:"Plain full-fat yoghurt",emoji:"🥛",note:"Good calcium source — full fat is important at this age",
+                   blw:"Pre-load a spoon and hand it to baby. Mix with mashed fruit for natural sweetness.",
+                   puree:"Offer on a spoon as-is or mixed with fruit puree. No added sugar.",
+                   cat:"dairy",phase:3,iron:false,allergenId:"milk"},
+                  {food:"Soft cooked salmon",emoji:"🐟",note:"Rich in omega-3 for brain development — one of the best foods for babies",
+                   blw:"Steam or bake, flake into large pieces checking carefully for bones. The soft flaky texture works well for BLW.",
+                   puree:"Steam, remove all bones, blend with sweet potato or pea puree.",
+                   cat:"protein",phase:3,iron:false,allergenId:"fish"},
+                  {food:"Lentil dhal",emoji:"🍲",note:"Iron-rich and protein-packed — one of the best iron sources for weaning",
+                   blw:"Cook red lentils very soft with mild spices (cumin, turmeric, no salt). Serve in a bowl for baby to scoop or pre-load spoon.",
+                   puree:"Blend until smooth. The natural texture is already quite smooth when well cooked.",
+                   cat:"protein",phase:3,iron:true},
+                  {food:"Soft cooked chicken",emoji:"🍗",note:"Iron and zinc-rich — dark meat is softer and more nutritious",
+                   blw:"Slow cook or braise chicken thighs until very tender. Shred into strips baby can hold. Keep moist — dry chicken is a choking risk.",
+                   puree:"Blend slow-cooked chicken with vegetable broth until smooth. Mix with sweet potato or carrot.",
+                   cat:"protein",phase:3,iron:true},
+                  {food:"Cheese sticks",emoji:"🧀",note:"Calcium-rich and easy to hold — full fat hard cheese is ideal",
+                   blw:"Cut hard cheese (cheddar, edam) into thick strips. Soft enough to gum but holds shape.",
+                   puree:"Grate finely and melt into vegetable purees or pasta sauce.",
+                   cat:"dairy",phase:3,iron:false,allergenId:"milk"},
+                  {food:"Tahini (sesame)",emoji:"🫙",note:"Introduces sesame early — another important allergen to tick off",
+                   blw:"Spread very thinly on toast or mix into hummus. Give in the morning — introduce in the morning so you can watch.",
+                   puree:"Mix a tiny amount (¼ tsp) into vegetable puree or yoghurt.",
+                   cat:"allergen",phase:3,iron:false,allergenId:"sesame",morningOnly:true},
+                ];
+
+                // Filter by phase
+                const _phaseMax = _wksSinceWean < 2 ? 1 : _wksSinceWean < 4 ? 2 : 3;
+                const _available = _allFoods.filter(f => f.phase <= _phaseMax);
+
+                // Smart suggestion: prefer foods not yet tried
+                const _triedFoods = (weaning||[]).map(w => w.food.toLowerCase());
+                const _notTried = _available.filter(f => !_triedFoods.some(t => t.includes(f.food.toLowerCase().split(" ")[0])));
+                const _pool = _notTried.length > 0 ? _notTried : _available;
+
+                // Today's suggestion — cycle through pool by day
                 const _doy = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000);
-                const _ft = _ftFiltered[_doy % _ftFiltered.length];
+                const _ft = _pool[_doy % _pool.length];
+
+                // Tomorrow's suggestion — next in pool
+                const _tmr = _pool[(_doy + 1) % _pool.length];
+
                 const _weanCount = (weaning||[]).length;
+                const [_showPrep, _setShowPrep] = React.useState("blw");
+                const _isAllergen = _ft.cat === "allergen";
+
                 return (
                   <div className="glass-card" style={{padding:"14px 16px",marginBottom:12}}>
-                    <div style={{fontSize:11,fontWeight:700,color:C.gold,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6}}>🍽 First Tastes</div>
-                    <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:3}}>Try: {_ft.food}{_ft.cat==="allergen"&&<span style={{fontSize:9,background:"rgba(212,168,85,0.2)",color:C.gold,padding:"1px 6px",borderRadius:99,marginLeft:6,fontWeight:600}}>ALLERGEN</span>}</div>
-                    <div style={{fontSize:12,color:_ft.allergen?C.gold:C.mid,marginBottom:6}}>{_ft.note}</div>
-                    {_ft.phase && <div style={{fontSize:10,color:C.lt,fontFamily:_fM,marginBottom:4}}>Phase: {_ft.phase}</div>}
-                    <div style={{fontSize:11,color:C.lt,lineHeight:1.5,marginBottom:8}}>{_ft.prep}</div>
-                    <div style={{fontSize:12,color:C.lt,fontStyle:"italic",marginBottom:4}}>It's okay if they only taste it — this is learning, not eating.</div>
-                    <div style={{fontSize:10,color:C.lt,marginBottom:8}}>💡 NHS tip: start with vegetables before fruit to encourage savoury tastes</div>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                      <button onClick={()=>{haptic();setShowWeaningForm(true);setWeaningForm({food:_ft.food.replace(/\s*[\u{1F300}-\u{1FFFF}]/gu,"").trim(),date:todayStr(),reaction:"liked",note:""});}}
-                        style={{padding:"8px 16px",borderRadius:99,border:"1.5px solid "+C.gold+"40",background:C.gold+"10",color:C.gold,fontSize:12,fontWeight:700,cursor:_cP}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                      <div style={{fontSize:11,fontWeight:700,color:C.gold,textTransform:"uppercase",letterSpacing:"0.05em"}}>
+                        🍽 {_wksSinceWean < 1 ? "First Taste" : "Try Today"}
+                      </div>
+                      {_weanCount > 0 && <span style={{fontSize:11,color:C.lt}}>{_weanCount} foods tried 🌈</span>}
+                    </div>
+
+                    {/* Today's food */}
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                      <span style={{fontSize:32}}>{_ft.emoji}</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:15,fontWeight:700,color:C.deep}}>
+                          {_ft.food}
+                          {_isAllergen && <span style={{fontSize:9,background:"rgba(212,168,85,0.2)",color:C.gold,padding:"1px 6px",borderRadius:99,marginLeft:6,fontWeight:600}}>ALLERGEN</span>}
+                          {_ft.iron && <span style={{fontSize:9,background:"rgba(80,200,120,0.15)",color:C.mint,padding:"1px 6px",borderRadius:99,marginLeft:4,fontWeight:600}}>IRON-RICH</span>}
+                        </div>
+                        <div style={{fontSize:12,color:C.mid,marginTop:2}}>{_ft.note}</div>
+                      </div>
+                    </div>
+
+                    {/* Allergen safety gate trigger + pre-intro checklist */}
+                    {_isAllergen && (()=>{
+                      const _isHighRisk = allergenProfile && (allergenProfile.eczema==="severe" || allergenProfile.knownAllergy==="yes");
+                      const _h = new Date().getHours();
+                      const _isMorning = _h >= 7 && _h < 12;
+                      const _lastAllergenDate = (weaning||[]).filter(w=>detectAllergens(w.food).length>0).sort((a,b)=>b.date.localeCompare(a.date))[0];
+                      const _daysSinceAllergen = _lastAllergenDate ? Math.floor((Date.now()-new Date(_lastAllergenDate.date).getTime())/(1000*60*60*24)) : 99;
+                      const _waitOk = _daysSinceAllergen >= 3;
+
+                      // No profile yet — gate
+                      if (!allergenProfile) return (
+                        <div style={{background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.25)",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
+                          <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>🛡️ Safety check needed before allergen suggestions</div>
+                          <div style={{fontSize:11,color:C.mid,lineHeight:1.5,marginBottom:8}}>We need to ask a few quick questions to make sure allergen introduction is safe for {babyName||"baby"}. Takes 30 seconds.</div>
+                          <button onClick={()=>setShowAllergenGate(true)}
+                            style={{padding:"8px 16px",borderRadius:99,border:"none",background:C.gold,color:"white",fontSize:12,fontWeight:700,cursor:_cP}}>
+                            Complete safety check
+                          </button>
+                        </div>
+                      );
+
+                      // High risk — GP first warning
+                      if (_isHighRisk) return (
+                        <div style={{background:"rgba(232,87,74,0.06)",border:"1.5px solid rgba(232,87,74,0.3)",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
+                          <div style={{fontSize:12,fontWeight:700,color:"#c04040",marginBottom:4}}>⚠️ Speak to your {_doctor} first</div>
+                          <div style={{fontSize:11,color:C.mid,lineHeight:1.5}}>
+                            Because {allergenProfile.eczema==="severe"?"baby has severe eczema":"baby has a known food allergy"}, BSACI recommends getting GP or allergist advice before introducing allergens. OBubba can show you this guidance but please don't proceed without professional advice.
+                          </div>
+                        </div>
+                      );
+
+                      // Pre-intro checklist
+                      return (
+                        <div style={{background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
+                          <div style={{fontSize:11,fontWeight:700,color:C.gold,marginBottom:8}}>☀️ Before you introduce this allergen — check all 4:</div>
+                          {[
+                            {ok:_isMorning, text:"It's morning (7am–12pm)", warn:"Give allergens in the morning only — you need 2 hours to watch for a reaction. Don't give before nap or bedtime."},
+                            {ok:true, text:"You'll be home and alert for the next 2 hours", warn:""},
+                            {ok:_waitOk, text:`At least 3 days since last allergen${_daysSinceAllergen < 99 ? ` (${_daysSinceAllergen}d ago)` : ""}`, warn:"Wait at least 3 days between introducing new allergens so you can identify any reaction clearly."},
+                            {ok:true, text:"Start with just ¼ teaspoon — a tiny taste only", warn:""},
+                          ].map((item,i)=>(
+                            <div key={i} style={{display:"flex",gap:8,padding:"3px 0",alignItems:"flex-start"}}>
+                              <span style={{fontSize:13,flexShrink:0,marginTop:1}}>{item.ok?"✅":"⚠️"}</span>
+                              <div>
+                                <div style={{fontSize:11,color:item.ok?C.deep:C.gold,fontWeight:item.ok?400:600}}>{item.text}</div>
+                                {!item.ok && item.warn && <div style={{fontSize:10,color:C.lt,lineHeight:1.4,marginTop:1}}>{item.warn}</div>}
+                              </div>
+                            </div>
+                          ))}
+                          <button onClick={()=>setShowAllergenEmergency(true)}
+                            style={{marginTop:8,padding:"5px 12px",borderRadius:99,border:`1px solid rgba(232,87,74,0.3)`,background:"rgba(232,87,74,0.05)",color:"#c04040",fontSize:11,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                            🚨 What to do if baby reacts
+                          </button>
+                        </div>
+                      );
+                    })()}
+
+                    {/* BLW / Puree toggle */}
+                    <div style={{display:"flex",gap:6,marginBottom:8}}>
+                      {["blw","puree"].map(mode=>(
+                        <button key={mode} onClick={()=>_setShowPrep(mode)}
+                          style={{padding:"4px 12px",borderRadius:99,border:`1px solid ${_showPrep===mode?C.ter:C.blush}`,background:_showPrep===mode?C.ter+"12":"var(--card-bg)",color:_showPrep===mode?C.ter:C.lt,fontSize:11,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                          {mode==="blw"?"👶 Baby-led":"🥄 Puree/spoon"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Prep guide */}
+                    <div style={{background:"var(--card-bg-alt)",borderRadius:10,padding:"8px 12px",fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:10}}>
+                      <strong style={{color:C.deep}}>{_showPrep==="blw"?"BLW prep:":"Puree/spoon prep:"}</strong> {_showPrep==="blw"?_ft.blw:_ft.puree}
+                    </div>
+
+                    <div style={{fontSize:11,color:C.lt,fontStyle:"italic",marginBottom:10,lineHeight:1.5}}>
+                      It's okay if they only lick or play with it — this is learning, not eating. Offer milk first so baby isn't hungry and stressed.
+                    </div>
+
+                    {/* Log + Tomorrow */}
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <button onClick={()=>{haptic();setShowWeaningForm(true);setWeaningForm({food:_ft.food,date:todayStr(),reaction:"neutral",note:"",liked:null});}}
+                        style={{flex:1,padding:"8px",borderRadius:99,border:"none",background:C.ter,color:"white",fontSize:12,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
                         Log attempt
                       </button>
-                      {_weanCount > 0 && <span style={{fontSize:11,color:C.lt}}>{_weanCount} foods explored 🌈</span>}
                     </div>
+
+                    {/* Tomorrow teaser */}
+                    {_tmr && _tmr.food !== _ft.food && (()=>{
+                      const _isHighRisk = allergenProfile && (allergenProfile.eczema==="severe" || allergenProfile.knownAllergy==="yes");
+                      const _tmrIsAllergen = _tmr.cat === "allergen";
+                      const _noProfile = _tmrIsAllergen && !allergenProfile;
+                      const _gpFirst = _tmrIsAllergen && _isHighRisk;
+                      return (
+                        <div style={{marginTop:10,borderRadius:12,border:`1px solid ${_tmrIsAllergen?"rgba(212,168,85,0.3)":C.blush}`,overflow:"hidden"}}>
+                          <div style={{padding:"8px 10px",background:_tmrIsAllergen?"rgba(212,168,85,0.06)":"var(--card-bg-alt)",display:"flex",alignItems:"center",gap:8}}>
+                            <span style={{fontSize:16}}>{_noProfile||_gpFirst?"🔒":_tmr.emoji}</span>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:11,color:C.lt}}>💡 Tomorrow — why not try:</div>
+                              <div style={{fontSize:13,fontWeight:600,color:_noProfile||_gpFirst?C.lt:C.deep}}>
+                                {_noProfile ? "Complete safety check to unlock allergen suggestions"
+                                 : _gpFirst ? "Speak to your GP before introducing allergens"
+                                 : _tmr.food}
+                                {!_noProfile && !_gpFirst && _tmrIsAllergen && <span style={{fontSize:9,background:"rgba(212,168,85,0.2)",color:C.gold,padding:"1px 6px",borderRadius:99,marginLeft:6,fontWeight:600}}>ALLERGEN</span>}
+                              </div>
+                            </div>
+                          </div>
+                          {_tmrIsAllergen && !_noProfile && !_gpFirst && (
+                            <div style={{padding:"6px 10px 8px",background:"rgba(212,168,85,0.04)",borderTop:"1px solid rgba(212,168,85,0.12)"}}>
+                              <div style={{fontSize:10,color:C.gold,lineHeight:1.5,marginBottom:4}}>
+                                ☀️ <strong>Allergen — morning only.</strong> Give at breakfast time, stay home for 2 hours to watch for reactions. Start with ¼ tsp only.
+                              </div>
+                              <button onClick={()=>setShowAllergenEmergency(true)}
+                                style={{padding:"3px 10px",borderRadius:99,border:"1px solid rgba(232,87,74,0.3)",background:"rgba(232,87,74,0.05)",color:"#c04040",fontSize:10,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                                🚨 Know the reaction signs
+                              </button>
+                            </div>
+                          )}
+                          {(_noProfile || _gpFirst) && _tmrIsAllergen && (
+                            <div style={{padding:"6px 10px",background:"rgba(212,168,85,0.04)",borderTop:"1px solid rgba(212,168,85,0.12)",fontSize:10,color:C.lt,lineHeight:1.4}}>
+                              {_noProfile ? "Tap 'Complete safety check' above to unlock allergen guidance." : "BSACI recommends GP advice before allergen introduction for babies with severe eczema or known allergies."}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })()}
@@ -14456,6 +14999,318 @@ function App(){
                   ))}
                 </div>
               )}
+
+              {/* ═══ Allergen Checklist ═══ */}
+              {age && age.totalWeeks >= 26 && devFilter==="weaning" && (()=>{
+                const _introduced = ALLERGEN_GUIDE.filter(a => allergenIntroduced(weaning, a.id));
+                const _notDone = ALLERGEN_GUIDE.filter(a => !allergenIntroduced(weaning, a.id));
+                const _needsMaintaining = _introduced.filter(a => !allergenRecent(weaning, a.id));
+                const [_showAllList, _setShowAllList] = React.useState(false);
+                const [_selectedAllergen, _setSelectedAllergen] = React.useState(null);
+                return (
+                  <div style={{marginBottom:12}}>
+                    {/* Header */}
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>
+                        🛡️ Allergen Tracker
+                        <HelpBtn title="Allergen Tracker" body={"Early introduction of the 14 major allergens significantly reduces the risk of food allergy. The LEAP study found early peanut introduction reduced peanut allergy risk by 81%.
+
+Once introduced with no reaction, keep giving each allergen regularly — at least once a week — to maintain tolerance. OBubba tracks which you've done and flags any that need a top-up."}/>
+                      </div>
+                      <span style={{fontSize:11,color:C.lt}}>{_introduced.length}/14 done</span>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div style={{height:6,borderRadius:99,background:"var(--card-bg-alt)",marginBottom:10,overflow:"hidden"}}>
+                      <div style={{height:"100%",borderRadius:99,background:`linear-gradient(90deg,${C.mint},${C.ter})`,width:`${(_introduced.length/14)*100}%`,transition:"width 0.4s"}}/>
+                    </div>
+
+                    {/* Legal disclaimer — allergen section */}
+                    <div style={{fontSize:10,color:C.lt,lineHeight:1.5,marginBottom:8,fontStyle:"italic"}}>
+                      OBubba allergen guidance is based on NHS, BSACI, and Anaphylaxis UK recommendations. This is general guidance only — not medical advice. If {babyName||"your baby"} has eczema, a known allergy, or family history of food allergy, speak to your {_doctor} before introducing allergens. In an emergency always call {_emergNum}.
+                    </div>
+
+                    {/* Needs maintaining — show at top if any */}
+                    {_needsMaintaining.length > 0 && (
+                      <div style={{background:"rgba(212,168,85,0.08)",border:"1px solid rgba(212,168,85,0.25)",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>⏰ Give these again this week</div>
+                        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                          {_needsMaintaining.map((a,i)=>{
+                            const _days = daysSinceAllergen(weaning, a.id);
+                            return (
+                              <button key={i} onClick={()=>_setSelectedAllergen(_selectedAllergen===a.id?null:a.id)}
+                                style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:99,border:"1px solid rgba(212,168,85,0.3)",background:"rgba(212,168,85,0.08)",cursor:_cP,fontSize:12}}>
+                                <span>{a.emoji}</span>
+                                <span style={{color:C.gold,fontWeight:600}}>{a.label}</span>
+                                {_days !== null && <span style={{fontSize:10,color:C.lt}}>{_days}d ago</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {/* Expanded maintain guide */}
+                        {_selectedAllergen && (()=>{
+                          const _ag = ALLERGEN_GUIDE.find(a=>a.id===_selectedAllergen);
+                          if(!_ag) return null;
+                          return (
+                            <div style={{marginTop:8,padding:"8px 10px",background:"var(--card-bg)",borderRadius:10,fontSize:12}}>
+                              <div style={{fontWeight:700,color:C.deep,marginBottom:4}}>{_ag.emoji} {_ag.label} — ideas to give this week</div>
+                              <div style={{color:C.mid,lineHeight:1.5}}>{_ag.maintain}</div>
+                              <button onClick={()=>{setWeaningForm({food:_ag.label,date:todayStr(),reaction:"neutral",note:"",liked:null});setShowWeaningForm(true);_setSelectedAllergen(null);}}
+                                style={{marginTop:8,padding:"5px 12px",borderRadius:99,border:"none",background:C.ter,color:"white",fontSize:11,fontWeight:700,cursor:_cP}}>
+                                Log {_ag.label} today
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* ── Allergen Safety Briefing — shown before first allergen intro ── */}
+                    {_introduced.length === 0 && (()=>{
+                      const [_safetyOpen, _setSafetyOpen] = React.useState(false);
+                      return (
+                        <div style={{marginBottom:10}}>
+                          {/* Risk screener */}
+                          <div style={{background:"rgba(192,112,136,0.06)",border:`1.5px solid ${C.ter}30`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
+                            <div style={{fontSize:13,fontWeight:700,color:C.deep,marginBottom:6}}>⚠️ Before you introduce allergens</div>
+                            <div style={{fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:8}}>
+                              Most babies can start allergens from 6 months. But if any of the following apply to {babyName||"your baby"}, speak to your {_doctor} first:
+                            </div>
+                            {[
+                              "Has severe or persistent eczema",
+                              "Has already reacted to a food",
+                              "Has a close family member with a diagnosed food allergy",
+                              "Was born prematurely or has a known immune condition",
+                            ].map((r,i)=>(
+                              <div key={i} style={{display:"flex",gap:8,padding:"3px 0",fontSize:12,color:C.mid}}>
+                                <span style={{color:C.ter,flexShrink:0}}>•</span>{r}
+                              </div>
+                            ))}
+                            <div style={{fontSize:11,color:C.lt,marginTop:8,fontStyle:"italic",lineHeight:1.5}}>
+                              High-risk babies can still benefit from early allergen introduction — but your {_doctor} can advise on timing and supervision. (NHS/BSACI guidance)
+                            </div>
+                          </div>
+
+                          {/* How to introduce safely — collapsed */}
+                          <div style={{border:`1px solid ${C.blush}`,borderRadius:12,overflow:"hidden",marginBottom:6}}>
+                            <button onClick={()=>_setSafetyOpen(v=>!v)}
+                              style={{width:"100%",padding:"10px 14px",background:"var(--card-bg)",border:"none",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:_cP,fontFamily:_fI}}>
+                              <span style={{fontSize:13,fontWeight:700,color:C.deep}}>📋 How to introduce allergens safely</span>
+                              <span style={{fontSize:11,color:C.lt}}>{_safetyOpen?"▲":"▼"}</span>
+                            </button>
+                            {_safetyOpen && (
+                              <div style={{padding:"10px 14px 14px",background:"var(--card-bg-alt)",borderTop:`1px solid ${C.blush}`}}>
+                                {[
+                                  {icon:"☀️", rule:"Give in the morning", detail:"Always introduce a new allergen in the morning so you have the full day to watch for a reaction. Never try for the first time before nap or bedtime."},
+                                  {icon:"🏠", rule:"Stay home for 2 hours", detail:"Stay at home and keep baby under close observation for at least 2 hours after giving a new allergen. Reactions usually happen within minutes but can take up to 2 hours."},
+                                  {icon:"🥄", rule:"Start tiny — ¼ teaspoon", detail:"Start with a very small amount (¼ to ½ teaspoon) mixed into a food baby already knows. If no reaction over 2-3 days, gradually increase."},
+                                  {icon:"1️⃣", rule:"One new allergen at a time", detail:"Never introduce two new allergens on the same day. If a reaction occurs, you need to know exactly which food caused it."},
+                                  {icon:"🔁", rule:"Keep giving it once introduced", detail:"Once introduced with no reaction, continue giving it at least once a week. Research shows regular exposure maintains tolerance."},
+                                  {icon:"🍼", rule:"Offer milk feed first", detail:"Give baby their usual milk feed before introducing the allergen food. A hungry, stressed baby is harder to observe carefully."},
+                                ].map((item,i)=>(
+                                  <div key={i} style={{display:"flex",gap:10,padding:"6px 0",borderTop:i?`1px solid ${C.blush}`:"none"}}>
+                                    <span style={{fontSize:16,flexShrink:0}}>{item.icon}</span>
+                                    <div>
+                                      <div style={{fontSize:12,fontWeight:700,color:C.deep}}>{item.rule}</div>
+                                      <div style={{fontSize:11,color:C.mid,lineHeight:1.5,marginTop:2}}>{item.detail}</div>
+                                    </div>
+                                  </div>
+                                ))}
+                                <div style={{fontSize:11,color:C.lt,marginTop:10,lineHeight:1.5,fontStyle:"italic",borderTop:`1px solid ${C.blush}`,paddingTop:8}}>
+                                  Source: NHS, Anaphylaxis UK, BSACI, LEAP study. This is guidance only — not medical advice. Always consult your {_doctor} if unsure.
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* ── Reaction guide — always visible once first allergen introduced ── */}
+                    {_introduced.length > 0 && (()=>{
+                      const [_rxOpen, _setRxOpen] = React.useState(false);
+                      return (
+                        <div style={{border:"1.5px solid rgba(232,87,74,0.2)",borderRadius:14,overflow:"hidden",marginBottom:10}}>
+                          <button onClick={()=>_setRxOpen(v=>!v)}
+                            style={{width:"100%",padding:"10px 14px",background:"rgba(232,87,74,0.03)",border:"none",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:_cP,fontFamily:_fI}}>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{fontSize:16}}>🚨</span>
+                              <span style={{fontSize:13,fontWeight:700,color:"#c04040"}}>What to do if baby reacts</span>
+                            </div>
+                            <span style={{fontSize:11,color:C.lt}}>{_rxOpen?"▲":"▼"}</span>
+                          </button>
+                          {_rxOpen && (
+                            <div style={{padding:"12px 14px",background:"var(--card-bg)"}}>
+                              {/* Mild */}
+                              <div style={{marginBottom:12}}>
+                                <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>⚠️ Mild reaction — monitor closely</div>
+                                {[
+                                  "Hives or raised, itchy red spots on skin",
+                                  "Swelling around mouth, lips or eyes",
+                                  "Runny nose, sneezing",
+                                  "Mild vomiting or stomach upset",
+                                  "Flushed or blotchy skin",
+                                ].map((s,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"1px 0"}}>• {s}</div>)}
+                                <div style={{fontSize:11,color:C.mid,marginTop:6,padding:"8px",background:"var(--card-bg-alt)",borderRadius:8,lineHeight:1.5}}>
+                                  Remove the food. Give antihistamine (e.g. Piriton/chlorphenamine) if prescribed. Contact 111 or your {_doctor} for advice. Watch closely for the next 2 hours.
+                                </div>
+                              </div>
+
+                              {/* Severe / 999 */}
+                              <div style={{background:"rgba(232,87,74,0.06)",border:"1.5px solid rgba(232,87,74,0.3)",borderRadius:12,padding:"12px",marginBottom:10}}>
+                                <div style={{fontSize:13,fontWeight:700,color:"#c04040",marginBottom:8}}>🆘 Call 999 immediately — anaphylaxis</div>
+                                <div style={{fontSize:11,color:"#c04040",marginBottom:8,fontWeight:600}}>Tell the operator: "My baby is having anaphylaxis" (pronounced: anna-fill-axis)</div>
+                                {[
+                                  "Difficulty breathing, noisy breathing or wheezing",
+                                  "Swollen throat or tongue — drooling, can't swallow",
+                                  "Sudden extreme paleness or blue tinge around lips",
+                                  "Floppy, limp, or sudden collapse",
+                                  "Loss of consciousness",
+                                  "Rapid worsening of any symptoms",
+                                ].map((s,i)=><div key={i} style={{fontSize:12,color:"#c04040",padding:"2px 0",fontWeight:500}}>• {s}</div>)}
+                                <div style={{marginTop:8,padding:"8px",background:"rgba(232,87,74,0.08)",borderRadius:8,fontSize:11,color:"#c04040",lineHeight:1.5}}>
+                                  While waiting for the ambulance: lie baby flat on their back with legs raised. If having difficulty breathing, allow them to sit up. Never leave them alone. If prescribed an adrenaline auto-injector (EpiPen/Jext), use it immediately.
+                                </div>
+                              </div>
+
+                              {/* Biphasic warning */}
+                              <div style={{padding:"8px 10px",background:"rgba(212,168,85,0.08)",border:"1px solid rgba(212,168,85,0.25)",borderRadius:10,fontSize:11,color:C.gold,lineHeight:1.5}}>
+                                ⏰ <strong>Important:</strong> Up to 1 in 20 allergic reactions have a "biphasic" phase — symptoms may seem to resolve then return hours later. Even after a mild reaction, monitor baby for at least 4-6 hours and seek medical advice.
+                              </div>
+
+                              <div style={{fontSize:10,color:C.lt,marginTop:8,lineHeight:1.5,fontStyle:"italic"}}>
+                                Sources: NHS, Anaphylaxis UK, Resuscitation Council UK (2021). Not medical advice — always follow guidance from your {_doctor}. In an emergency always call {_emergNum}.
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Next allergen to introduce */}
+                    {_notDone.length > 0 && (()=>{
+                      const _next = _notDone.sort((a,b)=>a.priority-b.priority)[0];
+                      const _lastLog = weaning.length ? [...weaning].sort((a,b)=>b.date.localeCompare(a.date))[0] : null;
+                      const _daysSinceLast = _lastLog ? Math.floor((Date.now()-new Date(_lastLog.date).getTime())/(1000*60*60*24)) : null;
+                      const _readyForNext = _daysSinceLast === null || _daysSinceLast >= 2;
+                      return (
+                        <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:12,padding:"12px",marginBottom:8}}>
+                          <div style={{fontSize:11,color:C.lt,marginBottom:4,fontFamily:_fM,textTransform:"uppercase",letterSpacing:"0.05em"}}>
+                            {_readyForNext ? "✨ Next allergen to introduce" : `⏳ Wait ${2-_daysSinceLast} more day${2-_daysSinceLast!==1?"s":""} before next allergen`}
+                          </div>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                            <span style={{fontSize:24}}>{_next.emoji}</span>
+                            <div>
+                              <div style={{fontSize:14,fontWeight:700,color:C.deep}}>{_next.label}</div>
+                              <div style={{fontSize:11,color:C.lt}}>{_next.note.slice(0,80)}...</div>
+                            </div>
+                          </div>
+                          {/* Morning warning — critical safety */}
+                          <div style={{background:"rgba(212,168,85,0.08)",border:"1px solid rgba(212,168,85,0.25)",borderRadius:10,padding:"8px 10px",marginBottom:8,fontSize:11,color:C.gold,lineHeight:1.5}}>
+                            ☀️ <strong>Give in the morning only</strong> — stay home for 2 hours after introducing so you can watch for any reaction. Never try a new allergen before nap or bedtime.
+                          </div>
+                          <div style={{fontSize:11,color:C.mid,lineHeight:1.5,marginBottom:8,padding:"8px",background:"var(--card-bg)",borderRadius:8}}>
+                            <strong>How to introduce:</strong> {_next.prep}
+                          </div>
+                          {!_readyForNext && _lastLog && (
+                            <div style={{fontSize:11,color:C.lt,padding:"6px 10px",background:"var(--card-bg-alt)",borderRadius:8,marginBottom:8,lineHeight:1.5}}>
+                              ⏳ Introduced a new food recently — wait at least 2 days before trying another allergen so you can spot any delayed reaction.
+                            </div>
+                          )}
+                          <div style={{display:"flex",gap:8}}>
+                            <button onClick={()=>{if(_readyForNext){setWeaningForm({food:_next.label,date:todayStr(),reaction:"neutral",note:"",liked:null});setShowWeaningForm(true);}}}
+                              style={{flex:1,padding:"8px",borderRadius:99,border:"none",background:_readyForNext?C.ter:"#ccc",color:"white",fontSize:12,fontWeight:700,cursor:_readyForNext?_cP:"not-allowed",opacity:_readyForNext?1:0.6}}>
+                              {_readyForNext ? "✓ Log introduction" : "Not ready yet — wait 2 days"}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Full checklist toggle */}
+                    <button onClick={()=>_setShowAllList(v=>!v)}
+                      style={{width:"100%",padding:"8px",borderRadius:10,border:`1px solid ${C.blush}`,background:"var(--card-bg)",fontSize:12,color:C.mid,cursor:_cP,fontFamily:_fI}}>
+                      {_showAllList ? "Hide" : "Show"} all 14 allergens ({_introduced.length} done, {_notDone.length} to go)
+                    </button>
+                    {_showAllList && (
+                      <div style={{marginTop:8,display:"flex",flexDirection:"column",gap:4}}>
+                        {ALLERGEN_GUIDE.map((a,i)=>{
+                          const _done = allergenIntroduced(weaning, a.id);
+                          const _recent = _done && allergenRecent(weaning, a.id);
+                          const _days = _done ? daysSinceAllergen(weaning, a.id) : null;
+                          return (
+                            <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px",borderRadius:10,
+                              background:_done?(_recent?"rgba(80,200,120,0.06)":"rgba(212,168,85,0.06)"):"var(--card-bg-alt)",
+                              border:`1px solid ${_done?(_recent?"rgba(80,200,120,0.2)":"rgba(212,168,85,0.2)"):C.blush}`}}>
+                              <span style={{fontSize:18}}>{a.emoji}</span>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:13,fontWeight:600,color:_done?C.deep:C.lt}}>{a.label}</div>
+                                {_done && <div style={{fontSize:10,color:_recent?C.mint:C.gold}}>{_recent?`✓ Given recently`:`⏰ ${_days}d ago — give again soon`}</div>}
+                                {!_done && <div style={{fontSize:10,color:C.lt}}>Not introduced yet</div>}
+                              </div>
+                              {_done ? (
+                                <button onClick={()=>{setWeaningForm({food:a.label,date:todayStr(),reaction:"neutral",note:"",liked:null});setShowWeaningForm(true);}}
+                                  style={{padding:"3px 10px",borderRadius:99,border:`1px solid ${C.blush}`,background:"var(--card-bg)",fontSize:10,color:C.mid,cursor:_cP}}>
+                                  Log again
+                                </button>
+                              ) : (
+                                <button onClick={()=>{setWeaningForm({food:a.label,date:todayStr(),reaction:"neutral",note:"",liked:null});setShowWeaningForm(true);}}
+                                  style={{padding:"3px 10px",borderRadius:99,border:"none",background:C.ter,fontSize:10,color:"white",cursor:_cP,fontWeight:600}}>
+                                  Introduce
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* ═══ Reaction Symptom Guide ═══ */}
+              {age && age.totalWeeks >= 26 && devFilter==="weaning" && (()=>{
+                const [_showReaction, _setShowReaction] = React.useState(false);
+                return (
+                  <div style={{marginBottom:12,border:"1.5px solid rgba(232,87,74,0.15)",borderRadius:14,overflow:"hidden"}}>
+                    <button onClick={()=>_setShowReaction(v=>!v)}
+                      style={{width:"100%",padding:"12px 14px",background:"rgba(232,87,74,0.03)",border:"none",display:"flex",justifyContent:"space-between",alignItems:"center",cursor:_cP,fontFamily:_fI}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span>🚨</span>
+                        <span style={{fontSize:13,fontWeight:700,color:"#c04040"}}>What does an allergic reaction look like?</span>
+                      </div>
+                      <span style={{fontSize:11,color:C.lt}}>{_showReaction?"▲":"▼"}</span>
+                    </button>
+                    {_showReaction && (
+                      <div style={{padding:"12px 14px",background:"var(--card-bg)"}}>
+                        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10,gap:10}}>
+                          <div style={{fontSize:12,color:C.mid,lineHeight:1.5,flex:1}}>
+                            Most reactions happen within minutes, but can take up to 2 hours. <strong>Always introduce allergens in the morning</strong> so you can watch. Most reactions are mild.
+                          </div>
+                          <button onClick={()=>setShowAllergenEmergency(true)} style={{padding:"5px 10px",borderRadius:99,border:"1px solid rgba(232,87,74,0.3)",background:"rgba(232,87,74,0.05)",color:"#c04040",fontSize:10,fontWeight:600,cursor:_cP,fontFamily:_fI,flexShrink:0}}>
+                            🚨 Emergency
+                          </button>
+                        </div>
+                        <div style={{marginBottom:10}}>
+                          <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>⚠️ Mild — monitor and call GP</div>
+                          {["Hives (raised, itchy red bumps on skin)","Swelling around mouth or eyes","Runny nose or sneezing","Mild vomiting","Stomach pain, unsettled after eating"].map((s,i)=>(
+                            <div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {s}</div>
+                          ))}
+                        </div>
+                        <div style={{background:"rgba(232,87,74,0.06)",border:"1px solid rgba(232,87,74,0.2)",borderRadius:10,padding:"10px",marginBottom:8}}>
+                          <div style={{fontSize:12,fontWeight:700,color:"#c04040",marginBottom:6}}>🆘 Call 999 immediately — anaphylaxis signs</div>
+                          {["Difficulty breathing, wheezing","Throat or tongue swelling","Sudden extreme paleness","Collapse or loss of consciousness","Severe vomiting/diarrhoea with other symptoms"].map((s,i)=>(
+                            <div key={i} style={{fontSize:12,color:"#c04040",padding:"2px 0"}}>• {s}</div>
+                          ))}
+                        </div>
+                        <div style={{fontSize:11,color:C.lt,fontStyle:"italic",lineHeight:1.5}}>
+                          Note: a red rash around the mouth from acidic foods (tomato, citrus) is contact rash — not allergy. Wipe clean and it will fade.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* ── Milestones — full detail section ── */}
               <div data-milestones="true">
@@ -14986,15 +15841,18 @@ function App(){
                 OBubba is a baby tracking and parenting companion app. It is <b>not a medical device</b> and does not provide medical advice, diagnosis, or treatment.
               </div>
               <div style={{fontSize:12,color:C.mid,lineHeight:1.7,marginTop:6}}>
-                Sleep predictions, feeding guidance, and developmental information are based on publicly available NHS, WHO, and paediatric sleep research guidelines. OBubba is not affiliated with or endorsed by the NHS, WHO, or any healthcare provider.
+                Sleep predictions, feeding guidance, and developmental information are based on publicly available guidelines from the NHS, WHO, AAP (American Academy of Pediatrics), NHMRC (Australia), and paediatric sleep research. OBubba is not affiliated with or endorsed by any of these organisations or any healthcare provider.
               </div>
               <div style={{fontSize:12,color:C.mid,lineHeight:1.7,marginTop:6}}>
-                Always consult your doctor or paediatrician with concerns about your baby's health, feeding, sleep, or development.
+                Allergen introduction guidance is based on NHS/BSACI guidance and the LEAP study findings. Always speak to your {_doctor} before introducing allergens if your baby has eczema, a known allergy, or a family history of food allergy.
               </div>
               <div style={{fontSize:12,color:C.mid,lineHeight:1.7,marginTop:6}}>
-                Growth chart data: WHO Child Growth Standards. Safe sleep guidance: The Lullaby Trust (UK).
+                Always consult your {_doctor} with any concerns about your baby's health, feeding, sleep, or development. OBubba is not a substitute for professional medical advice.
               </div>
-              <div style={{fontSize:11,color:C.lt,marginTop:8}}>Version 1.0 · © {new Date().getFullYear()} OBubba · <a href="https://obubba.com/privacy" target="_blank" style={{color:C.lt}}>Privacy Policy</a></div>
+              <div style={{fontSize:12,color:C.mid,lineHeight:1.7,marginTop:6}}>
+                Growth chart data: WHO Child Growth Standards. Safe sleep guidance: The Lullaby Trust (UK) / AAP (US) / Red Nose (AU).
+              </div>
+              <div style={{fontSize:11,color:C.lt,marginTop:8}}>Version 1.0 · © {new Date().getFullYear()} OBubba · <a href="https://obubba.com/privacy" target="_blank" style={{color:C.lt}}>Privacy Policy</a> · <a href="https://obubba.com/terms" target="_blank" style={{color:C.lt}}>Terms & Conditions</a></div>
             </div>
 
 
@@ -15961,6 +16819,214 @@ function App(){
               💡 White noise helps babies sleep by mimicking womb sounds. Keep volume below 50dB — about as loud as a quiet conversation.
               <br/><br/>📱 Sound continues when your screen locks. If audio stops briefly, unlock and it will resume automatically.
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Allergen Safety Gate ═══ */}
+      {showAllergenGate && (()=>{
+        const [_eczema, _setEczema] = React.useState("");
+        const [_knownAllergy, _setKnownAllergy] = React.useState("");
+        const [_familyHistory, _setFamilyHistory] = React.useState("");
+        const _canProceed = _eczema && _knownAllergy && _familyHistory;
+        const _highRisk = _eczema === "severe" || _knownAllergy === "yes";
+        return (
+          <div style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.6)",backdropFilter:"blur(6px)",zIndex:300,display:"flex",alignItems:"flex-end"}}>
+            <div style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"24px 20px 44px",width:"100%",maxWidth:520,margin:"0 auto",maxHeight:"90vh",overflowY:"auto"}}>
+              <div style={{width:36,height:4,borderRadius:99,background:"var(--card-border)",margin:"0 auto 16px"}}/>
+              <div style={{fontSize:24,textAlign:"center",marginBottom:8}}>🛡️</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:C.deep,textAlign:"center",marginBottom:6}}>Before we suggest allergens</div>
+              <div style={{fontSize:12,color:C.mid,textAlign:"center",lineHeight:1.6,marginBottom:20}}>
+                A few quick questions help us give you the right guidance. Allergen introduction is safe for most babies — we just need to check for any factors that mean you should speak to your GP first.
+              </div>
+
+              {/* Q1 */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.deep,marginBottom:8}}>Does {babyName||"baby"} have eczema?</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {[{v:"none",l:"No eczema"},{v:"mild",l:"Mild"},{v:"moderate",l:"Moderate"},{v:"severe",l:"Severe"}].map(o=>(
+                    <button key={o.v} onClick={()=>_setEczema(o.v)}
+                      style={{padding:"10px",borderRadius:12,border:`1.5px solid ${_eczema===o.v?C.ter:C.blush}`,background:_eczema===o.v?C.ter+"12":"var(--card-bg-alt)",color:_eczema===o.v?C.ter:C.mid,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                      {o.l}
+                    </button>
+                  ))}
+                </div>
+                {_eczema==="severe" && (
+                  <div style={{marginTop:8,padding:"8px 10px",borderRadius:10,background:"rgba(212,168,85,0.08)",border:"1px solid rgba(212,168,85,0.25)",fontSize:11,color:C.gold,lineHeight:1.5}}>
+                    ⚠️ Babies with severe eczema are at higher risk. BSACI recommends speaking to your {_doctor} before introducing egg and peanut. OBubba will remind you of this before each allergen.
+                  </div>
+                )}
+              </div>
+
+              {/* Q2 */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.deep,marginBottom:8}}>Does {babyName||"baby"} have a known food allergy?</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {[{v:"no",l:"No"},{v:"yes",l:"Yes"}].map(o=>(
+                    <button key={o.v} onClick={()=>_setKnownAllergy(o.v)}
+                      style={{padding:"10px",borderRadius:12,border:`1.5px solid ${_knownAllergy===o.v?C.ter:C.blush}`,background:_knownAllergy===o.v?C.ter+"12":"var(--card-bg-alt)",color:_knownAllergy===o.v?C.ter:C.mid,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                      {o.l}
+                    </button>
+                  ))}
+                </div>
+                {_knownAllergy==="yes" && (
+                  <div style={{marginTop:8,padding:"8px 10px",borderRadius:10,background:"rgba(232,87,74,0.06)",border:"1px solid rgba(232,87,74,0.2)",fontSize:11,color:"#c04040",lineHeight:1.5}}>
+                    🚨 If {babyName||"baby"} already has a known allergy, please speak to your {_doctor} or a paediatric allergist before introducing further allergens. Do not use this feature to introduce new allergens without professional guidance.
+                  </div>
+                )}
+              </div>
+
+              {/* Q3 */}
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.deep,marginBottom:8}}>Family history of severe food allergy, asthma, or eczema?</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  {[{v:"no",l:"No"},{v:"yes",l:"Yes"}].map(o=>(
+                    <button key={o.v} onClick={()=>_setFamilyHistory(o.v)}
+                      style={{padding:"10px",borderRadius:12,border:`1.5px solid ${_familyHistory===o.v?C.ter:C.blush}`,background:_familyHistory===o.v?C.ter+"12":"var(--card-bg-alt)",color:_familyHistory===o.v?C.ter:C.mid,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                      {o.l}
+                    </button>
+                  ))}
+                </div>
+                {_familyHistory==="yes" && (
+                  <div style={{marginTop:8,padding:"8px 10px",borderRadius:10,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,fontSize:11,color:C.mid,lineHeight:1.5}}>
+                    Family history alone doesn't mean you need to avoid allergens — early introduction is still recommended. It's worth mentioning to your {_doctor} at your next appointment.
+                  </div>
+                )}
+              </div>
+
+              {/* Legal disclaimer */}
+              <div style={{padding:"10px 12px",borderRadius:10,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,fontSize:10,color:C.lt,lineHeight:1.6,marginBottom:16}}>
+                ⚖️ OBubba's allergen guidance is based on NHS, BSACI, and Anaphylaxis UK recommendations for the <strong>general population</strong>. It is not medical advice and is not a substitute for professional guidance. If your baby is high-risk, always consult your {_doctor} before proceeding. OBubba is not responsible for any adverse reactions.
+              </div>
+
+              <button disabled={!_canProceed} onClick={()=>{ if(_canProceed){ saveAllergenProfile({eczema:_eczema,knownAllergy:_knownAllergy,familyHistory:_familyHistory,date:todayStr()}); setShowAllergenGate(false); }}}
+                style={{width:"100%",padding:"14px",borderRadius:99,border:"none",background:_canProceed?((_highRisk)?"#c04040":C.ter):"#ccc",color:"white",fontSize:15,fontWeight:700,cursor:_canProceed?_cP:"not-allowed",fontFamily:_fI,opacity:_canProceed?1:0.6}}>
+                {!_canProceed ? "Answer all questions to continue" : _highRisk ? "I understand — I'll speak to my GP first" : "I understand — let's get started"}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ═══ Allergen Emergency Card ═══ */}
+      {showAllergenEmergency && (
+        <div onClick={()=>setShowAllergenEmergency(false)} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.6)",backdropFilter:"blur(6px)",zIndex:300,display:"flex",alignItems:"flex-end"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"20px 18px 44px",width:"100%",maxWidth:520,margin:"0 auto",maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{width:36,height:4,borderRadius:99,background:"var(--card-border)",margin:"0 auto 16px"}}/>
+            <div style={{fontSize:13,fontWeight:700,color:C.deep,marginBottom:16,textAlign:"center"}}>🚨 Allergic Reaction Guide</div>
+
+            {/* MILD */}
+            <div style={{background:"rgba(212,168,85,0.06)",border:"1.5px solid rgba(212,168,85,0.3)",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:8}}>⚠️ MILD reaction — stop feeding, call 111 or GP</div>
+              {[
+                "Hives or raised itchy bumps (may appear anywhere on body)",
+                "Swelling around mouth, lips, or eyes",
+                "Runny nose or sneezing shortly after eating",
+                "Vomiting or stomach pain",
+                "Sudden change in behaviour — very unsettled",
+                "Red or blotchy rash on body",
+              ].map((s,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {s}</div>)}
+              <div style={{marginTop:8,fontSize:11,color:C.lt,lineHeight:1.5,fontStyle:"italic"}}>
+                Note: a red rash only around the mouth from acidic food (tomato, citrus) is a contact rash — not allergy. Wipe gently and it fades.
+              </div>
+            </div>
+
+            {/* SEVERE */}
+            <div style={{background:"rgba(232,87,74,0.06)",border:"2px solid rgba(232,87,74,0.4)",borderRadius:14,padding:"12px 14px",marginBottom:12}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#c04040",marginBottom:8}}>🆘 SEVERE (anaphylaxis) — CALL {_emergNum} IMMEDIATELY</div>
+              <div style={{fontSize:11,color:"#c04040",fontWeight:600,marginBottom:8}}>Say: "My baby is having anaphylaxis" (AN-a-fill-AX-is)</div>
+              {[
+                "Difficulty breathing, wheezing, or persistent cough",
+                "Throat or tongue swelling, hoarse voice",
+                "Pale, floppy, or unusually sleepy",
+                "Collapse or loss of consciousness",
+                "Severe vomiting alongside other symptoms",
+                "Suddenly very distressed with multiple symptoms at once",
+              ].map((s,i)=><div key={i} style={{fontSize:12,color:"#c04040",padding:"2px 0",fontWeight:500}}>• {s}</div>)}
+              <div style={{marginTop:10,padding:"10px",background:"rgba(232,87,74,0.08)",borderRadius:10,fontSize:11,color:"#c04040",lineHeight:1.6}}>
+                <strong>While waiting for ambulance:</strong> Lay baby flat — do NOT hold upright or let legs dangle. If breathing is difficult, let them sit. Do NOT encourage vomiting. Use EpiPen if prescribed. Watch for a second wave of symptoms 4–24 hours later (biphasic reaction).
+              </div>
+            </div>
+
+            {/* Call 999 button */}
+            <a href={`tel:${_emergNum}`} style={{display:"block",width:"100%",padding:"14px",borderRadius:99,background:"#c04040",color:"white",fontSize:16,fontWeight:700,textAlign:"center",textDecoration:"none",marginBottom:10,boxSizing:"border-box"}}>
+              📞 Call {_emergNum} Now
+            </a>
+            <a href={`tel:${_isUS?"811":_isAU?"1800022222":"111"}`} style={{display:"block",width:"100%",padding:"12px",borderRadius:99,background:"var(--card-bg-alt)",color:C.mid,fontSize:14,fontWeight:600,textAlign:"center",textDecoration:"none",marginBottom:16,border:`1px solid ${C.blush}`,boxSizing:"border-box"}}>
+              📞 Call {_isUS?"811 (nurse line)":_isAU?"Healthdirect 1800 022 222":"111 (NHS)"} — mild reaction advice
+            </a>
+
+            <div style={{fontSize:10,color:C.lt,lineHeight:1.6,textAlign:"center"}}>
+              Source: NHS, BSACI, Anaphylaxis UK, Resuscitation Council UK. Not a substitute for emergency services.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Meal Picker Sheet (6+ months) ═══ */}
+      {showMealPicker && (
+        <div onClick={()=>setShowMealPicker(false)} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.5)",backdropFilter:"blur(4px)",zIndex:200,display:"flex",alignItems:"flex-end"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"20px 16px 40px",width:"100%",maxWidth:520,margin:"0 auto"}}>
+            <div style={{width:36,height:4,borderRadius:99,background:"var(--card-border)",margin:"0 auto 16px"}}/>
+            <div style={{fontSize:16,fontWeight:700,color:C.deep,marginBottom:4,textAlign:"center"}}>🥕 Log a Meal</div>
+            <div style={{fontSize:12,color:C.lt,textAlign:"center",marginBottom:16}}>What time of day is it?</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+              {[
+                {label:"Breakfast",emoji:"🌅",time:"08:00",note:"Morning meal"},
+                {label:"Lunch",emoji:"☀️",time:"12:00",note:"Midday meal"},
+                {label:"Dinner",emoji:"🌙",time:"17:30",note:"Evening meal"},
+                {label:"Snack",emoji:"🍎",time:nowTime(),note:"Between meals"},
+              ].map(meal=>(
+                <button key={meal.label} onClick={()=>{
+                  haptic();
+                  quickAddLog("feed",{type:"feed",time:meal.time,feedType:"solids",amount:0,note:meal.label,night:false});
+                  setShowWeaningForm(true);
+                  setWeaningForm({food:"",date:todayStr(),reaction:"neutral",note:meal.label,liked:null});
+                  setShowMealPicker(false);
+                }} style={{padding:"16px 12px",borderRadius:16,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-alt)",cursor:_cP,textAlign:"center",fontFamily:_fI}}>
+                  <div style={{fontSize:28,marginBottom:4}}>{meal.emoji}</div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.deep}}>{meal.label}</div>
+                  <div style={{fontSize:11,color:C.lt,marginTop:2}}>{meal.note}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{fontSize:11,color:C.lt,textAlign:"center",lineHeight:1.5}}>
+              Tapping a meal logs it and opens the food journal so you can record what they tried 🥄
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ 6-Month Transition Popup ═══ */}
+      {show6moTransition&&(
+        <div onClick={()=>{setShow6moTransition(false);try{localStorage.setItem("transition_6mo_v1","1");}catch{}}} style={{position:"fixed",inset:0,background:"rgba(44,31,26,0.6)",backdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:24,padding:"28px 22px",maxWidth:360,width:"100%",boxShadow:"0 20px 60px rgba(0,0,0,0.3)",textAlign:"center"}}>
+            <div style={{fontSize:44,marginBottom:8}}>🥄</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:10,lineHeight:1.3}}>
+              {babyName||"Baby"} is 6 months old — a whole new chapter begins
+            </div>
+            <div style={{fontSize:13,color:C.mid,lineHeight:1.7,marginBottom:16}}>
+              The app is growing with them. Weaning, allergen tracking, and solid food logging are now unlocked in the Development tab.
+            </div>
+            <div style={{fontSize:13,color:C.mid,lineHeight:1.7,marginBottom:20}}>
+              Your feeds, sleep tracking, and all your data stay exactly the same. 🤍
+            </div>
+            <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"12px 14px",marginBottom:20,textAlign:"left"}}>
+              {[
+                {icon:"🥄",text:"Weaning journal — track every food tried"},
+                {icon:"🛡️",text:"Allergen tracker — all 14 allergens with status"},
+                {icon:"😴",text:"2-nap rhythm — wake windows getting longer"},
+                {icon:"🌙",text:"8/9/10 month regression coming — OBubba will flag it"},
+              ].map((item,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"5px 0",fontSize:12,color:C.mid}}>
+                  <span style={{fontSize:16}}>{item.icon}</span>{item.text}
+                </div>
+              ))}
+            </div>
+            <button onClick={()=>{setShow6moTransition(false);try{localStorage.setItem("transition_6mo_v1","1");}catch{};}}
+              style={{width:"100%",padding:"14px",borderRadius:99,border:"none",background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
+              Let's grow together 🌱
+            </button>
           </div>
         </div>
       )}
