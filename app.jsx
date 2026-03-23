@@ -11046,7 +11046,7 @@ img{max-width:100%;height:auto}
             {!napOn && (
               <button onClick={()=>{haptic();startBreastTimer(lastBreastSide==="L"?"R":lastBreastSide==="R"?"L":"L");}} style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:99,padding:"5px 14px",fontSize:13,color:C.ter,cursor:_cP,fontWeight:700,display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
                 <span>🤱 Start Feed</span>
-                {lastBreastSide && selDay===todayStr() && (<span style={{fontSize:10,fontWeight:400,color:C.lt}}>{"Next: "+(lastBreastSide==="L"?"Right ➡️":"Left ⬅️")}</span>)}
+                {lastBreastSide && selDay===todayStr() && (<span style={{fontSize:10,fontWeight:400,color:C.lt}}>Next: {lastBreastSide==="L" ? "Right ➡️" : "Left ⬅️"}</span>)}
               </button>
             )}
             {/* Active nap timer */}
