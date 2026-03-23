@@ -3627,6 +3627,7 @@ function App(){
 
     // ── Feed & nappy gentle context (computed early, used in all card variants) ──
     let _feedNappyHint = null;
+    let _chaoticDays = [];
     try {
       const _hints = [];
       // Find last feed and nappy — prioritise TODAY's entries, only fall back to yesterday's night entries
@@ -3660,22 +3661,93 @@ function App(){
         return _nc.reduce((best,e)=>{ const ge=_gapFromNow(e); const gb=_gapFromNow(best); return ge<gb?e:best; });
       })();
 
-      // Calculate baby's actual average feed interval from recent days (last 5 days)
+      // Calculate baby's actual average feed interval from recent days (last 7 days)
+      // with anomaly detection — chaotic days excluded from average
       let _avgFeedInterval = null;
+      _chaoticDays = [];
       try {
-        const _recentDayKeys = Object.keys(days).sort().slice(-5);
-        const _intervals = [];
-        _recentDayKeys.forEach(dk => {
+        const _recentDayKeys = Object.keys(days).sort().slice(-7);
+        // Build per-day stats
+        const _dayStats = _recentDayKeys.map(dk => {
           const _dayFeeds = (days[dk]||[]).filter(e=>e.type==="feed"&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
+          const gaps = [];
           for (let i=1; i<_dayFeeds.length; i++) {
             const gap = timeVal(_dayFeeds[i]) - timeVal(_dayFeeds[i-1]);
-            if (gap > 30 && gap < 360) _intervals.push(gap); // Only count daytime feed-to-feed gaps, cap 6h
+            if (gap > 20 && gap < 360) gaps.push(gap);
           }
-        });
-        if (_intervals.length >= 3) _avgFeedInterval = Math.round(_intervals.reduce((s,v)=>s+v,0) / _intervals.length);
+          const count = _dayFeeds.length;
+          const mean = gaps.length ? Math.round(gaps.reduce((s,v)=>s+v,0)/gaps.length) : null;
+          // Variance: how spread out the intervals are
+          const variance = gaps.length >= 2 ? Math.round(gaps.reduce((s,v)=>s+(v-mean)*(v-mean),0)/gaps.length) : 0;
+          return { dk, count, gaps, mean, variance };
+        }).filter(d => d.count >= 2); // need at least 2 feeds to be useful
+
+        if (_dayStats.length >= 3) {
+          // Median feed count and mean interval across days
+          const _counts = _dayStats.map(d=>d.count).sort((a,b)=>a-b);
+          const _medCount = _counts[Math.floor(_counts.length/2)];
+          const _means = _dayStats.filter(d=>d.mean!==null).map(d=>d.mean).sort((a,b)=>a-b);
+          const _medMean = _means.length ? _means[Math.floor(_means.length/2)] : null;
+          const _variances = _dayStats.filter(d=>d.variance>0).map(d=>d.variance).sort((a,b)=>a-b);
+          const _medVar = _variances.length ? _variances[Math.floor(_variances.length/2)] : 0;
+
+          // Flag chaotic days: feed count way off, intervals wildly inconsistent, or mean shifted heavily
+          _dayStats.forEach(d => {
+            let chaotic = false;
+            let reasons = [];
+            // Feed count >50% different from median
+            if (_medCount > 0 && Math.abs(d.count - _medCount) / _medCount > 0.5) {
+              chaotic = true;
+              reasons.push(d.count > _medCount ? "unusually frequent feeds" : "fewer feeds than normal");
+            }
+            // Interval variance >2.5x the median variance (very erratic spacing)
+            if (_medVar > 0 && d.variance > _medVar * 2.5) {
+              chaotic = true;
+              reasons.push("erratic feed spacing");
+            }
+            // Mean interval >40% different from median
+            if (_medMean && d.mean && Math.abs(d.mean - _medMean) / _medMean > 0.4) {
+              chaotic = true;
+              reasons.push(d.mean > _medMean ? "longer gaps than usual" : "shorter gaps than usual");
+            }
+            if (chaotic) {
+              d._chaotic = true;
+              d._reasons = reasons;
+              _chaoticDays.push({ date: d.dk, reasons });
+            }
+          });
+
+          // Build average from non-chaotic days only
+          const _goodDays = _dayStats.filter(d => !d._chaotic);
+          const _goodIntervals = [];
+          _goodDays.forEach(d => _goodIntervals.push(...d.gaps));
+          if (_goodIntervals.length >= 3) {
+            _avgFeedInterval = Math.round(_goodIntervals.reduce((s,v)=>s+v,0) / _goodIntervals.length);
+          } else {
+            // Not enough good days — use all data but note it
+            const _allIntervals = [];
+            _dayStats.forEach(d => _allIntervals.push(...d.gaps));
+            if (_allIntervals.length >= 3) _avgFeedInterval = Math.round(_allIntervals.reduce((s,v)=>s+v,0) / _allIntervals.length);
+          }
+        } else {
+          // Fewer than 3 days of data — use everything
+          const _allIntervals = [];
+          _dayStats.forEach(d => _allIntervals.push(...d.gaps));
+          if (_allIntervals.length >= 3) _avgFeedInterval = Math.round(_allIntervals.reduce((s,v)=>s+v,0) / _allIntervals.length);
+        }
       } catch {}
       // Blend baby's average with age guideline (strongly favour baby's own data when available)
-      const _ageThreshM = age ? (age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 180 : 210) : 180;
+      // Age-based DAYTIME feed interval guidelines (NHS feeds/day mapped to waking hours)
+      // <4wk: 8-12/day ≈ every 2h, <8wk: 7-8 ≈ 2.5h, <17wk: 6-7 ≈ 2.5-3h,
+      // <26wk: 5-6 ≈ 2.5h, <39wk: 4-5 milk+solids ≈ 3h, <52wk: 3-4 ≈ 3h, 52+: 3h+
+      const _ageThreshM = age ? (
+        age.totalWeeks < 4 ? 120 :
+        age.totalWeeks < 8 ? 150 :
+        age.totalWeeks < 17 ? 160 :
+        age.totalWeeks < 26 ? 150 :
+        age.totalWeeks < 39 ? 180 :
+        age.totalWeeks < 52 ? 180 : 210
+      ) : 160;
       let _feedThreshM = _avgFeedInterval ? Math.round(_avgFeedInterval * 0.85 + _ageThreshM * 0.15) : _ageThreshM;
 
       // ── Smart feed prediction: last session + age guideline + time-of-day pattern ──
@@ -3989,6 +4061,19 @@ function App(){
         <div style={{fontSize:13,color:C.mid,marginBottom:_rightNow?4:8,paddingLeft:20}}>{_timing}</div>
         {_rightNow && <div style={{fontSize:12,color:C.ter,fontWeight:600,paddingLeft:20,marginBottom:6}}>{_rightNow}</div>}
         {_feedNappyHint && <div style={{fontSize:11,color:C.lt,paddingLeft:20,marginBottom:6,fontFamily:_fM}}>🍼 {_feedNappyHint}</div>}
+        {_chaoticDays.length > 0 && _avgFeedInterval && (
+          <button onClick={()=>{
+            const _detail = _chaoticDays.map(d => {
+              const _dt = new Date(d.date+"T12:00:00");
+              const _dayName = _dt.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+              return _dayName + " (" + d.reasons.join(", ") + ")";
+            }).join("\n");
+            showConfirm("Unusual days excluded", _chaoticDays.length + " day" + (_chaoticDays.length>1?"s":"") + " excluded from feed predictions because feeding patterns were unusual:\n\n" + _detail + "\n\nThis helps keep predictions accurate. If " + (_chaoticDays.length>1?"these days were":"this day was") + " normal for your routine, you can ignore this.", ()=>{}, "Got it");
+          }} style={{background:"none",border:"none",padding:"0 0 0 20px",marginBottom:4,cursor:_cP,display:"flex",alignItems:"center",gap:4}}>
+            <span style={{fontSize:10,color:"#b88a20"}}>📊 {_chaoticDays.length} unusual day{_chaoticDays.length>1?"s":""} excluded from prediction</span>
+            <span style={{fontSize:9,color:C.lt}}>ⓘ</span>
+          </button>
+        )}
         {_feedNappyHint && _allFeeds.length >= 6 && !napOn && !_hasBed && !microReassureRef.current && (()=>{
           microReassureRef.current = true;
           const _microMsgs = [
@@ -5371,18 +5456,29 @@ function App(){
     const gap = nowMins - timeVal(lastFeed);
     if (gap < 0) return null;
 
-    // Calculate typical DAYTIME feed gap from last 5 days (exclude night feeds)
-    const recent = Object.keys(days).sort().slice(-5);
-    const gaps = [];
-    recent.forEach(d => {
+    // Calculate typical DAYTIME feed gap from last 7 days (exclude night feeds), filtering anomalous days
+    const recent = Object.keys(days).sort().slice(-7);
+    const _perDayGaps = recent.map(d => {
       const dFeeds = (days[d] || []).filter(e => e.type === "feed" && !e.night).sort((a, b) => timeVal(a) - timeVal(b));
+      const dg = [];
       for (let i = 1; i < dFeeds.length; i++) {
         const g = timeVal(dFeeds[i]) - timeVal(dFeeds[i - 1]);
-        if (g > 30 && g < 360) gaps.push(g);
+        if (g > 30 && g < 360) dg.push(g);
       }
-    });
+      return { gaps: dg, count: dFeeds.length, mean: dg.length ? dg.reduce((a,b)=>a+b,0)/dg.length : null };
+    }).filter(d => d.count >= 2);
+    // Exclude outlier days (feed count >50% from median)
+    let gaps = [];
+    if (_perDayGaps.length >= 3) {
+      const _counts = _perDayGaps.map(d=>d.count).sort((a,b)=>a-b);
+      const _medCount = _counts[Math.floor(_counts.length/2)];
+      const _goodDays = _perDayGaps.filter(d => _medCount > 0 ? Math.abs(d.count - _medCount) / _medCount <= 0.5 : true);
+      (_goodDays.length >= 2 ? _goodDays : _perDayGaps).forEach(d => gaps.push(...d.gaps));
+    } else {
+      _perDayGaps.forEach(d => gaps.push(...d.gaps));
+    }
     const avgGap = gaps.length >= 3 ? Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length) : null;
-    const threshold = avgGap || (age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 180 : 210);
+    const threshold = avgGap || (age.totalWeeks < 4 ? 120 : age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 160 : age.totalWeeks < 26 ? 150 : age.totalWeeks < 52 ? 180 : 210);
 
     return { gap, threshold, avgGap, lastFeedTime: lastFeed.time, overdue: gap > threshold };
   }
