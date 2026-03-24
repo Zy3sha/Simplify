@@ -787,6 +787,9 @@ window.OBNative = {
   preferences: OBPreferences,
 };
 
+// ── Set global native flag for app.jsx ──
+window._isNative = isNative();
+
 // ── AUTO-INIT on native ─────────────────────────────────────────
 if (isNative()) {
   (async () => {

@@ -2406,17 +2406,44 @@ function App(){
   }
   async function createChildSyncCode(childId) {
     if(!window._fb) { showToast("Not connected — please try again",2000,2); return null; }
-    // If code already exists for this child, reuse it
+    // If code already exists locally, reuse it
     const existingCode = childSyncCodes[childId];
     if(existingCode) {
-      showToast("Code already exists: " + existingCode,2000,1);
-      return existingCode;
+      // Verify it still exists in Firestore
+      try {
+        const snap = await fsGet("child_syncs", existingCode);
+        if(snap.exists()) {
+          showToast("Your code: " + existingCode,2000,1);
+          return existingCode;
+        }
+      } catch {}
+      // Code was lost from Firestore — regenerate below
+    }
+    // Check if this child already has a code stored on the server (via uid_to_backup)
+    if(window._fbUid) {
+      try {
+        const userSnap = await fsGet("uid_to_backup", window._fbUid);
+        if(userSnap.exists()) {
+          const userData = userSnap.data();
+          const storedCodes = userData.childSyncCodes;
+          if(storedCodes && typeof storedCodes === 'object' && storedCodes[childId]) {
+            const recoveredCode = storedCodes[childId];
+            const verifySnap = await fsGet("child_syncs", recoveredCode);
+            if(verifySnap.exists()) {
+              setChildSyncCodes(prev => ({...prev, [childId]: recoveredCode}));
+              subscribeToChildSync(childId, recoveredCode);
+              showToast("Code recovered: " + recoveredCode,2000,1);
+              return recoveredCode;
+            }
+          }
+        }
+      } catch {}
     }
     // Wait for auth if not ready
     if(!window._fbUid) {
       try { await waitForUid(); } catch { showToast("Auth not ready — please try again",2000,2); return null; }
     }
-    const {db, doc, getDoc, setDoc, serverTimestamp} = window._fb;
+    const {serverTimestamp} = window._fb;
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let code, exists = true;
     let attempts = 0;
@@ -2441,6 +2468,12 @@ function App(){
       showToast("Failed to save code — check internet connection",3000,2);
       return null;
     }
+    // Also store the code against the user's account for recovery
+    try {
+      await fsSet("uid_to_backup", window._fbUid, {
+        childSyncCodes: {...childSyncCodes, [childId]: code}
+      }, true);
+    } catch {}
     setChildSyncCodes(prev => ({...prev, [childId]: code}));
     subscribeToChildSync(childId, code);
     trackEvent("child_sync_created");
@@ -2520,7 +2553,7 @@ function App(){
         if(prev[childId]) return prev;
         let remoteChild = {};
         try{ remoteChild = d.child ? JSON.parse(d.child) : {}; }catch{}
-        return {...prev, [childId]: {...remoteChild, id: childId}};
+        return {...prev, [childId]: {...remoteChild, id: childId, _joinedViaSync: true}};
       });
       setChildSyncCodes(prev => ({...prev, [childId]: clean}));
       subscribeToChildSync(childId, clean);
@@ -8062,19 +8095,27 @@ function App(){
 
   async function requestNotifications(){
     try{
-      if(window._isNative){
+      if(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()){
         const {PushNotifications} = await import("@capacitor/push-notifications");
         const perm = await PushNotifications.requestPermissions();
         if(perm.receive==="granted"){
           await PushNotifications.register();
           setNotifPermission("granted");
           showToast("🔔 Notifications enabled ✓",2000,1);
+        } else {
+          showToast("Notifications were denied — you can enable them in Settings",3000,2);
         }
-      } else {
+      } else if('Notification' in window) {
         const p=await Notification.requestPermission();
         setNotifPermission(p);
+        if(p==="granted") showToast("🔔 Notifications enabled ✓",2000,1);
+        else showToast("Notifications denied — check browser settings",3000,2);
+      } else {
+        showToast("Notifications not supported on this device",2000,2);
       }
-    }catch(e){}
+    }catch(e){
+      showToast("Could not enable notifications — try again",2000,2);
+    }
   }
 
         function quickAddLog(type, data){
@@ -17984,45 +18025,30 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             )}
 
             <div style={{width:"100%",height:1,background:C.blush,marginBottom:16}}/>
-            {/* ── Import & Export ── */}
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:10}}>Data</div>
-              <div style={{display:"flex",gap:8}}>
-                <button onClick={()=>{setShowFamilyModal(false);setTimeout(()=>setShowImportModal(true),100);}} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,touchAction:"manipulation"}}>
-                  <span style={{fontSize:18}}>📥</span>
-                  <div style={{textAlign:"left"}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Import</div>
-                    <div style={{fontSize:11,color:C.lt}}>From CSV</div>
-                  </div>
-                </button>
-                <button onClick={()=>exportCSV()} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP,touchAction:"manipulation"}}>
-                  <span style={{fontSize:18}}>📤</span>
-                  <div style={{textAlign:"left"}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Export</div>
-                    <div style={{fontSize:11,color:C.lt}}>Save as CSV</div>
-                  </div>
-                </button>
-              </div>
-            </div>
             <div style={{fontFamily:_fM,fontSize:12,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:10}}>Share children individually</div>
             <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
               {Object.values(children).map(child => {
                 const cid = child.id;
                 const code = childSyncCodes[cid];
                 const isShared = !!code;
+                // Only the original creator can generate a share code
+                // A child joined via code has _joinedViaSync flag or ownerUid !== current user
+                const isOwner = !child._joinedViaSync;
                 return (
                   <div key={cid} style={{background:"var(--card-bg-solid)",borderRadius:14,padding:"12px 14px",border:`1px solid ${isShared?C.mint+"40":C.blush}`}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:isShared?8:0}}>
                       <div>
                         <div style={{fontWeight:700,fontSize:15,color:C.deep}}>{child.name||"Unnamed child"}</div>
-                        <div style={{fontSize:12,color:C.lt}}>{isShared?"Sharing enabled":"Not shared yet"}</div>
+                        <div style={{fontSize:12,color:C.lt}}>{isShared?"Sharing enabled":isOwner?"Not shared yet":"Linked from another parent"}</div>
                       </div>
-                      {!isShared ? (
+                      {!isShared && isOwner ? (
                         <button onClick={async()=>{await createChildSyncCode(cid);}} style={{padding:"7px 14px",borderRadius:99,border:_bN,background:C.ter,color:"white",fontSize:13,fontWeight:700,cursor:_cP,fontFamily:_fI,flexShrink:0}}>
                           Get code
                         </button>
-                      ) : (
+                      ) : isShared ? (
                         <span style={{fontSize:18}}>🔗</span>
+                      ) : (
+                        <span style={{fontSize:12,color:C.lt}}>Linked</span>
                       )}
                     </div>
                     {isShared && (
