@@ -9781,12 +9781,9 @@ function App(){
     }
 
     // EMERGENCY & CONTACTS — country-aware
-    const locale = (navigator.language||"en-GB").toLowerCase();
-    const isUS = locale.includes("en-us") || locale.includes("en_us");
-    const isAU = locale.includes("en-au") || locale.includes("en_au");
-    const emergNum = isUS ? "911" : isAU ? "000" : "999";
-    const nonEmerg = isUS ? "Poison Control: 1-800-222-1222" : isAU ? "13 HEALTH (13 43 25 84)" : "NHS 111";
-    const hvTitle = isUS ? "pediatrician" : isAU ? "child health nurse or GP" : "health visitor or GP";
+    const emergNum = _isUS ? "911" : _isAU ? "000" : "999";
+    const nonEmerg = _isUS ? "Poison Control: 1-800-222-1222" : _isAU ? "13 HEALTH (13 43 25 84)" : "NHS 111";
+    const hvTitle = _isUS ? "pediatrician" : _isAU ? "child health nurse or GP" : "health visitor or GP";
 
     let contactsHtml = "";
     if (emergencyContacts.length) {
@@ -14810,7 +14807,7 @@ function App(){
                   {q:"Soft spot on head (fontanelle)", a:"The soft spots are gaps between skull bones — there's one at the front (closes 9-18 months) and one at the back (closes at 6-8 weeks). It's normal to see it pulse with heartbeat. See a doctor if it bulges when baby isn't crying, or is sunken."},
                   {q:"Hiccups all the time", a:"Normal and harmless. The diaphragm is immature and easily triggered. Feed slowly and pause to wind if they happen during feeds. They stop on their own."},
                   {q:"Jerky movements or startle reflex", a:"Normal — this is the Moro reflex and all healthy newborns have it. Baby throws arms out when startled. It disappears around 3-4 months. Swaddling can help calm babies who startle themselves awake."},
-                  {q:"Jaundice (yellow skin or eyes)", a:"Common in the first week — affects around 60% of newborns. Mild jaundice usually clears by 2 weeks. If baby looks very yellow, is difficult to wake for feeds, or jaundice appears in the first 24 hours after birth, contact your midwife or GP promptly."},
+                  {q:"Jaundice (yellow skin or eyes)", a:"Common in the first week — affects around 60% of newborns. Mild jaundice usually clears by 2 weeks. If baby looks very yellow, is difficult to wake for feeds, or jaundice appears in the first 24 hours after birth, contact your midwife or "+_doctor+" promptly."},
                   {q:"Poo colour — green, yellow, black", a:"Black/dark green in first 2 days (meconium) is normal. Then changes to yellow/seedy (breastfed) or tan/yellow (formula). Green can be normal but if persistent with other symptoms, mention it to your "+_doctor+". White, pale or chalky poo needs same-day medical attention."},
                   {q:"Not focusing eyes or looking at me", a:"Normal under 6-8 weeks. Newborns can see clearly about 20-30cm — roughly the distance to your face during feeding. By 6-8 weeks they start making real eye contact and smiling."},
                   {q:"Cluster feeding — feeding constantly", a:"Completely normal, especially in evenings. Cluster feeding is not a sign of low milk supply — it's baby topping up, stimulating supply, and preparing for a longer stretch. It typically eases by 12 weeks."},
@@ -17272,7 +17269,7 @@ function App(){
                     <div style={{fontSize:11,color:C.lt}}>{r.how}</div>
                   </div>
                 ))}
-                <div style={{marginTop:10,padding:"10px 12px",borderRadius:12,background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",fontSize:12,color:C.gold,lineHeight:1.6}}>Mastitis: hot, red, painful breast + flu-like symptoms needs same-day GP treatment.</div>
+                <div style={{marginTop:10,padding:"10px 12px",borderRadius:12,background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",fontSize:12,color:C.gold,lineHeight:1.6}}>Mastitis: hot, red, painful breast + flu-like symptoms needs same-day {_doctor} treatment.</div>
               </div>
             )}
             {bfHubSection==="spurts"&&(
