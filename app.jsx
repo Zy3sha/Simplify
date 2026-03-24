@@ -2070,6 +2070,7 @@ function App(){
   const hashPin = (pin) => { let h=5381; for(let i=0;i<pin.length;i++) h=((h<<5)+h)+pin.charCodeAt(i); return (h>>>0).toString(16); };
   async function verifyLogin(username, pin) {
     if(!window._fb) { setAuthError("Not connected — check your internet"); return false; }
+    await waitForUid();
     const {db, doc, getDoc} = window._fb;
     const key = normaliseUsername(username);
     if(!key) { setAuthError("Enter a username"); return false; }
@@ -2267,6 +2268,7 @@ function App(){
     const seq = ++authCheckSeqRef.current;
     authUsernameCheckRef.current = setTimeout(async()=>{
       if(!window._fb) { setAuthUsernameStatus("idle"); return; }
+      await waitForUid();
       const {db, doc, getDoc} = window._fb;
       try {
         let snap;
