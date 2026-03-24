@@ -1,5 +1,9 @@
 // ── Global error handler — styled sleeping baby page ──
 window.onerror = function(msg, src, line, col, err) {
+  // Ignore cross-origin script errors (line 0 = external script, not our code)
+  if (line === 0 || msg === 'Script error.' || msg === 'Script error') return true;
+  // Ignore non-fatal Capacitor/plugin errors
+  if (typeof msg === 'string' && (msg.indexOf('capacitor') !== -1 || msg.indexOf('gapi') !== -1)) return true;
   // Try to get real error message if cross-origin obscured it
   var detail = msg;
   if (err && err.message) detail = err.message;
