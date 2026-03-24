@@ -11338,22 +11338,7 @@ function App(){
               })()}
               <div style={{display:notesOpen?"block":"none",border:"1px solid var(--card-border)",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"10px 0 2px",marginBottom:10,background:"var(--card-bg-solid)"}}>
 
-              {/* ═══ Planner ═══ */}
-              {/* Dashed add buttons — only show for empty sections */}
-              {(reminders.filter(r=>!r.done).length===0||pinnedNotes.length===0)&&(
-                <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
-                  {reminders.filter(r=>!r.done).length===0&&(
-                    <button onClick={()=>{setReminderForm({text:"",date:todayStr(),time:"",trigger:""});setShowAddReminder(true);}} style={{flex:1,minWidth:85,padding:"9px 8px",borderRadius:16,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:11,fontWeight:600,color:C.mid,fontFamily:_fI}}>
-                      🔔 Reminder
-                    </button>
-                  )}
-                  {pinnedNotes.length===0&&(
-                    <button onClick={()=>setShowAddPin(true)} style={{flex:1,minWidth:85,padding:"9px 8px",borderRadius:16,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:11,fontWeight:600,color:C.mid,fontFamily:_fI}}>
-                      📌 Pin Note
-                    </button>
-                  )}
-                </div>
-              )}
+              {/* ═══ Planner — order: Appointments, Reminders, Pinned Notes, Add buttons ═══ */}
 
               {/* Upcoming Appointments — pill when empty, full card when populated */}
               {(()=>{
@@ -11460,29 +11445,18 @@ function App(){
                 </div>
               )}
 
-              {/* ── Priority Action ── */}
-              {(()=>{
-                const action = getPriorityAction();
-                if (!action) return null;
-                const bg = action.priority === "high" ? "rgba(201,112,90,0.08)" : "rgba(111,168,152,0.08)";
-                const border = action.priority === "high" ? C.ter + "40" : C.mint + "40";
-                return (
-                  <div style={{background:bg,border:`1.5px solid ${border}`,borderRadius:16,padding:"12px 14px",marginBottom:12}}>
-                    <div style={{display:"flex",alignItems:"center",gap:10}}>
-                      <span style={{fontSize:22}}>{action.emoji}</span>
-                      <div style={{flex:1,fontSize:13,color:C.deep,lineHeight:1.5,fontWeight:500}}>{action.text}</div>
-                    </div>
-                    {action.why && (
-                      <div style={{marginTop:6,padding:"6px 8px",borderRadius:8,background:"var(--card-bg-alt)",border:"1px solid var(--card-border)"}}>
-                        <div style={{fontSize:10,color:"var(--text-mid)",fontFamily:_fI,lineHeight:1.6}}>
-                          <span style={{fontWeight:600,color:"var(--text-deep)"}}>Why? </span>{action.why}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
+              {/* Dashed add buttons at bottom of Notes & Reminders */}
+              <div style={{display:"flex",gap:6,marginBottom:6,flexWrap:"wrap",padding:"0 12px"}}>
+                <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:"",repeat:"none",travelMins:0});setShowAddAppt(true);}} style={{flex:1,minWidth:75,padding:"8px 6px",borderRadius:12,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:10,fontWeight:600,color:C.lt,fontFamily:_fI}}>
+                  📅 Appt
+                </button>
+                <button onClick={()=>{setReminderForm({text:"",date:todayStr(),time:"",trigger:""});setShowAddReminder(true);}} style={{flex:1,minWidth:75,padding:"8px 6px",borderRadius:12,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:10,fontWeight:600,color:C.lt,fontFamily:_fI}}>
+                  🔔 Reminder
+                </button>
+                <button onClick={()=>setShowAddPin(true)} style={{flex:1,minWidth:75,padding:"8px 6px",borderRadius:12,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:10,fontWeight:600,color:C.lt,fontFamily:_fI}}>
+                  📌 Note
+                </button>
+              </div>
 
                                           {/* Age guidance */}
               {ageStage&&(
