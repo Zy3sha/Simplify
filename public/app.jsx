@@ -2,7 +2,7 @@
 const { useState, useEffect, useRef } = React;
 
 // Remove static splash screen (defined in index.html) once React has mounted
-try { const splash = document.getElementById("obubba-splash"); if(splash) splash.style.opacity="0"; setTimeout(()=>{if(splash)splash.remove();},400); } catch {}
+try { const splash = document.getElementById("ob-splash"); if(splash) splash.style.opacity="0"; setTimeout(()=>{if(splash)splash.remove();},400); } catch {}
 
 // roundRect polyfill for older Android WebViews
 if (!CanvasRenderingContext2D.prototype.roundRect) {
@@ -8396,9 +8396,16 @@ function App(){
     const _calNow = todayStr();
     const _searchDays = [..._today, ...(days[_prevDk]||[]), ...(_calNow !== selDay ? (days[_calNow]||[]) : [])];
     const _lastFeed = _searchDays.filter(e => e.time && (e.type==="feed" || (e.amount||0)>0 || e.assistedType==="milk" || e.feedType==="milk")).sort((a,b)=>{let ta=timeVal(a),tb=timeVal(b);if(a.night&&ta<720)ta+=1440;if(b.night&&tb<720)tb+=1440;return ta-tb;}).pop();
+    const _nowMs = Date.now();
     const _nowM = new Date().getHours() * 60 + new Date().getMinutes();
-    let _feedGap = _lastFeed ? ((_nowM < timeVal(_lastFeed)) ? _nowM + 1440 - timeVal(_lastFeed) : _nowM - timeVal(_lastFeed)) : 999;
-    if (_feedGap > 720 && _lastFeed) _feedGap = ((_nowM - timeVal(_lastFeed)) + 1440) % 1440;
+    let _feedGap = 999;
+    if (_lastFeed) {
+      const fdk = _lastFeed._dk || selDay;
+      const ft = (_lastFeed.time||"00:00").split(":").map(Number);
+      const feedDate = new Date(fdk + "T00:00:00");
+      feedDate.setHours(ft[0], ft[1], 0, 0);
+      _feedGap = Math.max(0, Math.round((_nowMs - feedDate.getTime()) / 60000));
+    }
     const _feedThreshold = age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 180 : age.totalWeeks < 26 ? 210 : 270;
 
     let _topReason = null;
@@ -12688,6 +12695,7 @@ function App(){
                   const d=new Date(a.date+"T23:59:59");
                   return d>=new Date()&&d<=new Date(Date.now()+7*24*60*60*1000);
                 }).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+                if(!upcoming.length) return null;
                 return (
                   <div className="glass-card" style={{...card,padding:"12px 14px",marginBottom:10}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:upcoming.length?8:0}}>
@@ -12772,6 +12780,8 @@ function App(){
                   ))}
                 </div>
               )}
+
+              </div>{/* ── end Notes & Reminders collapsible ── */}
 
               {/* ── Priority Action ── */}
               {(()=>{
@@ -12896,9 +12906,6 @@ function App(){
                   </div>
                 );
               })()}
-
-              </div>{/* end Notes & Reminders collapsible */}
-
 
               {/* 5. Today's summary stats — nap/bed card hidden (Hero Card handles this) */}
               {false && (()=>{
@@ -14338,6 +14345,82 @@ function App(){
 
               {/* ── SLEEP ANALYSIS SECTION (collapsible) ── */}
               {(insightFilter==="sleep") && <div>
+
+              {/* ═══ Tomorrow's Predicted Rhythm — top of insights ═══ */}
+              {(()=>{
+                const flex = tomorrowFlexSchedule();
+                const sched = flex ? flex.schedule : null;
+                if (!sched) return null;
+                const isRhythmAdj = flex && flex.source === "rhythm-adjusted";
+                return (
+                  <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:14,padding:"14px",marginBottom:12}}>
+                    <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:4}}>📅 Tomorrow's Predicted Rhythm</div>
+                    <div style={{fontSize:12,color:C.lt,fontFamily:_fM,marginBottom:10}}>
+                      {`NHS guidance + ${babyName||"baby"}'s sleep patterns`}
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                      {sched.map((item,i)=>{
+                        const isBridge = item.type==="bridge";
+                        const dotColor = item.type==="bed"?C.sky:item.type==="nap"?C.mint:isBridge?"#d4a855":C.gold;
+                        return (
+                          <div key={i} style={{display:"flex",alignItems:"center",gap:0}}>
+                            <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:24,flexShrink:0}}>
+                              <div style={{width:8,height:8,borderRadius:"50%",background:dotColor,flexShrink:0}}/>
+                              {i<sched.length-1&&<div style={{width:2,height:20,background:C.blush}}/>}
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flex:1,padding:"4px 0 4px 4px",opacity:isBridge?0.75:1}}>
+                              <div style={{display:"flex",alignItems:"center",gap:5}}>
+                                <span style={{fontSize:13}}>{item.icon}</span>
+                                <span style={{fontSize:13,color:isBridge?"#8a6020":C.mid,fontWeight:500}}>{item.label}{isBridge?" (optional)":""}</span>
+                              </div>
+                              <span style={{fontFamily:_fM,fontSize:13,fontWeight:700,color:C.deep}}>{fmt12(item.time.includes("–")?item.time.split("–")[0].trim():item.time)}{item.time.includes("–")?" – "+fmt12(item.time.split("–")[1].trim()):""}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{fontSize:11,fontFamily:_fM,color:C.lt,marginTop:10,borderTop:`1px solid ${C.blush}`,paddingTop:6}}>
+                      {`Based on NHS wake windows + ${babyName||"baby"}'s rhythm + sleep budget`}
+                      {flex.dataQuality&&<span style={{marginLeft:6,fontSize:10,padding:"1px 6px",borderRadius:99,background:flex.dataQuality==="high"?C.mint+"22":flex.dataQuality==="good"?"var(--chip-bg)":C.gold+"22",color:flex.dataQuality==="high"?C.mint:flex.dataQuality==="good"?C.lt:C.gold}}>{flex.dataQuality==="high"?"● High accuracy":flex.dataQuality==="good"?"● Good":"● Learning"}</span>}
+                    </div>
+                    {flex.sleepBudget && (
+                      <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
+                        <div style={{fontSize:10,color:C.lt,fontFamily:_fM,background:"var(--chip-bg)",padding:"2px 8px",borderRadius:99}}>🌙 Night sleep ~{hm(flex.sleepBudget.nightEst)}</div>
+                        <div style={{fontSize:10,color:C.lt,fontFamily:_fM,background:"var(--chip-bg)",padding:"2px 8px",borderRadius:99}}>😴 Nap goal {hm(flex.sleepBudget.required)}</div>
+                        <div style={{fontSize:10,color:flex.sleepBudget.projected>=flex.sleepBudget.required?C.mint:C.gold,fontFamily:_fM,background:"var(--chip-bg)",padding:"2px 8px",borderRadius:99}}>📊 This plan gives {hm(flex.sleepBudget.projected)}</div>
+                        {flex.sleepBudget.deficitBoost > 0 && <div style={{fontSize:10,color:C.gold,fontFamily:_fM,background:C.gold+"15",padding:"2px 8px",borderRadius:99}}>⚡ +{flex.sleepBudget.deficitBoost}m extra (today's naps were short)</div>}
+                      </div>
+                    )}
+                    <div style={{display:"flex",gap:6,marginTop:8}}>
+                      <button onClick={()=>{setShowScheduleMaker(true);}} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${C.mint}44`,background:"transparent",color:C.mint,fontSize:11,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                        🧩 Build around event
+                      </button>
+                      <button onClick={()=>{setAdjForm({wakeTime:"",bedTime:"",duration:"today"});setShowAdjustSchedule(true);}} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${C.sky}44`,background:"transparent",color:C.sky,fontSize:11,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                        ⚙️ Adjust schedule
+                      </button>
+                    </div>
+                    {scheduleOverride && (
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:6,padding:"4px 8px",borderRadius:8,background:C.gold+"15"}}>
+                        <span style={{fontSize:10,color:C.gold}}>⚙️ Custom {scheduleOverride.permanent?"(permanent)":"(today only)"}: wake {scheduleOverride.wake?fmt12((() => { const m=scheduleOverride.wake; return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"); })()):"-"}, bed {scheduleOverride.bed?fmt12((() => { const m=scheduleOverride.bed; return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"); })()):"-"}</span>
+                        <button onClick={clearScheduleOverride} style={{background:_bN,border:_bN,fontSize:10,color:C.ter,cursor:_cP}}>✕ Clear</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* ═══ SCHEDULE BUILDER — top of insights ═══ */}
+              {age && (
+                <button onClick={()=>{haptic();setShowScheduleMaker(true);}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"16px",marginBottom:12,borderRadius:16,border:`1.5px solid ${C.ter}30`,background:"var(--card-bg-solid)",boxShadow:"var(--card-shadow)",cursor:_cP,textAlign:"left"}}>
+                  <div style={{width:44,height:44,borderRadius:14,background:`linear-gradient(135deg,${C.ter}15,${C.mint}15)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🧩</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Schedule Builder</div>
+                    <div style={{fontSize:12,color:C.lt,marginTop:2}}>Plan {babyName||"baby"}'s naps around an appointment or event</div>
+                  </div>
+                  <span style={{fontSize:13,color:C.ter,fontWeight:700}}>Build →</span>
+                </button>
+              )}
+
               {collHead("sleep","😴","Sleep & Bedtime")}
               {insightSection.sleep && (
                 <div style={{background:"var(--card-bg-solid)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
@@ -14719,72 +14802,6 @@ function App(){
                           })()}
                         </div>
 
-                                                {/* Tomorrow's Predicted Rhythm */}
-                        {(()=>{
-                          const flex = tomorrowFlexSchedule();
-                          const sched = flex ? flex.schedule : null;
-                          if (!sched) return null;
-                          const isRhythmAdj = flex && flex.source === "rhythm-adjusted";
-                          return (
-                            <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:14,padding:"14px"}}>
-                              <div style={{fontSize:13,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:4}}>📅 Tomorrow's Predicted Rhythm</div>
-                              <div style={{fontSize:12,color:C.lt,fontFamily:_fM,marginBottom:10}}>
-                                {`NHS guidance + ${babyName||"baby"}'s sleep patterns`}
-                              </div>
-                              <div style={{display:"flex",flexDirection:"column",gap:0}}>
-                                {sched.map((item,i)=>{
-                                  const isBridge = item.type==="bridge";
-                                  const dotColor = item.type==="bed"?C.sky:item.type==="nap"?C.mint:isBridge?"#d4a855":C.gold;
-                                  return (
-                                    <div key={i} style={{display:"flex",alignItems:"center",gap:0}}>
-                                      <div style={{display:"flex",flexDirection:"column",alignItems:"center",width:24,flexShrink:0}}>
-                                        <div style={{width:8,height:8,borderRadius:"50%",background:dotColor,flexShrink:0}}/>
-                                        {i<sched.length-1&&<div style={{width:2,height:20,background:C.blush}}/>}
-                                      </div>
-                                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flex:1,padding:"4px 0 4px 4px",opacity:isBridge?0.75:1}}>
-                                        <div style={{display:"flex",alignItems:"center",gap:5}}>
-                                          <span style={{fontSize:13}}>{item.icon}</span>
-                                          <span style={{fontSize:13,color:isBridge?"#8a6020":C.mid,fontWeight:500}}>{item.label}{isBridge?" (optional)":""}</span>
-                                        </div>
-                                        <span style={{fontFamily:_fM,fontSize:13,fontWeight:700,color:C.deep}}>{fmt12(item.time.includes("–")?item.time.split("–")[0].trim():item.time)}{item.time.includes("–")?" – "+fmt12(item.time.split("–")[1].trim()):""}</span>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                              <div style={{fontSize:11,fontFamily:_fM,color:C.lt,marginTop:10,borderTop:`1px solid ${C.blush}`,paddingTop:6}}>
-                                {`Based on NHS wake windows + ${babyName||"baby"}'s rhythm + sleep budget`}
-                                {flex.dataQuality&&<span style={{marginLeft:6,fontSize:10,padding:"1px 6px",borderRadius:99,background:flex.dataQuality==="high"?C.mint+"22":flex.dataQuality==="good"?"var(--chip-bg)":C.gold+"22",color:flex.dataQuality==="high"?C.mint:flex.dataQuality==="good"?C.lt:C.gold}}>{flex.dataQuality==="high"?"● High accuracy":flex.dataQuality==="good"?"● Good":"● Learning"}</span>}
-                              </div>
-                              {flex.sleepBudget && (
-                                <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
-                                  <div style={{fontSize:10,color:C.lt,fontFamily:_fM,background:"var(--chip-bg)",padding:"2px 8px",borderRadius:99}}>🌙 Night sleep ~{hm(flex.sleepBudget.nightEst)}</div>
-                                  <div style={{fontSize:10,color:C.lt,fontFamily:_fM,background:"var(--chip-bg)",padding:"2px 8px",borderRadius:99}}>😴 Nap goal {hm(flex.sleepBudget.required)}</div>
-                                  <div style={{fontSize:10,color:flex.sleepBudget.projected>=flex.sleepBudget.required?C.mint:C.gold,fontFamily:_fM,background:"var(--chip-bg)",padding:"2px 8px",borderRadius:99}}>📊 This plan gives {hm(flex.sleepBudget.projected)}</div>
-                                  {flex.sleepBudget.deficitBoost > 0 && <div style={{fontSize:10,color:C.gold,fontFamily:_fM,background:C.gold+"15",padding:"2px 8px",borderRadius:99}}>⚡ +{flex.sleepBudget.deficitBoost}m extra (today's naps were short)</div>}
-                                </div>
-                              )}
-                              <div style={{display:"flex",gap:6,marginTop:8}}>
-                                <button onClick={()=>{setShowScheduleMaker(true);}} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${C.mint}44`,background:"transparent",color:C.mint,fontSize:11,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
-                                  🧩 Build around event
-                                </button>
-                                <button onClick={()=>{setAdjForm({wakeTime:"",bedTime:"",duration:"today"});setShowAdjustSchedule(true);}} style={{flex:1,padding:"6px",borderRadius:8,border:`1px solid ${C.sky}44`,background:"transparent",color:C.sky,fontSize:11,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
-                                  ⚙️ Adjust schedule
-                                </button>
-                              </div>
-                              {scheduleOverride && (
-                                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:6,padding:"4px 8px",borderRadius:8,background:C.gold+"15"}}>
-                                  <span style={{fontSize:10,color:C.gold}}>⚙️ Custom {scheduleOverride.permanent?"(permanent)":"(today only)"}: wake {scheduleOverride.wake?fmt12((() => { const m=scheduleOverride.wake; return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"); })()):"-"}, bed {scheduleOverride.bed?fmt12((() => { const m=scheduleOverride.bed; return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"); })()):"-"}</span>
-                                  <button onClick={clearScheduleOverride} style={{background:_bN,border:_bN,fontSize:10,color:C.ter,cursor:_cP}}>✕ Clear</button>
-                                </div>
-                              )}
-                              <div style={{fontSize:11,color:C.lt,fontFamily:_fM,marginTop:4}}>
-
-                              </div>
-                            </div>
-                          );
-                        })()}
-
                         {/* Averages */}
                         {(()=>{
                           const last14 = dayKeys.slice(-14);
@@ -14863,18 +14880,6 @@ function App(){
                     </div>
                   </div>
                 </div>
-              )}
-
-              {/* ═══ SCHEDULE BUILDER — always visible under Sleep tab ═══ */}
-              {age && (
-                <button onClick={()=>{haptic();setShowScheduleMaker(true);}} style={{width:"100%",display:"flex",alignItems:"center",gap:12,padding:"16px",marginTop:12,marginBottom:4,borderRadius:16,border:`1.5px solid ${C.ter}30`,background:"var(--card-bg-solid)",boxShadow:"var(--card-shadow)",cursor:_cP,textAlign:"left"}}>
-                  <div style={{width:44,height:44,borderRadius:14,background:`linear-gradient(135deg,${C.ter}15,${C.mint}15)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🧩</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:15,fontWeight:700,color:C.deep}}>Schedule Builder</div>
-                    <div style={{fontSize:12,color:C.lt,marginTop:2}}>Plan {babyName||"baby"}'s naps around an appointment or event</div>
-                  </div>
-                  <span style={{fontSize:13,color:C.ter,fontWeight:700}}>Build →</span>
-                </button>
               )}
 
               </div>}
@@ -16849,15 +16854,15 @@ function App(){
           <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8,marginTop:10}}>👨‍👩‍👧 Family & Sharing</div>
           <div>
           <div style={{fontSize:12,color:C.lt,fontStyle:"italic",marginBottom:10}}>Share the load — keep everyone in sync</div>
-          <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14}}>
-            <button onClick={()=>setShowFamilyModal(true)} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
+          <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:14}}>
+            <button onClick={()=>setShowFamilyModal(true)} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"16px",cursor:_cP,textAlign:"left",width:"100%",touchAction:"manipulation",WebkitTapHighlightColor:"transparent",isolation:"isolate"}}>
               <span style={{fontSize:24}}>👨‍👩‍👧</span>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:4,fontSize:15,fontWeight:700,color:C.deep}}>Share & Sync <HelpBtn title="Share & Sync" body="Share your backup code with your partner so both parents see the same data. Each child syncs independently. Data is stored securely via Google Cloud. Tap Link a Child to connect to another parent's data."/></div>
                 <div style={{fontSize:12,color:C.lt,marginTop:2}}>{familyCode?"Manage sync & backup":"Connect with partner or restore data"}</div>
               </div>
             </button>
-            <button onClick={()=>{setShowCarerCard(true);restartCarerSession();}} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%"}}>
+            <button onClick={()=>{setShowCarerCard(true);restartCarerSession();}} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"16px",cursor:_cP,textAlign:"left",width:"100%",touchAction:"manipulation",WebkitTapHighlightColor:"transparent",isolation:"isolate"}}>
               <span style={{fontSize:24}}>👩‍🍼</span>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:4,fontSize:15,fontWeight:700,color:C.deep}}>Carer Card <HelpBtn title="Carer Card & Portal" body={"Generate a shareable care guide for anyone looking after "+( babyName||"your baby")+" — babysitters, grandparents, nursery.\n\n📋 The Care Guide includes feeding info, sleep windows, safe sleep guidance, emergency contacts, and your pinned notes.\n\n📱 The QR code opens a Carer Portal where carers can log feeds, naps, and nappy changes from their own phone.\n\n🔒 Carers can only see what they log — they never have access to your data, history, or app.\n\n✓ You'll see their entries under 'Carer Activity' below and can accept them into "+(babyName||"baby")+"'s day log, or dismiss them.\n\nEach child has their own QR code — switch children before sharing."}/></div>
@@ -18909,10 +18914,10 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             </div>
 
             {/* Action buttons */}
-            <button onClick={()=>{haptic();shareCarerCard();}} style={{width:"100%",padding:"15px",borderRadius:99,border:_bN,background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
+            <button onTouchEnd={e=>{e.stopPropagation();haptic();shareCarerCard();}} onClick={e=>{e.stopPropagation();haptic();shareCarerCard();}} style={{width:"100%",padding:"15px",borderRadius:99,border:_bN,background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:8,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",position:"relative",zIndex:5}}>
               📤 Share Care Guide
             </button>
-            <button onClick={()=>{
+            <button onTouchEnd={e=>{e.stopPropagation();}} onClick={e=>{e.stopPropagation();
               haptic();
               const html = generateCarerCardHTML();
               const closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back</button><div style="display:flex;gap:8px"><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button><button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div></div>`;
@@ -18925,7 +18930,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               try{return window.open("","_blank");}catch{return null;}
             })();
               if(w){ w.document.write(html.replace("<body>","<body>"+closeBar)); w.document.close(); }
-            }} style={{width:"100%",padding:"13px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
+            }} style={{width:"100%",padding:"13px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginBottom:8,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",position:"relative",zIndex:5}}>
               📋 Preview
             </button>
             <button onClick={()=>setShowCarerCard(false)} style={{width:"100%",padding:"12px",borderRadius:99,border:_bN,background:C.blush,color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
@@ -19618,26 +19623,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             </div>
             <LinkChildForm joinChildByCode={joinChildByCode} C={C} />
             <RestoreDataForm restoreFromBackup={restoreFromBackup} setShowFamilyModal={setShowFamilyModal} familyUsername={familyUsername} backupCode={backupCode} C={C} />
-            {/* ── Import & Export ── */}
-            <div style={{borderTop:`1px solid ${C.blush}`,marginTop:16,paddingTop:16}}>
-              <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:10}}>Data</div>
-              <div style={{display:"flex",gap:8}}>
-                <button onClick={()=>{setShowFamilyModal(false);setTimeout(()=>setShowImportModal(true),200);}} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
-                  <span style={{fontSize:20}}>📥</span>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Import</div>
-                    <div style={{fontSize:11,color:C.lt}}>From CSV</div>
-                  </div>
-                </button>
-                <button onClick={()=>{setShowFamilyModal(false);setTimeout(()=>exportCSV(),200);}} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
-                  <span style={{fontSize:20}}>📤</span>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Export</div>
-                    <div style={{fontSize:11,color:C.lt}}>Save CSV</div>
-                  </div>
-                </button>
-              </div>
-            </div>
+            {/* duplicate import/export removed — kept the one above */}
             {familyUsername && (
               <div style={{borderTop:`1px solid ${C.blush}`,marginTop:16,paddingTop:16}}>
                 <button onClick={()=>{setShowFamilyModal(false);logout();}}

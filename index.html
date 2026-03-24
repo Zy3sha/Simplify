@@ -103,6 +103,21 @@
 </div>
 <button id="theme-toggle" aria-label="Toggle theme" onclick="toggleTheme()">🌙</button>
 
+<!-- Disable iOS rubber-band bounce -->
+<script>
+(function(){
+  document.addEventListener('touchmove',function(e){
+    var el=e.target;
+    while(el&&el!==document.body){
+      var s=getComputedStyle(el);
+      if(/(auto|scroll)/.test(s.overflowY)&&el.scrollHeight>el.clientHeight) return;
+      el=el.parentElement;
+    }
+    e.preventDefault();
+  },{passive:false});
+})();
+</script>
+
 <!-- Theme system (must run immediately for no flash) -->
 <script src="theme.js"></script>
 

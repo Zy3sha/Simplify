@@ -26,20 +26,12 @@ const config: CapacitorConfig = {
       sound: 'notification.wav',
     },
 
-    // ── Splash Screen ──
+    // ── Splash Screen — disabled so the HTML sleeping-baby splash shows ──
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 0,
       launchAutoHide: true,
-      backgroundColor: '#F0DDD6',
-      androidSplashResourceName: 'splash',
-      androidScaleType: 'CENTER_CROP',
+      backgroundColor: '#FFFEFD',
       showSpinner: false,
-      iosSpinnerStyle: 'small',
-      spinnerColor: '#C07088',
-      splashFullScreen: true,
-      splashImmersive: true,
-      layoutName: 'launch_screen',
-      useDialog: true,
     },
 
     // ── Keyboard ──
