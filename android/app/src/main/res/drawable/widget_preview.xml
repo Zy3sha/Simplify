@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="100dp"
+    android:viewportWidth="200"
+    android:viewportHeight="100">
+    <!-- Widget preview placeholder -->
+    <path
+        android:pathData="M0,16C0,7.16 7.16,0 16,0L184,0C192.84,0 200,7.16 200,16L200,84C200,92.84 192.84,100 184,100L16,100C7.16,100 0,92.84 0,84Z"
+        android:fillColor="#FBF5F3"/>
+    <path
+        android:pathData="M20,25L20,25"
+        android:strokeWidth="0"
+        android:fillColor="#00000000"/>
+</vector>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Moon with zzz for sleep -->
+    <path
+        android:pathData="M12.43,2.3C10.07,2.3 7.97,3.37 6.58,5.05C6.23,5.48 6.5,6.1 7.05,6.14C10.66,6.42 13.5,9.41 13.5,13.06C13.5,15.41 12.24,17.47 10.35,18.58C9.85,18.87 9.9,19.62 10.43,19.84C11.07,20.1 11.76,20.25 12.47,20.25C16.61,20.25 19.97,16.89 19.97,12.75C19.97,7.06 16.12,2.3 12.43,2.3Z"
+        android:fillColor="#8B7EC8"/>
+</vector>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Baby bottle / drop icon for feed -->
+    <path
+        android:pathData="M12,2C11.17,2 10.5,2.67 10.5,3.5L10.5,4.18C7.92,5.01 6,7.41 6,10.25L6,16L4,18L4,19L20,19L20,18L18,16L18,10.25C18,7.41 16.08,5.01 13.5,4.18L13.5,3.5C13.5,2.67 12.83,2 12,2ZM12,6C14.76,6 17,8.24 17,11L17,16L7,16L7,11C7,8.24 9.24,6 12,6Z"
+        android:fillColor="#C07088"/>
+</vector>

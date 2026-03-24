@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Static shortcuts + Google Assistant App Actions -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Google Assistant Built-In Intents (BII) for voice commands -->
+    <!-- "Hey Google, log a feed in OBubba" -->
+    <capability android:name="actions.intent.CREATE_THING">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.obubba.app"
+            android:targetClass="com.obubba.app.MainActivity">
+            <parameter
+                android:name="thing.name"
+                android:key="action" />
+        </intent>
+    </capability>
+
+    <!-- "Hey Google, open OBubba baby summary" -->
+    <capability android:name="actions.intent.OPEN_APP_FEATURE">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.obubba.app"
+            android:targetClass="com.obubba.app.MainActivity">
+            <parameter
+                android:name="feature"
+                android:key="action" />
+        </intent>
+    </capability>
+
+    <!-- Static shortcuts (long-press app icon) -->
+    <shortcut
+        android:shortcutId="log_feed"
+        android:enabled="true"
+        android:icon="@drawable/ic_feed"
+        android:shortcutShortLabel="@string/shortcut_log_feed"
+        android:shortcutLongLabel="@string/shortcut_log_feed_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.obubba.app"
+            android:targetClass="com.obubba.app.MainActivity">
+            <extra android:name="action" android:value="log_feed" />
+        </intent>
+        <categories android:name="android.shortcut.conversation" />
+        <capability-binding android:key="actions.intent.CREATE_THING">
+            <parameter-binding
+                android:key="thing.name"
+                android:value="feed" />
+        </capability-binding>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="log_sleep"
+        android:enabled="true"
+        android:icon="@drawable/ic_sleep"
+        android:shortcutShortLabel="@string/shortcut_log_sleep"
+        android:shortcutLongLabel="@string/shortcut_log_sleep_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.obubba.app"
+            android:targetClass="com.obubba.app.MainActivity">
+            <extra android:name="action" android:value="log_sleep" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="log_nappy"
+        android:enabled="true"
+        android:icon="@drawable/ic_nappy"
+        android:shortcutShortLabel="@string/shortcut_log_nappy"
+        android:shortcutLongLabel="@string/shortcut_log_nappy_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.obubba.app"
+            android:targetClass="com.obubba.app.MainActivity">
+            <extra android:name="action" android:value="log_nappy" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="start_timer"
+        android:enabled="true"
+        android:icon="@drawable/ic_timer"
+        android:shortcutShortLabel="@string/shortcut_start_timer"
+        android:shortcutLongLabel="@string/shortcut_start_timer_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.obubba.app"
+            android:targetClass="com.obubba.app.MainActivity">
+            <extra android:name="action" android:value="start_timer" />
+        </intent>
+    </shortcut>
+</shortcuts>

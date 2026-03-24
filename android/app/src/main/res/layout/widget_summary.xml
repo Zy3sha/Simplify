@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- OBubba Home Screen Widget Layout -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/widget_background">
+
+    <!-- Header: Baby name -->
+    <TextView
+        android:id="@+id/tv_baby_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Baby"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#5B4F5F"
+        android:fontFamily="sans-serif-medium" />
+
+    <!-- Last feed time -->
+    <TextView
+        android:id="@+id/tv_last_feed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Last feed: --:--"
+        android:textSize="13sp"
+        android:textColor="#C07088"
+        android:layout_marginTop="4dp" />
+
+    <!-- Stats row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical">
+
+        <!-- Feeds -->
+        <TextView
+            android:id="@+id/tv_feed_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0 feeds"
+            android:textSize="12sp"
+            android:textColor="#7A6B7E"
+            android:drawableStart="@drawable/ic_feed"
+            android:drawablePadding="4dp" />
+
+        <!-- Sleeps -->
+        <TextView
+            android:id="@+id/tv_sleep_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0 sleeps"
+            android:textSize="12sp"
+            android:textColor="#7A6B7E"
+            android:drawableStart="@drawable/ic_sleep"
+            android:drawablePadding="4dp" />
+
+        <!-- Nappies -->
+        <TextView
+            android:id="@+id/tv_nappy_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0 nappies"
+            android:textSize="12sp"
+            android:textColor="#7A6B7E"
+            android:drawableStart="@drawable/ic_nappy"
+            android:drawablePadding="4dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Quick action buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btn_log_feed"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="Feed"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/widget_button_bg"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/btn_log_sleep"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="Sleep"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/widget_button_bg"
+            android:textAllCaps="false" />
+    </LinearLayout>
+</LinearLayout>

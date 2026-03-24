@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OBubba</string>
+    <string name="title_activity_main">OBubba</string>
+    <string name="package_name">com.obubba.app</string>
+    <string name="custom_url_scheme">obubba</string>
+
+    <!-- Widget -->
+    <string name="widget_description">See your baby\'s daily feeds, sleeps, and nappies at a glance.</string>
+
+    <!-- App Shortcuts -->
+    <string name="shortcut_log_feed">Log Feed</string>
+    <string name="shortcut_log_feed_long">Log a feed for baby</string>
+    <string name="shortcut_log_sleep">Log Sleep</string>
+    <string name="shortcut_log_sleep_long">Log sleep or nap</string>
+    <string name="shortcut_log_nappy">Log Nappy</string>
+    <string name="shortcut_log_nappy_long">Log a nappy change</string>
+    <string name="shortcut_start_timer">Start Timer</string>
+    <string name="shortcut_start_timer_long">Start a feed or sleep timer</string>
+</resources>
