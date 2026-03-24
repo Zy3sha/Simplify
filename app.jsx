@@ -1083,6 +1083,7 @@ function App(){
   const[meds,setMeds]=useState(()=>{try{const v=localStorage.getItem("meds_v1");return v?JSON.parse(v):{};}catch{return {};}});
   const[showMedForm,setShowMedForm]=useState(false);
   const[medForm,setMedForm]=useState({name:"",dose:"",time:"",temp:"",note:""});
+  const[medTab,setMedTab]=useState("log");
   useEffect(()=>{try{localStorage.setItem("meds_v1",JSON.stringify(meds));}catch{}},[meds]);
   // Tummy time
   const[tummyOn,setTummyOn]=useState(false);
@@ -3676,6 +3677,7 @@ function App(){
             </div>
           )}
         </div>
+        {(()=>{ const action = getPriorityAction(); if (!action) return null; return (<div style={{marginTop:10,padding:"10px 12px",borderRadius:12,background:action.priority==="high"?"rgba(201,112,90,0.08)":"rgba(111,168,152,0.08)",border:"1.5px solid "+(action.priority==="high"?C.ter+"40":C.mint+"40")}}><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>{action.emoji}</span><div style={{flex:1,fontSize:12,color:C.deep,lineHeight:1.5}}>{action.text}</div></div></div>); })()}
       </div>
     );
    } catch(err) {
@@ -11446,17 +11448,11 @@ function App(){
               )}
 
               {/* Dashed add buttons at bottom of Notes & Reminders */}
-              <div style={{display:"flex",gap:6,marginBottom:6,flexWrap:"wrap",padding:"0 12px"}}>
-                <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:"",repeat:"none",travelMins:0});setShowAddAppt(true);}} style={{flex:1,minWidth:75,padding:"8px 6px",borderRadius:12,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:10,fontWeight:600,color:C.lt,fontFamily:_fI}}>
-                  📅 Appt
-                </button>
-                <button onClick={()=>{setReminderForm({text:"",date:todayStr(),time:"",trigger:""});setShowAddReminder(true);}} style={{flex:1,minWidth:75,padding:"8px 6px",borderRadius:12,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:10,fontWeight:600,color:C.lt,fontFamily:_fI}}>
-                  🔔 Reminder
-                </button>
-                <button onClick={()=>setShowAddPin(true)} style={{flex:1,minWidth:75,padding:"8px 6px",borderRadius:12,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:10,fontWeight:600,color:C.lt,fontFamily:_fI}}>
-                  📌 Note
-                </button>
-              </div>
+<div style={{display:"flex",gap:6,padding:"4px 12px 8px"}}>
+  <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:"",repeat:"none",travelMins:0});setShowAddAppt(true);}} style={{flex:1,padding:"8px 4px",borderRadius:12,border:"1.5px dashed "+C.blush,background:"var(--card-bg)",cursor:_cP,fontSize:10,fontWeight:600,color:C.lt,fontFamily:_fI,textAlign:"center"}}>📅 Appt</button>
+  <button onClick={()=>{setReminderForm({text:"",date:todayStr(),time:"",trigger:""});setShowAddReminder(true);}} style={{flex:1,padding:"8px 4px",borderRadius:12,border:"1.5px dashed "+C.blush,background:"var(--card-bg)",cursor:_cP,fontSize:10,fontWeight:600,color:C.lt,fontFamily:_fI,textAlign:"center"}}>🔔 Reminder</button>
+  <button onClick={()=>setShowAddPin(true)} style={{flex:1,padding:"8px 4px",borderRadius:12,border:"1.5px dashed "+C.blush,background:"var(--card-bg)",cursor:_cP,fontSize:10,fontWeight:600,color:C.lt,fontFamily:_fI,textAlign:"center"}}>📌 Note</button>
+</div>
 
                                           {/* Age guidance */}
               {ageStage&&(
@@ -11505,8 +11501,7 @@ function App(){
               {(()=>{
                 const dayMeds = meds[selDay] || [];
                 const dayTummy = (days[selDay]||[]).filter(e=>e.type==="tummy");
-                const _hasVaccs = !!babyDob;
-                if (!dayMeds.length && !dayTummy.length && !_hasVaccs) return null;
+                if (!dayMeds.length && !dayTummy.length) return null;
                 return (
                   <div style={{marginBottom:12}}>
                     {dayMeds.length > 0 && (
@@ -11536,78 +11531,6 @@ function App(){
                         </div>
                       </div>
                     )}
-                    {/* Vaccinations inside medicine section */}
-                    {babyDob && (()=>{
-                const _dob = new Date(babyDob+"T00:00:00");
-                const _addW = (w)=>{ const d=new Date(_dob); d.setDate(d.getDate()+w*7); return d; };
-                const _addM = (m)=>{ const d=new Date(_dob); d.setMonth(d.getMonth()+m); return d; };
-                const _fmt = (d)=>d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
-                const _today = new Date();
-                const _key = "vaccs_v1_"+resolvedActiveId;
-                const _done = (()=>{try{return JSON.parse(localStorage.getItem(_key)||"[]");}catch{return [];}})();
-                const _sched = _isUS ? [
-                  {id:"2mo",label:"2 months",due:_addM(2),jabs:["DTaP","IPV","Hib","PCV","RV","HepB"]},
-                  {id:"4mo",label:"4 months",due:_addM(4),jabs:["DTaP","IPV","Hib","PCV","RV"]},
-                  {id:"6mo",label:"6 months",due:_addM(6),jabs:["DTaP","IPV","Hib","PCV","RV","HepB","Flu"]},
-                  {id:"12mo",label:"12 months",due:_addM(12),jabs:["MMR","Varicella","HepA","PCV booster"]},
-                ] : [
-                  {id:"8w",label:"8 weeks",due:_addW(8),jabs:["6-in-1 (DTaP/IPV/Hib/HepB)","Rotavirus","MenB"]},
-                  {id:"12w",label:"12 weeks",due:_addW(12),jabs:["6-in-1 2nd dose","Rotavirus 2nd dose","PCV"]},
-                  {id:"16w",label:"16 weeks",due:_addW(16),jabs:["6-in-1 3rd dose","MenB 2nd dose"]},
-                  {id:"1yr",label:"1 year",due:_addM(12),jabs:["Hib/MenC","MMR","PCV booster","MenB booster"]},
-                  {id:"3yr",label:"3 years 4 months",due:_addM(40),jabs:["4-in-1 pre-school booster","MMR 2nd dose"]},
-                ];
-                const _next = _sched.filter(v=>!_done.includes(v.id)&&v.due>=_today).sort((a,b)=>a.due-b.due)[0];
-                const _overdue = _sched.filter(v=>!_done.includes(v.id)&&v.due<_today);
-                return (
-                  <div style={{marginBottom:14}}>
-                    <div style={{background:"var(--card-bg)",border:"1px solid "+C.blush,borderRadius:16,overflow:"hidden"}}>
-                      <button onClick={()=>setVaccOpen(v=>!v)} style={{width:"100%",padding:"14px 16px",background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:_cP,fontFamily:_fI}}>
-                        <div style={{textAlign:"left"}}>
-                          <div style={{display:"flex",alignItems:"center",gap:6}}>
-                            <span style={{fontSize:16}}>💉</span>
-                            <span style={{fontSize:14,fontWeight:700,color:C.deep}}>{_overdue.length>0?"⚠️ "+_overdue.length+" overdue":_next?"Next: "+_next.label:"All done ✓"}</span>
-                          </div>
-                          <div style={{fontSize:11,color:C.lt,marginTop:2,paddingLeft:22}}>{_overdue.length>0?("Contact your " + _doctorUrgent + (_isUS || _isIN || _isSG ? "'s office" : " surgery")):_next?"Due "+_fmt(_next.due):""+_sched.filter(v=>v.due<=_today).length+" vaccinations completed"}</div>
-                        </div>
-                        <span style={{color:C.lt,fontSize:12,transform:vaccOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
-                      </button>
-                      {vaccOpen && (
-                        <div style={{borderTop:"1px solid "+C.blush,padding:"12px 16px"}}>
-                          <div style={{fontSize:11,color:C.lt,marginBottom:10}}>{_isUS?"AAP/CDC":_isAU?"NIP (AU)":"NHS UK"} schedule — tap circle to mark as given</div>
-                          {_sched.map((v,i)=>{
-                            const _isDone=_done.includes(v.id);
-                            const _isOd=!_isDone&&v.due<_today;
-                            return (
-                              <div key={v.id} style={{padding:"10px 0",borderTop:i?"1px solid "+C.blush:"none",display:"flex",gap:12,alignItems:"flex-start"}}>
-                                <button onClick={()=>{
-                                  const cur=(()=>{try{return JSON.parse(localStorage.getItem(_key)||"[]");}catch{return [];}})();
-                                  const nxt=cur.includes(v.id)?cur.filter(x=>x!==v.id):[...cur,v.id];
-                                  try{localStorage.setItem(_key,JSON.stringify(nxt));}catch{}
-                                  setVaccTick(t=>t+1);
-                                }} style={{width:24,height:24,borderRadius:"50%",border:"2px solid "+(_isDone?C.mint:_isOd?"#c04040":C.blush),background:_isDone?C.mint:"transparent",flexShrink:0,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",marginTop:2}}>
-                                  {_isDone&&<span style={{color:"white",fontSize:11,fontWeight:700}}>✓</span>}
-                                </button>
-                                <div style={{flex:1}}>
-                                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
-                                    <span style={{fontSize:13,fontWeight:700,color:_isDone?C.lt:_isOd?"#c04040":C.deep}}>{v.label}</span>
-                                    {_isOd&&<span style={{fontSize:9,background:"rgba(232,87,74,0.12)",color:"#c04040",padding:"1px 6px",borderRadius:99,fontWeight:700}}>OVERDUE</span>}
-                                  </div>
-                                  <div style={{fontSize:11,color:C.lt,marginBottom:3}}>{_fmt(v.due)}</div>
-                                  {v.jabs.map((j,ji)=><div key={ji} style={{fontSize:11,color:_isDone?C.lt:C.mid}}>• {j}</div>)}
-                                </div>
-                              </div>
-                            );
-                          })}
-                          <div style={{marginTop:10,padding:"8px 10px",borderRadius:10,background:"var(--card-bg-alt)",fontSize:11,color:C.lt,lineHeight:1.5}}>
-                            Reference only — always book through your {_doctorUrgent}.
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
                   </div>
                 );
               })()}
@@ -18617,6 +18540,11 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
           <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:520}}>
             <div style={{width:48,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginBottom:16,textAlign:"center"}}>💊 Medicine / Temperature</div>
+            <div style={{display:"flex",gap:8,marginBottom:14,justifyContent:"center"}}>
+              <button onClick={()=>setMedTab("log")} style={{padding:"7px 16px",borderRadius:99,border:"1.5px solid "+(medTab==="log"?C.ter:C.blush),background:medTab==="log"?"rgba(192,112,136,0.1)":"transparent",color:medTab==="log"?C.ter:C.lt,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>💊 Log Entry</button>
+              <button onClick={()=>setMedTab("vacc")} style={{padding:"7px 16px",borderRadius:99,border:"1.5px solid "+(medTab==="vacc"?C.ter:C.blush),background:medTab==="vacc"?"rgba(192,112,136,0.1)":"transparent",color:medTab==="vacc"?C.ter:C.lt,fontSize:13,fontWeight:600,cursor:_cP,fontFamily:_fI}}>💉 Vaccinations</button>
+            </div>
+            {medTab==="log"&&(<>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <div style={{display:"flex",gap:8}}>
                 <input placeholder="Medicine name" value={medForm.name} onChange={e=>setMedForm(f=>({...f,name:e.target.value}))}
@@ -18647,6 +18575,68 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             <button onClick={saveMedicine} style={{width:"100%",padding:"14px",borderRadius:99,border:_bN,background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:15,fontWeight:700,cursor:_cP,fontFamily:_fI,marginTop:14}}>
               Save
             </button>
+            </>)}
+            {medTab==="vacc"&&(
+              <div>
+              {babyDob && (()=>{
+                const _dob = new Date(babyDob+"T00:00:00");
+                const _addW = (w)=>{ const d=new Date(_dob); d.setDate(d.getDate()+w*7); return d; };
+                const _addM = (m)=>{ const d=new Date(_dob); d.setMonth(d.getMonth()+m); return d; };
+                const _fmt = (d)=>d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+                const _today = new Date();
+                const _key = "vaccs_v1_"+resolvedActiveId;
+                const _done = (()=>{try{return JSON.parse(localStorage.getItem(_key)||"[]");}catch{return [];}})();
+                const _sched = _isUS ? [
+                  {id:"2mo",label:"2 months",due:_addM(2),jabs:["DTaP","IPV","Hib","PCV","RV","HepB"]},
+                  {id:"4mo",label:"4 months",due:_addM(4),jabs:["DTaP","IPV","Hib","PCV","RV"]},
+                  {id:"6mo",label:"6 months",due:_addM(6),jabs:["DTaP","IPV","Hib","PCV","RV","HepB","Flu"]},
+                  {id:"12mo",label:"12 months",due:_addM(12),jabs:["MMR","Varicella","HepA","PCV booster"]},
+                ] : [
+                  {id:"8w",label:"8 weeks",due:_addW(8),jabs:["6-in-1 (DTaP/IPV/Hib/HepB)","Rotavirus","MenB"]},
+                  {id:"12w",label:"12 weeks",due:_addW(12),jabs:["6-in-1 2nd dose","Rotavirus 2nd dose","PCV"]},
+                  {id:"16w",label:"16 weeks",due:_addW(16),jabs:["6-in-1 3rd dose","MenB 2nd dose"]},
+                  {id:"1yr",label:"1 year",due:_addM(12),jabs:["Hib/MenC","MMR","PCV booster","MenB booster"]},
+                  {id:"3yr",label:"3 years 4 months",due:_addM(40),jabs:["4-in-1 pre-school booster","MMR 2nd dose"]},
+                ];
+                const _next = _sched.filter(v=>!_done.includes(v.id)&&v.due>=_today).sort((a,b)=>a.due-b.due)[0];
+                const _overdue = _sched.filter(v=>!_done.includes(v.id)&&v.due<_today);
+                return (
+                  <div>
+                    <div style={{fontSize:11,color:C.lt,marginBottom:10}}>{_isUS?"AAP/CDC":_isAU?"NIP (AU)":"NHS UK"} schedule — tap circle to mark as given</div>
+                    {_overdue.length>0&&<div style={{background:"rgba(232,87,74,0.08)",border:"1.5px solid rgba(232,87,74,0.2)",borderRadius:12,padding:"10px 12px",marginBottom:10,fontSize:13,color:"#c04040",fontWeight:600}}>{"⚠️ "+_overdue.length+" overdue — contact your "+_doctorUrgent+(_isUS||_isIN||_isSG?"'s office":" surgery")}</div>}
+                    {_sched.map((v,i)=>{
+                      const _isDone=_done.includes(v.id);
+                      const _isOd=!_isDone&&v.due<_today;
+                      return (
+                        <div key={v.id} style={{padding:"10px 0",borderTop:i?"1px solid "+C.blush:"none",display:"flex",gap:12,alignItems:"flex-start"}}>
+                          <button onClick={()=>{
+                            const cur=(()=>{try{return JSON.parse(localStorage.getItem(_key)||"[]");}catch{return [];}})();
+                            const nxt=cur.includes(v.id)?cur.filter(x=>x!==v.id):[...cur,v.id];
+                            try{localStorage.setItem(_key,JSON.stringify(nxt));}catch{}
+                            setVaccTick(t=>t+1);
+                          }} style={{width:24,height:24,borderRadius:"50%",border:"2px solid "+(_isDone?C.mint:_isOd?"#c04040":C.blush),background:_isDone?C.mint:"transparent",flexShrink:0,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",marginTop:2}}>
+                            {_isDone&&<span style={{color:"white",fontSize:11,fontWeight:700}}>✓</span>}
+                          </button>
+                          <div style={{flex:1}}>
+                            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                              <span style={{fontSize:13,fontWeight:700,color:_isDone?C.lt:_isOd?"#c04040":C.deep}}>{v.label}</span>
+                              {_isOd&&<span style={{fontSize:9,background:"rgba(232,87,74,0.12)",color:"#c04040",padding:"1px 6px",borderRadius:99,fontWeight:700}}>OVERDUE</span>}
+                            </div>
+                            <div style={{fontSize:11,color:C.lt,marginBottom:3}}>{_fmt(v.due)}</div>
+                            {v.jabs.map((j,ji)=><div key={ji} style={{fontSize:11,color:_isDone?C.lt:C.mid}}>• {j}</div>)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div style={{marginTop:10,padding:"8px 10px",borderRadius:10,background:"var(--card-bg-alt)",fontSize:11,color:C.lt,lineHeight:1.5}}>
+                      Reference only — always book through your {_doctorUrgent}.
+                    </div>
+                  </div>
+                );
+              })()}
+              {!babyDob&&<div style={{fontSize:13,color:C.lt,textAlign:"center",padding:"20px 0"}}>Add {babyName||"baby"}'s date of birth in settings to see vaccination schedule.</div>}
+              </div>
+            )}
             <button onClick={()=>setShowMedForm(false)} style={{width:"100%",padding:"12px",borderRadius:99,border:_bN,background:C.blush,color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginTop:6}}>
               Cancel
             </button>
