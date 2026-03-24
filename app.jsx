@@ -1659,9 +1659,9 @@ function App(){
     return new Promise(resolve => {
       let waited = 0;
       const poll = setInterval(() => {
-        waited += 100;
+        waited += 200;
         if(window._fbUid || waited >= 5000) { clearInterval(poll); resolve(); }
-      }, 100);
+      }, 200);
     });
   }
   const pushToCloud = React.useCallback(async(code, allChildren) => {
@@ -2070,36 +2070,13 @@ function App(){
   const hashPin = (pin) => { let h=5381; for(let i=0;i<pin.length;i++) h=((h<<5)+h)+pin.charCodeAt(i); return (h>>>0).toString(16); };
   async function verifyLogin(username, pin) {
     if(!window._fb) { setAuthError("Not connected — check your internet"); return false; }
-    await waitForUid();
     const {db, doc, getDoc} = window._fb;
     const key = normaliseUsername(username);
     if(!key) { setAuthError("Enter a username"); return false; }
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
-      // Use Firebase SDK directly for login — more reliable than REST in native WebView
-      let snap;
-      let _debugInfo = "";
-      const _hasAuth = !!window._fb?.auth?.currentUser;
-      const _uid = window._fbUid || "none";
-      try {
-        snap = await getDoc(doc(db, "usernames", key));
-        _debugInfo = `SDK:${snap.exists()?"found":"miss"}`;
-      } catch(sdkErr) {
-        _debugInfo = `SDK-err:${sdkErr?.code||sdkErr?.message||"unknown"}`;
-        // SDK failed — fall back to REST
-        try {
-          snap = await fsGet("usernames", key);
-          _debugInfo += ` REST:${snap.exists()?"found":"miss"}${snap._error?"/e:"+snap._error:""}`;
-        } catch(restErr) {
-          _debugInfo += ` REST-err:${restErr?.message||"unknown"}`;
-          snap = {exists:()=>false, data:()=>({}), _error:"both-failed"};
-        }
-      }
-      if(!snap.exists()) {
-        const detail = `[key:${key} auth:${_hasAuth} uid:${_uid} ${_debugInfo}]`;
-        if(snap._error) { setAuthError(`Connection issue — try again ${detail}`); return false; }
-        setAuthError(`Username not found ${detail}`); return false;
-      }
+      const snap = await fsGet("usernames", key);
+      if(!snap.exists()) { setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false; }
       const data = snap.data();
       if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
       const resolvedBackup = data.backupCode || null;
@@ -2110,8 +2087,7 @@ function App(){
       const code = resolvedBackup || data.familyCode;
       if(code) {
         try {
-          let fSnap;
-          try { fSnap = await getDoc(doc(db, "families", code)); } catch { fSnap = await fsGet("families", code); }
+          const fSnap = await fsGet("families", code);
           if(fSnap.exists()) {
             const d = fSnap.data();
             if(d.children) {
@@ -2165,12 +2141,10 @@ function App(){
 
   // Firestore REST read via CapacitorHttp — bypasses WKWebView CORS block
   // Falls back to fetch (works in browser). Mirrors getDoc() snap interface.
-  // Returns {exists(), data(), _error} — _error is set on auth/network failure vs genuine 404.
   async function fsGet(collection, docId) {
     try {
       const _user = window._fb?.auth?.currentUser;
-      let _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
-      if(!_token && window._fbRestToken) _token = window._fbRestToken;
+      const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
       const _url = `https://firestore.googleapis.com/v1/projects/obubba-d9ccc/databases/(default)/documents/${collection}/${encodeURIComponent(docId)}`;
       const _headers = _token ? {"Authorization":`Bearer ${_token}`} : {};
       const _capHttp = window.Capacitor?.Plugins?.CapacitorHttp;
@@ -2182,11 +2156,7 @@ function App(){
         const _r = await fetch(_url, {headers:_headers}).catch(()=>null);
         _status = _r?.status; _data = _r ? await _r.json().catch(()=>null) : null;
       }
-      // Distinguish genuine 404 from auth/network errors
-      if(_status === 404) return {exists:()=>false, data:()=>({}), _error: null};
-      if(!_data || _data.error || _status === 403 || _status === 401 || !_status) {
-        return {exists:()=>false, data:()=>({}), _error: _status || "network"};
-      }
+      if(_status === 404 || !_data || _data.error) return {exists:()=>false, data:()=>({})};
       const fields = _data.fields || {};
       const parsed = {};
       for(const [k,v] of Object.entries(fields)) {
@@ -2197,16 +2167,15 @@ function App(){
         else if(v.mapValue) parsed[k] = v.mapValue;
         else parsed[k] = v;
       }
-      return {exists:()=>true, data:()=>parsed, _error: null};
-    } catch(e) { return {exists:()=>false, data:()=>({}), _error: "exception"}; }
+      return {exists:()=>true, data:()=>parsed};
+    } catch(e) { return {exists:()=>false, data:()=>({})}; }
   }
 
   // Firestore REST write via CapacitorHttp — bypasses WKWebView CORS block
   async function fsSet(collection, docId, data, merge=false) {
     try {
       const _user = window._fb?.auth?.currentUser;
-      let _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
-      if(!_token && window._fbRestToken) _token = window._fbRestToken;
+      const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
       if(!_token) return false;
       const toField = (v) => {
         if(v === null || v === undefined) return {nullValue: null};
@@ -2270,12 +2239,9 @@ function App(){
     const seq = ++authCheckSeqRef.current;
     authUsernameCheckRef.current = setTimeout(async()=>{
       if(!window._fb) { setAuthUsernameStatus("idle"); return; }
-      await waitForUid();
       const {db, doc, getDoc} = window._fb;
       try {
-        let snap;
-        try { snap = await getDoc(doc(db, "usernames", normaliseUsername(val))); }
-        catch { snap = await fsGet("usernames", normaliseUsername(val)); }
+        const snap = await fsGet("usernames", normaliseUsername(val));
         if(seq !== authCheckSeqRef.current) return; // stale response — ignore
         setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
         if(snap.exists()) try{document.activeElement.blur();}catch{}
@@ -2298,7 +2264,6 @@ function App(){
       if(!_isReclaim) {
         const snap = await fsGet("usernames", key);
         if(snap.exists()) return false;
-        if(snap._error) return false; // Don't create if we couldn't verify availability
       }
       // Generate a fresh backup code for this new account — NEVER reuse existing codes
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -2306,7 +2271,7 @@ function App(){
       for(let attempt=0;attempt<20;attempt++){
         newCode = "BK"+Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
         const codeSnap = await fsGet("families", newCode);
-        if(!codeSnap.exists() && !codeSnap._error) break;
+        if(!codeSnap.exists()) break;
       }
       // Clear any previous account data from this device — CRITICAL for multi-account safety
       const blankChild = {id:uid(),name:"",dob:"",sex:"",unborn:false,days:{},weights:[],heights:[],photos:[],milestones:{}};

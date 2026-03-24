@@ -24,34 +24,7 @@ const analytics = getAnalytics(app);
 
 window._fb = { db, auth, analytics, doc, setDoc, getDoc, onSnapshot, serverTimestamp, signInAnonymously, onAuthStateChanged, logEvent, collection, addDoc, getDocs, deleteDoc, query, orderBy };
 
-// Try SDK anonymous auth first
-signInAnonymously(auth).catch(e => {
-  console.warn("SDK auth failed, trying REST fallback:", e?.code || e);
-  // REST fallback: call Firebase Identity Toolkit directly (no domain restriction)
-  const _doRestAuth = async () => {
-    try {
-      const _capHttp = window.Capacitor?.Plugins?.CapacitorHttp;
-      const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`;
-      const body = { returnSecureToken: true };
-      let resp;
-      if (_capHttp) {
-        resp = await _capHttp.post({ url, headers: {"Content-Type":"application/json"}, data: body });
-      } else {
-        const r = await fetch(url, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
-        resp = { status: r.status, data: await r.json() };
-      }
-      if (resp?.data?.idToken) {
-        window._fbRestToken = resp.data.idToken;
-        window._fbUid = resp.data.localId;
-        // Sign into Firebase SDK with the custom token if possible
-        const { signInWithCredential, GoogleAuthProvider } = await import('firebase/auth').catch(()=>({}));
-        // Store token for REST calls
-        console.log("REST auth succeeded, uid:", resp.data.localId);
-      }
-    } catch(e2) { console.warn("REST auth also failed:", e2); }
-  };
-  _doRestAuth();
-});
+signInAnonymously(auth).catch(e => console.warn("Auth error", e));
 onAuthStateChanged(auth, user => { if (user) window._fbUid = user.uid; });
 
 export { db, auth, analytics };
