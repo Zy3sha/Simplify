@@ -10,6 +10,9 @@ import { _toothLabels, toothLabel } from './src/data/tooth-labels.js';
 import { ICONS, NAMES, POOP_TYPES, POOP_SAFETY_FLAGS } from './src/data/constants.js';
 import { MILESTONE_CATS, MILESTONES, DEV_PHASES, ACT_CATS } from './src/data/milestones.js';
 import { DEV_ACTIVITIES } from './src/data/activities.js';
+import { BfSupportPanel } from './src/components/BfSupportPanel.jsx';
+import { getBfSupport } from './src/support/bf-engine.js';
+import { checkEscalation } from './src/support/bf-safety.js';
 
 const { useState, useEffect, useRef } = React;
 
@@ -11100,6 +11103,32 @@ function App(){
               {/* ═══ HERO CARD — Bubba Rhythm ═══ */}
               {renderHeroCard()}
 
+              {/* ═══ BF SUPPORT NUDGE — priority notification for breastfeeding concerns ═══ */}
+              {selDay===todayStr()&&feedType==="breast"&&age&&age.totalWeeks<=26&&(()=>{
+                try {
+                  const _bfToday=(days[todayStr()]||[]).filter(e=>e.type==="feed"&&(e.subtype==="breast"||e.feedType==="breast"));
+                  const _bfTrigger=(()=>{
+                    if(_bfToday.length>=10&&age.totalWeeks>4) return "cluster_feeding";
+                    if(_bfToday.some(e=>e.notes&&/pain|sore|hurt|crack/i.test(e.notes))) return "latch_pain";
+                    if(_bfToday.some(e=>e.notes&&/engorg|hard|swollen/i.test(e.notes))) return "engorgement";
+                    return null;
+                  })();
+                  if(!_bfTrigger) return null;
+                  const _esc=checkEscalation(_bfTrigger,{});
+                  const _prioClass=_esc.escalation_level==="emergency"?"lg-prio-urgent":_esc.escalation_level==="seek_review"?"lg-prio-warning":"lg-prio-support";
+                  return (
+                    <div className={"glass-card prio-glow "+_prioClass} style={{padding:"14px 16px",marginBottom:10,cursor:_cP}} onClick={()=>{setShowBfHub(true);setBfHubSection("support");}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                        <span style={{fontSize:16}}>🤱</span>
+                        <span style={{fontSize:13,fontWeight:700,color:C.deep}}>Feeding support available</span>
+                      </div>
+                      <div style={{fontSize:12,color:C.mid,lineHeight:1.6}}>{_esc.message}</div>
+                      <div style={{fontSize:11,color:C.ter,fontWeight:600,marginTop:6}}>Tap to find help near you →</div>
+                    </div>
+                  );
+                } catch(e){ return null; }
+              })()}
+
               {/* ═══ DISRUPTION DIAGNOSTIC — what's going on? ═══ */}
               {selDay===todayStr()&&(()=>{
                 const _diag = disruptionDiagnostic();
@@ -11447,7 +11476,7 @@ function App(){
                                           {/* Age guidance */}
               {ageStage&&(
                 <div style={{background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"12px 14px",marginBottom:12,boxShadow:"var(--card-shadow)"}}>
-                  <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4,display:"flex",alignItems:"center"}}>{ageStage.label} <HelpBtn title="Age Guidance" body="These ranges are from AASM (American Academy of Sleep Medicine) and NHS Start4Life — not rigid targets. Every baby is different. The prediction engine uses your baby's actual patterns alongside these ranges to give personalised suggestions. If you have concerns about your baby's sleep or development, speak to your " + _devDoc + "."/></div>
+                  <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4,display:"flex",alignItems:"center"}}>{ageStage.label} <HelpBtn title="Age Guidance" body={`These ranges are from AASM (American Academy of Sleep Medicine) and NHS Start4Life — not rigid targets. Every baby is different. The prediction engine uses your baby's actual patterns alongside these ranges to give personalised suggestions. If you have concerns about your baby's sleep or development, speak to your ${_devDoc}.`}/></div>
                   <div style={{fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:8}}>{ageStage.tip}</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                     {[{icon:"😴",val:ageStage.napGoal},{icon:"🍼",val:ageStage.feedGoal},{icon:"🌙",val:ageStage.nightNote}].map((x,i)=>(
@@ -11513,7 +11542,7 @@ function App(){
                     )}
                     {dayTummy.length > 0 && (
                       <div>
-                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🤸 Tummy Time <HelpBtn title="Tummy Time" body={(_isUS ? "AAP" : _isAU ? "Raising Children Network" : "NHS") + " recommends supervised tummy time from birth, building to 30 minutes per day spread across multiple sessions. Builds neck and shoulder strength essential for rolling, sitting, and crawling. Tap the Tummy button to start a timer."/></div>
+                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🤸 Tummy Time <HelpBtn title="Tummy Time" body={`${_isUS ? "AAP" : _isAU ? "Raising Children Network" : "NHS"} recommends supervised tummy time from birth, building to 30 minutes per day spread across multiple sessions. Builds neck and shoulder strength essential for rolling, sitting, and crawling. Tap the Tummy button to start a timer.`}/></div>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                           {dayTummy.map(t=>(
                             <span key={t.id} style={{fontSize:12,background:"rgba(111,168,152,0.1)",border:`1px solid ${C.mint}30`,borderRadius:8,padding:"4px 8px",color:C.mint,fontWeight:600}}>{fmt12(t.time)} · {t.duration}min</span>
@@ -15028,7 +15057,7 @@ function App(){
                 <div className="glass-card" style={{...card,padding:"4px 14px 8px",marginBottom:10}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0 6px",borderBottom:`1px solid ${C.blush}`,marginBottom:2}}>
                     <span style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Due now · tap to mark achieved</span>
-                    <HelpBtn title="Milestones" body="Showing milestones for your baby's current age. Tap the circle to mark as achieved — it'll move to the Achieved section. Every baby develops at their own pace. If concerned, speak to your " + _devDoc + "."/>
+                    <HelpBtn title="Milestones" body={`Showing milestones for your baby's current age. Tap the circle to mark as achieved — it'll move to the Achieved section. Every baby develops at their own pace. If concerned, speak to your ${_devDoc}.`}/>
                   </div>
                   {nowMsPending.length === 0
                     ? <div style={{textAlign:"center",padding:"18px 0",color:C.lt,fontSize:13}}>All caught up! No pending milestones for this age.</div>
@@ -16518,7 +16547,7 @@ function App(){
               <button onClick={()=>setShowBfHub(false)} style={{fontSize:18,color:C.lt,background:_bN,border:_bN,cursor:_cP}}>✕</button>
             </div>
             <div style={{display:"flex",gap:6,marginBottom:16,overflowX:"auto",paddingBottom:2}}>
-              {[{k:"cluster",l:"Cluster"},{k:"supply",l:"Supply"},{k:"tongue",l:"Tongue tie"},{k:"help",l:"Get help"},{k:"spurts",l:"Growth spurts"}].map(s=>(
+              {[{k:"cluster",l:"Cluster"},{k:"supply",l:"Supply"},{k:"tongue",l:"Tongue tie"},{k:"help",l:"Get help"},{k:"support",l:"🔍 Find support"},{k:"spurts",l:"Growth spurts"}].map(s=>(
                 <button key={s.k} onClick={()=>setBfHubSection(s.k)} style={{padding:"6px 14px",borderRadius:99,border:"1.5px solid "+(bfHubSection===s.k?C.ter:C.blush),background:bfHubSection===s.k?C.ter+"12":"var(--card-bg)",color:bfHubSection===s.k?C.ter:C.mid,fontSize:11,fontWeight:600,cursor:_cP,whiteSpace:"nowrap",fontFamily:_fI,flexShrink:0}}>{s.l}</button>
               ))}
             </div>
@@ -16608,6 +16637,9 @@ function App(){
                 ))}
                 <div style={{marginTop:10,padding:"10px 12px",borderRadius:12,background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",fontSize:12,color:C.gold,lineHeight:1.6}}>Mastitis: hot, red, painful breast + flu-like symptoms needs same-day {_doctorUrgent} treatment.</div>
               </div>
+            )}
+            {bfHubSection==="support"&&(
+              <BfSupportPanel isDark={isDark} C={C} onClose={()=>setBfHubSection(null)} />
             )}
             {bfHubSection==="spurts"&&(
               <div>

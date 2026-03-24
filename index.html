@@ -66,19 +66,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 
-  <!-- External libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
-
-  <!-- Firebase -->
-  <script type="module" src="firebase.js"></script>
-
-  <!-- Native Plugin Bridge (Capacitor + platform features) -->
-  <script src="native-plugins.js" defer></script>
-
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css"/>
+  <link rel="stylesheet" href="liquid-glass.css"/>
 </head>
 <body>
 <div id="root"></div>
@@ -87,7 +77,10 @@
 <!-- Theme system (must run immediately for no flash) -->
 <script src="theme.js"></script>
 
-<!-- App loader (fetches app.jsx, compiles, + utilities) -->
-<script src="loader.js"></script>
+<!-- Native Plugin Bridge (Capacitor — loads separately, uses runtime dynamic imports) -->
+<script src="native-plugins.js" defer></script>
+
+<!-- Vite module entry — replaces loader.js + CDN React + Babel -->
+<script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

@@ -36,6 +36,13 @@ export default defineConfig({
     target: 'es2020', // Modern WebView targets (iOS 14+, Android 7+)
     cssCodeSplit: true, // Split CSS per lazy-loaded chunk
     rollupOptions: {
+      // Capacitor plugins use dynamic import() and only resolve at runtime on native
+      external: [
+        /^@capacitor\//,
+        /^@capacitor-community\//,
+        /^@capawesome\//,
+        /^cordova-plugin-/,
+      ],
       output: {
         manualChunks: {
           react: ['react', 'react-dom'],
