@@ -36,7 +36,6 @@
     "@capacitor-community/biometric-auth": "^6.0.0",
     "@capacitor-community/in-app-purchases": "^6.0.0",
     "@capacitor-community/speech-recognition": "^6.0.0",
-    "@capacitor-community/background-geolocation": "^3.0.0",
     "@capacitor-community/firebase-analytics": "^6.0.0",
     "@capawesome/capacitor-app-shortcuts": "^6.0.0",
     "@capawesome/capacitor-badge": "^6.0.0",
