@@ -9094,7 +9094,7 @@ function App(){
       <div style="font-size:10px;color:#C0A8B0;margin-top:4px">Carers can log feeds, naps & nappies — you'll review them in the app</div>
     </div>`);
 
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name}'s Care Guide</title><style>*{box-sizing:border-box;margin:0}body{font-family:-apple-system,system-ui,sans-serif;max-width:100%;margin:0;padding:60px 16px 40px;background:#FFFCF9;font-size:15px;line-height:1.5}h2{font-family:Georgia,serif;font-size:17px}table{border-collapse:collapse;width:100%}td,th{padding:4px 8px;font-size:13px;word-break:break-word}img{max-width:100%;height:auto}</style></head><body>${sections.join("")}</body></html>`;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name}'s Care Guide</title><style>*{box-sizing:border-box;margin:0}body{font-family:-apple-system,system-ui,sans-serif;max-width:100%;margin:0;padding:16px 16px 40px;background:#FFFCF9;font-size:15px;line-height:1.5}h2{font-family:Georgia,serif;font-size:17px}table{border-collapse:collapse;width:100%}td,th{padding:4px 8px;font-size:13px;word-break:break-word}img{max-width:100%;height:auto}@media print{.no-print{display:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>${sections.join("")}</body></html>`;
   }
 
   async function shareCarerCard() {
@@ -9112,7 +9112,7 @@ function App(){
       }
     } catch(e) { /* fallback to URL */ }
 
-    const _closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
+    const _closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0;gap:8px"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 16px;border-radius:99px;border:none;background:#C07088;color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back</button><button onclick="window._obPrint()" style="padding:8px 16px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button><button onclick="window._obShare()" style="padding:8px 16px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button></div>`;
     // Try native share first (mobile)
     if (navigator.share) {
       const blob = new Blob([finalHtml], { type: "text/html" });
@@ -17338,7 +17338,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             })();
               if(w){ w.document.write(html.replace("<body>","<body>"+closeBar)); w.document.close(); }
             }} style={{width:"100%",padding:"13px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
-              📋 Preview
+              📋 Preview & Print
             </button>
             <button onClick={()=>setShowCarerCard(false)} style={{width:"100%",padding:"12px",borderRadius:99,border:_bN,background:C.blush,color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
               Close
