@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
-    hostname: 'obubba.com',
+    hostname: 'localhost',
   },
 
   plugins: {
@@ -112,7 +112,7 @@ const config: CapacitorConfig = {
     allowsLinkPreview: true,
     backgroundColor: '#F0DDD6',
     preferredContentMode: 'mobile',
-    limitsNavigationsToAppBoundDomains: true,
+    limitsNavigationsToAppBoundDomains: false,
     // Enable associated domains for Universal Links & Siri
     // Configured in Xcode: applinks:obubba.com, activitycontinuation:obubba.com
   },
