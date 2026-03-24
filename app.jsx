@@ -2076,8 +2076,9 @@ function App(){
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
       // Wait for auth before login (REST needs token)
-      if(!window._fb?.auth?.currentUser) {
-        await new Promise(r => { let w=0; const p=setInterval(()=>{ w+=100; if(window._fb?.auth?.currentUser||w>=3000){clearInterval(p);r();}},100); });
+      try { await window._fbAuthReady; } catch(e) {
+        setAuthError("Could not connect — check your internet and try again");
+        return false;
       }
       const snap = await fsGet("usernames", key);
       if(!snap.exists()) { setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false; }
@@ -2246,9 +2247,7 @@ function App(){
       const {db, doc, getDoc} = window._fb;
       try {
         // Wait for auth before checking (REST needs token)
-        if(!window._fb?.auth?.currentUser) {
-          await new Promise(r => { let w=0; const p=setInterval(()=>{ w+=100; if(window._fb?.auth?.currentUser||w>=3000){clearInterval(p);r();}},100); });
-        }
+        try { await window._fbAuthReady; } catch { return; }
         const snap = await fsGet("usernames", normaliseUsername(val));
         if(seq !== authCheckSeqRef.current) return; // stale response — ignore
         setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
@@ -10169,6 +10168,7 @@ function App(){
                 {authUsernameStatus==="checking"?"⏳ Checking…":authUsernameStatus==="found"?"✓ Account found":"✗ No account with that username"}
               </div>
             )}
+            {window._fbAuthError && <div style={{fontSize:10,marginTop:2,textAlign:"center",color:"#c00"}}>Auth: {window._fbAuthError?.code||window._fbAuthError?.message||"error"}</div>}
           </div>
           <label style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:10}}>
             {isLogin?"PIN":"Choose a PIN"}

@@ -24,7 +24,18 @@ const analytics = getAnalytics(app);
 
 window._fb = { db, auth, analytics, doc, setDoc, getDoc, onSnapshot, serverTimestamp, signInAnonymously, onAuthStateChanged, logEvent, collection, addDoc, getDocs, deleteDoc, query, orderBy };
 
-signInAnonymously(auth).catch(e => console.warn("Auth error", e));
-onAuthStateChanged(auth, user => { if (user) window._fbUid = user.uid; });
+// Auth-ready promise: resolves when we have a user, rejects after 10s
+window._fbAuthReady = new Promise((resolve, reject) => {
+  const timeout = setTimeout(() => reject(new Error("Auth timeout 10s")), 10000);
+  onAuthStateChanged(auth, user => {
+    if (user) { window._fbUid = user.uid; clearTimeout(timeout); resolve(user); }
+  });
+});
+signInAnonymously(auth).catch(e => {
+  console.warn("Auth error", e);
+  window._fbAuthError = e;
+  // Visible debug on device
+  if(window.Capacitor) document.title = "AUTH_ERR: " + (e.code||e.message||e);
+});
 
 export { db, auth, analytics };
