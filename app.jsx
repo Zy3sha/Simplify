@@ -2189,6 +2189,7 @@ function App(){
   const[authLoading,setAuthLoading]=useState(false);
   const[agreedToTerms,setAgreedToTerms]=useState(false);
   const authUsernameCheckRef = React.useRef(null);
+  const authCheckSeqRef = React.useRef(0);
   const[showForgotPin,setShowForgotPin]=useState(false);
   const[forgotPinStep,setForgotPinStep]=useState("word");
   const[forgotPinWord,setForgotPinWord]=useState("");
@@ -2944,15 +2945,17 @@ function App(){
     clearTimeout(authUsernameCheckRef.current);
     if(!val || val.length < 3) { setAuthUsernameStatus("idle"); return; }
     setAuthUsernameStatus("checking");
+    const seq = ++authCheckSeqRef.current;
     authUsernameCheckRef.current = setTimeout(async()=>{
       if(!window._fb) { setAuthUsernameStatus("idle"); return; }
       const {db, doc, getDoc} = window._fb;
       try {
         const snap = await fsGet("usernames", normaliseUsername(val));
+        if(seq !== authCheckSeqRef.current) return; // stale response — ignore
         setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
         if(snap.exists()) try{document.activeElement.blur();}catch{}
-      } catch(e) { setAuthUsernameStatus("idle"); }
-    }, 500);
+      } catch(e) { if(seq === authCheckSeqRef.current) setAuthUsernameStatus("idle"); }
+    }, 300);
   }
   async function reserveUsername(username, pin) {
     if(!window._fb || !username.trim()) return false;
@@ -4419,6 +4422,17 @@ function App(){
         </div>
         <div style={{fontSize:13,color:C.mid,marginTop:6}}>{babyName||"Baby"}'s day is underway</div>
         <div style={{fontSize:12,color:C.lt,fontStyle:"italic",marginTop:6}}>You're doing great 🤍</div>
+        <div style={{paddingLeft:20,marginTop:8}}>
+          <button onClick={()=>{haptic();setHeroWhyOpen(!heroWhyOpen);}} style={{background:"none",border:"none",padding:0,fontSize:12,fontWeight:600,color:C.ter,cursor:_cP,display:"flex",alignItems:"center",gap:4}}>
+            {heroWhyOpen?"Hide":"Why?"} <span style={{fontSize:9,transform:heroWhyOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
+          </button>
+          {heroWhyOpen&&(
+            <div style={{marginTop:8,padding:"12px",borderRadius:12,background:"var(--card-bg-alt)",border:"1px solid var(--card-border)"}}>
+              <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>OBubba uses NHS Start4Life, AASM, and WHO guidelines to show age-appropriate sleep and feed guidance for your baby.</div>
+              <div style={{fontSize:11,color:C.lt,marginTop:10,fontStyle:"italic",borderTop:"1px solid var(--card-border)",paddingTop:8}}>This is general guidance — not medical advice. If you have concerns, speak to your health visitor or GP.</div>
+            </div>
+          )}
+        </div>
       </div>
     );
    }
