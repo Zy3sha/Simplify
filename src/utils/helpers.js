@@ -6,8 +6,8 @@ export const uid = () => { const _id = Date.now().toString(36)+Math.random().toS
 
 export const haptic=(ms=10)=>{try{if(window.OBNative){window.OBNative.haptics.impact(typeof ms==="string"?ms.charAt(0).toUpperCase()+ms.slice(1):"Medium");return;}if(window._nativeHaptic){window._nativeHaptic(typeof ms==="string"?ms:"medium");return;}if(navigator.vibrate){navigator.vibrate(typeof ms==="number"?ms:10);}}catch{}};
 
-export const _isNativePlatform = () => window.OBNative && window.OBNative.isNative();
-export const _getPlatform = () => window.OBNative ? window.OBNative.getPlatform() : 'web';
+export const _isNativePlatform = () => !!(window._isNative || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) || (window.OBNative && window.OBNative.isNative()));
+export const _getPlatform = () => window.Capacitor ? window.Capacitor.getPlatform() : window.OBNative ? window.OBNative.getPlatform() : 'web';
 
 // Shared style constants
 export const _fM = "monospace";

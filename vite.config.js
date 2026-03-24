@@ -1,10 +1,32 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { copyFileSync, existsSync, mkdirSync } from 'fs';
+import { resolve } from 'path';
+
+// Plugin to copy standalone JS files to dist after build
+function copyNativePlugins() {
+  return {
+    name: 'copy-native-plugins',
+    closeBundle() {
+      const files = ['native-plugins.js', 'theme.js'];
+      const outDir = resolve(__dirname, 'dist');
+      if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+      for (const f of files) {
+        const src = resolve(__dirname, f);
+        if (existsSync(src)) {
+          copyFileSync(src, resolve(outDir, f));
+          console.log(`  ✓ Copied ${f} → dist/${f}`);
+        }
+      }
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [
     react(),
+    copyNativePlugins(),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {

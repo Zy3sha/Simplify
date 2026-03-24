@@ -503,6 +503,26 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+// Always use an overlay div — window.open is blocked in WKWebView/Capacitor
+function openOverlay(html) {
+  const existing = document.getElementById('print-overlay');
+  if (existing) existing.remove();
+  const d = document.createElement("div");
+  d.id = "print-overlay";
+  d.style.cssText = "position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
+  document.body.appendChild(d);
+  d.innerHTML = html;
+  // Set up print/share handlers on the overlay
+  window._obPrint = () => { try { window.print(); } catch {} };
+  window._obShare = () => {
+    try {
+      const blob = new Blob([d.innerHTML], { type: "text/html" });
+      const file = new File([blob], "care-guide.html", { type: "text/html" });
+      if (navigator.share) navigator.share({ title: "Care Guide", files: [file] }).catch(() => {});
+    } catch {}
+  };
+}
+
 function App(){
   const timerRef = React.useRef(null);
   const[isDark,setIsDark]=useState(()=>document.body.classList.contains('dark-mode'));
@@ -734,7 +754,7 @@ function App(){
     });
     const csv=rows.map(r=>r.join(",")).join("\n");
     const blob=new Blob([csv],{type:"text/csv"});
-    if(window._isNative && navigator.share){
+    if(_isNativePlatform() && navigator.share){
       const file=new File([blob],`${babyName||"baby"}-data-${todayStr()}.csv`,{type:"text/csv"});
       navigator.share({title:"OBubba Data Export",files:[file]}).catch(()=>{});
     } else {
@@ -2059,9 +2079,9 @@ function App(){
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
       const snap = await fsGet("usernames", key);
-      if(!snap.exists()) { setAuthError("Username not found"); return false; }
+      if(!snap.exists()) { setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false; }
       const data = snap.data();
-      if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN"); return false; }
+      if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
       const resolvedBackup = data.backupCode || null;
       if(resolvedBackup) {
         setBackupCode(resolvedBackup);
@@ -3044,11 +3064,11 @@ function App(){
     const _nowM = _h * 60 + new Date().getMinutes();
     const _naps = _today.filter(e => e.type === "nap" && !e.night);
     const _napsDone = _naps.length;
-    const _profile = getAgeNapProfile(age.totalWeeks);
-    const _ww = getWakeWindow(age.totalWeeks);
+    const _profile = getAgeNapProfile(age ? age.totalWeeks : null);
+    const _ww = getWakeWindow(age ? age.totalWeeks : null);
     const _pred = predictNextNap();
     const _bed = bedtimePrediction();
-    const _adjustedExpected = (_profile.expectedNaps || 3) + (bridgeNapScheduled ? 1 : 0);
+    const _adjustedExpected = ((_profile && _profile.expectedNaps) || 3) + (bridgeNapScheduled ? 1 : 0);
     const _napsComplete = _napsDone >= _adjustedExpected;
     const _dailySleepMax = _profile.idealTotalMax || 300;
     // Awake time
@@ -3697,7 +3717,7 @@ function App(){
           </button>
         )}
         {_rightNow && <div style={{fontSize:12,color:C.ter,fontWeight:600,paddingLeft:20,marginBottom:6}}>{_rightNow}</div>}
-        {_feedNappyHint && <div style={{fontSize:11,color:C.lt,paddingLeft:20,marginBottom:6,fontFamily:_fM}}>🍼 {_feedNappyHint}</div>}
+        {_feedNappyHint && <div style={{fontSize:11,color:C.lt,paddingLeft:20,marginBottom:6,fontFamily:_fM}}>{_feedNappyHint.split(" · ").map((part,i)=><span key={i} style={{whiteSpace:"nowrap"}}>{i===0?"🍼 ":""}{part}{i<_feedNappyHint.split(" · ").length-1?" · ":""}</span>)}</div>}
         {_feedNappyHint && _allFeeds.length >= 6 && !napOn && !_hasBed && !microReassureRef.current && (()=>{
           microReassureRef.current = true;
           const _microMsgs = [
@@ -6363,7 +6383,7 @@ function App(){
       if(rTime>now && rTime<now+24*60*60*1000){
         setTimeout(()=>{
           try{
-            if(window._isNative&&window.Capacitor&&window.Capacitor.Plugins.LocalNotifications){
+            if(_isNativePlatform()&&window.Capacitor&&window.Capacitor.Plugins.LocalNotifications){
               window.Capacitor.Plugins.LocalNotifications.schedule({notifications:[{title:"OBubba Reminder",body:r.text,id:Math.floor(Math.random()*100000),schedule:{at:new Date(rTime)}}]});
             } else {
               new Notification("OBubba Reminder",{body:r.text,icon:"obubba-happy.png",tag:"rem-"+r.id});
@@ -6388,7 +6408,7 @@ function App(){
             try{
               const _notifBody=`${t===remindTravel?"Time to leave! ":""}${a.title}${a.time?" at "+fmt12(a.time):""}${a.date===todayStr()?" today":" on "+fmtDate(a.date)}`;
               try{
-                if(window._isNative&&window.Capacitor&&window.Capacitor.Plugins.LocalNotifications){
+                if(_isNativePlatform()&&window.Capacitor&&window.Capacitor.Plugins.LocalNotifications){
                   window.Capacitor.Plugins.LocalNotifications.schedule({notifications:[{title:"OBubba Reminder",body:_notifBody,id:Math.floor(Math.random()*100000),schedule:{at:new Date(t)}}]});
                 } else {
                   new Notification("OBubba Reminder",{body:_notifBody,icon:"obubba-happy.png",tag:"appt-"+a.id});
@@ -9170,32 +9190,16 @@ function App(){
       }
     } catch(e) { /* fallback to URL */ }
 
-    const _closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0;gap:8px"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 16px;border-radius:99px;border:none;background:#C07088;color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back</button><button onclick="window._obPrint()" style="padding:8px 16px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button><button onclick="window._obShare()" style="padding:8px 16px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button></div>`;
+    const _closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0;gap:8px"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 16px;border-radius:99px;border:none;background:#C07088;color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif;touch-action:manipulation">← Back</button><button onclick="window._obPrint()" style="padding:8px 16px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif;touch-action:manipulation">🖨️ Print</button><button onclick="window._obShare()" style="padding:8px 16px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif;touch-action:manipulation">📤 Share</button></div>`;
     // Try native share first (mobile)
     if (navigator.share) {
       const blob = new Blob([finalHtml], { type: "text/html" });
       const file = new File([blob], `${name}-care-guide.html`, { type: "text/html" });
       navigator.share({ title: `${name}'s Care Guide`, files: [file] }).catch(() => {
-        const w = (()=>{
-              if(window._isNative){
-                const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
-                document.body.appendChild(d);
-                return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
-              }
-              try{return window.open("","_blank");}catch{return null;}
-            })();
-        if (w) { w.document.write(finalHtml.replace("<body>","<body>"+_closeBar)); w.document.close(); }
+        openOverlay(finalHtml.replace("<body>","<body>"+_closeBar));
       });
     } else {
-      const w = (()=>{
-              if(window._isNative){
-                const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
-                document.body.appendChild(d);
-                return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
-              }
-              try{return window.open("","_blank");}catch{return null;}
-            })();
-      if (w) { w.document.write(finalHtml.replace("<body>","<body>"+_closeBar)); w.document.close(); }
+      openOverlay(finalHtml.replace("<body>","<body>"+_closeBar));
     }
   }
 
@@ -10047,7 +10051,7 @@ function App(){
   const tabLabels={day:"Today",insights:"Insights",develop:"Development",settings:"Account"};
   // Register FCM token for push notifications
   React.useEffect(()=>{
-    if(!window._isNative || !window._fb || !window._fbUid || window._fbUid==="anon") return;
+    if(!_isNativePlatform() || !window._fb || !window._fbUid || window._fbUid==="anon") return;
     (async()=>{
       try{
         const {PushNotifications} = await import("@capacitor/push-notifications");
@@ -10069,7 +10073,7 @@ function App(){
   // Auto-trigger Face ID on login screen
   React.useEffect(()=>{
     if(!authScreen || authMode!=="login" || bioAttemptedRef.current) return;
-    if(!window._isNative || !window._biometricAuth) return;
+    if(!_isNativePlatform() || !window._biometricAuth) return;
     const bioUser = localStorage.getItem("bio_user");
     const bioPin = localStorage.getItem("bio_pin");
     const bioEnabled = localStorage.getItem("bio_enabled");
@@ -10108,7 +10112,7 @@ function App(){
         if(ok) {
           try{ localStorage.setItem("onboarded_v2","1"); }catch{}
           // Store credentials for Face ID (always store on native, check biometric on re-auth)
-          if(window._isNative){
+          if(_isNativePlatform()){
             try{
               localStorage.setItem("bio_user",authUsername);
               localStorage.setItem("bio_pin",pin);
@@ -10624,7 +10628,7 @@ function App(){
   }
 
   return(
-    <div style={{background:"transparent",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:"var(--text-deep)",paddingBottom:80,maxWidth:"100vw",overflowX:"hidden"}}>
+    <div style={{background:"transparent",minHeight:"100vh",fontFamily:"'DM Sans',sans-serif",color:"var(--text-deep)",paddingBottom:80,width:"100%",maxWidth:"100%",overflowX:"hidden",boxSizing:"border-box"}}>
       <style>{`
         @keyframes pulse{0%,100%{box-shadow:0 0 0 12px rgba(201,112,90,0.15)}50%{box-shadow:0 0 0 22px rgba(201,112,90,0.04)}}
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
@@ -13725,8 +13729,6 @@ function App(){
                       </div>
                     </button>
                     <button onClick={()=>{
-                      const w=(()=>{if(window._isNative){const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";document.body.appendChild(d);return{document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};} try{return window.open("","_blank");}catch{return null;}})();
-                      if(!w)return;
                       const rEntries2=(days[selDay]||[]).filter(e=>!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
                       const rNight2=(days[selDay]||[]).filter(e=>e.night);
                       let html2="<html><head><title>"+(babyName||"Baby")+" Report</title><style>body{font-family:system-ui,-apple-system,sans-serif;max-width:100%;margin:0;padding:60px 16px 40px;box-sizing:border-box;font-size:15px;line-height:1.5;color:#333}h1{color:#c9705a;font-size:18px;margin:0 0 4px}h2{color:#666;border-bottom:1px solid #ddd;padding-bottom:4px;font-size:15px}table{width:100%;border-collapse:collapse}td{padding:6px 8px;border-bottom:1px solid #eee;font-size:13px;word-break:break-word}</style></head><body>";
@@ -13736,8 +13738,8 @@ function App(){
                       html2+="</table>";
                       if(rNight2.length){html2+="<h2>Night</h2><table>";rNight2.forEach((e,i)=>{html2+="<tr><td>"+(e.amount>0?"🍼":"🌟")+" "+(i+1)+"</td><td>"+fmt12(e.time)+"</td><td>"+(e.amount?fmtVol(e.amount,FU):"")+(e.selfSettled?" Self settled":"")+"</td></tr>";});html2+="</table>";}
                       html2+="<br><p style='color:#999;font-size:12px'>OBubba — obubba.com</p></body></html>";
-                      const closeBar2=`<div style="position:sticky;top:0;z-index:99;background:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:system-ui">← Back</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #ddd;background:white;color:#555;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui">🖨️ Print</button></div>`;
-                      w.document.write(html2.replace("<body>","<body>"+closeBar2));w.document.close();
+                      const closeBar2=`<div style="position:sticky;top:0;z-index:99;background:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #eee"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:system-ui;touch-action:manipulation">← Back</button><button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #ddd;background:white;color:#555;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui;touch-action:manipulation">🖨️ Print</button></div>`;
+                      openOverlay(html2.replace("<body>","<body>"+closeBar2));
                     }} style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"10px 12px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg)",cursor:_cP}}>
                       <span style={{fontSize:16}}>🖨️</span>
                       <div style={{textAlign:"left"}}>
@@ -15517,7 +15519,7 @@ function App(){
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {items.map((item,i)=>(
-                    <button key={i} onClick={()=>{if(window._isNative){window.location.href=item.url;}else{try{window.open(item.url,"_blank");}catch{}}}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg-alt)",cursor:_cP,textAlign:"left",width:"100%"}}>
+                    <button key={i} onClick={()=>{if(_isNativePlatform()){window.location.href=item.url;}else{try{window.open(item.url,"_blank");}catch{}}}} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg-alt)",cursor:_cP,textAlign:"left",width:"100%"}}>
                       <span style={{fontSize:16}}>{item.emoji}</span>
                       <div style={{flex:1}}>
                         <div style={{fontSize:12,fontWeight:600,color:C.deep}}>{item.label}</div>
@@ -17385,16 +17387,8 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             <button onClick={()=>{
               haptic();
               const html = generateCarerCardHTML();
-              const closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
-              const w = (()=>{
-              if(window._isNative){
-                const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
-                document.body.appendChild(d);
-                return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
-              }
-              try{return window.open("","_blank");}catch{return null;}
-            })();
-              if(w){ w.document.write(html.replace("<body>","<body>"+closeBar)); w.document.close(); }
+              const closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif;touch-action:manipulation">← Back to App</button><button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif;touch-action:manipulation">🖨️ Print</button></div>`;
+              openOverlay(html.replace("<body>","<body>"+closeBar));
             }} style={{width:"100%",padding:"13px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
               📋 Preview & Print
             </button>
