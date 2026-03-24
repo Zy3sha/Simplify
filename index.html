@@ -81,7 +81,14 @@
   <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-<div id="root"></div>
+<div id="root">
+  <div id="ob-splash" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFF8F2 0%,#F5E1D8 40%,#F0DDD6 100%);padding:40px 24px;text-align:center">
+    <style>#ob-splash .breathe{animation:sBreath 2.5s ease-in-out infinite}@keyframes sBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}</style>
+    <img src="obubba-happy.png" alt="" width="120" height="120" class="breathe" style="margin-bottom:20px;filter:drop-shadow(0 8px 24px rgba(192,112,136,0.25))"/>
+    <div style="font-family:Georgia,serif;font-size:22px;font-weight:700;color:#5B4F5F;margin-bottom:8px">OBubba</div>
+    <div style="font-size:13px;color:#A89898">Getting everything ready...</div>
+  </div>
+</div>
 <button id="theme-toggle" aria-label="Toggle theme" onclick="toggleTheme()">🌙</button>
 
 <!-- Theme system (must run immediately for no flash) -->
