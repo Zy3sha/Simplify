@@ -55,8 +55,14 @@ const toothLabel = (id) => _toothLabels[id] || id;
 const _isUS = _locale.startsWith("en-us");
 const _isAU = _locale.startsWith("en-au");
 const _emergNum = _isUS ? "911" : _isAU ? "000" : "999";
-const _helpLine = _isUS ? "your pediatrician" : _isAU ? "your GP or 000" : "111 (NHS) or your GP";
+const _helpLine = _isUS ? "your pediatrician" : _isAU ? "your GP or Healthdirect (1800 022 222)" : "111 (NHS) or your GP";
 const _doctor = _isUS ? "pediatrician" : _isAU ? "GP" : "GP or health visitor";
+const _doctorUrgent = _isUS ? "pediatrician" : "GP";
+const _newbornTeam = _isUS ? "pediatrician" : _isAU ? "midwife or GP" : "midwife or health visitor";
+const _bfSupport = _isUS ? "pediatrician or lactation consultant (IBCLC)" : _isAU ? "GP, child and family health nurse, or ABA (1800 686 268)" : "health visitor, midwife, or breastfeeding specialist";
+const _devDoc = _isUS ? "pediatrician" : _isAU ? "child and family health nurse or GP" : "health visitor or GP";
+const _sleepDoc = _isUS ? "pediatrician" : _isAU ? "child and family health nurse or GP" : "health visitor";
+const _wellbeingDoc = _isUS ? "doctor or therapist" : _isAU ? "GP or child and family health nurse" : "GP or health visitor";
 const fmtCountdown = s => {
   if(s <= 0) return "Now!";
   const h = Math.floor(s/3600);
@@ -243,7 +249,7 @@ function getNightWindows(thisDayEntries, nextDayEntries) {
 const ICONS={feed:"🍼",nap:"😴",wake:"☀️",sleep:"🌙",poop:"💩"};
 const NAMES={feed:"Feed",nap:"Nap",wake:"Wake Up",sleep:"Bedtime",poop:"Nappy"};
 const POOP_TYPES=["Yellow/seedy","Mustard","Green","Brown","Dark green","Orange","Black/tarry","White/pale","Mucousy","Watery","Formed/solid","Pellet-like","Frothy","Bloody/streaked","Meconium","Other"];
-const POOP_SAFETY_FLAGS={"Black/tarry":`Black or tarry stools after the first few days may need medical attention — contact your ${_doctor}.`,"White/pale":`Persistently pale or chalky stools can indicate a liver condition — mention this to your ${_doctor} promptly.`,"Bloody/streaked":`Blood in stools can have many causes, but if new or persistent, contact your ${_doctor}.`,"Meconium":`Meconium (dark, sticky first stools) is normal in the first 48–72 hours. If still passing meconium after day 3–4, mention it to your midwife or ${_doctor}.`};
+const POOP_SAFETY_FLAGS={"Black/tarry":`Black or tarry stools after the first few days may need medical attention — contact your ${_doctorUrgent}.`,"White/pale":`Persistently pale or chalky stools can indicate a liver condition — mention this to your ${_doctorUrgent} promptly.`,"Bloody/streaked":`Blood in stools can have many causes, but if new or persistent, contact your ${_doctorUrgent}.`,"Meconium":`Meconium (dark, sticky first stools) is normal in the first 48–72 hours. If still passing meconium after day 3–4, mention it to your ${_newbornTeam}.`};
 
 // 14 major UK allergens — NHS/FSA
 const ALLERGENS = {
@@ -4398,7 +4404,7 @@ function App(){
               {_whyLines.map((ln,i)=>(
                 <div key={i} style={{fontSize:12,color:i===_whyLines.length-1?"var(--text-lt)":"var(--text-mid)",marginBottom:i<_whyLines.length-1?8:0,lineHeight:1.5}}>{ln}</div>
               ))}
-              <div style={{fontSize:11,color:C.lt,marginTop:10,fontStyle:"italic",borderTop:"1px solid var(--card-border)",paddingTop:8}}>Sleep and wake windows: NHS Start4Life, AASM, WHO. Growth data: WHO Child Growth Standards. Feeding: NHS/WHO complementary feeding guidance. Development: NHS Start4Life developmental milestones. This is general guidance — not medical advice. If you have concerns, speak to your {_doctor}.</div>
+              <div style={{fontSize:11,color:C.lt,marginTop:10,fontStyle:"italic",borderTop:"1px solid var(--card-border)",paddingTop:8}}>Sleep and wake windows: {_isUS ? "AAP, AASM" : _isAU ? "Raising Children Network, AASM" : "NHS Start4Life, AASM"}, WHO. Growth data: WHO Child Growth Standards. Feeding: {_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS"}/WHO complementary feeding guidance. Development: {_isUS ? "CDC milestone tracker" : _isAU ? "Raising Children Network" : "NHS Start4Life"} developmental milestones. This is general guidance — not medical advice. If you have concerns, speak to your {_doctor}.</div>
             </div>
           )}
         </div>
@@ -5313,7 +5319,7 @@ function App(){
     if (recentWakes > prevWakes + 1.2) {
       alerts.push({
         title: "More night wakes recently",
-        body: "Night wakes have picked up a bit over the last 3 days. This often happens during developmental phases — it's very normal and usually settles within 1–2 weeks. Keeping bedtime consistent really helps. Remember: broken sleep is exhausting. If you're struggling, talk to your partner, a friend, or your " + _doctor + " — looking after yourself matters too.",
+        body: "Night wakes have picked up a bit over the last 3 days. This often happens during developmental phases — it's very normal and usually settles within 1–2 weeks. Keeping bedtime consistent really helps. Remember: broken sleep is exhausting. If you're struggling, talk to your partner, a friend, or your " + _sleepDoc + " — looking after yourself matters too.",
         icon: "🌙"
       });
     }
@@ -5366,7 +5372,7 @@ function App(){
     const regressions = [
       { weeks:[15,19], label:"4-Month Sleep Regression", emoji:"🌊",
         desc:`${name}'s sleep architecture is maturing from newborn cycles to adult-style 4-stage sleep. This is permanent brain development — not a setback.`,
-        advice:"Expect 2–4 weeks of disrupted sleep. Keep routines consistent, offer extra feeds if needed, and avoid introducing new sleep props. This regression means the brain is developing normally. It's OK to feel exhausted — this phase passes. If you need support, your " + _doctor + " is always there." },
+        advice:"Expect 2–4 weeks of disrupted sleep. Keep routines consistent, offer extra feeds if needed, and avoid introducing new sleep props. This regression means the brain is developing normally. It's OK to feel exhausted — this phase passes. If you need support, your " + _sleepDoc + " is always there." },
       { weeks:[34,42], label:"8–10 Month Sleep Regression", emoji:"🧗",
         desc:`Separation anxiety + major motor milestones (crawling, pulling up) are disrupting ${name}'s sleep. The brain is practising new skills even during sleep.`,
         advice:"Usually lasts 2–6 weeks. Practice new skills during the day, maintain bedtime routine, offer reassurance without creating new habits. Separation anxiety is a sign of healthy attachment — you're doing something right." },
@@ -7547,7 +7553,7 @@ function App(){
         type: "illness", score: 70,
         title: "Possible illness",
         brief: "Recent medicine or temperature logs suggest " + _n + " may be unwell. Illness is a very common cause of sleep disruption and usually resolves as they recover.",
-        detail: "Offer extra comfort and feeds as needed. If you're concerned, contact your " + _doctor + "."
+        detail: "Offer extra comfort and feeds as needed. If you're concerned, contact your " + _doctorUrgent + "."
       });
     }
 
@@ -7557,7 +7563,7 @@ function App(){
         type: "unknown", score: 40,
         title: "Temporary disruption",
         brief: "The last few nights have been unsettled. This could be developmental, environmental, or just a phase. It's very common and usually passes within a week or two.",
-        detail: "Keep routines consistent, offer comfort, and trust that patterns resettle. If it persists beyond 2–3 weeks with no improvement, it's worth mentioning to your " + _doctor + "."
+        detail: "Keep routines consistent, offer comfort, and trust that patterns resettle. If it persists beyond 2–3 weeks with no improvement, it's worth mentioning to your " + _sleepDoc + "."
       });
     }
 
@@ -9455,7 +9461,7 @@ function App(){
     if (recent3h.length >= 3 && !nearbyBottle) return { icon: "\uD83E\uDD0D", title: "This looks like cluster feeding", body: "Very normal, especially in the evening or during growth spurts. Your body is responding exactly as it should." };
     if (isNight) return { icon: "\uD83C\uDF19", title: "Night feeds are doing important work", body: "Overnight feeds are common and can help support milk supply. You\u2019re doing brilliantly." };
     if (breastFeeds.length >= 5 && wetCount >= 4 && nowH >= 14) return { icon: "\uD83D\uDC9A", title: "Today\u2019s signs look reassuring", body: "Feeding pattern and wet nappies suggest things may be going well. Trust yourself." };
-    if (nowH >= 16 && breastFeeds.length <= 3 && wetCount <= 2) return { icon: "\uD83D\uDC9B", title: "Worth a closer look", body: "If this keeps happening and you\u2019re worried, it may help to speak to your " + _doctor + ", midwife, or breastfeeding specialist." };
+    if (nowH >= 16 && breastFeeds.length <= 3 && wetCount <= 2) return { icon: "\uD83D\uDC9B", title: "Worth a closer look", body: "If this keeps happening and you\u2019re worried, it may help to speak to your " + _bfSupport + "." };
     if (breastFeeds.length >= 2) {
       const msgs = [
         { title: "You\u2019re feeding beautifully", body: _bfName + " is lucky to have you. Every feed counts." },
@@ -12178,7 +12184,7 @@ function App(){
                                           {/* Age guidance */}
               {ageStage&&(
                 <div style={{background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"12px 14px",marginBottom:12,boxShadow:"var(--card-shadow)"}}>
-                  <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4,display:"flex",alignItems:"center"}}>{ageStage.label} <HelpBtn title="Age Guidance" body="These ranges are from AASM (American Academy of Sleep Medicine) and NHS Start4Life — not rigid targets. Every baby is different. The prediction engine uses your baby's actual patterns alongside these ranges to give personalised suggestions. If you have concerns about your baby's sleep or development, speak to your " + _doctor + "."/></div>
+                  <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4,display:"flex",alignItems:"center"}}>{ageStage.label} <HelpBtn title="Age Guidance" body="These ranges are from AASM (American Academy of Sleep Medicine) and NHS Start4Life — not rigid targets. Every baby is different. The prediction engine uses your baby's actual patterns alongside these ranges to give personalised suggestions. If you have concerns about your baby's sleep or development, speak to your " + _devDoc + "."/></div>
                   <div style={{fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:8}}>{ageStage.tip}</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                     {[{icon:"😴",val:ageStage.napGoal},{icon:"🍼",val:ageStage.feedGoal},{icon:"🌙",val:ageStage.nightNote}].map((x,i)=>(
@@ -12323,7 +12329,7 @@ function App(){
                             );
                           })}
                           <div style={{marginTop:10,padding:"8px 10px",borderRadius:10,background:"var(--card-bg-alt)",fontSize:11,color:C.lt,lineHeight:1.5}}>
-                            Reference only — always book through your {_doctor}.
+                            Reference only — always book through your {_doctorUrgent}.
                           </div>
                         </div>
                       )}
@@ -13142,9 +13148,9 @@ function App(){
                     You've mentioned feeling tough a couple of times recently. That's worth paying attention to — not because something is wrong, but because you deserve support too.
                   </div>
                   <div style={{fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:12}}>
-                    Prolonged parenting stress is real. It's not weakness — it's a signal your mind and body need care. One conversation with your {_doctor} can make a genuine difference.
+                    Prolonged parenting stress is real. It's not weakness — it's a signal your mind and body need care. One conversation with your {_wellbeingDoc} can make a genuine difference.
                   </div>
-                  <button onClick={()=>setShowWellbeing({msg:"Please don't carry this alone. Your " + _doctor + " genuinely wants to hear from you — this is exactly what they're there for. You don't need to be in crisis to reach out.", label:"Need support", resources:wellbeingResources})}
+                  <button onClick={()=>setShowWellbeing({msg:"Please don't carry this alone. Your " + _wellbeingDoc + " genuinely wants to hear from you — this is exactly what they're there for. You don't need to be in crisis to reach out.", label:"Need support", resources:wellbeingResources})}
                     style={{width:"100%",padding:"10px",borderRadius:99,border:"none",background:"rgba(123,104,238,0.15)",color:"#7b68ee",fontSize:13,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
                     💜 See support resources
                   </button>
@@ -14799,7 +14805,7 @@ function App(){
                 const _isPurpleWindow = ageWeeks >= 4 && ageWeeks < 14;
 
                 const _normalQs = [
-                  {q:"Grunting and straining", a:"Very normal — especially in the first few weeks. Babies grunt when moving stool because they haven't yet learned to relax their pelvic floor. It's not pain, it's effort. If there's no stool after several days or baby seems distressed, mention it to your "+_doctor+"."},
+                  {q:"Grunting and straining", a:"Very normal — especially in the first few weeks. Babies grunt when moving stool because they haven't yet learned to relax their pelvic floor. It's not pain, it's effort. If there's no stool after several days or baby seems distressed, mention it to your "+_newbornTeam+"."},
                   {q:"Sneezing constantly", a:"Completely normal. Babies sneeze to clear their tiny nasal passages. It doesn't mean they have a cold. Newborns are obligate nose-breathers so they sneeze often to keep the airway clear."},
                   {q:"Cross-eyed or eyes going in different directions", a:"Normal under 4 months. Eye muscles are still developing and it takes time for both eyes to track together. If it continues beyond 4 months or one eye is always turned in, mention it to your GP."},
                   {q:"Breathing fast then pausing", a:"This is called periodic breathing and is normal in newborns. Breathing may speed up, slow down, or pause for up to 10 seconds. If a pause lasts longer than 15-20 seconds or baby turns blue or pale, call 999."},
@@ -14807,7 +14813,7 @@ function App(){
                   {q:"Soft spot on head (fontanelle)", a:"The soft spots are gaps between skull bones — there's one at the front (closes 9-18 months) and one at the back (closes at 6-8 weeks). It's normal to see it pulse with heartbeat. See a doctor if it bulges when baby isn't crying, or is sunken."},
                   {q:"Hiccups all the time", a:"Normal and harmless. The diaphragm is immature and easily triggered. Feed slowly and pause to wind if they happen during feeds. They stop on their own."},
                   {q:"Jerky movements or startle reflex", a:"Normal — this is the Moro reflex and all healthy newborns have it. Baby throws arms out when startled. It disappears around 3-4 months. Swaddling can help calm babies who startle themselves awake."},
-                  {q:"Jaundice (yellow skin or eyes)", a:"Common in the first week — affects around 60% of newborns. Mild jaundice usually clears by 2 weeks. If baby looks very yellow, is difficult to wake for feeds, or jaundice appears in the first 24 hours after birth, contact your midwife or "+_doctor+" promptly."},
+                  {q:"Jaundice (yellow skin or eyes)", a:"Common in the first week — affects around 60% of newborns. Mild jaundice usually clears by 2 weeks. If baby looks very yellow, is difficult to wake for feeds, or jaundice appears in the first 24 hours after birth, contact your "+_newbornTeam+" promptly."},
                   {q:"Poo colour — green, yellow, black", a:"Black/dark green in first 2 days (meconium) is normal. Then changes to yellow/seedy (breastfed) or tan/yellow (formula). Green can be normal but if persistent with other symptoms, mention it to your "+_doctor+". White, pale or chalky poo needs same-day medical attention."},
                   {q:"Not focusing eyes or looking at me", a:"Normal under 6-8 weeks. Newborns can see clearly about 20-30cm — roughly the distance to your face during feeding. By 6-8 weeks they start making real eye contact and smiling."},
                   {q:"Cluster feeding — feeding constantly", a:"Completely normal, especially in evenings. Cluster feeding is not a sign of low milk supply — it's baby topping up, stimulating supply, and preparing for a longer stretch. It typically eases by 12 weeks."},
@@ -14855,7 +14861,7 @@ function App(){
                           💜 <strong>You haven't done anything wrong.</strong> If you need to put baby down safely and take a breath, that's the right thing to do. Never shake a baby.
                         </div>
                         <div style={{marginTop:6,fontSize:11,color:C.lt,lineHeight:1.5}}>
-                          If crying is accompanied by fever, vomiting, a bulging fontanelle, or baby is very pale or limp — contact your {_doctor} immediately.
+                          If crying is accompanied by fever, vomiting, a bulging fontanelle, or baby is very pale or limp — contact your {_doctorUrgent} immediately.
                         </div>
                       </div>
                     )}
@@ -14883,7 +14889,7 @@ function App(){
                         </div>
                       ))}
                       <div style={{fontSize:11,color:C.lt,marginTop:8,lineHeight:1.5,fontStyle:"italic"}}>
-                        Based on NHS guidance. Not medical advice — always contact your {_doctor} if you're worried about your baby.
+                        Based on {_isUS ? "AAP" : _isAU ? "Raising Children Network" : "NHS"} guidance. Not medical advice — always contact your {_doctor} if you're worried about your baby.
                       </div>
                     </div>
 
@@ -15249,7 +15255,7 @@ function App(){
                       // High risk — GP first warning
                       if (_isHighRisk) return (
                         <div style={{background:"rgba(232,87,74,0.06)",border:"1.5px solid rgba(232,87,74,0.3)",borderRadius:12,padding:"10px 12px",marginBottom:8}}>
-                          <div style={{fontSize:12,fontWeight:700,color:"#c04040",marginBottom:4}}>⚠️ Speak to your {_doctor} first</div>
+                          <div style={{fontSize:12,fontWeight:700,color:"#c04040",marginBottom:4}}>⚠️ Speak to your {_doctorUrgent} first</div>
                           <div style={{fontSize:11,color:C.mid,lineHeight:1.5}}>
                             Because {allergenProfile.eczema==="severe"?"baby has severe eczema":"baby has a known food allergy"}, BSACI recommends getting GP or allergist advice before introducing allergens. OBubba can show you this guidance but please don't proceed without professional advice.
                           </div>
@@ -15404,7 +15410,7 @@ function App(){
 
                     {/* Legal disclaimer — allergen section */}
                     <div style={{fontSize:10,color:C.lt,lineHeight:1.5,marginBottom:8,fontStyle:"italic"}}>
-                      OBubba allergen guidance is based on NHS, BSACI, and Anaphylaxis UK recommendations. This is general guidance only — not medical advice. If {babyName||"your baby"} has eczema, a known allergy, or family history of food allergy, speak to your {_doctor} before introducing allergens. In an emergency always call {_emergNum}.
+                      OBubba allergen guidance is based on NHS, BSACI, and Anaphylaxis UK recommendations. This is general guidance only — not medical advice. If {babyName||"your baby"} has eczema, a known allergy, or family history of food allergy, speak to your {_doctorUrgent} before introducing allergens. In an emergency always call {_emergNum}.
                     </div>
 
                     {/* Needs maintaining — show at top if any */}
@@ -15451,7 +15457,7 @@ function App(){
                           <div style={{background:"rgba(192,112,136,0.06)",border:`1.5px solid ${C.ter}30`,borderRadius:14,padding:"12px 14px",marginBottom:8}}>
                             <div style={{fontSize:13,fontWeight:700,color:C.deep,marginBottom:6}}>⚠️ Before you introduce allergens</div>
                             <div style={{fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:8}}>
-                              Most babies can start allergens from 6 months. But if any of the following apply to {babyName||"your baby"}, speak to your {_doctor} first:
+                              Most babies can start allergens from 6 months. But if any of the following apply to {babyName||"your baby"}, speak to your {_doctorUrgent} first:
                             </div>
                             {[
                               "Has severe or persistent eczema",
@@ -15464,7 +15470,7 @@ function App(){
                               </div>
                             ))}
                             <div style={{fontSize:11,color:C.lt,marginTop:8,fontStyle:"italic",lineHeight:1.5}}>
-                              High-risk babies can still benefit from early allergen introduction — but your {_doctor} can advise on timing and supervision. (NHS/BSACI guidance)
+                              High-risk babies can still benefit from early allergen introduction — but your {_doctorUrgent} can advise on timing and supervision. (NHS/BSACI guidance)
                             </div>
                           </div>
 
@@ -15494,7 +15500,7 @@ function App(){
                                   </div>
                                 ))}
                                 <div style={{fontSize:11,color:C.lt,marginTop:10,lineHeight:1.5,fontStyle:"italic",borderTop:`1px solid ${C.blush}`,paddingTop:8}}>
-                                  Source: NHS, Anaphylaxis UK, BSACI, LEAP study. This is guidance only — not medical advice. Always consult your {_doctor} if unsure.
+                                  Source: NHS, Anaphylaxis UK, BSACI, LEAP study. This is guidance only — not medical advice. Always consult your {_doctorUrgent} if unsure.
                                 </div>
                               </div>
                             )}
@@ -15529,7 +15535,7 @@ function App(){
                                   "Flushed or blotchy skin",
                                 ].map((s,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"1px 0"}}>• {s}</div>)}
                                 <div style={{fontSize:11,color:C.mid,marginTop:6,padding:"8px",background:"var(--card-bg-alt)",borderRadius:8,lineHeight:1.5}}>
-                                  Remove the food. Give antihistamine (e.g. Piriton/chlorphenamine) if prescribed. Contact 111 or your {_doctor} for advice. Watch closely for the next 2 hours.
+                                  Remove the food. Give antihistamine (e.g. {_isUS ? "Benadryl/diphenhydramine" : "Piriton/chlorphenamine"}) if prescribed. Contact {_isUS ? "your " + _doctorUrgent : _isAU ? "Healthdirect (1800 022 222) or your " + _doctorUrgent : "111 or your " + _doctorUrgent} for advice. Watch closely for the next 2 hours.
                                 </div>
                               </div>
 
@@ -15556,7 +15562,7 @@ function App(){
                               </div>
 
                               <div style={{fontSize:10,color:C.lt,marginTop:8,lineHeight:1.5,fontStyle:"italic"}}>
-                                Sources: NHS, Anaphylaxis UK, Resuscitation Council UK (2021). Not medical advice — always follow guidance from your {_doctor}. In an emergency always call {_emergNum}.
+                                Sources: NHS, Anaphylaxis UK, Resuscitation Council UK (2021). Not medical advice — always follow guidance from your {_doctorUrgent}. In an emergency always call {_emergNum}.
                               </div>
                             </div>
                           )}
@@ -15723,7 +15729,7 @@ function App(){
                 <div className="glass-card" style={{...card,padding:"4px 14px 8px",marginBottom:10}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0 6px",borderBottom:`1px solid ${C.blush}`,marginBottom:2}}>
                     <span style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Due now · tap to mark achieved</span>
-                    <HelpBtn title="Milestones" body="Showing milestones for your baby's current age. Tap the circle to mark as achieved — it'll move to the Achieved section. Every baby develops at their own pace. If concerned, speak to your " + _doctor + "."/>
+                    <HelpBtn title="Milestones" body="Showing milestones for your baby's current age. Tap the circle to mark as achieved — it'll move to the Achieved section. Every baby develops at their own pace. If concerned, speak to your " + _devDoc + "."/>
                   </div>
                   {nowMsPending.length === 0
                     ? <div style={{textAlign:"center",padding:"18px 0",color:C.lt,fontSize:13}}>All caught up! No pending milestones for this age.</div>
@@ -15739,7 +15745,7 @@ function App(){
                 <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:12,padding:"12px 14px",marginTop:6,marginBottom:14}}>
                   <div style={{fontSize:11,color:C.mid,lineHeight:1.7}}>
                     <span style={{fontWeight:700,color:C.deep}}>ℹ️ A note on milestones</span><br/>
-                    Every baby develops at their own pace — these ranges are general guidelines. If you have concerns, speak to your {_doctor}.
+                    Every baby develops at their own pace — these ranges are general guidelines. If you have concerns, speak to your {_devDoc}.
                   </div>
                 </div>
                 </>
@@ -15810,7 +15816,7 @@ function App(){
               <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:12,padding:"12px 14px",marginBottom:4}}>
                 <div style={{fontSize:11,color:C.mid,lineHeight:1.7}}>
                   <span style={{fontWeight:700,color:C.deep}}>ℹ️ About this guidance</span><br/>
-                  Activities: NHS Start4Life developmental play guidance. Milestones: NHS developmental reviews framework. Growth: WHO Child Growth Standards. Every baby develops at their own pace — use these as inspiration, not a checklist. If you have concerns, speak to your {_doctor}.
+                  Activities: {_isUS ? "CDC" : _isAU ? "Raising Children Network" : "NHS Start4Life"} developmental play guidance. Milestones: {_isUS ? "AAP/CDC" : _isAU ? "Raising Children Network" : "NHS"} developmental reviews framework. Growth: WHO Child Growth Standards. Every baby develops at their own pace — use these as inspiration, not a checklist. If you have concerns, speak to your {_devDoc}.
                 </div>
               </div>
 
@@ -16215,7 +16221,7 @@ function App(){
                 Sleep predictions, feeding guidance, and developmental information are based on publicly available guidelines from the NHS, WHO, AAP (American Academy of Pediatrics), NHMRC (Australia), and paediatric sleep research. OBubba is not affiliated with or endorsed by any of these organisations or any healthcare provider.
               </div>
               <div style={{fontSize:12,color:C.mid,lineHeight:1.7,marginTop:6}}>
-                Allergen introduction guidance is based on NHS/BSACI guidance and the LEAP study findings. Always speak to your {_doctor} before introducing allergens if your baby has eczema, a known allergy, or a family history of food allergy.
+                Allergen introduction guidance is based on NHS/BSACI guidance and the LEAP study findings. Always speak to your {_doctorUrgent} before introducing allergens if your baby has eczema, a known allergy, or a family history of food allergy.
               </div>
               <div style={{fontSize:12,color:C.mid,lineHeight:1.7,marginTop:6}}>
                 Always consult your {_doctor} with any concerns about your baby's health, feeding, sleep, or development. OBubba is not a substitute for professional medical advice.
@@ -17238,7 +17244,7 @@ function App(){
                   {["6+ wet nappies in 24 hours","Baby is gaining weight","Baby seems satisfied after most feeds","You can hear swallowing during feeds","Breasts feel softer after feeds"].map((t,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>)}
                 </div>
                 <div style={{background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",borderRadius:12,padding:"10px 12px"}}>
-                  <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>Speak to your {_doctor} if</div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>Speak to your {_bfSupport} if</div>
                   {["Fewer than 6 wet nappies a day","Baby not gaining weight","Every feed leaves baby unsettled","Significant pain during every feed"].map((t,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>)}
                 </div>
               </div>
@@ -17251,7 +17257,7 @@ function App(){
                   <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>Signs during feeding</div>
                   {["Significant pain throughout feeds — not just at latch","Clicking sounds while feeding","Baby slips off breast frequently","Very long feeds without satisfaction","Poor weight gain despite frequent feeding","Baby cannot stick tongue past lower lip","Tongue looks heart-shaped when crying"].map((t,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>)}
                 </div>
-                <div style={{padding:"10px 12px",borderRadius:12,background:"var(--card-bg-alt)",border:"1px solid "+C.blush,fontSize:12,color:C.mid,lineHeight:1.6}}>Ask your midwife or {_doctor} to check. Treatment (a simple snip called a frenotomy) can transform feeding. An IBCLC lactation consultant can also assess.</div>
+                <div style={{padding:"10px 12px",borderRadius:12,background:"var(--card-bg-alt)",border:"1px solid "+C.blush,fontSize:12,color:C.mid,lineHeight:1.6}}>Ask your {_newbornTeam} to check. Treatment (a simple snip called a frenotomy) can transform feeding. An IBCLC lactation consultant can also assess.</div>
               </div>
             )}
             {bfHubSection==="help"&&(
@@ -17269,7 +17275,7 @@ function App(){
                     <div style={{fontSize:11,color:C.lt}}>{r.how}</div>
                   </div>
                 ))}
-                <div style={{marginTop:10,padding:"10px 12px",borderRadius:12,background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",fontSize:12,color:C.gold,lineHeight:1.6}}>Mastitis: hot, red, painful breast + flu-like symptoms needs same-day {_doctor} treatment.</div>
+                <div style={{marginTop:10,padding:"10px 12px",borderRadius:12,background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",fontSize:12,color:C.gold,lineHeight:1.6}}>Mastitis: hot, red, painful breast + flu-like symptoms needs same-day {_doctorUrgent} treatment.</div>
               </div>
             )}
             {bfHubSection==="spurts"&&(
@@ -17324,7 +17330,7 @@ function App(){
                 </div>
                 {_eczema==="severe" && (
                   <div style={{marginTop:8,padding:"8px 10px",borderRadius:10,background:"rgba(212,168,85,0.08)",border:"1px solid rgba(212,168,85,0.25)",fontSize:11,color:C.gold,lineHeight:1.5}}>
-                    ⚠️ Babies with severe eczema are at higher risk. BSACI recommends speaking to your {_doctor} before introducing egg and peanut. OBubba will remind you of this before each allergen.
+                    ⚠️ Babies with severe eczema are at higher risk. BSACI recommends speaking to your {_doctorUrgent} before introducing egg and peanut. OBubba will remind you of this before each allergen.
                   </div>
                 )}
               </div>
@@ -17342,7 +17348,7 @@ function App(){
                 </div>
                 {_knownAllergy==="yes" && (
                   <div style={{marginTop:8,padding:"8px 10px",borderRadius:10,background:"rgba(232,87,74,0.06)",border:"1px solid rgba(232,87,74,0.2)",fontSize:11,color:"#c04040",lineHeight:1.5}}>
-                    🚨 If {babyName||"baby"} already has a known allergy, please speak to your {_doctor} or a paediatric allergist before introducing further allergens. Do not use this feature to introduce new allergens without professional guidance.
+                    🚨 If {babyName||"baby"} already has a known allergy, please speak to your {_doctorUrgent} or a paediatric allergist before introducing further allergens. Do not use this feature to introduce new allergens without professional guidance.
                   </div>
                 )}
               </div>
@@ -17360,14 +17366,14 @@ function App(){
                 </div>
                 {_familyHistory==="yes" && (
                   <div style={{marginTop:8,padding:"8px 10px",borderRadius:10,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,fontSize:11,color:C.mid,lineHeight:1.5}}>
-                    Family history alone doesn't mean you need to avoid allergens — early introduction is still recommended. It's worth mentioning to your {_doctor} at your next appointment.
+                    Family history alone doesn't mean you need to avoid allergens — early introduction is still recommended. It's worth mentioning to your {_doctorUrgent} at your next appointment.
                   </div>
                 )}
               </div>
 
               {/* Legal disclaimer */}
               <div style={{padding:"10px 12px",borderRadius:10,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,fontSize:10,color:C.lt,lineHeight:1.6,marginBottom:16}}>
-                ⚖️ OBubba's allergen guidance is based on NHS, BSACI, and Anaphylaxis UK recommendations for the <strong>general population</strong>. It is not medical advice and is not a substitute for professional guidance. If your baby is high-risk, always consult your {_doctor} before proceeding. OBubba is not responsible for any adverse reactions.
+                ⚖️ OBubba's allergen guidance is based on NHS, BSACI, and Anaphylaxis UK recommendations for the <strong>general population</strong>. It is not medical advice and is not a substitute for professional guidance. If your baby is high-risk, always consult your {_doctorUrgent} before proceeding. OBubba is not responsible for any adverse reactions.
               </div>
 
               <button disabled={!_canProceed} onClick={()=>{ if(_canProceed){ saveAllergenProfile({eczema:_eczema,knownAllergy:_knownAllergy,familyHistory:_familyHistory,date:todayStr()}); setShowAllergenGate(false); }}}
@@ -17549,7 +17555,7 @@ function App(){
 
             {/* Health visitor nudge */}
             <div style={{background:"var(--card-bg-alt)",borderRadius:14,padding:"12px 14px",marginBottom:16,border:`1px solid ${C.blush}`}}>
-              <div style={{fontSize:13,fontWeight:600,color:C.deep,marginBottom:4}}>🏥 Your {_doctor} wants to hear from you</div>
+              <div style={{fontSize:13,fontWeight:600,color:C.deep,marginBottom:4}}>🏥 Your {_doctorUrgent} wants to hear from you</div>
               <div style={{fontSize:12,color:C.mid,lineHeight:1.6}}>
                 You don't need to be in crisis to book a GP appointment. Postnatal distress, sleep deprivation, and anxiety are all valid reasons to go. Mention how you're feeling — they can refer you to the right support quickly.
               </div>
