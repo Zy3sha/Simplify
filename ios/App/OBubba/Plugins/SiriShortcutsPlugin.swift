@@ -2,7 +2,6 @@ import Foundation
 import Capacitor
 import Intents
 import CoreSpotlight
-import MobileCoreServices
 
 /// Capacitor plugin that bridges Siri Shortcuts to the web layer.
 /// Donates NSUserActivity items so iOS can suggest them in Siri, Spotlight, and the Shortcuts app.
@@ -36,11 +35,13 @@ public class SiriShortcutsPlugin: CAPPlugin, CAPBridgedPlugin {
         activity.isEligibleForPrediction = isPrediction
         activity.persistentIdentifier = activityType
 
-        // Add to Spotlight
-        let attributes = CSSearchableItemAttributeSet(contentType: .item)
-        attributes.title = title
-        attributes.contentDescription = "OBubba: \(title)"
-        activity.contentAttributeSet = attributes
+        // Add to Spotlight (CSSearchableItemAttributeSet(contentType:) requires iOS 14+)
+        if #available(iOS 14.0, *) {
+            let attrs = CSSearchableItemAttributeSet(contentType: .item)
+            attrs.title = title
+            attrs.contentDescription = "OBubba: \(title)"
+            activity.contentAttributeSet = attrs
+        }
 
         DispatchQueue.main.async {
             self.bridge?.viewController?.userActivity = activity
