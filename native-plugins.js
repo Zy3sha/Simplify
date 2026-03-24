@@ -789,6 +789,31 @@ window.OBNative = {
   preferences: OBPreferences,
 };
 
+// ── Disable iOS rubber-band bounce ──────────────────────────────
+if (isNative() && getPlatform() === 'ios') {
+  document.addEventListener('touchmove', function(e) {
+    // Allow scrolling inside scrollable containers, prevent body bounce
+    let target = e.target;
+    while (target && target !== document.body) {
+      const style = window.getComputedStyle(target);
+      if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+        const isAtTop = target.scrollTop <= 0;
+        const isAtBottom = target.scrollTop + target.clientHeight >= target.scrollHeight;
+        if ((isAtTop && e.touches[0].clientY > 0) || (isAtBottom && e.touches[0].clientY < window.innerHeight)) {
+          // Allow natural scroll within container
+          return;
+        }
+        return; // scrollable container, allow
+      }
+      target = target.parentElement;
+    }
+    // No scrollable parent — prevent bounce
+    if (document.body.scrollHeight <= window.innerHeight) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+}
+
 // ── AUTO-INIT on native ─────────────────────────────────────────
 if (isNative()) {
   (async () => {
