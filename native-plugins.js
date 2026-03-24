@@ -49,7 +49,7 @@ const OBBiometric = {
   async isAvailable() {
     if (!isNative()) return { available: false, type: 'none' };
     try {
-      const { BiometricAuth } = await import('@capacitor-community/biometric-auth');
+      const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
       const result = await BiometricAuth.checkBiometry();
       return {
         available: result.isAvailable,
@@ -61,7 +61,7 @@ const OBBiometric = {
   async authenticate(reason = 'Verify your identity') {
     if (!isNative()) return { success: false, error: 'not_native' };
     try {
-      const { BiometricAuth } = await import('@capacitor-community/biometric-auth');
+      const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
       await BiometricAuth.authenticate({ reason, allowDeviceCredential: true });
       return { success: true };
     } catch (e) {
