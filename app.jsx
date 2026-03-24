@@ -2006,11 +2006,8 @@ function App(){
     // Unsubscribe from Firestore listener — prevents old data leaking to new account
     if(unsubscribeRef.current){ unsubscribeRef.current(); unsubscribeRef.current=null; }
 
-    // Clear ALL localStorage
-    const keysToRemove = ["auth_verified","family_username","backup_code","family_code",
-      "children_v1","active_child","tut_v2","install_date_v1",
-      "use_personal_recs_v1","fluid_unit_v1","measure_unit_v1","reminders_v1","appointments_v1","pinned_notes_v1"];
-    keysToRemove.forEach(k=>{ try{localStorage.removeItem(k);}catch{} });
+    // Clear ALL localStorage — complete wipe to prevent stale data
+    try { localStorage.clear(); } catch {}
 
     // Reset ALL app state — blank slate
     const blankChild = {id:uid(),name:"",dob:"",sex:"",unborn:false,days:{},weights:[],heights:[],photos:[],milestones:{}};
@@ -15560,15 +15557,13 @@ function App(){
           {/* ═══ 7. VACCINATIONS — moved to Day tab (below Notes & Reminders) ═══ */}
 
           {/* ═══ 8. SIGN OUT ═══ */}
-          {familyUsername&&(
-            <button onClick={logout} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%",marginTop:14}}>
-              <span style={{fontSize:24}}>🚪</span>
-              <div>
-                <div style={{fontSize:15,fontWeight:700,color:C.mid}}>Sign Out</div>
-                <div style={{fontSize:12,color:C.lt,marginTop:2}}>Signed in as {familyUsername}</div>
-              </div>
-            </button>
-          )}
+          <button onClick={logout} style={{display:"flex",alignItems:"center",gap:14,background:"var(--card-bg-solid)",border:`1px solid ${C.blush}`,borderRadius:16,padding:"14px 16px",cursor:_cP,textAlign:"left",width:"100%",marginTop:14}}>
+            <span style={{fontSize:24}}>🚪</span>
+            <div>
+              <div style={{fontSize:15,fontWeight:700,color:C.mid}}>Sign Out</div>
+              <div style={{fontSize:12,color:C.lt,marginTop:2}}>{familyUsername ? "Signed in as "+familyUsername : "Sign out and switch account"}</div>
+            </div>
+          </button>
 
           {/* ── Emotional Sign-off ── */}
           <div style={{textAlign:"center",padding:"24px 16px 8px",marginBottom:16}}>
