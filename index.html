@@ -72,6 +72,14 @@
 </head>
 <body>
 <div id="root"></div>
+
+<!-- Splash screen — visible while JS bundles load, removed by React once mounted -->
+<div id="obubba-splash" style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#F0DDD6;transition:opacity 0.4s ease">
+  <img src="obubba-happy.png" alt="" style="width:120px;height:120px;border-radius:28px;box-shadow:0 8px 32px rgba(0,0,0,0.10);margin-bottom:20px;animation:splashPulse 1.8s ease-in-out infinite"/>
+  <div style="font-family:'DM Sans',system-ui,sans-serif;font-size:15px;font-weight:600;color:#8B7B8B;letter-spacing:0.02em">Getting everything ready...</div>
+  <style>@keyframes splashPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:0.85}}</style>
+</div>
+
 <button id="theme-toggle" aria-label="Toggle theme" onclick="toggleTheme()">🌙</button>
 
 <!-- Theme system (must run immediately for no flash) -->

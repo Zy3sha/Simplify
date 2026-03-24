@@ -9,7 +9,7 @@ function copyNativePlugins() {
   return {
     name: 'copy-native-plugins',
     closeBundle() {
-      const files = ['native-plugins.js', 'theme.js', 'obubba-happy.png', 'obubba-celebration.png', 'obubba-thinking.png', 'obubba-loading.png'];
+      const files = ['native-plugins.js', 'theme.js', 'obubba-happy.png', 'obubba-celebration.png', 'obubba-thinking.png', 'obubba-loading.png', 'sleep-baby.png'];
       const outDir = resolve(__dirname, 'dist');
       if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
       for (const f of files) {
