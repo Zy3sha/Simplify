@@ -3582,105 +3582,159 @@ function App(){
     }, 1000);
     return()=>clearInterval(countdownRef.current);
   },[selDay, days, age, timerMode]);
-  // ═══ HERO CARD — Bubba Rhythm ═══
+  // ═══ HERO CARD v2 — Bubba Rhythm ═══
+  // Single data layer → priority system → clean render
+  // All feed/nappy gaps computed ONCE with wall-clock-aware cross-day math
   function renderHeroCard() {
    try {
     if (!age) return null;
-    const _isYesterday = (()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
-    const _calToday = todayStr();
-    const _calTodayEntries = days[_calToday] || [];
-    const _todayHasMorningWake = _calTodayEntries.some(e => e.type === "wake" && !e.night);
-    const _todayHasAnyDaytimeEntries = _calTodayEntries.some(e => !e.night && (e.type === "feed" || e.type === "nap" || e.type === "poop" || e.type === "wake"));
-    const _heroDay = (() => {
-      if (_todayHasMorningWake) return _calToday;
-      if (_todayHasAnyDaytimeEntries) return _calToday;
-      const _nowH = new Date().getHours();
-      if (_nowH < 5 && (days[_isYesterday]||[]).some(e => e.type === "sleep" && !e.night)) return _isYesterday;
-      return _calToday;
-    })();
-    let _today = days[_heroDay] || [];
-    const _useYesterday = _heroDay === _isYesterday;
-    const _wakeMissing = !_useYesterday && !_todayHasMorningWake && _todayHasAnyDaytimeEntries;
-    if (_today.length === 0 && !_todayHasMorningWake && (days[_isYesterday]||[]).length === 0) {
-      return (
-        <div className="glass-card" style={{padding:"20px 18px",marginBottom:12}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-            <span style={{fontSize:24}}>👋</span>
-            <span style={{fontSize:16,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>Welcome to OBubba!</span>
-          </div>
-          <div style={{fontSize:13,color:C.mid,marginBottom:14,lineHeight:1.6}}>
-            {age ? `Start tracking ${_name}'s day by tapping ☀️ Wake above.` : `Tap ${_name}'s name above to add a date of birth — this unlocks nap predictions, wake windows and milestones.`}
-          </div>
-          {age ? (
-            <div style={{background:"rgba(201,112,90,0.08)",borderRadius:12,padding:"12px 14px",fontSize:13,color:C.mid,lineHeight:1.5}}>
-              <strong>First step:</strong> Tap <strong>☀️ Wake</strong> to log when {_name} woke up this morning.
-            </div>
-          ) : (
-            <div style={{background:"rgba(123,104,238,0.08)",borderRadius:12,padding:"12px 14px",fontSize:13,color:C.mid,lineHeight:1.5}}>
-              <strong>First step:</strong> Tap <strong>{_name}'s name</strong> at the top to add their date of birth.
-            </div>
-          )}
-        </div>
-      );
-    }
-    const _h0 = new Date().getHours();
-    const _hasBed = _today.some(e => e.type === "sleep" && !e.night);
-    const _hasWake = _useYesterday ? false : _today.some(e => e.type === "wake" && !e.night);
-    // Day is effectively underway if there are ANY daytime entries (feeds, naps, nappies)
-    // even if wake wasn't explicitly logged — parents often just start feeding/changing
-    const _dayStarted = _hasWake || _today.filter(e => !e.night && (e.type === "feed" || e.type === "nap" || e.type === "poop")).length > 0;
+
+    // ══════════════════════════════════════════════════════
+    // GUARD: Hero card is real-time only — no hero on past days
+    // ══════════════════════════════════════════════════════
+    if (selDay !== todayStr()) return null;
+
+    // ══════════════════════════════════════════════════════
+    // LAYER 1: Unified data — computed once, used everywhere
+    // ══════════════════════════════════════════════════════
     const _name = babyName || "Baby";
-    const _h = new Date().getHours();
-    const _nowM = _h * 60 + new Date().getMinutes();
-    const _naps = _today.filter(e => e.type === "nap" && !e.night);
-    const _napsDone = _naps.length;
-    const _profile = getAgeNapProfile(age.totalWeeks);
-    const _ww = getWakeWindow(age.totalWeeks);
-    const _pred = predictNextNap();
-    const _bed = bedtimePrediction();
-    const _adjustedExpected = _profile.expectedNaps + (bridgeNapScheduled ? 1 : 0);
-    const _napsComplete = _napsDone >= _adjustedExpected;
-    const _dailySleepMax = _profile.idealTotalMax || 300;
-    // Awake time
-    const _dayE = _today.filter(e => !e.night).sort((a, b) => timeVal(a) - timeVal(b));
-    let _awakeMin = 0;
-    let _lastSleep = null;
-    _dayE.forEach(e => {
-      if (e.type === "wake") _lastSleep = timeVal(e);
-      if (e.type === "nap" && e.end) _lastSleep = timeVal({time: e.end});
-    });
-    // If no wake entry but day has started, use first daytime entry as effective wake
-    if (_lastSleep === null && _dayStarted && _dayE.length > 0) {
-      _lastSleep = timeVal(_dayE[0]);
-    }
-    if (_lastSleep !== null) _awakeMin = Math.max(0, _nowM - _lastSleep);
-
-    let _dot, _label, _timing;
-
-    // ── Contextual reassurance based on day pattern ──
-    const _allFeeds = _today.filter(e => e.type === "feed" && !e.night);
-    // Include night feeds for timing calculations
-    const _prevDayKey = (()=>{const d=new Date(_heroDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
-    const _allFeedsIncNight = [..._allFeeds, ..._today.filter(e=>e.time&&e.night&&(e.type==="feed"||(e.amount||0)>0||e.assistedType==="milk"||e.feedType==="milk")), ...((days[_prevDayKey]||[]).filter(e=>e.time&&e.night&&(e.type==="feed"||(e.amount||0)>0||e.assistedType==="milk"||e.feedType==="milk")))];
-    const _totalNapMin = _naps.reduce((s,n) => s + minDiff(n.start, n.end), 0);
+    const _now = new Date();
+    const _h = _now.getHours();
+    const _nowM = _h * 60 + _now.getMinutes();
     const _isNightTime = _h >= 22 || _h < 5;
-    const _isIrregularDay = _napsDone > 0 && _naps.some(n => minDiff(n.start, n.end) < 20) && _allFeeds.length > 6;
-    const _isHighNeedDay = _allFeeds.length >= 8 || (_napsDone >= 1 && _naps.every(n => minDiff(n.start, n.end) < 35));
-    const _isStableDay = _napsDone >= 2 && _naps.every(n => minDiff(n.start, n.end) >= 30) && !_isHighNeedDay;
+    const _w = age.totalWeeks;
+    const _ww = getWakeWindow(_w);
+    const _profile = getAgeNapProfile(_w);
+    const _calToday = todayStr();
+    const _prevDayStr = (()=>{const d=new Date(_calToday+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
+    const _todayEntries = days[_calToday] || [];
+    const _prevEntries = days[_prevDayStr] || [];
 
-    let _reassure;
+    // ── Wake & sleep status ──
+    const _hasMorningWake = _todayEntries.some(e => e.type === "wake" && !e.night);
+    const _hasDaytimeEntries = _todayEntries.some(e => !e.night && (e.type === "feed" || e.type === "nap" || e.type === "poop"));
+    const _dayStarted = _hasMorningWake || _hasDaytimeEntries;
+    const _wakeMissing = _dayStarted && !_hasMorningWake;
+    const _hasBed = _todayEntries.some(e => e.type === "sleep" && !e.night);
+    const _morningWake = _todayEntries.find(e => e.type === "wake" && !e.night);
+
+    // ── Nap data ──
+    const _naps = _todayEntries.filter(e => e.type === "nap" && !e.night);
+    const _napsDone = _naps.length;
+    const _totalNapMin = _naps.reduce((s,n) => s + minDiff(n.start, n.end), 0);
+    const _adjustedExpected = _profile.naps;
+    const _napsComplete = _napsDone >= _adjustedExpected;
+    const _dailySleepMax = _profile.idealNapDurMax * _adjustedExpected;
+
+    // ── Awake time ──
+    const _lastNapEnd = _naps.length > 0 ? Math.max(..._naps.map(n => timeVal({time: n.end || n.start}))) : null;
+    const _wakeTime = _morningWake ? timeVal(_morningWake) : null;
+    let _lastSleep = _lastNapEnd || _wakeTime;
+    if (_lastSleep === null && _dayStarted) {
+      const _dayE = _todayEntries.filter(e => !e.night);
+      if (_dayE.length > 0) _lastSleep = Math.min(..._dayE.filter(e=>e.time).map(e => timeVal(e)));
+    }
+    const _awakeMin = _lastSleep !== null ? Math.max(0, _nowM - _lastSleep) : 0;
+
+    // ── Last feed — ONE wall-clock-aware cross-day calculation ──
+    const _tag = (arr, dk) => arr.map(e => ({...e, _dk: dk}));
+    const _feedPool = [..._tag(_todayEntries, _calToday), ..._tag(_prevEntries, _prevDayStr)];
+    const _isFeed = (e) => e.time && (e.type === "feed" || (e.amount && e.amount > 0) || (e.night && (e.assistedType === "milk" || e.feedType === "milk")));
+    const _allPoolFeeds = _feedPool.filter(_isFeed);
+    const _wallGap = (e) => {
+      const tv = timeVal(e);
+      let gap = _nowM - tv;
+      if (e._dk === _calToday) { if (gap < 0) gap += 1440; }
+      else { if (gap < 0) gap += 1440; const dd = Math.round((new Date(_calToday+"T12:00:00") - new Date(e._dk+"T12:00:00")) / 86400000); if (dd > 0) gap += (dd - 1) * 1440; }
+      return Math.max(0, gap);
+    };
+    const _lastFeed = _allPoolFeeds.length > 0 ? _allPoolFeeds.reduce((best, e) => _wallGap(e) < _wallGap(best) ? e : best) : null;
+    const _feedGapM = _lastFeed ? _wallGap(_lastFeed) : 9999;
+
+    // ── Last nappy — same approach ──
+    const _nappyPool = _feedPool.filter(e => e.time && e.type === "poop");
+    const _lastNappy = _nappyPool.length > 0 ? _nappyPool.reduce((best, e) => _wallGap(e) < _wallGap(best) ? e : best) : null;
+    const _nappyGapM = _lastNappy ? _wallGap(_lastNappy) : 9999;
+
+    // ── Today's daytime feeds (for totals) ──
+    const _allFeeds = _todayEntries.filter(e => e.type === "feed" && !e.night);
+    const _totalMl = _allFeeds.reduce((s,f) => s + (f.amount||0), 0);
+
+    // ── Feed predictions ──
+    const _ageThreshM = _w < 4 ? 120 : _w < 8 ? 150 : _w < 13 ? 180 : _w < 26 ? 210 : _w < 39 ? 240 : 270;
+    let _feedThreshM = _ageThreshM;
+
+    // Personal rhythm: average feed interval from last 7 days
+    let _avgFeedInterval = null;
+    try {
+      const _recentDays = Object.keys(days).sort().slice(-7);
+      const _allGaps = [];
+      _recentDays.forEach(dk => {
+        const df = (days[dk]||[]).filter(e=>e.type==="feed"&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
+        for (let i=1; i<df.length; i++) { const g = timeVal(df[i]) - timeVal(df[i-1]); if (g > 20 && g < 360) _allGaps.push(g); }
+      });
+      if (_allGaps.length >= 3) {
+        _allGaps.sort((a,b)=>a-b);
+        const trimmed = _allGaps.slice(Math.floor(_allGaps.length*0.1), Math.ceil(_allGaps.length*0.9));
+        _avgFeedInterval = Math.round(trimmed.reduce((s,v)=>s+v,0)/trimmed.length);
+        _feedThreshM = Math.min(_avgFeedInterval, Math.round(_ageThreshM * 1.25));
+      }
+    } catch {}
+
+    // Weight-based per-feed target (NHS 150ml/kg/day)
+    const _latestWeight = weights && weights.length > 0 ? weights[weights.length-1].kg : null;
+    const _feedsPerDay = _w < 4 ? 10 : _w < 8 ? 7 : _w < 13 ? 6 : _w < 26 ? 5 : _w < 39 ? 4 : 3;
+    const _perFeedTarget = _latestWeight ? Math.round((_latestWeight * 150) / _feedsPerDay) : (_w < 4 ? 60 : _w < 8 ? 90 : _w < 13 ? 125 : _w < 26 ? 180 : 200);
+    const _dailyTarget = _latestWeight ? Math.round(_latestWeight * 150) : null;
+
+    // Next feed prediction time
+    const _lastFeedTime = _lastFeed ? timeVal(_lastFeed) : null;
+    const _nextFeedMins = _lastFeedTime !== null ? _lastFeedTime + _feedThreshM : null;
+    const _nextFeedStr = _nextFeedMins ? fmt12(`${String(Math.floor(_nextFeedMins/60)%24).padStart(2,"0")}:${String(_nextFeedMins%60).padStart(2,"0")}`) : null;
+
+    // ── Growth spurt / quiet day detection ──
+    let _growthSpurt = false;
+    let _quietDay = false;
+    try {
+      const _last7 = Object.keys(days).sort().slice(-7);
+      const _avgDailyMl = _last7.length > 0 ? Math.round(_last7.reduce((s,d) => s + (days[d]||[]).filter(e=>e.type==="feed"&&!e.night).reduce((ss,f)=>ss+(f.amount||0),0), 0) / _last7.length) : 0;
+      const _avgFeedCount = _last7.length > 0 ? Math.round(_last7.reduce((s,d) => s + (days[d]||[]).filter(e=>e.type==="feed"&&!e.night).length, 0) / _last7.length) : 0;
+      if (_avgDailyMl > 0 && _totalMl > _avgDailyMl * 1.3 && _allFeeds.length >= 4) _growthSpurt = true;
+      // Quiet day: by this hour, fewer feeds than usual average for this time
+      if (_avgFeedCount > 0 && _h >= 10) {
+        const _expectedByNow = Math.round(_avgFeedCount * (_h / 14)); // rough proportion of day elapsed
+        if (_allFeeds.length < _expectedByNow * 0.6 && _allFeeds.length < _avgFeedCount - 2) _quietDay = true;
+      }
+    } catch {}
+
+    // ── Nap & bedtime predictions ──
+    let _pred = null; try { _pred = predictNextNap(); } catch {}
+    let _bed = null; try { _bed = bedtimePrediction(); } catch {}
+
+    // ── Night feed hint (newborns need scheduled feeds) ──
+    const _needsScheduledNightFeeds = _w < 6 || (weights && weights.length >= 2 && weights[weights.length-1].kg < weights[0].kg);
+    const _nightFeedHint = _needsScheduledNightFeeds
+      ? "Feed every 2–3 hours — " + _name + " needs regular feeds to gain weight"
+      : (()=>{ const p = []; if (_w < 26) p.push("Night wakes are completely normal at this age"); p.push("If " + _name + " wakes, offer a gentle feed" + (_w < 52 ? " and check the nappy" : "")); return p.join(". "); })();
+
+    // ══════════════════════════════════════════════════════
+    // LAYER 2: Reassurance & self-care (preserved from v6)
+    // ══════════════════════════════════════════════════════
+    let _reassure = "You're doing great 🤍";
     try {
     if (_isNightTime) {
       const _nightMsgs = [
-        "You're not alone — this part is hard.",
-        "The nights are long but you're doing something incredible.",
+        "The night feeds won't last forever. Every one of them is helping " + _name + " grow.",
+        "You're awake because you love " + _name + ". That's enough. That's everything.",
+        "This is the hardest part. It does get easier. You're doing brilliantly.",
+        "Every parent who's ever lived has been where you are right now. You're not alone.",
+        "Dawn is coming. You'll both make it through.",
         "Rest when you can. You're doing enough.",
         "This won't last forever. You're showing up when it matters most."
       ];
       _reassure = _nightMsgs[_h % _nightMsgs.length];
     } else {
-      // Daily rotating encouraging messages — always show
-      const _dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000);
+      const _dayOfYear = Math.floor((_now - new Date(_now.getFullYear(),0,0)) / 86400000);
       const _morningMsgs = [
         "Let's start the new day with cuddles and kisses 🤍",
         "Every new day with " + _name + " is a gift. Soak it in.",
@@ -3701,7 +3755,6 @@ function App(){
     }
     } catch(e) { _reassure = "You're doing great 🤍"; }
 
-    // ── Self-care nudge — separate line, shows from 10am daily until tapped ──
     let _selfCareNudge = null;
     try {
     const _parentNudgeShown = (()=>{try{return localStorage.getItem("parent_nudge_date")===todayStr();}catch{return false;}})();
@@ -3719,254 +3772,39 @@ function App(){
       "☕ You've been going all day. Whatever you need right now — do that thing.",
       "🫶 Parenting a baby is one of the most isolating things a person can do. You're not alone, even when it feels that way.",
     ];
-    // Nap-triggered nudge: if baby has been napping for 40+ mins, suggest the parent does something
-    const _napOn = napOn;
     const _napElapsed = napSec ? Math.floor(napSec / 60) : 0;
     const _napNudgeKey = "nap_nudge_" + selDay;
     const _napNudgeShown = (()=>{try{return localStorage.getItem(_napNudgeKey)==="1";}catch{return false;}})();
-    if(_napOn && _napElapsed >= 40 && !_napNudgeShown && !_isNightTime) {
+    if (napOn && _napElapsed >= 40 && !_napNudgeShown && !_isNightTime) {
       _selfCareNudge = "😴 " + _name + " has been napping " + _napElapsed + " minutes. Put the phone down — do something just for you right now.";
       try{localStorage.setItem(_napNudgeKey, "1");}catch{}
     } else {
       _selfCareNudge = (!_parentNudgeShown && !_isNightTime && _h >= 10)
-        ? _selfCareNudges[Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000) % _selfCareNudges.length]
+        ? _selfCareNudges[Math.floor((_now - new Date(_now.getFullYear(),0,0)) / 86400000) % _selfCareNudges.length]
         : null;
     }
     } catch(e) { _selfCareNudge = null; }
 
-    // ── Feed & nappy gentle context (computed early, used in all card variants) ──
-    let _feedNappyHint = null;
-    let _chaoticDays = [];
-    try {
-      const _hints = [];
-      // Find last feed and nappy using same logic as daily total (which works correctly)
-      const _calNow = todayStr();
-      const _fpPrev = (()=>{const d=new Date(selDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
-      const _fpNext = (()=>{const d=new Date(selDay+"T12:00:00");d.setDate(d.getDate()+1);return d.toISOString().split("T")[0];})();
-      const _tag = (arr, dk) => arr.map(e => ({...e, _dk: dk}));
-      const _searchPool = [
-        ..._tag(_today, selDay),
-        ...(_calNow !== selDay ? _tag(days[_calNow]||[], _calNow) : []),
-        ..._tag(days[_fpPrev]||[], _fpPrev),
-        ...(_fpNext !== _calNow && _fpNext !== selDay ? _tag(days[_fpNext]||[], _fpNext) : [])
-      ];
-      const _isFeedEntry = (e) => e.time && (
-        e.type === "feed" ||
-        (e.amount && e.amount > 0) ||
-        (e.night && (e.assistedType === "milk" || e.feedType === "milk"))
-      );
-      const _isNappyEntry = (e) => e.time && e.type === "poop";
-      const _allPoolFeeds = _searchPool.filter(_isFeedEntry);
-      const _allPoolNappies = _searchPool.filter(_isNappyEntry);
-      const _wallGap = (e) => {
-        const tv = timeVal(e);
-        const isCalToday = e._dk === _calNow;
-        let gap = _nowM - tv;
-        if (isCalToday) {
-          if (gap < 0) gap += 1440;
-        } else {
-          if (gap < 0) gap += 1440;
-          if (e._dk < _calNow) {
-            const daysDiff = Math.round((new Date(_calNow+"T12:00:00") - new Date(e._dk+"T12:00:00")) / (1000*60*60*24));
-            if (daysDiff > 0) gap += (daysDiff - 1) * 1440;
-          }
-        }
-        return Math.max(0, gap);
-      };
-      const _lastFeed = _allPoolFeeds.length > 0
-        ? { entry: _allPoolFeeds.reduce((best, e) => _wallGap(e) < _wallGap(best) ? e : best), gap: null }
-        : null;
-      if (_lastFeed) _lastFeed.gap = _wallGap(_lastFeed.entry);
-      const _lastNappy = _allPoolNappies.length > 0
-        ? { entry: _allPoolNappies.reduce((best, e) => _wallGap(e) < _wallGap(best) ? e : best), gap: null }
-        : null;
-      if (_lastNappy) _lastNappy.gap = _wallGap(_lastNappy.entry);
+    // ══════════════════════════════════════════════════════
+    // LAYER 3: Priority-based state selection
+    // ══════════════════════════════════════════════════════
+    let _dot, _label, _timing, _secondary = null, _rightNow = null;
 
-      // Average feed interval from last 7 days with anomaly detection
-      let _avgFeedInterval = null;
-      try {
-        const _recentDayKeys = Object.keys(days).sort().slice(-7);
-        const _dayStats = [];
-        _recentDayKeys.forEach(dk => {
-          const _dayFeeds = (days[dk]||[]).filter(e=>e.type==="feed"&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
-          if (_dayFeeds.length < 2) return;
-          const dGaps = [];
-          for (let i=1; i<_dayFeeds.length; i++) {
-            const gap = timeVal(_dayFeeds[i]) - timeVal(_dayFeeds[i-1]);
-            if (gap > 20 && gap < 360) dGaps.push(gap);
-          }
-          const mean = dGaps.length > 0 ? Math.round(dGaps.reduce((s,v)=>s+v,0)/dGaps.length) : 0;
-          const variance = dGaps.length >= 2 ? Math.round(dGaps.reduce((s,v)=>s+((v-mean)*(v-mean)),0)/dGaps.length) : 0;
-          _dayStats.push({ dk, count: _dayFeeds.length, gaps: dGaps, mean, variance });
-        });
-        if (_dayStats.length >= 3) {
-          const _counts = _dayStats.map(d=>d.count).sort((a,b)=>a-b);
-          const _medCount = _counts[Math.floor(_counts.length/2)];
-          const _means = _dayStats.filter(d=>d.mean>0).map(d=>d.mean).sort((a,b)=>a-b);
-          const _medMean = _means.length > 0 ? _means[Math.floor(_means.length/2)] : 0;
-          const _variances = _dayStats.filter(d=>d.variance>0).map(d=>d.variance).sort((a,b)=>a-b);
-          const _medVar = _variances.length > 0 ? _variances[Math.floor(_variances.length/2)] : 0;
-          _dayStats.forEach(d => {
-            let chaotic = false; const reasons = [];
-            if (_medCount > 0 && Math.abs(d.count - _medCount) / _medCount > 0.5) { chaotic = true; reasons.push(d.count > _medCount ? "unusually frequent feeds" : "fewer feeds than normal"); }
-            if (_medVar > 0 && d.variance > _medVar * 2.5) { chaotic = true; reasons.push("erratic feed spacing"); }
-            if (_medMean > 0 && d.mean > 0 && Math.abs(d.mean - _medMean) / _medMean > 0.4) { chaotic = true; reasons.push(d.mean > _medMean ? "longer gaps than usual" : "shorter gaps than usual"); }
-            if (chaotic) { d._chaotic = true; _chaoticDays.push({ date: d.dk, reasons }); }
-          });
-          const _goodDays = _dayStats.filter(d => !d._chaotic);
-          const _goodIntervals = [];
-          (_goodDays.length >= 2 ? _goodDays : _dayStats).forEach(d => _goodIntervals.push(...d.gaps));
-          if (_goodIntervals.length >= 3) _avgFeedInterval = Math.round(_goodIntervals.reduce((s,v)=>s+v,0) / _goodIntervals.length);
-        } else {
-          const _allI = []; _dayStats.forEach(d => _allI.push(...d.gaps));
-          if (_allI.length >= 3) _avgFeedInterval = Math.round(_allI.reduce((s,v)=>s+v,0) / _allI.length);
-        }
-      } catch(ex) { /* anomaly detection failed — use age guideline */ }
+    // Get expanded action if available
+    try { const _ern = expandedRightNow(); if (_ern) _rightNow = "Right now: " + _ern.text; } catch {}
 
-      // NHS-aligned daytime feed interval guidelines
-      const _ageThreshM = age ? (
-        age.totalWeeks < 4 ? 120 : age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 160 :
-        age.totalWeeks < 26 ? 150 : age.totalWeeks < 39 ? 180 : age.totalWeeks < 52 ? 180 : 210
-      ) : 160;
-      let _feedThreshM = _avgFeedInterval ? Math.round(_avgFeedInterval * 0.85 + _ageThreshM * 0.15) : _ageThreshM;
+    // ── Build secondary info line (always: last feed + nappy context) ──
+    const _secParts = [];
+    if (_feedGapM < 9000) _secParts.push("🍼 Last feed " + hm(_feedGapM) + " ago" + (_nextFeedStr && _feedGapM < _feedThreshM ? " · next ~" + _nextFeedStr : ""));
+    if (_nappyGapM < 9000 && _nappyGapM >= 120) _secParts.push("🧷 Nappy " + hm(_nappyGapM) + " ago");
+    else if (_nappyGapM < 120 && _nappyGapM < 9000) _secParts.push("🧷 Nappy changed " + hm(_nappyGapM) + " ago");
+    if (_growthSpurt) _secParts.push("📈 Possible growth spurt — extra feeds are normal");
+    if (_quietDay && !_growthSpurt) _secParts.push("Fewer feeds than usual today — keep offering");
+    _secondary = _secParts.length > 0 ? _secParts.join(" · ") : null;
 
-      // Smart feed prediction: last session size + time-of-day pattern
-      let _smartFeedNote = null;
-      try {
-        if (_lastFeed) {
-          const _lfe = _lastFeed.entry;
-          const _lfAmount = _lfe.amount || 0;
-          const _lfIsBreast = _lfe.feedType === "breast";
-          const _lfBreastSec = (_lfe.breastL || 0) + (_lfe.breastR || 0);
-          const _lfMins = timeVal(_lfe);
-          const w = age ? age.totalWeeks : 12;
-
-          // Per-feed target: use actual weight (150ml/kg/day ÷ feeds/day) when available
-          // NHS guideline: 150ml per kg of body weight per day
-          const _latestWeight = weights && weights.length > 0 ? weights[weights.length-1].kg : null;
-          const _feedsPerDay = w < 4 ? 10 : w < 8 ? 7 : w < 13 ? 6 : w < 26 ? 5 : w < 39 ? 4 : w < 52 ? 3 : 3;
-          const _perFeedTarget = _latestWeight
-            ? Math.round((_latestWeight * 150) / _feedsPerDay) // weight-based: 150ml/kg/day
-            : (w < 4 ? 60 : w < 8 ? 90 : w < 13 ? 125 : w < 26 ? 180 : w < 39 ? 180 : 200); // age-only fallback
-
-          // Historical feeds at similar time of day (±2h, last 7 days)
-          const _histDays = Object.keys(days).sort().slice(-7);
-          const _simFeeds = []; const _simIntervals = [];
-          _histDays.forEach(dk => {
-            const _dFeeds = (days[dk]||[]).filter(e=>e.type==="feed"&&e.time&&!e.night).sort((a,b)=>timeVal(a)-timeVal(b));
-            _dFeeds.forEach((e, i) => {
-              const diff = Math.abs(timeVal(e) - _lfMins);
-              if (diff <= 120 || diff >= 1320) {
-                _simFeeds.push(e);
-                if (i < _dFeeds.length - 1) { const g = timeVal(_dFeeds[i+1]) - timeVal(e); if (g > 20 && g < 360) _simIntervals.push(g); }
-              }
-            });
-          });
-          const _simAmounts = _simFeeds.filter(e=>(e.amount||0)>0).map(e=>e.amount);
-          const _avgAmountAtTime = _simAmounts.length >= 2 ? Math.round(_simAmounts.reduce((s,v)=>s+v,0)/_simAmounts.length) : null;
-          const _avgIntervalAtTime = _simIntervals.length >= 2 ? Math.round(_simIntervals.reduce((s,v)=>s+v,0)/_simIntervals.length) : null;
-          const _simBreastSecs = _simFeeds.filter(e=>e.feedType==="breast"&&((e.breastL||0)+(e.breastR||0))>0).map(e=>(e.breastL||0)+(e.breastR||0));
-          const _avgBreastSecAtTime = _simBreastSecs.length >= 2 ? Math.round(_simBreastSecs.reduce((s,v)=>s+v,0)/_simBreastSecs.length) : null;
-
-          // Adjust interval based on how full the last feed was vs the per-feed target
-          let _adjustRatio = 1.0;
-          if (_lfIsBreast && _avgBreastSecAtTime && _lfBreastSec > 0) {
-            _adjustRatio = Math.min(1.2, Math.max(0.5, _lfBreastSec / _avgBreastSecAtTime));
-          } else if (!_lfIsBreast && _lfAmount > 0) {
-            // Compare to per-feed target (weight-based when available) — NOT to historical avg at this time
-            _adjustRatio = Math.min(1.2, Math.max(0.5, _lfAmount / _perFeedTarget));
-          }
-
-          // Best interval: prefer baby's overall rhythm, use time-of-day only if close to overall average
-          // This prevents one long nap-gap from inflating the prediction
-          let _baseInterval = _avgFeedInterval || _ageThreshM;
-          if (_avgIntervalAtTime && _avgFeedInterval) {
-            // Only use time-of-day interval if it's within 30% of overall average (otherwise it's an outlier)
-            if (Math.abs(_avgIntervalAtTime - _avgFeedInterval) / _avgFeedInterval <= 0.3) {
-              _baseInterval = _avgIntervalAtTime;
-            }
-          }
-          _feedThreshM = Math.round(_baseInterval * _adjustRatio);
-
-          // Hard cap: never predict more than 25% beyond age guideline
-          _feedThreshM = Math.min(_feedThreshM, Math.round(_ageThreshM * 1.25));
-
-          // Build context note
-          if (!_lfIsBreast && _lfAmount > 0) {
-            const _pct = Math.round((_lfAmount / _perFeedTarget) * 100);
-            if (_pct < 75) {
-              _smartFeedNote = "last feed " + _lfAmount + "ml (" + _pct + "% of " + _perFeedTarget + "ml target" + (_latestWeight ? " for " + _latestWeight + "kg" : "") + ") — may be hungry sooner";
-            } else if (_pct > 120) {
-              _smartFeedNote = "big feed (" + _lfAmount + "ml vs " + _perFeedTarget + "ml target)";
-            }
-          } else if (_lfIsBreast && _lfBreastSec > 0 && _avgBreastSecAtTime) {
-            const _pct = Math.round((_lfBreastSec / _avgBreastSecAtTime) * 100);
-            if (_pct < 70) _smartFeedNote = "shorter feed (" + Math.floor(_lfBreastSec/60) + "min vs usual " + Math.floor(_avgBreastSecAtTime/60) + "min) — may be hungry sooner";
-          }
-        }
-      } catch(ex) { /* smart prediction failed */ }
-
-      // Final safety cap on _feedThreshM
-      _feedThreshM = Math.min(_feedThreshM, Math.round(_ageThreshM * 1.25));
-
-      if (_lastFeed) {
-        let _feedGapM = _lastFeed.gap;
-        if (_feedGapM >= _feedThreshM && _feedGapM < 1500) {
-          _hints.push("might be ready for a feed — last one " + hm(Math.min(_feedGapM, 900)) + " ago");
-          if (_smartFeedNote) _hints.push(_smartFeedNote);
-        } else if (_feedGapM >= 0 && _feedGapM < _feedThreshM && _feedGapM < 720) {
-          const [fh,fm]=_lastFeed.entry.time.split(":").map(Number);
-          const t=fh*60+fm+_feedThreshM;
-          _hints.push("next feed ~" + fmt12(`${String(Math.floor(t/60)%24).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`) + " (based on " + (_avgFeedInterval ? _name + "'s rhythm" : "age guideline") + ")");
-          if (_smartFeedNote) _hints.push(_smartFeedNote);
-        } else if (_feedGapM >= 720) {
-          _hints.push("could be ready for a feed soon");
-        }
-      } else {
-        _hints.push("could be ready for a feed soon");
-      }
-      if (_lastNappy) {
-        let _nappyGapM = _lastNappy.gap;
-        if (_nappyGapM >= 150 && _nappyGapM < 1500) _hints.push("a fresh nappy might help — last one " + hm(Math.min(_nappyGapM, 900)) + " ago");
-        else if (_nappyGapM >= 0 && _nappyGapM < 900) _hints.push("nappy changed " + hm(_nappyGapM) + " ago");
-      } else {
-        _hints.push("a fresh nappy could be nice");
-      }
-      if (_hints.length) _feedNappyHint = _hints.join(" · ");
-    } catch(e) { _feedNappyHint = null; }
-
-    // ── "Right now" action line (expanded) ──
-
-    // Newborn (<6wk) or pre-birthweight regain: NEEDS scheduled night feeds every 2-3h
-    // Everyone else: night wakes are responsive, don't predict times
-    const _needsScheduledNightFeeds = age && (age.totalWeeks < 6 || (weights && weights.length >= 2 && weights[weights.length-1].kg < weights[0].kg));
-    const _nightFeedHint = _needsScheduledNightFeeds
-      ? "Feed every 2–3 hours — " + _name + " needs regular feeds to gain weight"
-      : (()=>{
-          const _parts = [];
-          if (age && age.totalWeeks < 26) _parts.push("Night wakes are completely normal at this age");
-          _parts.push("If " + _name + " wakes, offer a gentle feed" + (age && age.totalWeeks < 52 ? " and check the nappy" : ""));
-          return _parts.join(". ");
-        })();
-
-    // ── Morning: no wake logged ──
-    if (!_dayStarted && _h >= 5 && _h <= 10) {
-      return (
-        <button onClick={()=>{haptic();handleSmartWake();}} className="glass-card prio-glow" style={{width:"100%",padding:"20px 18px",marginBottom:12,cursor:_cP,textAlign:"left"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-            <div style={{width:10,height:10,borderRadius:"50%",background:"#D4A855",boxShadow:"0 0 8px rgba(212,168,85,0.4)"}}/>
-            <span style={{fontSize:16,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>Good morning! ☀️</span>
-          </div>
-          <div style={{fontSize:13,color:C.mid,marginBottom:6}}>Tap to start {_name}'s day</div>
-          {_feedNappyHint && !_dayStarted && <div style={{fontSize:11,color:C.lt,marginBottom:6,fontFamily:_fM}}>🍼 When {_name} wakes, {_feedNappyHint}</div>}
-          <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>{_reassure}</div>
-        </button>
-      );
-    }
-
-    // ── Night mode (9pm–5am) with bedtime logged ──
+    // ── PRIORITY 1: Night mode (9pm–5am with bedtime) ──
     if ((_h >= 21 || _h < 5) && _hasBed) {
-      const _bedEntry = _today.find(e => e.type === "sleep" && !e.night);
+      const _bedEntry = _todayEntries.find(e => e.type === "sleep" && !e.night);
       const _timeStr = nightElapsed !== null && nightElapsed > 0
         ? "Sleeping since " + (_bedEntry ? fmt12(_bedEntry.time) : "") + " · " + Math.floor(nightElapsed/3600) + "h " + Math.floor((nightElapsed%3600)/60) + "m"
         : "Sleeping for the night";
@@ -3981,6 +3819,7 @@ function App(){
           {_nwCtx && _nwCtx.wakeNum > 0 && _nwCtx.contextLine && <div style={{fontSize:12,color:C.lt,marginBottom:6,paddingLeft:2}}>{_nwCtx.contextLine}</div>}
           {_nwCtx && _nwCtx.wakeNum > 0 && _nwCtx.topReason && <div style={{fontSize:13,color:C.ter,fontWeight:600,marginBottom:8,paddingLeft:2}}>{_nwCtx.topReason}</div>}
           {_nwCtx && _nwCtx.wakeNum > 0 && _nwCtx.helpLine && <div style={{fontSize:12,color:C.mint,fontStyle:"italic",marginBottom:8,paddingLeft:2}}>{_nwCtx.helpLine}</div>}
+          {_feedGapM < 9000 && <div style={{fontSize:12,color:C.lt,marginBottom:8,paddingLeft:2}}>🍼 Last feed {hm(_feedGapM)} ago</div>}
           <button onClick={()=>{haptic();setShowNightWake(true);setNwForm({time:nowTime(),ml:"",selfSettled:false,assisted:false,assistedType:"milk",assistedNote:"",assistedDuration:"",settleDuration:"",note:""});}} style={{width:"100%",padding:"12px",borderRadius:12,border:"1.5px solid rgba(123,104,238,0.25)",background:"rgba(123,104,238,0.06)",color:C.deep,fontSize:14,fontWeight:600,cursor:_cP}}>
             Log night wake
           </button>
@@ -3990,194 +3829,78 @@ function App(){
       );
     }
 
-    // ── Determine status ──
-    let _expandedRN = null;
-    try { _expandedRN = expandedRightNow(); } catch(e) {}
-    let _rightNow = _expandedRN ? ("Right now: " + _expandedRN.text) : null;
+    // ── PRIORITY 2: Morning — no wake, no entries ──
+    if (!_dayStarted && _h >= 5 && _h <= 10) {
+      // Build hint from last feed
+      const _feedHint = _feedGapM < 9000 ? "last feed " + hm(_feedGapM) + " ago" : null;
+      return (
+        <button onClick={()=>{haptic();handleSmartWake();}} className="glass-card prio-glow" style={{width:"100%",padding:"20px 18px",marginBottom:12,cursor:_cP,textAlign:"left"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+            <div style={{width:10,height:10,borderRadius:"50%",background:"#D4A855",boxShadow:"0 0 8px rgba(212,168,85,0.4)"}}/>
+            <span style={{fontSize:16,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>Good morning! ☀️</span>
+          </div>
+          <div style={{fontSize:13,color:C.mid,marginBottom:6}}>Tap to start {_name}'s day</div>
+          {_feedHint && <div style={{fontSize:11,color:C.lt,marginBottom:6,fontFamily:_fM}}>🍼 When {_name} wakes, {_feedHint}</div>}
+          <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>{_reassure}</div>
+        </button>
+      );
+    }
 
+    // ── PRIORITY 3: Nap in progress ──
     if (napOn) {
       const _napMins = Math.floor(napSec / 60);
-      // Check if this is a bridge nap
-      const _activeEntry = napEntryId ? _today.find(e => e.id === napEntryId) : null;
+      const _activeEntry = napEntryId ? _todayEntries.find(e => e.id === napEntryId) : null;
       const _isBridgeNap = _activeEntry && _activeEntry.isBridge;
-      
-      // Only treat as bedtime if: all naps done AND it's genuinely evening (7pm+)
-      // A long nap at 1:34pm–5pm is NOT bedtime even if all expected naps are done
       const _bedPredMins = _bed && _bed.time ? (()=>{ const [bh,bm]=_bed.time.split(":").map(Number); return bh*60+bm; })() : null;
-      const _earliestBedMins = _bedPredMins ? Math.max(_bedPredMins - 30, 19*60) : 19*60; // Never before 7pm
+      const _earliestBedMins = _bedPredMins ? Math.max(_bedPredMins - 30, 19*60) : 19*60;
       const _isLikelyBedtime = _napsComplete && _nowM >= _earliestBedMins && !_isBridgeNap;
-
-      // Detect long nap: significantly over typical duration
-      const _expDur = Math.round((_profile.idealNapDurMin + _profile.idealNapDurMax) / 2);
-      const _isLongNap = _napMins > _expDur * 1.5 && _napMins > 60;
-      // Total day sleep so far including this nap
-      const _totalDaySleepSoFar = _totalNapMin + _napMins;
-      // If this nap pushes total day sleep near/past the max, last nap may need skipping
-      const _shouldSkipLastNap = !_napsComplete && _totalDaySleepSoFar >= _dailySleepMax * 0.85;
+      const _napMax = _profile.idealNapDurMax;
 
       if (_isLikelyBedtime) {
-        // Genuinely bedtime
         _dot = "#7B68EE"; _label = "Sleeping for the night 🌙";
         _timing = "Sleeping " + _napMins + " min · Sweet dreams, " + _name;
-        _feedNappyHint = _nightFeedHint;
+        _secondary = _nightFeedHint;
         _rightNow = null;
       } else if (_isBridgeNap) {
         _dot = "#D4A855"; _label = "Bridge nap 🌉";
-        const _bridgeTarget = 20;
-        if (_napMins < _bridgeTarget) {
-          _timing = "Sleeping " + _napMins + " min · Gently wake " + _name + " around " + _bridgeTarget + " min";
-        } else if (_napMins < 30) {
-          _timing = "Sleeping " + _napMins + " min · Time to gently wake " + _name;
-          _rightNow = "Right now: " + _bridgeTarget + " min is up — a gentle wake helps keep bedtime on track";
-        } else {
-          _timing = "Sleeping " + _napMins + " min · That's OK — we'll nudge bedtime a little later";
-        }
-        if (_feedNappyHint) _feedNappyHint = "When " + _name + " wakes, " + _feedNappyHint;
+        _timing = _napMins < 20 ? "Sleeping " + _napMins + " min · Gently wake around 20 min" : _napMins < 30 ? "Sleeping " + _napMins + " min · Time to gently wake " + _name : "Sleeping " + _napMins + " min · That's OK — we'll nudge bedtime a little later";
+      } else if (_napMins >= _napMax + 30) {
+        _dot = "#E8937A"; _label = "Nap " + (_napsDone + 1) + " — very long";
+        _timing = "Sleeping " + hm(_napMins) + " · Well past the typical " + _napMax + " min max for " + fmtAge(age);
+        _rightNow = "Right now: Consider gently waking " + _name + " — very long naps can steal from overnight sleep";
+      } else if (_napMins >= _napMax) {
+        _dot = "#D4A855"; _label = "Nap " + (_napsDone + 1) + " — long";
+        _timing = "Sleeping " + hm(_napMins) + " · Past the typical " + _napMax + " min max";
       } else {
-        // Normal nap — show nap count with progressive wake guidance
-        const _napMax = _profile.idealNapDurMax; // Age-appropriate max (e.g. 120 min at 5mo)
-        const _wakeNudgeAt = Math.round(_napMax * 0.85); // Nudge at 85% of max (e.g. 102 min)
-
-        if (_napMins >= _napMax + 30) {
-          // Way over max — strongly suggest waking
-          _dot = "#E8937A"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected + " — very long";
-          _timing = "Sleeping " + hm(_napMins) + " · Well past the typical " + _napMax + " min max for " + fmtAge(age);
-          if (_shouldSkipLastNap) {
-            _rightNow = "Right now: Total day sleep is " + hm(_totalDaySleepSoFar) + " (max ~" + hm(_dailySleepMax) + "). Consider gently waking " + _name + ", skip the last nap and bring bedtime earlier";
-          } else {
-            _rightNow = "Right now: Consider gently waking " + _name + " — very long naps can steal from overnight sleep and make the next nap harder. " + _name + " may not need all " + _adjustedExpected + " naps today";
-          }
-        } else if (_napMins >= _napMax) {
-          // Over max — suggest waking
-          _dot = "#D4A855"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected + " — long";
-          _timing = "Sleeping " + hm(_napMins) + " · Past the typical " + _napMax + " min max";
-          if (_shouldSkipLastNap) {
-            _rightNow = "Right now: Big nap — total day sleep approaching " + hm(_totalDaySleepSoFar) + ". You may want to skip the last nap and bring bedtime earlier";
-          } else {
-            _rightNow = "Right now: This nap has hit the age-appropriate max (" + _napMax + " min). It's OK to gently wake " + _name + " to protect the next wake window and bedtime";
-          }
-        } else if (_napMins >= _wakeNudgeAt) {
-          // Approaching max — gentle heads up
-          _dot = "#7B68EE"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected;
-          const _rem = _napMax - _napMins;
-          _timing = "Sleeping " + _napMins + " min · ~" + _rem + " min until typical max (" + _napMax + " min)";
-          if (_feedNappyHint) _feedNappyHint = "When " + _name + " wakes, " + _feedNappyHint;
-        } else {
-          // Normal nap, under typical range
-          _dot = "#7B68EE"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected;
-          const _rem = Math.max(0, _expDur - _napMins);
-          _timing = "Sleeping " + _napMins + " min" + (_rem > 0 ? " · Expected wake ~" + _rem + " min" : " · May wake soon");
-          if (_feedNappyHint) _feedNappyHint = "When " + _name + " wakes, " + _feedNappyHint;
-        }
+        _dot = "#7BA68C"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected;
+        _timing = "Sleeping " + hm(_napMins) + " · " + _name + " is resting well";
       }
-    } else if (_hasBed && (_h >= 19 || _h < 5) && _napsComplete) {
-      // Only show "sleeping for the night" if genuinely evening AND all naps done
-      _dot = "#7B68EE"; _label = "Sleeping for the night";
-      const _bedEntry2 = _today.find(e => e.type === "sleep" && !e.night);
-      _timing = nightElapsed !== null && nightElapsed > 0
-        ? "Sleeping since " + (_bedEntry2 ? fmt12(_bedEntry2.time) : "") + " · " + Math.floor(nightElapsed/3600) + "h " + Math.floor((nightElapsed%3600)/60) + "m"
-        : "";
-      _feedNappyHint = _nightFeedHint;
-    } else if (_hasBed && !_napsComplete) {
-      // Bedtime logged but baby still has naps remaining — this is likely a mislog or early nap end
-      _dot = "#7BA68C"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected + " still expected";
-      _timing = "Awake " + hm(_awakeMin) + " · " + _name + " usually has " + _adjustedExpected + " naps at this age";
-      _rightNow = "A bedtime entry was logged but " + _name + " still has " + (_adjustedExpected - _napsDone) + " nap" + ((_adjustedExpected - _napsDone) !== 1 ? "s" : "") + " expected today. If this was a nap, you can edit the entry.";
-    } else if (_hasBed) {
-      // Bedtime logged during day, all naps done but too early for night
-      _dot = "#7BA68C"; _label = "All naps complete — waiting for bedtime";
-      _timing = "Awake " + hm(_awakeMin) + " · " + (_bed ? "Bedtime at ~" + fmt12(_bed.time) : "Bedtime soon");
     }
-    // ── Dynamic skip-nap check ──
-    // Even if profile says more naps expected, check if another nap TODAY would push bedtime too late
-    // Based on: paediatric sleep consultant consensus — protect the 7-8pm bedtime window,
-    // an early bedtime (even 6pm) is better than a late nap that delays bedtime past 8pm
-    let _shouldSkipNextNap = false;
-    let _skipNapReason = "";
-    let _earlyBedSuggestion = null;
-    if (!napOn && !_hasBed && !_napsComplete && _napsDone >= 1) {
-      try {
-        // Find when the last nap ended
-        const _lastNapEntry = _naps.sort((a,b) => timeVal({time:b.end||b.start}) - timeVal({time:a.end||a.start}))[0];
-        const _lastNapEndM = _lastNapEntry && _lastNapEntry.end ? timeVal({time:_lastNapEntry.end}) : null;
-        if (_lastNapEndM !== null) {
-          // Calculate: if baby napped at earliest opportunity, would bedtime be too late?
-          const _settleTime = 15; // minutes to settle before next nap
-          const _minNapDur = _profile.idealNapDurMin; // shortest reasonable nap
-          const _wwAfterNap = _ww.min; // minimum wake window before bed
-          const _earliestNapStart = Math.max(_nowM, _lastNapEndM + _ww.min);
-          const _earliestNapEnd = _earliestNapStart + _minNapDur;
-          const _earliestBedtime = _earliestNapEnd + _wwAfterNap;
-          const _latestAcceptableBed = 20 * 60; // 8pm = 1200 min
-          // Also check total day sleep — would another nap exceed daily max?
-          const _totalWithMinNap = _totalNapMin + _minNapDur;
-
-          if (_earliestBedtime > _latestAcceptableBed || _totalWithMinNap > _dailySleepMax) {
-            _shouldSkipNextNap = true;
-            // Calculate ideal early bedtime: last nap end + appropriate WW
-            const _idealEarlyBed = _lastNapEndM + Math.round((_ww.min + _ww.max) / 2);
-            const _earlyBedStr = fmt12(`${String(Math.floor(_idealEarlyBed/60)%24).padStart(2,"0")}:${String(_idealEarlyBed%60).padStart(2,"0")}`);
-            _earlyBedSuggestion = _earlyBedStr;
-
-            if (_totalWithMinNap > _dailySleepMax) {
-              _skipNapReason = _name + " has had " + hm(_totalNapMin) + " of day sleep (max ~" + hm(_dailySleepMax) + " at this age). Another nap would exceed the daily limit and could disrupt overnight sleep.";
-            } else {
-              const _bedIfNapped = fmt12(`${String(Math.floor(_earliestBedtime/60)%24).padStart(2,"0")}:${String(_earliestBedtime%60).padStart(2,"0")}`);
-              _skipNapReason = "Even the shortest nap (" + _minNapDur + " min) would push bedtime to ~" + _bedIfNapped + ". An earlier bedtime (around " + _earlyBedStr + ") protects overnight sleep better than a late nap.";
-            }
-          }
-        }
-      } catch {}
-    }
-
-    if (_shouldSkipNextNap && !napOn && !_hasBed) {
-      // Override nap prediction — advise skipping and doing early bedtime
-      _dot = "#6B5B95"; _label = "Skip nap " + (_napsDone+1) + " today — early bedtime";
-      _timing = _napsDone + " of " + _adjustedExpected + " naps done · Aim for bedtime ~" + (_earlyBedSuggestion || "6:30pm");
-      _rightNow = _skipNapReason + " Sleep consultants recommend: when in doubt, protect bedtime. An early bedtime (even 6pm) won't cause early morning waking — it actually helps overnight consolidation.";
-    } else if (_pred && _pred.isOverdue) {
-      _dot = "#E8937A"; _label = "Winding down soon";
-      _timing = "Awake " + hm(_awakeMin) + " · Past the nap window — settling time";
-    } else if (_napsComplete && _bed && !_bed.estimated) {
-      const _bParts = _bed.time.split(":").map(Number);
-      const _minsUntilBed = Math.max(0, _bParts[0]*60+_bParts[1] - _nowM);
-      // Check if a bridge nap is suggested — if so, naps aren't truly complete
-      let _bridgeInfo = null;
-      try { _bridgeInfo = earlyBedtimeRisk(); } catch {}
-      if (_minsUntilBed <= 30) {
-        _dot = "#6B5B95"; _label = "Winding down for bed";
-        _timing = "Bedtime in ~" + _minsUntilBed + " min · Wind-down time";
-      } else if (_bridgeInfo && _bridgeInfo.suggestBridge) {
-        const _bridgeStartMins = _bridgeInfo.bridgeStart;
-        const _minsUntilBridge = _bridgeStartMins - _nowM;
-        if (_minsUntilBridge > -30) {
-          // Bridge nap window still open
-          const _bStart = fmt12(`${String(Math.floor(_bridgeStartMins/60)%24).padStart(2,"0")}:${String(_bridgeStartMins%60).padStart(2,"0")}`);
-          _dot = "#D4A855"; _label = "Bridge nap suggested";
-          _timing = _minsUntilBridge > 0
-            ? "Short nap ~" + _bStart + " (~20 min) · Then bedtime at ~" + fmt12(_bed.time)
-            : "Bridge nap window is now — a quick 20 min nap can help";
-        } else {
-          // Bridge window passed — baby didn't nap, switch to bedtime
-          _dot = "#7BA68C"; _label = "Skipped bridge nap — that's OK";
-          _timing = "Bedtime at ~" + fmt12(_bed.time) + " · " + _name + " may be a bit tired — an earlier bedtime helps";
-        }
-      } else {
-        _dot = "#7BA68C"; _label = "All naps complete";
-        _timing = "Bedtime at ~" + fmt12(_bed.time) + " · " + _napsDone + " nap" + (_napsDone !== 1 ? "s" : "") + " done today";
+    // ── PRIORITY 4: Feed overdue ──
+    else if (_dayStarted && _feedGapM >= _feedThreshM && _feedGapM < 1500 && !_hasBed) {
+      _dot = "#7aabc4"; _label = "Feed window opening";
+      _timing = "Last feed " + hm(_feedGapM) + " ago" + (_nextFeedStr ? " · was due ~" + _nextFeedStr : "");
+      if (_lastFeed && _lastFeed.amount > 0 && _lastFeed.amount < _perFeedTarget * 0.75) {
+        const _pct = Math.round((_lastFeed.amount / _perFeedTarget) * 100);
+        _rightNow = "Last feed was " + _lastFeed.amount + "ml (" + _pct + "% of " + _perFeedTarget + "ml target) — " + _name + " may be hungry sooner";
       }
-    } else if (_pred && !_pred.isOverdue) {
+    }
+    // ── PRIORITY 5: Nap approaching / overdue ──
+    else if (_dayStarted && _pred && !_hasBed && !_napsComplete) {
+      const _napTimeStr = fmt12(_pred.napStart_min);
       const _pParts = _pred.napStart_min.split(":").map(Number);
       const _minsUntilNap = Math.max(0, _pParts[0]*60+_pParts[1] - _nowM);
       const _isPersonal = _pred.sourceLabel && _pred.sourceLabel.includes("pattern");
       const _rhythmTag = _isPersonal ? " · OBubba Rhythm" : "";
-      const _napTimeStr = fmt12(_pred.napStart_min);
-      const _napCountTag = " · Nap " + (_napsDone+1) + " of " + _adjustedExpected;
-      if (_minsUntilNap <= 10) {
-        _dot = "#D4A855"; _label = "Nap " + (_napsDone+1) + " of " + _adjustedExpected + " — window open";
+
+      if (_pred.isOverdue) {
+        _dot = "#E8937A"; _label = "Winding down soon";
+        _timing = "Awake " + hm(_awakeMin) + " · Past the nap window — settling time";
+      } else if (_minsUntilNap <= 10) {
+        _dot = "#D4A855"; _label = "Nap " + (_napsDone+1) + " — window open";
         _timing = "Awake " + hm(_awakeMin) + " · Ready for a nap now" + _rhythmTag;
       } else if (_minsUntilNap <= 20) {
-        _dot = "#D4A855"; _label = "Nap " + (_napsDone+1) + " of " + _adjustedExpected + " approaching";
+        _dot = "#D4A855"; _label = "Nap " + (_napsDone+1) + " approaching";
         _timing = "Awake " + hm(_awakeMin) + " · Nap at ~" + _napTimeStr + _rhythmTag;
       } else if (_minsUntilNap <= 30) {
         _dot = "#D4A855"; _label = "Settling time";
@@ -4186,46 +3909,93 @@ function App(){
         _dot = "#7BA68C"; _label = "All good right now";
         _timing = "Awake " + hm(_awakeMin) + " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " around " + _napTimeStr + _rhythmTag;
       }
-    } else if (_dayStarted && _allFeedsIncNight.length > 0) {
-      // Real-time last feed: cross-day aware, anchored on calendar today
-      const _rtNow = todayStr();
-      const _rtPrev = (()=>{const d=new Date(_rtNow+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
-      const _rtTag = (arr, dk) => arr.map(e => ({...e, _rtdk: dk}));
-      const _rtPool = [
-        ..._rtTag(days[_rtNow]||[], _rtNow),
-        ..._rtTag(days[_rtPrev]||[], _rtPrev),
-        ...(_heroDay !== _rtNow && _heroDay !== _rtPrev ? _rtTag(_today, _heroDay) : [])
-      ];
-      const _rtFeeds = _rtPool.filter(e => e.time && (e.type === "feed" || (e.amount && e.amount > 0) || (e.night && (e.assistedType === "milk" || e.feedType === "milk"))));
-      const _rtGap = (e) => {
-        const tv = timeVal(e);
-        let gap = _nowM - tv;
-        if (e._rtdk === _rtNow) { if (gap < 0) gap += 1440; }
-        else { if (gap < 0) gap += 1440; const dd = Math.round((new Date(_rtNow+"T12:00:00") - new Date(e._rtdk+"T12:00:00")) / 86400000); if (dd > 0) gap += (dd - 1) * 1440; }
-        return Math.max(0, gap);
-      };
-      const _rtBest = _rtFeeds.length > 0 ? _rtFeeds.reduce((best, e) => _rtGap(e) < _rtGap(best) ? e : best) : null;
-      let _minsSinceFeed = _rtBest ? _rtGap(_rtBest) : 9999;
-      if (_minsSinceFeed >= 150 && _minsSinceFeed < 1500) {
+    }
+    // ── PRIORITY 5b: Dynamic skip-nap check ──
+    else if (_dayStarted && !_hasBed && !_napsComplete && _napsDone >= 1) {
+      let _shouldSkip = false;
+      let _earlyBedStr = null;
+      try {
+        const _lastNapEntry = _naps.sort((a,b) => timeVal({time:b.end||b.start}) - timeVal({time:a.end||a.start}))[0];
+        const _lne = _lastNapEntry && _lastNapEntry.end ? timeVal({time:_lastNapEntry.end}) : null;
+        if (_lne !== null) {
+          const _earliestNapEnd = Math.max(_nowM, _lne + _ww.min) + _profile.idealNapDurMin;
+          const _earliestBed = _earliestNapEnd + _ww.min;
+          if (_earliestBed > 20*60 || (_totalNapMin + _profile.idealNapDurMin) > _dailySleepMax) {
+            _shouldSkip = true;
+            const _idealBed = _lne + Math.round((_ww.min + _ww.max) / 2);
+            _earlyBedStr = fmt12(`${String(Math.floor(_idealBed/60)%24).padStart(2,"0")}:${String(_idealBed%60).padStart(2,"0")}`);
+          }
+        }
+      } catch {}
+      if (_shouldSkip) {
+        _dot = "#6B5B95"; _label = "Skip nap " + (_napsDone+1) + " — early bedtime";
+        _timing = _napsDone + " of " + _adjustedExpected + " naps done · Aim for bedtime ~" + (_earlyBedStr || "6:30pm");
+        _rightNow = "An early bedtime protects overnight sleep better than a late nap. Sleep consultants recommend: when in doubt, protect bedtime.";
+      } else {
+        _dot = "#7BA68C"; _label = "All good right now";
+        _timing = "Awake " + hm(_awakeMin) + " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " still to come";
+      }
+    }
+    // ── PRIORITY 5c: All naps done — bedtime context ──
+    else if (_dayStarted && _napsComplete && _bed && !_hasBed) {
+      const _bParts = _bed.time ? _bed.time.split(":").map(Number) : [19,0];
+      const _minsUntilBed = Math.max(0, _bParts[0]*60+_bParts[1] - _nowM);
+      let _bridgeInfo = null;
+      try { _bridgeInfo = earlyBedtimeRisk(); } catch {}
+
+      if (_minsUntilBed <= 30) {
+        _dot = "#6B5B95"; _label = "Winding down for bed";
+        _timing = "Bedtime in ~" + _minsUntilBed + " min · Wind-down time";
+      } else if (_bridgeInfo && _bridgeInfo.suggestBridge) {
+        const _bStart = _bridgeInfo.bridgeStart;
+        const _mUntilBridge = _bStart - _nowM;
+        if (_mUntilBridge > -30) {
+          _dot = "#D4A855"; _label = "Bridge nap suggested";
+          _timing = _mUntilBridge > 0
+            ? "Short nap ~" + fmt12(`${String(Math.floor(_bStart/60)%24).padStart(2,"0")}:${String(_bStart%60).padStart(2,"0")}`) + " (~20 min) · Then bedtime at ~" + fmt12(_bed.time)
+            : "Bridge nap window is now — a quick 20 min nap can help";
+        } else {
+          _dot = "#7BA68C"; _label = "Skipped bridge nap — that's OK";
+          _timing = "Bedtime at ~" + fmt12(_bed.time) + " · An earlier bedtime helps";
+        }
+      } else {
+        _dot = "#7BA68C"; _label = "All naps complete";
+        _timing = "Bedtime at ~" + fmt12(_bed.time) + " · " + _napsDone + " nap" + (_napsDone !== 1 ? "s" : "") + " done today";
+      }
+    }
+    // ── PRIORITY 5d: Bedtime logged during day ──
+    else if (_dayStarted && _hasBed && _h < 21) {
+      const _bedEntry2 = _todayEntries.find(e => e.type === "sleep" && !e.night);
+      _dot = "#7B68EE"; _label = "Sleeping for the night 🌙";
+      _timing = nightElapsed !== null && nightElapsed > 0
+        ? "Sleeping since " + (_bedEntry2 ? fmt12(_bedEntry2.time) : "") + " · " + Math.floor(nightElapsed/3600) + "h " + Math.floor((nightElapsed%3600)/60) + "m"
+        : "";
+      _secondary = _nightFeedHint;
+    }
+    // ── PRIORITY 6: Day started, feeds logged, no nap prediction ──
+    else if (_dayStarted && _feedGapM < 9000) {
+      if (_feedGapM >= 150) {
         _dot = "#7aabc4"; _label = "Feed window opening";
-        _timing = "Last feed " + hm(_minsSinceFeed) + " ago · " + (age && age.totalWeeks < 3 ? "little ones this age often need feeding every 2–3h" : _name + " might be getting peckish");
-      } else if (_minsSinceFeed >= 1500) {
-        _dot = "#7aabc4"; _label = "Feed window opening";
-        _timing = "It's been a while since the last feed — " + _name + " might be hungry";
+        _timing = "Last feed " + hm(_feedGapM) + " ago · " + (_w < 3 ? "little ones this age often need feeding every 2–3h" : _name + " might be getting peckish");
       } else {
         _dot = "#7BA68C"; _label = "All good right now";
         _timing = "Awake " + hm(_awakeMin) + (!_napsComplete ? " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " still to come" : " · Enjoying the day");
       }
-    } else if (_dayStarted) {
+    }
+    // ── PRIORITY 7: Day started but nothing specific ──
+    else if (_dayStarted) {
       _dot = "#7BA68C"; _label = "All good right now";
-      _timing = "Awake " + hm(_awakeMin) + (!_napsComplete ? " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " still to come" : " · Enjoying the day");
-      if (!_hasWake) _rightNow = "Tip: Log a ☀️ Wake to unlock more accurate nap predictions";
-    } else {
+      _timing = "Awake " + hm(_awakeMin) + " · " + (_napsComplete ? "Enjoying the day" : "Nap " + (_napsDone+1) + " of " + _adjustedExpected + " still to come");
+    }
+    // ── PRIORITY 8: Day not started (after 10am) ──
+    else {
       _dot = "#A89898"; _label = "Ready to start";
       _timing = "Log a wake to start tracking " + _name + "'s day";
     }
 
-    // ── Why? content ──
+    // ══════════════════════════════════════════════════════
+    // LAYER 4: Why? content
+    // ══════════════════════════════════════════════════════
     const _whyLines = [];
     _whyLines.push("At " + fmtAge(age) + ", wake windows are typically " + _ww.label + ".");
     if (_pred && _pred.sourceLabel) {
@@ -4240,23 +4010,19 @@ function App(){
       _whyLines.push("🔒 " + _name + "'s personal rhythm is forming — unlock Bubba Rhythm to see it.");
     }
     _whyLines.push("Sleep timing based on NHS Start4Life, AASM (American Academy of Sleep Medicine), and WHO Infant Health guidelines for " + fmtAge(age) + ". Always follow your baby's individual cues.");
-    // Feed & nappy prediction explanation
-    const _latestWt = weights && weights.length > 0 ? weights[weights.length-1].kg : null;
-    if (_latestWt) {
-      const _dailyMl = Math.round(_latestWt * 150);
-      const _fpd = age.totalWeeks < 4 ? 10 : age.totalWeeks < 8 ? 7 : age.totalWeeks < 13 ? 6 : age.totalWeeks < 26 ? 5 : age.totalWeeks < 39 ? 4 : 3;
-      _whyLines.push("🍼 Feed prediction: NHS recommends ~150ml per kg per day. At " + _latestWt + "kg that's ~" + _dailyMl + "ml/day or ~" + Math.round(_dailyMl/_fpd) + "ml per feed across " + _fpd + " feeds. Predictions adjust based on " + _name + "'s last feed size and usual rhythm at this time of day.");
+    if (_latestWeight) {
+      const _dailyMl = Math.round(_latestWeight * 150);
+      _whyLines.push("🍼 Feed prediction: NHS recommends ~150ml per kg per day. At " + _latestWeight + "kg that's ~" + _dailyMl + "ml/day or ~" + Math.round(_dailyMl/_feedsPerDay) + "ml per feed across " + _feedsPerDay + " feeds. Predictions adjust based on " + _name + "'s last feed size and usual rhythm at this time of day.");
     } else {
       _whyLines.push("🍼 Feed prediction: Based on NHS age-appropriate guidelines and " + _name + "'s feeding rhythm over the last 7 days. Add " + _name + "'s weight in settings to get personalised per-feed targets (NHS 150ml/kg/day).");
     }
-    _whyLines.push("Feed and nappy times are gentle estimates — not medical advice. Every baby is different. Always follow " + _name + "'s hunger cues (rooting, lip smacking, fussiness) over any prediction. Unusual days are automatically excluded from the average. If you have concerns about feeding or weight gain, speak to your health visitor or GP.");
+    _whyLines.push("Feed and nappy times are gentle estimates — not medical advice. Every baby is different. Always follow " + _name + "'s hunger cues (rooting, lip smacking, fussiness) over any prediction. If you have concerns about feeding or weight gain, speak to your health visitor or GP.");
 
-    // ── Premium gate: strip prediction details for free users ──
+    // ══════════════════════════════════════════════════════
+    // LAYER 5: Premium gate
+    // ══════════════════════════════════════════════════════
     if (STORE_READY && !isPremium && !trialActive) {
-      // Free users see: basic awake time + generic wake window range
-      // NOT: personalised nap times, bridge nap suggestions, bedtime countdowns
       if (_dot === "#D4A855" || _dot === "#E8937A") {
-        // Nap approaching / overdue / bridge nap → generic
         _timing = "Awake " + hm(_awakeMin) + " · Typical wake window: " + _ww.label;
         _label = _awakeMin > _ww.max ? "Getting tired" : "Watch for sleepy cues";
       }
@@ -4268,15 +4034,19 @@ function App(){
         _timing = "Awake " + hm(_awakeMin) + " · Bedtime approaching";
       }
       _rightNow = null;
+      _secondary = null; // hide detailed feed/nappy context
     }
 
+    // ══════════════════════════════════════════════════════
+    // RENDER
+    // ══════════════════════════════════════════════════════
     return (
       <div className="glass-card prio-glow" style={{padding:"18px 16px",marginBottom:12}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
           <div style={{width:10,height:10,borderRadius:"50%",background:_dot,boxShadow:"0 0 8px "+_dot+"60",animation:"candlePulse 4s ease-in-out infinite"}}/>
           <span style={{fontSize:16,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{_label}</span>
         </div>
-        <div style={{fontSize:13,color:C.mid,marginBottom:_rightNow?4:8,paddingLeft:20}}>{_timing}</div>
+        <div style={{fontSize:13,color:C.mid,marginBottom:_secondary||_rightNow?4:8,paddingLeft:20}}>{_timing}</div>
         {_wakeMissing && (
           <button onClick={()=>{haptic();handleSmartWake();}} style={{display:"flex",alignItems:"center",gap:8,width:"calc(100% - 20px)",marginLeft:20,background:"rgba(212,168,85,0.1)",border:"1.5px solid rgba(212,168,85,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:8,cursor:_cP,textAlign:"left"}}>
             <span style={{fontSize:18}}>☀️</span>
@@ -4286,9 +4056,9 @@ function App(){
             </div>
           </button>
         )}
+        {_secondary && <div style={{fontSize:11,color:C.lt,paddingLeft:20,marginBottom:6,fontFamily:_fM}}>{_secondary}</div>}
         {_rightNow && <div style={{fontSize:12,color:C.ter,fontWeight:600,paddingLeft:20,marginBottom:6}}>{_rightNow}</div>}
-        {_feedNappyHint && <div style={{fontSize:11,color:C.lt,paddingLeft:20,marginBottom:6,fontFamily:_fM}}>🍼 {_feedNappyHint}</div>}
-        {_feedNappyHint && _allFeeds.length >= 6 && !napOn && !_hasBed && !microReassureRef.current && (()=>{
+        {_allFeeds.length >= 6 && !napOn && !_hasBed && !microReassureRef.current && (()=>{
           microReassureRef.current = true;
           const _microMsgs = [
             "You're responding to " + _name + " — that matters most.",
@@ -4313,7 +4083,7 @@ function App(){
               {_whyLines.map((ln,i)=>(
                 <div key={i} style={{fontSize:12,color:i===_whyLines.length-1?"var(--text-lt)":"var(--text-mid)",marginBottom:i<_whyLines.length-1?8:0,lineHeight:1.5}}>{ln}</div>
               ))}
-              <div style={{fontSize:11,color:C.lt,marginTop:10,fontStyle:"italic",borderTop:"1px solid var(--card-border)",paddingTop:8}}>Sleep and wake windows: NHS Start4Life, AASM, WHO. Growth data: WHO Child Growth Standards. Feeding: NHS/WHO complementary feeding guidance. Development: NHS Start4Life developmental milestones. This is general guidance — not medical advice. If you have concerns, speak to your {_doctor}.</div>
+              <div style={{fontSize:11,color:C.lt,marginTop:10,fontStyle:"italic",borderTop:"1px solid var(--card-border)",paddingTop:8}}>Sleep and wake windows: NHS Start4Life, AASM, WHO. Growth data: WHO Child Growth Standards. Feeding: NHS/WHO complementary feeding guidance. This is general guidance — not medical advice. If you have concerns, speak to your {_doctor}.</div>
             </div>
           )}
         </div>
