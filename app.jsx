@@ -1,3 +1,7 @@
+import React from "react";
+import * as ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
+
 const { useState, useEffect, useRef } = React;
 
 // Remove static splash screen (defined in index.html) once React has mounted
@@ -40,7 +44,8 @@ const fmtSec = s => s>=3600 ? `${Math.floor(s/3600)}:${String(Math.floor((s%3600
 const haptic=(ms=10)=>{try{if(window._nativeHaptic){window._nativeHaptic(typeof ms==="string"?ms:"medium");return;}if(navigator.vibrate){navigator.vibrate(typeof ms==="number"?ms:10);}}catch{}};
 // Native keyboard: adjust viewport when keyboard appears
 // Global share function for print overlay buttons
-window._obShare=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html="<!DOCTYPE html><html><head><meta charset=utf-8><style>*{box-sizing:border-box}body{font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:20px}table{border-collapse:collapse}td,th{padding:4px 8px;text-align:left}</style></head><body>"+el.innerHTML+"</body></html>";var blob=new Blob([html],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});navigator.share({title:"Care Guide",files:[file]}).catch(function(){});}catch(e){}};
+window._obShare=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html=el.outerHTML;var blob=new Blob(["<!DOCTYPE html><html><head><meta charset=utf-8><style>@media print{.no-print{display:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>"+html+"</body></html>"],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});if(navigator.share){navigator.share({title:"Care Guide",files:[file]}).catch(function(){});}else{var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="OBubba-Care-Guide.html";a.click();}}catch(e){}};
+window._obPrint=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html=el.innerHTML;var fullHtml="<!DOCTYPE html><html><head><meta charset=utf-8><style>*{box-sizing:border-box}body{font-family:-apple-system,sans-serif;max-width:100%;margin:0;padding:20px;font-size:14px;line-height:1.5}@media print{.no-print{display:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>"+html+"</body></html>";var blob=new Blob([fullHtml],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});if(navigator.share){navigator.share({title:"Save as PDF",files:[file]}).catch(function(){});}else{var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="OBubba-Care-Guide.html";a.click();}}catch(e){}};
 if(typeof window!=="undefined"&&window.visualViewport){let _lastFocused=null;document.addEventListener("focusin",function(ev){_lastFocused=ev.target;});window.visualViewport.addEventListener("resize",function(){const kbH=window.innerHeight-window.visualViewport.height;document.documentElement.style.setProperty("--keyboard-height",kbH+"px");if(_lastFocused&&kbH>100){setTimeout(function(){_lastFocused.scrollIntoView({behavior:"smooth",block:"center"});},100);}});window.visualViewport.addEventListener("scroll",function(){document.documentElement.style.setProperty("--vv-offset",window.visualViewport.offsetTop+"px");});}
 const _locale = (navigator.language||"en-GB").toLowerCase();
 const _toothLabels = {"UR-E":"Upper right 2nd molar","UR-D":"Upper right 1st molar","UR-C":"Upper right canine","UR-B":"Upper right lateral","UR-A":"Upper right central","UL-A":"Upper left central","UL-B":"Upper left lateral","UL-C":"Upper left canine","UL-D":"Upper left 1st molar","UL-E":"Upper left 2nd molar","LR-E":"Lower right 2nd molar","LR-D":"Lower right 1st molar","LR-C":"Lower right canine","LR-B":"Lower right lateral","LR-A":"Lower right central","LL-A":"Lower left central","LL-B":"Lower left lateral","LL-C":"Lower left canine","LL-D":"Lower left 1st molar","LL-E":"Lower left 2nd molar"};
@@ -1069,7 +1074,7 @@ function UsernameSetForm({ normaliseUsername, reserveUsername, C }) {
             try{
             if(!window._fb){setSt("idle");return;}
             const {db,doc,getDoc}=window._fb;
-            const snap=await getDoc(doc(db,"usernames",normaliseUsername(e.target.value)));
+            const snap=await fsGet("usernames", normaliseUsername(e.target.value));
             setSt(snap.exists()?"taken":"available");
             }catch{setSt("idle");}
           },600);
@@ -2308,7 +2313,7 @@ function App(){
           }
         });
       });
-      await setDoc(doc(db,"families",code), {
+      await fsSet("families", code, {
         children: JSON.stringify(cleanForCloud),
         updatedAt: serverTimestamp(),
         updatedBy: myUid,
@@ -2317,7 +2322,7 @@ function App(){
 
       if(myUid && myUid !== "anon") {
         try{
-          await setDoc(doc(db,"uid_to_backup",myUid), {backupCode: code, updatedAt: serverTimestamp()}, {merge:true});
+          await fsSet("uid_to_backup", myUid, {backupCode: code, updatedAt: serverTimestamp()}, true);
         }catch(e){ console.warn("uid_to_backup write error",e); }
       }
       setSyncStatus("synced");
@@ -2466,7 +2471,7 @@ function App(){
           if(uname) {
             const key = uname.toLowerCase().replace(/[^a-z0-9_]/g,"");
             try {
-              const uSnap = await getDoc(doc(db,"usernames",key));
+              const uSnap = await fsGet("usernames", key);
               if(uSnap.exists()) {
                 const uData = uSnap.data();
                 code = uData.backupCode || uData.familyCode || null;
@@ -2482,7 +2487,7 @@ function App(){
           const hasVerifiedUser = localStorage.getItem("auth_verified") && (familyUsername || localStorage.getItem("family_username"));
           if(!code && window._fbUid && hasVerifiedUser) {
             try {
-              const uidSnap2 = await getDoc(doc(db,"uid_to_backup",window._fbUid));
+              const uidSnap2 = await fsGet("uid_to_backup", window._fbUid);
               if(uidSnap2.exists()) {
                 const ec = uidSnap2.data().backupCode;
                 if(ec) {
@@ -2496,7 +2501,7 @@ function App(){
         }
         if(code) {
           try {
-            const snap = await getDoc(doc(db,"families",code));
+            const snap = await fsGet("families", code);
             if(snap.exists()) {
               const d = snap.data();
               if(d.children) {
@@ -2556,7 +2561,7 @@ function App(){
               let newCode, exists = true;
               while(exists){
                 newCode = "BK"+Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
-                try{ const s = await getDoc(doc(db,"families",newCode)); exists = s.exists(); }
+                try{ const s = await fsGet("families", newCode); exists = s.exists(); }
                 catch{ exists = false; }
               }
               setBackupCode(newCode);
@@ -2652,7 +2657,7 @@ function App(){
     const {db, doc, getDoc} = window._fb;
     const clean = code.trim().toUpperCase();
     try {
-      const snap = await getDoc(doc(db,"families",clean));
+      const snap = await fsGet("families", clean);
       if(!snap.exists()) return false;
       const d = snap.data();
       if(d.children) {
@@ -2691,7 +2696,7 @@ function App(){
     if(!key) { setAuthError("Enter a username"); return false; }
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
-      const snap = await getDoc(doc(db,"usernames",key));
+      const snap = await fsGet("usernames", key);
       if(!snap.exists()) { setAuthError("Username not found"); return false; }
       const data = snap.data();
       if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN"); return false; }
@@ -2703,7 +2708,7 @@ function App(){
       const code = resolvedBackup || data.familyCode;
       if(code) {
         try {
-          const fSnap = await getDoc(doc(db,"families",code));
+          const fSnap = await fsGet("families", code);
           if(fSnap.exists()) {
             const d = fSnap.data();
             if(d.children) {
@@ -2754,6 +2759,80 @@ function App(){
       return true;
     }catch(e) { setAuthError("Something went wrong — try again"); return false; }
   }
+
+  // Firestore REST read via CapacitorHttp — bypasses WKWebView CORS block
+  // Falls back to fetch (works in browser). Mirrors getDoc() snap interface.
+  async function fsGet(collection, docId) {
+    try {
+      const _user = window._fb?.auth?.currentUser;
+      const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
+      const _url = `https://firestore.googleapis.com/v1/projects/obubba-d9ccc/databases/(default)/documents/${collection}/${encodeURIComponent(docId)}`;
+      const _headers = _token ? {"Authorization":`Bearer ${_token}`} : {};
+      const _capHttp = window.Capacitor?.Plugins?.CapacitorHttp;
+      let _data, _status;
+      if(_capHttp) {
+        const _r = await _capHttp.get({url:_url, headers:_headers}).catch(()=>null);
+        _status = _r?.status; _data = _r?.data;
+      } else {
+        const _r = await fetch(_url, {headers:_headers}).catch(()=>null);
+        _status = _r?.status; _data = _r ? await _r.json().catch(()=>null) : null;
+      }
+      if(_status === 404 || !_data || _data.error) return {exists:()=>false, data:()=>({})};
+      const fields = _data.fields || {};
+      const parsed = {};
+      for(const [k,v] of Object.entries(fields)) {
+        if(v.stringValue !== undefined) parsed[k] = v.stringValue;
+        else if(v.booleanValue !== undefined) parsed[k] = v.booleanValue;
+        else if(v.integerValue !== undefined) parsed[k] = parseInt(v.integerValue);
+        else if(v.nullValue !== undefined) parsed[k] = null;
+        else if(v.mapValue) parsed[k] = v.mapValue;
+        else parsed[k] = v;
+      }
+      return {exists:()=>true, data:()=>parsed};
+    } catch(e) { return {exists:()=>false, data:()=>({})}; }
+  }
+
+  // Firestore REST write via CapacitorHttp — bypasses WKWebView CORS block
+  async function fsSet(collection, docId, data, merge=false) {
+    try {
+      const _user = window._fb?.auth?.currentUser;
+      const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
+      if(!_token) return false;
+      const toField = (v) => {
+        if(v === null || v === undefined) return {nullValue: null};
+        if(typeof v === 'boolean') return {booleanValue: v};
+        if(typeof v === 'number') return Number.isInteger(v) ? {integerValue: String(v)} : {doubleValue: v};
+        if(typeof v === 'string') return {stringValue: v};
+        if(v && typeof v === 'object' && v._methodName === 'serverTimestamp') return {timestampValue: new Date().toISOString()};
+        if(typeof v === 'object') {
+          const fields = {};
+          for(const [k,val] of Object.entries(v)) fields[k] = toField(val);
+          return {mapValue: {fields}};
+        }
+        return {stringValue: String(v)};
+      };
+      const fields = {};
+      for(const [k,v] of Object.entries(data)) fields[k] = toField(v);
+      const body = JSON.stringify({fields});
+      let url = `https://firestore.googleapis.com/v1/projects/obubba-d9ccc/databases/(default)/documents/${collection}/${encodeURIComponent(docId)}`;
+      if(merge) {
+        const mask = Object.keys(data).map(k=>`updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+        url += `?${mask}`;
+      }
+      const headers = {"Content-Type":"application/json","Authorization":`Bearer ${_token}`};
+      const _capHttp = window.Capacitor?.Plugins?.CapacitorHttp;
+      let status;
+      if(_capHttp) {
+        const r = await _capHttp.patch({url, headers, data: body}).catch(()=>null);
+        status = r?.status;
+      } else {
+        const r = await fetch(url, {method:'PATCH', headers, body}).catch(()=>null);
+        status = r?.status;
+      }
+      return status >= 200 && status < 300;
+    } catch(e) { console.warn('fsSet error', e); return false; }
+  }
+
   function checkUsername(raw) {
     const val = raw.trim();
     setObUsername(raw);
@@ -2765,7 +2844,7 @@ function App(){
       if(!window._fb) { setObUsernameStatus("idle"); return; }
       const {db, doc, getDoc} = window._fb;
       try {
-        const snap = await getDoc(doc(db,"usernames",normaliseUsername(val)));
+        const snap = await fsGet("usernames", normaliseUsername(val));
         setObUsernameStatus(snap.exists() ? "taken" : "available");
       } catch(e) { setObUsernameStatus("idle"); }
     }, 600);
@@ -2782,7 +2861,7 @@ function App(){
       if(!window._fb) { setAuthUsernameStatus("idle"); return; }
       const {db, doc, getDoc} = window._fb;
       try {
-        const snap = await getDoc(doc(db,"usernames",normaliseUsername(val)));
+        const snap = await fsGet("usernames", normaliseUsername(val));
         setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
         if(snap.exists()) try{document.activeElement.blur();}catch{}
       } catch(e) { setAuthUsernameStatus("idle"); }
@@ -2802,7 +2881,7 @@ function App(){
     if(_isReclaim) { try{localStorage.removeItem("reclaim_username");}catch{} }
     try {
       if(!_isReclaim) {
-        const snap = await getDoc(doc(db,"usernames",key));
+        const snap = await fsGet("usernames", key);
         if(snap.exists()) return false;
       }
       // Generate a fresh backup code for this new account — NEVER reuse existing codes
@@ -2810,7 +2889,7 @@ function App(){
       let newCode;
       for(let attempt=0;attempt<20;attempt++){
         newCode = "BK"+Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
-        const codeSnap = await getDoc(doc(db,"families",newCode));
+        const codeSnap = await fsGet("families", newCode);
         if(!codeSnap.exists()) break;
       }
       // Clear any previous account data from this device — CRITICAL for multi-account safety
@@ -2821,7 +2900,7 @@ function App(){
       try{ localStorage.removeItem("family_code"); }catch{}
       setBackupCode(newCode);
       try{ localStorage.setItem("backup_code", newCode); }catch{}
-      await setDoc(doc(db,"usernames",key), {
+      await fsSet("usernames", key, {
         pinHash: hashPin(pin||"0000"),
         backupCode: newCode,
         familyCode: null,
@@ -2842,7 +2921,7 @@ function App(){
     const {db, doc, setDoc} = window._fb;
     const key = normaliseUsername(familyUsername);
     try {
-      await setDoc(doc(db,"usernames",key), {recoveryHash: hashPin(word.trim().toLowerCase())}, {merge:true});
+      await fsSet("usernames", key, {recoveryHash: hashPin(word.trim().toLowerCase())}, true);
       return true;
     } catch(e) { console.warn("Save recovery word error", e); return false; }
   }
@@ -2851,14 +2930,14 @@ function App(){
     const {db, doc, getDoc, setDoc} = window._fb;
     const key = normaliseUsername(username);
     try {
-      const snap = await getDoc(doc(db,"usernames",key));
+      const snap = await fsGet("usernames", key);
       if(!snap.exists()) return {ok:false, error:"Username not found"};
       const data = snap.data();
       const codeMatch = (data.backupCode||data.familyCode||"").toUpperCase() === wordOrCode.trim().toUpperCase();
       const wordMatch = data.recoveryHash && data.recoveryHash === hashPin(wordOrCode.trim().toLowerCase());
       if(!codeMatch && !wordMatch)
         return {ok:false, error:"That doesn't match — check your recovery word"};
-      await setDoc(doc(db,"usernames",key), {pinHash: hashPin(newPin)}, {merge:true});
+      await fsSet("usernames", key, {pinHash: hashPin(newPin)}, true);
       return {ok:true};
     } catch(e) { return {ok:false, error:"Something went wrong — try again"}; }
   }
@@ -2870,7 +2949,7 @@ function App(){
       const {db, doc, setDoc} = window._fb;
       const key = normaliseUsername(familyUsername);
       try {
-        await setDoc(doc(db,"usernames",key), {familyCode}, {merge:true});
+        await fsSet("usernames", key, {familyCode}, true);
       } catch(e){}
     })();
   },[fbReady, familyUsername, familyCode]);
@@ -2968,12 +3047,12 @@ function App(){
     let code, exists = true;
     while(exists) {
       code = Array.from({length:6}, ()=>chars[Math.floor(Math.random()*chars.length)]).join("");
-      try{ const s = await getDoc(doc(db,"child_syncs",code)); exists = s.exists(); }
+      try{ const s = await fsGet("child_syncs", code); exists = s.exists(); }
       catch{ exists = false; }
     }
     const child = children[childId];
 
-    await setDoc(doc(db,"child_syncs",code), {
+    await fsSet("child_syncs", code, {
       childId,
       childName: child?.name || "",
       ownerUid: window._fbUid || "",
@@ -3002,13 +3081,13 @@ function App(){
       });
     }
     try {
-      await setDoc(doc(db,"child_syncs",code), {
+      await fsSet("child_syncs", code, {
         child: JSON.stringify(child),
         childName: child.name || "",
         updatedAt: serverTimestamp(),
         updatedBy: window._fbUid || "anon",
         writeToken: writeTokenRef.current
-      }, {merge:true});
+      }, true);
     } catch(e) { console.warn("pushChildSync error", e); }
   }
   const subscribeToChildSync = React.useCallback((childId, code) => {
@@ -3057,7 +3136,7 @@ function App(){
     const clean = code.trim().toUpperCase();
     if(clean.length !== 6) return {ok:false, error:"Code must be 6 characters"};
     try {
-      const snap = await getDoc(doc(db,"child_syncs",clean));
+      const snap = await fsGet("child_syncs", clean);
       if(!snap.exists()) return {ok:false, error:"Code not found — ask the other parent to check"};
       const d = snap.data();
       const childId = d.childId;
@@ -3514,14 +3593,20 @@ function App(){
     const _calToday = todayStr();
     const _calTodayEntries = days[_calToday] || [];
     const _todayHasMorningWake = _calTodayEntries.some(e => e.type === "wake" && !e.night);
+    const _todayHasAnyDaytimeEntries = _calTodayEntries.some(e => !e.night && (e.type === "feed" || e.type === "nap" || e.type === "poop" || e.type === "wake"));
     const _heroDay = (() => {
+      // Always use today if there are any daytime entries (feeds, nappies, naps, wakes)
       if (_todayHasMorningWake) return _calToday;
-      if ((days[_isYesterday]||[]).some(e => e.type === "sleep" && !e.night)) return _isYesterday;
-      if (_calTodayEntries.some(e => e.type === "wake" && !e.night)) return _calToday;
+      if (_todayHasAnyDaytimeEntries) return _calToday;
+      // Only fall to yesterday if today is empty AND it's overnight (before 5am)
+      const _nowH = new Date().getHours();
+      if (_nowH < 5 && (days[_isYesterday]||[]).some(e => e.type === "sleep" && !e.night)) return _isYesterday;
       return _calToday;
     })();
     let _today = days[_heroDay] || [];
     const _useYesterday = _heroDay === _isYesterday;
+    // Track if wake is missing so we can nudge the user
+    const _wakeMissing = !_useYesterday && !_todayHasMorningWake && _todayHasAnyDaytimeEntries;
     if (_today.length === 0 && !_todayHasMorningWake && (days[_isYesterday]||[]).length === 0) {
       return (
         <div className="glass-card" style={{padding:"20px 18px",marginBottom:12}}>
@@ -3580,8 +3665,8 @@ function App(){
 
     // ── Contextual reassurance based on day pattern ──
     const _allFeeds = _today.filter(e => e.type === "feed" && !e.night);
-    // Include night feeds for timing calculations
-    const _prevDayKey = (()=>{const d=new Date(selDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+    // Include night feeds for timing calculations — use _heroDay not selDay
+    const _prevDayKey = (()=>{const d=new Date(_heroDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
     const _allFeedsIncNight = [..._allFeeds, ..._today.filter(e=>e.time&&e.night&&(e.type==="feed"||(e.amount||0)>0||e.assistedType==="milk"||e.feedType==="milk")), ...((days[_prevDayKey]||[]).filter(e=>e.time&&e.night&&(e.type==="feed"||(e.amount||0)>0||e.assistedType==="milk"||e.feedType==="milk")))];
     const _totalNapMin = _naps.reduce((s,n) => s + minDiff(n.start, n.end), 0);
     const _isNightTime = _h >= 22 || _h < 5;
@@ -3658,38 +3743,52 @@ function App(){
     // ── Feed & nappy gentle context (computed early, used in all card variants) ──
     let _feedNappyHint = null;
     let _chaoticDays = [];
+    let _lastFeed = null;
+    let _lastNappy = null;
     try {
       const _hints = [];
-      const _baseDayForPrev = _useYesterday ? _isYesterday : selDay;
-      const _prevDay = (()=>{const d=new Date(_baseDayForPrev+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
-      const _todayActual = days[todayStr()]||[];
-      // Find last feed and nappy: search TODAY first, only fall back to previous days if nothing today
-      const _todayFeeds = _today.filter(e=>e.time&&(e.type==="feed"||(e.amount||0)>0||(e.night&&(e.assistedType==="milk"||e.feedType==="milk"))));
-      const _prevDayEntries = [...(days[_prevDay]||[]), ...(_useYesterday ? _todayActual : [])];
-      const _prevDayFeeds = _prevDayEntries.filter(e=>e.time&&(e.type==="feed"||(e.amount||0)>0||(e.night&&(e.assistedType==="milk"||e.feedType==="milk"))));
-      const _todayNappies = _today.filter(e=>e.time&&e.type==="poop");
-      const _prevDayNappies = _prevDayEntries.filter(e=>e.time&&e.type==="poop");
-      // For same-day entries, simple gap from now works
-      const _sameDayGap = (e) => { let g = _nowM - timeVal(e); if (g < 0) g += 1440; return g; };
-      // Pick most recent from today; if none, most recent from yesterday (add 1440 for correct gap)
-      const _lastFeed = (()=>{
-        if (_todayFeeds.length > 0) return { entry: _todayFeeds.reduce((best,e) => _sameDayGap(e) < _sameDayGap(best) ? e : best), fromPrev: false };
-        if (_prevDayFeeds.length > 0) return { entry: _prevDayFeeds.reduce((best,e) => _sameDayGap(e) < _sameDayGap(best) ? e : best), fromPrev: true };
-        return null;
-      })();
-      const _lastNappy = (()=>{
-        if (_todayNappies.length > 0) return { entry: _todayNappies.reduce((best,e) => _sameDayGap(e) < _sameDayGap(best) ? e : best), fromPrev: false };
-        if (_prevDayNappies.length > 0) return { entry: _prevDayNappies.reduce((best,e) => _sameDayGap(e) < _sameDayGap(best) ? e : best), fromPrev: true };
-        return null;
-      })();
-      // Actual gap in minutes, accounting for which day the entry is from
-      const _realGap = (item) => {
-        if (!item) return 9999;
-        let g = _nowM - timeVal(item.entry);
-        if (g < 0) g += 1440;
-        if (item.fromPrev) g += 1440; // yesterday's entry is at least 24h-ish old
-        return g;
+      // Find last feed and nappy — always anchor on real calendar today for correct wall-clock gaps
+      const _calNow = todayStr();
+      const _fpPrev = (()=>{const d=new Date(_calNow+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
+      const _fpNext = (()=>{const d=new Date(_calNow+"T12:00:00");d.setDate(d.getDate()+1);return d.toISOString().split("T")[0];})();
+      const _tag = (arr, dk) => arr.map(e => ({...e, _dk: dk}));
+      const _searchPool = [
+        ..._tag(days[_calNow]||[], _calNow),
+        ...(_fpPrev !== _calNow ? _tag(days[_fpPrev]||[], _fpPrev) : []),
+        ...(_heroDay !== _calNow && _heroDay !== _fpPrev ? _tag(_today, _heroDay) : []),
+        ...(_fpNext !== _calNow && _fpNext !== _fpPrev ? _tag(days[_fpNext]||[], _fpNext) : [])
+      ];
+      const _isFeedEntry = (e) => e.time && (
+        e.type === "feed" ||
+        (e.amount && e.amount > 0) ||
+        (e.night && (e.assistedType === "milk" || e.feedType === "milk"))
+      );
+      const _isNappyEntry = (e) => e.time && e.type === "poop";
+      const _allPoolFeeds = _searchPool.filter(_isFeedEntry);
+      const _allPoolNappies = _searchPool.filter(_isNappyEntry);
+      const _wallGap = (e) => {
+        const tv = timeVal(e);
+        const isCalToday = e._dk === _calNow;
+        let gap = _nowM - tv;
+        if (isCalToday) {
+          if (gap < 0) gap += 1440;
+        } else {
+          if (gap < 0) gap += 1440;
+          if (e._dk < _calNow) {
+            const daysDiff = Math.round((new Date(_calNow+"T12:00:00") - new Date(e._dk+"T12:00:00")) / (1000*60*60*24));
+            if (daysDiff > 0) gap += (daysDiff - 1) * 1440;
+          }
+        }
+        return Math.max(0, gap);
       };
+      _lastFeed = _allPoolFeeds.length > 0
+        ? { entry: _allPoolFeeds.reduce((best, e) => _wallGap(e) < _wallGap(best) ? e : best), gap: null }
+        : null;
+      if (_lastFeed) _lastFeed.gap = _wallGap(_lastFeed.entry);
+      _lastNappy = _allPoolNappies.length > 0
+        ? { entry: _allPoolNappies.reduce((best, e) => _wallGap(e) < _wallGap(best) ? e : best), gap: null }
+        : null;
+      if (_lastNappy) _lastNappy.gap = _wallGap(_lastNappy.entry);
 
       // Average feed interval from last 7 days with anomaly detection
       let _avgFeedInterval = null;
@@ -3819,24 +3918,23 @@ function App(){
       _feedThreshM = Math.min(_feedThreshM, Math.round(_ageThreshM * 1.25));
 
       if (_lastFeed) {
-        let _feedGapM = _realGap(_lastFeed);
+        let _feedGapM = _lastFeed.gap;
         if (_feedGapM >= _feedThreshM && _feedGapM < 1500) {
           _hints.push("might be ready for a feed — last one " + hm(Math.min(_feedGapM, 900)) + " ago");
           if (_smartFeedNote) _hints.push(_smartFeedNote);
-        } else if (_feedGapM >= 0 && _feedGapM < _feedThreshM && !_lastFeed.fromPrev) {
-          // Only show predicted time for today's feeds (yesterday's time-of-day is misleading)
+        } else if (_feedGapM >= 0 && _feedGapM < _feedThreshM && _feedGapM < 720) {
           const [fh,fm]=_lastFeed.entry.time.split(":").map(Number);
           const t=fh*60+fm+_feedThreshM;
           _hints.push("next feed ~" + fmt12(`${String(Math.floor(t/60)%24).padStart(2,"0")}:${String(t%60).padStart(2,"0")}`) + " (based on " + (_avgFeedInterval ? _name + "'s rhythm" : "age guideline") + ")");
           if (_smartFeedNote) _hints.push(_smartFeedNote);
-        } else if (_lastFeed.fromPrev) {
+        } else if (_feedGapM >= 720) {
           _hints.push("could be ready for a feed soon");
         }
       } else {
         _hints.push("could be ready for a feed soon");
       }
       if (_lastNappy) {
-        let _nappyGapM = _realGap(_lastNappy);
+        let _nappyGapM = _lastNappy.gap;
         if (_nappyGapM >= 150 && _nappyGapM < 1500) _hints.push("a fresh nappy might help — last one " + hm(Math.min(_nappyGapM, 900)) + " ago");
         else if (_nappyGapM >= 0 && _nappyGapM < 900) _hints.push("nappy changed " + hm(_nappyGapM) + " ago");
       } else {
@@ -4097,20 +4195,15 @@ function App(){
         _timing = "Awake " + hm(_awakeMin) + " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " around " + _napTimeStr + _rhythmTag;
       }
     } else if (_dayStarted && _allFeedsIncNight.length > 0) {
-      // Find most recent feed — prioritise today's entries over yesterday's night feeds
-      const _todayFeedsInc = _allFeedsIncNight.filter(e => !e.night || (e.night && timeVal(e) < 720 && _nowM < 720));
-      const _srcFeeds = _todayFeedsInc.length > 0 ? _todayFeedsInc : _allFeedsIncNight;
-      const _lastFeedEntry = _srcFeeds.reduce((best, e) => {
-        const gE = ((_nowM - timeVal(e)) + 1440) % 1440;
-        const gB = ((_nowM - timeVal(best)) + 1440) % 1440;
-        return gE < gB ? e : best;
-      });
-      let _minsSinceFeed = ((_nowM - timeVal(_lastFeedEntry)) + 1440) % 1440;
-      // Sanity check: if gap seems impossibly small for a yesterday entry, it's cross-day confusion
-      if (_minsSinceFeed < 10 && !_today.includes(_lastFeedEntry)) _minsSinceFeed += 1440;
-      if (_minsSinceFeed >= 150) {
+      // Use _lastFeed from the feed hint pool above (wall-clock-aware, cross-day correct)
+      // _lastFeed is computed in the feed & nappy context block using _wallGap
+      let _minsSinceFeed = _lastFeed ? _lastFeed.gap : 9999;
+      if (_minsSinceFeed >= 150 && _minsSinceFeed < 1500) {
         _dot = "#7aabc4"; _label = "Feed window opening";
         _timing = "Last feed " + hm(_minsSinceFeed) + " ago · " + (age && age.totalWeeks < 3 ? "little ones this age often need feeding every 2–3h" : _name + " might be getting peckish");
+      } else if (_minsSinceFeed >= 1500) {
+        _dot = "#7aabc4"; _label = "Feed window opening";
+        _timing = "It's been a while since the last feed — " + _name + " might be hungry";
       } else {
         _dot = "#7BA68C"; _label = "All good right now";
         _timing = "Awake " + hm(_awakeMin) + (!_napsComplete ? " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " still to come" : " · Enjoying the day");
@@ -4176,6 +4269,15 @@ function App(){
           <span style={{fontSize:16,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{_label}</span>
         </div>
         <div style={{fontSize:13,color:C.mid,marginBottom:_rightNow?4:8,paddingLeft:20}}>{_timing}</div>
+        {_wakeMissing && (
+          <button onClick={()=>{haptic();handleSmartWake();}} style={{display:"flex",alignItems:"center",gap:8,width:"100%",background:"rgba(212,168,85,0.1)",border:"1.5px solid rgba(212,168,85,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:8,cursor:_cP,textAlign:"left"}}>
+            <span style={{fontSize:18}}>☀️</span>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Wake not logged</div>
+              <div style={{fontSize:11,color:C.mid}}>Tap to log {_name}'s morning wake — this unlocks nap predictions</div>
+            </div>
+          </button>
+        )}
         {_rightNow && <div style={{fontSize:12,color:C.ter,fontWeight:600,paddingLeft:20,marginBottom:6}}>{_rightNow}</div>}
         {_feedNappyHint && <div style={{fontSize:11,color:C.lt,paddingLeft:20,marginBottom:6,fontFamily:_fM}}>🍼 {_feedNappyHint}</div>}
         {_feedNappyHint && _allFeeds.length >= 6 && !napOn && !_hasBed && !microReassureRef.current && (()=>{
@@ -7571,11 +7673,14 @@ function App(){
     });
     const _topHelp = Object.entries(_recentHelps).sort((a, b) => b[1] - a[1])[0];
 
-    // Quick reason from crying analysis
+    // Quick reason from crying analysis — search selDay AND today's actual date
     const _prevDk = (()=>{const d=new Date(selDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
-    const _lastFeed = [..._today, ...(days[_prevDk]||[])].filter(e => e.time && (e.type==="feed" || (e.amount||0)>0 || e.assistedType==="milk" || e.feedType==="milk")).sort((a,b)=>{let ta=timeVal(a),tb=timeVal(b);if(a.night&&ta<720)ta+=1440;if(b.night&&tb<720)tb+=1440;return ta-tb;}).pop();
+    const _calNow = todayStr();
+    const _searchDays = [..._today, ...(days[_prevDk]||[]), ...(_calNow !== selDay ? (days[_calNow]||[]) : [])];
+    const _lastFeed = _searchDays.filter(e => e.time && (e.type==="feed" || (e.amount||0)>0 || e.assistedType==="milk" || e.feedType==="milk")).sort((a,b)=>{let ta=timeVal(a),tb=timeVal(b);if(a.night&&ta<720)ta+=1440;if(b.night&&tb<720)tb+=1440;return ta-tb;}).pop();
     const _nowM = new Date().getHours() * 60 + new Date().getMinutes();
-    const _feedGap = _lastFeed ? ((_nowM < timeVal(_lastFeed)) ? _nowM + 1440 - timeVal(_lastFeed) : _nowM - timeVal(_lastFeed)) : 999;
+    let _feedGap = _lastFeed ? ((_nowM < timeVal(_lastFeed)) ? _nowM + 1440 - timeVal(_lastFeed) : _nowM - timeVal(_lastFeed)) : 999;
+    if (_feedGap > 720 && _lastFeed) _feedGap = ((_nowM - timeVal(_lastFeed)) + 1440) % 1440;
     const _feedThreshold = age.totalWeeks < 8 ? 150 : age.totalWeeks < 17 ? 180 : age.totalWeeks < 26 ? 210 : 270;
 
     let _topReason = null;
@@ -7911,10 +8016,15 @@ function App(){
     _naps.forEach(n => { if (n.end) { const t = timeVal({ time: n.end }); if (t > (_lastSleep || 0)) _lastSleep = t; } });
     const _awakeMin = _lastSleep !== null ? _nowM - _lastSleep : 0;
 
-    // Feed check
-    if (_feeds.length > 0) {
-      const _lastFeedTime = Math.max(..._feeds.map(f => timeVal(f)));
-      const _feedGap = _nowM - _lastFeedTime;
+    // Feed check — include night feeds (logged as wakes with milk/amount)
+    const _allFeedsForGap = _today.filter(e => e.time && (
+      (e.type === "feed") ||
+      (e.night && ((e.amount||0) > 0 || e.assistedType === "milk" || e.feedType === "milk"))
+    ));
+    if (_allFeedsForGap.length > 0) {
+      const _lastFeedTime = Math.max(..._allFeedsForGap.map(f => timeVal(f)));
+      let _feedGap = _nowM - _lastFeedTime;
+      if (_feedGap < 0) _feedGap += 1440; // overnight wrap
       if (_feedGap >= 150) return { text: (age && age.totalWeeks < 3) ? "Little tummies empty quickly at this age — feeding every 2–3 hours is normal" : "Last feed was " + hm(_feedGap) + " ago — " + _n + " could be getting peckish", priority: "med" };
     } else if (_wakeE && _awakeMin > 30) {
       return { text: "No feeds logged yet — offer a feed", priority: "med" };
@@ -8048,16 +8158,8 @@ function App(){
       setShowNightWake(true);
       return;
     }
-    // If editing a wake entry and bedtime is logged, ask day/night
-    if(entry.type==="wake" && !entry.night){
-      const dayEntries = days[selDay]||[];
-      const hasBedtime = dayEntries.some(e=>e.type==="sleep"&&!e.night);
-      if(hasBedtime){
-        setWakeEditEntry(entry);
-        setShowWakeEditPrompt(true);
-        return;
-      }
-    }
+    // If editing a wake entry and bedtime is logged, still go to normal edit form
+    // (the day/night dropdown there lets user choose)
     setEditEntry(entry);
     setEType(entry.type);
     setFeedType(entry.feedType||"milk");
@@ -8652,7 +8754,8 @@ function App(){
     }
   }
   function saveEntry(){
-    let e={id:editEntry?editEntry.id:uid(),note:form.note||"",nightLocked:editEntry?editEntry.nightLocked:false};
+    const _userChoseNight = (eType==="feed"||eType==="wake"||eType==="sleep");
+    let e={id:editEntry?editEntry.id:uid(),note:form.note||"",nightLocked:_userChoseNight?true:(editEntry?editEntry.nightLocked:false)};
     const formTime = form.time || nowTime();
     const formStart = form.start || nowTime();
     const formEnd = form.end || nowTime();
@@ -8669,6 +8772,8 @@ function App(){
     }
     else if(eType==="nap"){e={...e,type:"nap",start:formStart,end:formEnd,night:false};}
     else if(eType==="poop"){e={...e,type:"poop",time:formTime,poopType:form.poopType||"",night:false};}
+    else if(eType==="wake"){e={...e,type:"wake",time:formTime,night:form.night==="yes"};}
+    else if(eType==="sleep"){e={...e,type:"sleep",time:formTime,night:form.night==="yes"};}
     else{e={...e,type:eType,time:formTime,night:false};}
     if(editEntry){
       setDays(d=>{
@@ -10695,7 +10800,7 @@ function App(){
                   if(!window._fb){setForgotPinError("Not connected");setForgotPinLoading(false);return;}
                   const {db,doc,getDoc}=window._fb;
                   try{
-                    const snap=await getDoc(doc(db,"usernames",normaliseUsername(authUsername)));
+                    const snap=await fsGet("usernames", normaliseUsername(authUsername));
                     if(!snap.exists()){setForgotPinError("Username not found");setForgotPinLoading(false);return;}
                     const data=snap.data();
                     const wordHash=hashPin(forgotPinWord.trim().toLowerCase());
@@ -11690,7 +11795,7 @@ function App(){
               )}
 
               {/* ONE-TAP LOG ROW — below date strip, above age guidance */}
-              <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"10px 8px",marginBottom:10,gap:1,boxShadow:"var(--card-shadow)",position:"relative",zIndex:2,overflow:"hidden"}}>
+              <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"10px 8px 14px 8px",marginBottom:14,gap:1,boxShadow:"var(--card-shadow)",position:"relative",zIndex:2,overflow:"hidden"}}>
                 {[
                   {emoji:"🍼",label:"Feed",longAction:()=>openLogPanel("feed"),action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""})},
                   {emoji:"🤱",label:"Breast",longAction:()=>openLogPanel("feed"),action:()=>{haptic();startBreastTimer("L");}},
@@ -11724,7 +11829,7 @@ function App(){
                       if(lp.timer){clearTimeout(lp.timer);}
                       window._obLp={fired:false,timer:null};
                     }}
-                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1,padding:"6px 1px",borderRadius:12,border:"none",background:"transparent",cursor:_cP,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",maxHeight:52}}
+                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1,padding:"8px 1px",borderRadius:12,border:"none",background:"transparent",cursor:_cP,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",minHeight:48}}
                   >
                     <span style={{fontSize:22,lineHeight:1}}>{emoji}</span>
                     <span style={{fontSize:10,fontWeight:600,color:napOn&&label==="Stop"?C.ter:C.mid,fontFamily:_fM}}>{label}</span>
@@ -16825,6 +16930,13 @@ function App(){
           {(eType==="wake"||eType==="sleep")&&(
             <>
               <TimeInput label={eType==="sleep"?"Bedtime":"Wake Time"} value={form.time} onChange={t=>setForm(f=>({...f,time:t}))}/>
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:15,fontFamily:_fM,color:C.mid,textTransform:"uppercase",letterSpacing:_ls08,display:"block",marginBottom:4}}>Day or night?</label>
+                <select value={form.night} onChange={e=>setForm(f=>({...f,night:e.target.value}))} style={{width:"100%",padding:"9px 12px",borderRadius:12,border:"1.5px solid var(--card-border)",background:"var(--input-bg)",color:C.deep,fontSize:15,fontFamily:_fI,outline:_oN,boxSizing:_bBB}}>
+                  <option value="no">{eType==="wake"?"☀️ Morning wake (starts the day)":"🌙 Bedtime (ends the day)"}</option>
+                  <option value="yes">{eType==="wake"?"🌙 Night wake":"🌙 Night entry"}</option>
+                </select>
+              </div>
               <Inp label="Note (optional)" type="text" placeholder="e.g. fussy, didn't finish…" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}/>
             </>
           )}
@@ -19451,4 +19563,4 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
     </div>
   );
 }
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary,null,React.createElement(App)));
+createRoot(document.getElementById('root')).render(React.createElement(ErrorBoundary,null,React.createElement(App)));
