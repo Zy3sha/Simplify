@@ -10507,6 +10507,32 @@ function App(){
       } catch(e) { console.warn("Native PDF share failed, falling back", e); }
     }
 
+    // Try Web Share API with HTML file
+    try {
+      const blob = new Blob([finalHtml], { type: "text/html" });
+      const file = new File([blob], `${name}-Care-Guide.html`, { type: "text/html" });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: `${name}'s Care Guide`, files: [file] });
+        return;
+      }
+    } catch(e) { if (e.name === "AbortError") return; }
+
+    // Define share/print helpers on window so the close bar buttons work
+    window._obShare = async () => {
+      try {
+        const blob = new Blob([finalHtml], { type: "text/html" });
+        const file = new File([blob], `${name}-Care-Guide.html`, { type: "text/html" });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ title: `${name}'s Care Guide`, files: [file] });
+        } else if (navigator.share) {
+          await navigator.share({ title: `${name}'s Care Guide`, text: `${name}'s Care Guide from OBubba` });
+        } else {
+          showToast("Sharing not supported on this device", 2000, 0);
+        }
+      } catch(e) { if (e.name !== "AbortError") showToast("Could not share", 1500, 0); }
+    };
+    window._obPrint = () => { try { window.print(); } catch(e) {} };
+
     // Web / fallback: open preview with print/share bar
     const _closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back</button><div style="display:flex;gap:8px"><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button><button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div></div>`;
     const w = (()=>{
