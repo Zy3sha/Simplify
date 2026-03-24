@@ -2359,18 +2359,22 @@ function App(){
     }, 200);
     return ()=>clearInterval(check);
   },[]);
+  function waitForUid() {
+    if(window._fbUid) return Promise.resolve();
+    return new Promise(resolve => {
+      let waited = 0;
+      const poll = setInterval(() => {
+        waited += 200;
+        if(window._fbUid || waited >= 5000) { clearInterval(poll); resolve(); }
+      }, 200);
+    });
+  }
   const pushToCloud = React.useCallback(async(code, allChildren) => {
     if(!window._fb || !code) return;
     const {db, doc, setDoc, serverTimestamp} = window._fb;
 
     if(!window._fbUid) {
-      await new Promise(resolve => {
-        let waited = 0;
-        const poll = setInterval(() => {
-          waited += 200;
-          if(window._fbUid || waited >= 5000) { clearInterval(poll); resolve(); }
-        }, 200);
-      });
+      await waitForUid();
     }
     try {
       setSyncStatus("syncing");
@@ -2413,6 +2417,7 @@ function App(){
       }
       setSyncStatus("synced");
     } catch(e) {
+      console.warn("sync:",e.message||e);
       setSyncStatus("error");
     }
   },[]);
@@ -2441,7 +2446,7 @@ function App(){
           });
         }
       }
-      catch(e){}
+      catch(e){console.warn("sync:",e.message||e);}
     });
   },[]);
 
@@ -3156,13 +3161,7 @@ function App(){
     const child = childData || children[childId];
     if(!child) return;
     if(!window._fbUid) {
-      await new Promise(resolve => {
-        let waited = 0;
-        const poll = setInterval(() => {
-          waited += 200;
-          if(window._fbUid || waited >= 5000) { clearInterval(poll); resolve(); }
-        }, 200);
-      });
+      await waitForUid();
     }
     try {
       await fsSet("child_syncs", code, {
@@ -3209,7 +3208,7 @@ function App(){
             return {...prev, [childId]: {...remoteChild, id:childId, days:mergedDays}};
           });
         }
-      } catch(e) {}
+      } catch(e) {console.warn("sync:",e.message||e);}
     });
     childSubsRef.current[childId] = unsub;
   }, []);
@@ -3264,7 +3263,7 @@ function App(){
       Object.entries(childSyncCodes).forEach(([childId, code]) => {
         pushChildSync(childId, code, childrenSnapshot[childId]);
       });
-    }, 2000);
+    }, 1000);
     return ()=>clearTimeout(syncRef.current);
   },[fbReady, children, childSyncCodes]);
 
@@ -14812,7 +14811,7 @@ function App(){
                   {q:"Hiccups all the time", a:"Normal and harmless. The diaphragm is immature and easily triggered. Feed slowly and pause to wind if they happen during feeds. They stop on their own."},
                   {q:"Jerky movements or startle reflex", a:"Normal — this is the Moro reflex and all healthy newborns have it. Baby throws arms out when startled. It disappears around 3-4 months. Swaddling can help calm babies who startle themselves awake."},
                   {q:"Jaundice (yellow skin or eyes)", a:"Common in the first week — affects around 60% of newborns. Mild jaundice usually clears by 2 weeks. If baby looks very yellow, is difficult to wake for feeds, or jaundice appears in the first 24 hours after birth, contact your midwife or GP promptly."},
-                  {q:"Poo colour — green, yellow, black", a:"Black/dark green in first 2 days (meconium) is normal. Then changes to yellow/seedy (breastfed) or tan/yellow (formula). Green can be normal but if persistent with other symptoms, mention it to your "+_doctor+". White, pale or chalky poo needs same-day GP attention."},
+                  {q:"Poo colour — green, yellow, black", a:"Black/dark green in first 2 days (meconium) is normal. Then changes to yellow/seedy (breastfed) or tan/yellow (formula). Green can be normal but if persistent with other symptoms, mention it to your "+_doctor+". White, pale or chalky poo needs same-day medical attention."},
                   {q:"Not focusing eyes or looking at me", a:"Normal under 6-8 weeks. Newborns can see clearly about 20-30cm — roughly the distance to your face during feeding. By 6-8 weeks they start making real eye contact and smiling."},
                   {q:"Cluster feeding — feeding constantly", a:"Completely normal, especially in evenings. Cluster feeding is not a sign of low milk supply — it's baby topping up, stimulating supply, and preparing for a longer stretch. It typically eases by 12 weeks."},
                 ];
@@ -18067,12 +18066,13 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               ) : (
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
                   {carerEntries.map(entry => {
-                    const icon = entry.type==="feed"?"🍼":entry.type==="nap"?"😴":entry.type==="poop"?"💩":"📝";
-                    const dotColor = entry.type==="feed"?C.ter:entry.type==="nap"?"#7B68EE":entry.type==="poop"?C.gold:C.lt;
+                    const isNappy = entry.type==="poop"||entry.type==="nappy";
+                    const icon = entry.type==="feed"?"🍼":entry.type==="nap"?"😴":isNappy?"💩":"📝";
+                    const dotColor = entry.type==="feed"?C.ter:entry.type==="nap"?"#7B68EE":isNappy?C.gold:C.lt;
                     let desc = "";
                     if(entry.type==="feed") desc = (entry.feedType||"bottle") + (entry.amount?" — "+entry.amount+"ml":"");
                     else if(entry.type==="nap") desc = "Nap" + (entry.start?" from "+fmt12(entry.start):"") + (entry.end?" to "+fmt12(entry.end):" (ongoing)");
-                    else if(entry.type==="poop") desc = (entry.poopType||"wet") + " nappy";
+                    else if(isNappy) desc = (entry.poopType||"wet") + " nappy";
                     else desc = entry.text||"Note";
                     return (
                       <div key={entry.id} style={{background:"var(--card-bg)",border:"1px solid var(--card-border)",borderRadius:16,padding:"14px 16px"}}>
