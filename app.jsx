@@ -2076,8 +2076,12 @@ function App(){
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
       let snap;
-      try { snap = await getDoc(doc(db, "usernames", key)); }
-      catch { snap = await fsGet("usernames", key); }
+      try {
+        snap = await Promise.race([
+          getDoc(doc(db, "usernames", key)),
+          new Promise((_,rej) => setTimeout(()=>rej(new Error("timeout")),3000))
+        ]);
+      } catch { snap = await fsGet("usernames", key); }
       if(!snap.exists()) { setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false; }
       const data = snap.data();
       if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
@@ -2090,7 +2094,12 @@ function App(){
       if(code) {
         try {
           let fSnap;
-          try { fSnap = await getDoc(doc(db, "families", code)); } catch { fSnap = await fsGet("families", code); }
+          try {
+            fSnap = await Promise.race([
+              getDoc(doc(db, "families", code)),
+              new Promise((_,rej) => setTimeout(()=>rej(new Error("timeout")),3000))
+            ]);
+          } catch { fSnap = await fsGet("families", code); }
           if(fSnap.exists()) {
             const d = fSnap.data();
             if(d.children) {
@@ -2244,10 +2253,14 @@ function App(){
       if(!window._fb) { setAuthUsernameStatus("idle"); return; }
       const {db, doc, getDoc} = window._fb;
       try {
-        // Try Firebase SDK first (handles auth internally), fall back to REST
+        // Try Firebase SDK first with 3s timeout, fall back to REST
         let snap;
-        try { snap = await getDoc(doc(db, "usernames", normaliseUsername(val))); }
-        catch { snap = await fsGet("usernames", normaliseUsername(val)); }
+        try {
+          snap = await Promise.race([
+            getDoc(doc(db, "usernames", normaliseUsername(val))),
+            new Promise((_,rej) => setTimeout(()=>rej(new Error("timeout")),3000))
+          ]);
+        } catch { snap = await fsGet("usernames", normaliseUsername(val)); }
         if(seq !== authCheckSeqRef.current) return; // stale response — ignore
         setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
         if(snap.exists()) try{document.activeElement.blur();}catch{}
