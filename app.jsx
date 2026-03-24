@@ -11340,13 +11340,8 @@ function App(){
 
               {/* ═══ Planner ═══ */}
               {/* Dashed add buttons — only show for empty sections */}
-              {(appointments.filter(a=>new Date(a.date+"T23:59:59")>=new Date()).length===0||reminders.filter(r=>!r.done).length===0||pinnedNotes.length===0)&&(
+              {(reminders.filter(r=>!r.done).length===0||pinnedNotes.length===0)&&(
                 <div style={{display:"flex",gap:6,marginBottom:10,flexWrap:"wrap"}}>
-                  {appointments.filter(a=>new Date(a.date+"T23:59:59")>=new Date()).length===0&&(
-                    <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:"",repeat:"none",travelMins:0});setShowAddAppt(true);}} style={{flex:1,minWidth:85,padding:"9px 8px",borderRadius:16,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:11,fontWeight:600,color:C.mid,fontFamily:_fI}}>
-                      📅 Appointment
-                    </button>
-                  )}
                   {reminders.filter(r=>!r.done).length===0&&(
                     <button onClick={()=>{setReminderForm({text:"",date:todayStr(),time:"",trigger:""});setShowAddReminder(true);}} style={{flex:1,minWidth:85,padding:"9px 8px",borderRadius:16,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:11,fontWeight:600,color:C.mid,fontFamily:_fI}}>
                       🔔 Reminder
@@ -11501,15 +11496,7 @@ function App(){
                   </div>
                 </div>
               )}
-              {/* 3. Quick actions — collapsible */}
-              <button onClick={()=>{haptic();setLogGridOpen(!logGridOpen);}} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:logGridOpen?"14px 14px 0 0":14,border:"1px solid var(--card-border)",background:"var(--card-bg)",boxShadow:"var(--card-shadow)",cursor:_cP,marginBottom:logGridOpen?0:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <span style={{fontSize:13,fontWeight:700,color:C.deep}}>🏷️ Detailed Log</span>
-                </div>
-                <span style={{fontSize:10,color:C.lt,transform:logGridOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
-              </button>
-              <div style={{display:logGridOpen?"block":"none",border:"1px solid var(--card-border)",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"10px 12px 2px",marginBottom:10,background:"var(--card-bg-solid)"}}>
-              <div data-actions-grid="true" id="detail-log-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
+              <div data-actions-grid="true" id="detail-log-grid" style={{display:"none"}}>{/* Log buttons moved into Today's Plan */}
                 {[
                   {id:"feed",  icon:"🍼", label:"Feed"},
                   {id:"nappy", icon:"💩", label:"Nappy"},
@@ -11540,11 +11527,12 @@ function App(){
               </div>
 
 
-              {/* Medicine & Temperature entries */}
+              {/* Medicine, Temperature & Vaccinations */}
               {(()=>{
                 const dayMeds = meds[selDay] || [];
                 const dayTummy = (days[selDay]||[]).filter(e=>e.type==="tummy");
-                if (!dayMeds.length && !dayTummy.length) return null;
+                const _hasVaccs = !!babyDob;
+                if (!dayMeds.length && !dayTummy.length && !_hasVaccs) return null;
                 return (
                   <div style={{marginBottom:12}}>
                     {dayMeds.length > 0 && (
@@ -11574,14 +11562,8 @@ function App(){
                         </div>
                       </div>
                     )}
-                  </div>
-                );
-              })()}
-
-              </div>{/* end Notes & Reminders collapsible */}
-
-              {/* ═══ VACCINATIONS — below Notes & Reminders ═══ */}
-              {babyDob && (()=>{
+                    {/* Vaccinations inside medicine section */}
+                    {babyDob && (()=>{
                 const _dob = new Date(babyDob+"T00:00:00");
                 const _addW = (w)=>{ const d=new Date(_dob); d.setDate(d.getDate()+w*7); return d; };
                 const _addM = (m)=>{ const d=new Date(_dob); d.setMonth(d.getMonth()+m); return d; };
@@ -11652,7 +11634,11 @@ function App(){
                   </div>
                 );
               })()}
+                  </div>
+                );
+              })()}
 
+              </div>{/* end Notes & Reminders collapsible */}
 
               <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:4}}>
                 <HelpBtn title="Today's Summary" body={(()=>{
@@ -11677,7 +11663,6 @@ function App(){
                   return "These numbers update as you log throughout the day. Here's what's typical for " + fmtAge(age) + ":\n\n" + _milkTip + "\n\n" + _nappyTip + "\n\n" + _sleepTip + "\n\n" + _napLen + "\n\nThese are general ranges, not targets. Every baby is different — if " + _n + " is content, feeding well, and gaining weight, you're doing great.\n\n💬 If anything concerns you, your " + _doctor + " is always happy to help.";
                 })()}/>
               </div>
-              </div>{/* end Detailed Log collapsible */}
 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
                 {[
@@ -11703,6 +11688,35 @@ function App(){
                 <span style={{fontSize:10,color:C.lt,transform:todayPlanOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
               </button>
               <div style={{display:todayPlanOpen?"block":"none",border:"1px solid var(--card-border)",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"10px 12px 2px",marginBottom:10,background:"var(--card-bg-solid)"}}>
+
+              {/* Log buttons inside Today's Plan */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
+                {[
+                  {id:"feed",  icon:"🍼", label:"Feed"},
+                  {id:"nappy", icon:"💩", label:"Nappy"},
+                  {id:"sleep", icon:"😴", label:"Sleep"},
+                  {id:"pump",  icon:"🫙", label:"Pump"},
+                  {id:"wake",  icon:"☀️", label:"Wake Up"},
+                  {id:"med",   icon:"💊", label:"Med/Temp"},
+                  {id:"photo", icon:"📷", label:"Photo"},
+                  {id:"paste", icon:"📋", label:"Notes"},
+                ].map(({id,icon,label})=>(
+                  <button key={id} onClick={()=>{haptic();
+                    if(id==="paste") openPaste();
+                    else if(id==="photo") capturePhoto(null);
+                    else if(id==="med"){ setMedForm({name:"",dose:"",time:nowTime(),temp:"",note:""});setShowMedForm(true); }
+                    else openLogPanel(id);
+                  }}
+                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"10px 4px",borderRadius:14,border:`2px solid ${logPanel===id?"var(--ter)":"rgba(255,255,255,0.45)"}`,background:logPanel===id?"var(--chip-bg-active)":"var(--card-bg)",cursor:_cP,fontFamily:_fI,transition:"all 0.15s, transform 0.1s",boxShadow:logPanel===id?"0 0 12px rgba(192,112,136,0.30), inset 0 1px 0 rgba(255,255,255,0.60)":"inset 0 0 5px rgba(246,221,227,0.35), inset 0 1px 0 rgba(255,255,255,0.50)"}}
+                    onMouseDown={e=>{e.currentTarget.style.transform="scale(0.92)";}}
+                    onMouseUp={e=>{e.currentTarget.style.transform="scale(1)";}}
+                    onTouchStart={e=>{e.currentTarget.style.transform="scale(0.92)";}}
+                    onTouchEnd={e=>{e.currentTarget.style.transform="scale(1)";}}>
+                    <span style={{fontSize:22}}>{icon}</span>
+                    <span style={{fontSize:11,fontWeight:700,color:logPanel===id?C.ter:C.mid,letterSpacing:"0.01em",textAlign:"center",lineHeight:1.2}}>{label}</span>
+                  </button>
+                ))}
+              </div>
 
               {/* Premium gate for Today's Plan */}
               {STORE_READY && !isPremium && !trialActive && todayPlanOpen && (
