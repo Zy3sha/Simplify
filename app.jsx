@@ -3592,17 +3592,14 @@ function App(){
     const _todayHasMorningWake = _calTodayEntries.some(e => e.type === "wake" && !e.night);
     const _todayHasAnyDaytimeEntries = _calTodayEntries.some(e => !e.night && (e.type === "feed" || e.type === "nap" || e.type === "poop" || e.type === "wake"));
     const _heroDay = (() => {
-      // Always use today if there are any daytime entries (feeds, nappies, naps, wakes)
       if (_todayHasMorningWake) return _calToday;
       if (_todayHasAnyDaytimeEntries) return _calToday;
-      // Only fall to yesterday if today is empty AND it's overnight (before 5am)
       const _nowH = new Date().getHours();
       if (_nowH < 5 && (days[_isYesterday]||[]).some(e => e.type === "sleep" && !e.night)) return _isYesterday;
       return _calToday;
     })();
     let _today = days[_heroDay] || [];
     const _useYesterday = _heroDay === _isYesterday;
-    // Track if wake is missing so we can nudge the user
     const _wakeMissing = !_useYesterday && !_todayHasMorningWake && _todayHasAnyDaytimeEntries;
     if (_today.length === 0 && !_todayHasMorningWake && (days[_isYesterday]||[]).length === 0) {
       return (
@@ -3662,7 +3659,7 @@ function App(){
 
     // ── Contextual reassurance based on day pattern ──
     const _allFeeds = _today.filter(e => e.type === "feed" && !e.night);
-    // Include night feeds for timing calculations — use _heroDay not selDay
+    // Include night feeds for timing calculations
     const _prevDayKey = (()=>{const d=new Date(_heroDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
     const _allFeedsIncNight = [..._allFeeds, ..._today.filter(e=>e.time&&e.night&&(e.type==="feed"||(e.amount||0)>0||e.assistedType==="milk"||e.feedType==="milk")), ...((days[_prevDayKey]||[]).filter(e=>e.time&&e.night&&(e.type==="feed"||(e.amount||0)>0||e.assistedType==="milk"||e.feedType==="milk")))];
     const _totalNapMin = _naps.reduce((s,n) => s + minDiff(n.start, n.end), 0);
@@ -3740,20 +3737,18 @@ function App(){
     // ── Feed & nappy gentle context (computed early, used in all card variants) ──
     let _feedNappyHint = null;
     let _chaoticDays = [];
-    let _lastFeed = null;
-    let _lastNappy = null;
     try {
       const _hints = [];
-      // Find last feed and nappy — always anchor on real calendar today for correct wall-clock gaps
+      // Find last feed and nappy using same logic as daily total (which works correctly)
       const _calNow = todayStr();
-      const _fpPrev = (()=>{const d=new Date(_calNow+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
-      const _fpNext = (()=>{const d=new Date(_calNow+"T12:00:00");d.setDate(d.getDate()+1);return d.toISOString().split("T")[0];})();
+      const _fpPrev = (()=>{const d=new Date(selDay+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
+      const _fpNext = (()=>{const d=new Date(selDay+"T12:00:00");d.setDate(d.getDate()+1);return d.toISOString().split("T")[0];})();
       const _tag = (arr, dk) => arr.map(e => ({...e, _dk: dk}));
       const _searchPool = [
-        ..._tag(days[_calNow]||[], _calNow),
-        ...(_fpPrev !== _calNow ? _tag(days[_fpPrev]||[], _fpPrev) : []),
-        ...(_heroDay !== _calNow && _heroDay !== _fpPrev ? _tag(_today, _heroDay) : []),
-        ...(_fpNext !== _calNow && _fpNext !== _fpPrev ? _tag(days[_fpNext]||[], _fpNext) : [])
+        ..._tag(_today, selDay),
+        ...(_calNow !== selDay ? _tag(days[_calNow]||[], _calNow) : []),
+        ..._tag(days[_fpPrev]||[], _fpPrev),
+        ...(_fpNext !== _calNow && _fpNext !== selDay ? _tag(days[_fpNext]||[], _fpNext) : [])
       ];
       const _isFeedEntry = (e) => e.time && (
         e.type === "feed" ||
@@ -3778,11 +3773,11 @@ function App(){
         }
         return Math.max(0, gap);
       };
-      _lastFeed = _allPoolFeeds.length > 0
+      const _lastFeed = _allPoolFeeds.length > 0
         ? { entry: _allPoolFeeds.reduce((best, e) => _wallGap(e) < _wallGap(best) ? e : best), gap: null }
         : null;
       if (_lastFeed) _lastFeed.gap = _wallGap(_lastFeed.entry);
-      _lastNappy = _allPoolNappies.length > 0
+      const _lastNappy = _allPoolNappies.length > 0
         ? { entry: _allPoolNappies.reduce((best, e) => _wallGap(e) < _wallGap(best) ? e : best), gap: null }
         : null;
       if (_lastNappy) _lastNappy.gap = _wallGap(_lastNappy.entry);
@@ -4192,9 +4187,25 @@ function App(){
         _timing = "Awake " + hm(_awakeMin) + " · Nap " + (_napsDone+1) + " of " + _adjustedExpected + " around " + _napTimeStr + _rhythmTag;
       }
     } else if (_dayStarted && _allFeedsIncNight.length > 0) {
-      // Use _lastFeed from the feed hint pool above (wall-clock-aware, cross-day correct)
-      // _lastFeed is computed in the feed & nappy context block using _wallGap
-      let _minsSinceFeed = _lastFeed ? _lastFeed.gap : 9999;
+      // Real-time last feed: cross-day aware, anchored on calendar today
+      const _rtNow = todayStr();
+      const _rtPrev = (()=>{const d=new Date(_rtNow+"T12:00:00");d.setDate(d.getDate()-1);return d.toISOString().split("T")[0];})();
+      const _rtTag = (arr, dk) => arr.map(e => ({...e, _rtdk: dk}));
+      const _rtPool = [
+        ..._rtTag(days[_rtNow]||[], _rtNow),
+        ..._rtTag(days[_rtPrev]||[], _rtPrev),
+        ...(_heroDay !== _rtNow && _heroDay !== _rtPrev ? _rtTag(_today, _heroDay) : [])
+      ];
+      const _rtFeeds = _rtPool.filter(e => e.time && (e.type === "feed" || (e.amount && e.amount > 0) || (e.night && (e.assistedType === "milk" || e.feedType === "milk"))));
+      const _rtGap = (e) => {
+        const tv = timeVal(e);
+        let gap = _nowM - tv;
+        if (e._rtdk === _rtNow) { if (gap < 0) gap += 1440; }
+        else { if (gap < 0) gap += 1440; const dd = Math.round((new Date(_rtNow+"T12:00:00") - new Date(e._rtdk+"T12:00:00")) / 86400000); if (dd > 0) gap += (dd - 1) * 1440; }
+        return Math.max(0, gap);
+      };
+      const _rtBest = _rtFeeds.length > 0 ? _rtFeeds.reduce((best, e) => _rtGap(e) < _rtGap(best) ? e : best) : null;
+      let _minsSinceFeed = _rtBest ? _rtGap(_rtBest) : 9999;
       if (_minsSinceFeed >= 150 && _minsSinceFeed < 1500) {
         _dot = "#7aabc4"; _label = "Feed window opening";
         _timing = "Last feed " + hm(_minsSinceFeed) + " ago · " + (age && age.totalWeeks < 3 ? "little ones this age often need feeding every 2–3h" : _name + " might be getting peckish");
@@ -4267,7 +4278,7 @@ function App(){
         </div>
         <div style={{fontSize:13,color:C.mid,marginBottom:_rightNow?4:8,paddingLeft:20}}>{_timing}</div>
         {_wakeMissing && (
-          <button onClick={()=>{haptic();handleSmartWake();}} style={{display:"flex",alignItems:"center",gap:8,width:"100%",background:"rgba(212,168,85,0.1)",border:"1.5px solid rgba(212,168,85,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:8,cursor:_cP,textAlign:"left"}}>
+          <button onClick={()=>{haptic();handleSmartWake();}} style={{display:"flex",alignItems:"center",gap:8,width:"calc(100% - 20px)",marginLeft:20,background:"rgba(212,168,85,0.1)",border:"1.5px solid rgba(212,168,85,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:8,cursor:_cP,textAlign:"left"}}>
             <span style={{fontSize:18}}>☀️</span>
             <div>
               <div style={{fontSize:13,fontWeight:700,color:C.deep}}>Wake not logged</div>
@@ -8155,8 +8166,7 @@ function App(){
       setShowNightWake(true);
       return;
     }
-    // If editing a wake entry and bedtime is logged, still go to normal edit form
-    // (the day/night dropdown there lets user choose)
+    // Wake edits go to normal edit form (day/night dropdown there)
     setEditEntry(entry);
     setEType(entry.type);
     setFeedType(entry.feedType||"milk");
@@ -11792,7 +11802,7 @@ function App(){
               )}
 
               {/* ONE-TAP LOG ROW — below date strip, above age guidance */}
-              <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"10px 8px 14px 8px",marginBottom:14,gap:1,boxShadow:"var(--card-shadow)",position:"relative",zIndex:2,overflow:"hidden"}}>
+              <div onTouchStart={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"10px 8px",marginBottom:10,gap:1,boxShadow:"var(--card-shadow)",position:"relative",zIndex:2,overflow:"hidden"}}>
                 {[
                   {emoji:"🍼",label:"Feed",longAction:()=>openLogPanel("feed"),action:()=>quickAddLog("feed",{type:"feed",time:nowTime(),feedType:"milk",amount:0,night:false,note:""})},
                   {emoji:"🤱",label:"Breast",longAction:()=>openLogPanel("feed"),action:()=>{haptic();startBreastTimer("L");}},
@@ -11826,7 +11836,7 @@ function App(){
                       if(lp.timer){clearTimeout(lp.timer);}
                       window._obLp={fired:false,timer:null};
                     }}
-                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1,padding:"8px 1px",borderRadius:12,border:"none",background:"transparent",cursor:_cP,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",minHeight:48}}
+                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,flex:1,padding:"6px 1px",borderRadius:12,border:"none",background:"transparent",cursor:_cP,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",maxHeight:52}}
                   >
                     <span style={{fontSize:22,lineHeight:1}}>{emoji}</span>
                     <span style={{fontSize:10,fontWeight:600,color:napOn&&label==="Stop"?C.ter:C.mid,fontFamily:_fM}}>{label}</span>
@@ -12170,6 +12180,79 @@ function App(){
               })()}
 
               </div>{/* end Notes & Reminders collapsible */}
+
+              {/* ═══ VACCINATIONS — below Notes & Reminders ═══ */}
+              {babyDob && (()=>{
+                const _dob = new Date(babyDob+"T00:00:00");
+                const _addW = (w)=>{ const d=new Date(_dob); d.setDate(d.getDate()+w*7); return d; };
+                const _addM = (m)=>{ const d=new Date(_dob); d.setMonth(d.getMonth()+m); return d; };
+                const _fmt = (d)=>d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+                const _today = new Date();
+                const _key = "vaccs_v1_"+resolvedActiveId;
+                const _done = (()=>{try{return JSON.parse(localStorage.getItem(_key)||"[]");}catch{return [];}})();
+                const _sched = _isUS ? [
+                  {id:"2mo",label:"2 months",due:_addM(2),jabs:["DTaP","IPV","Hib","PCV","RV","HepB"]},
+                  {id:"4mo",label:"4 months",due:_addM(4),jabs:["DTaP","IPV","Hib","PCV","RV"]},
+                  {id:"6mo",label:"6 months",due:_addM(6),jabs:["DTaP","IPV","Hib","PCV","RV","HepB","Flu"]},
+                  {id:"12mo",label:"12 months",due:_addM(12),jabs:["MMR","Varicella","HepA","PCV booster"]},
+                ] : [
+                  {id:"8w",label:"8 weeks",due:_addW(8),jabs:["6-in-1 (DTaP/IPV/Hib/HepB)","Rotavirus","MenB"]},
+                  {id:"12w",label:"12 weeks",due:_addW(12),jabs:["6-in-1 2nd dose","Rotavirus 2nd dose","PCV"]},
+                  {id:"16w",label:"16 weeks",due:_addW(16),jabs:["6-in-1 3rd dose","MenB 2nd dose"]},
+                  {id:"1yr",label:"1 year",due:_addM(12),jabs:["Hib/MenC","MMR","PCV booster","MenB booster"]},
+                  {id:"3yr",label:"3 years 4 months",due:_addM(40),jabs:["4-in-1 pre-school booster","MMR 2nd dose"]},
+                ];
+                const _next = _sched.filter(v=>!_done.includes(v.id)&&v.due>=_today).sort((a,b)=>a.due-b.due)[0];
+                const _overdue = _sched.filter(v=>!_done.includes(v.id)&&v.due<_today);
+                return (
+                  <div style={{marginBottom:14}}>
+                    <div style={{background:"var(--card-bg)",border:"1px solid "+C.blush,borderRadius:16,overflow:"hidden"}}>
+                      <button onClick={()=>setVaccOpen(v=>!v)} style={{width:"100%",padding:"14px 16px",background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:_cP,fontFamily:_fI}}>
+                        <div style={{textAlign:"left"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:6}}>
+                            <span style={{fontSize:16}}>💉</span>
+                            <span style={{fontSize:14,fontWeight:700,color:C.deep}}>{_overdue.length>0?"⚠️ "+_overdue.length+" overdue":_next?"Next: "+_next.label:"All done ✓"}</span>
+                          </div>
+                          <div style={{fontSize:11,color:C.lt,marginTop:2,paddingLeft:22}}>{_overdue.length>0?"Contact your GP surgery":_next?"Due "+_fmt(_next.due):""+_sched.filter(v=>v.due<=_today).length+" vaccinations completed"}</div>
+                        </div>
+                        <span style={{color:C.lt,fontSize:12,transform:vaccOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
+                      </button>
+                      {vaccOpen && (
+                        <div style={{borderTop:"1px solid "+C.blush,padding:"12px 16px"}}>
+                          <div style={{fontSize:11,color:C.lt,marginBottom:10}}>{_isUS?"AAP/CDC":"NHS UK"} schedule — tap circle to mark as given</div>
+                          {_sched.map((v,i)=>{
+                            const _isDone=_done.includes(v.id);
+                            const _isOd=!_isDone&&v.due<_today;
+                            return (
+                              <div key={v.id} style={{padding:"10px 0",borderTop:i?"1px solid "+C.blush:"none",display:"flex",gap:12,alignItems:"flex-start"}}>
+                                <button onClick={()=>{
+                                  const cur=(()=>{try{return JSON.parse(localStorage.getItem(_key)||"[]");}catch{return [];}})();
+                                  const nxt=cur.includes(v.id)?cur.filter(x=>x!==v.id):[...cur,v.id];
+                                  try{localStorage.setItem(_key,JSON.stringify(nxt));}catch{}
+                                  setVaccTick(t=>t+1);
+                                }} style={{width:24,height:24,borderRadius:"50%",border:"2px solid "+(_isDone?C.mint:_isOd?"#c04040":C.blush),background:_isDone?C.mint:"transparent",flexShrink:0,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",marginTop:2}}>
+                                  {_isDone&&<span style={{color:"white",fontSize:11,fontWeight:700}}>✓</span>}
+                                </button>
+                                <div style={{flex:1}}>
+                                  <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                                    <span style={{fontSize:13,fontWeight:700,color:_isDone?C.lt:_isOd?"#c04040":C.deep}}>{v.label}</span>
+                                    {_isOd&&<span style={{fontSize:9,background:"rgba(232,87,74,0.12)",color:"#c04040",padding:"1px 6px",borderRadius:99,fontWeight:700}}>OVERDUE</span>}
+                                  </div>
+                                  <div style={{fontSize:11,color:C.lt,marginBottom:3}}>{_fmt(v.due)}</div>
+                                  {v.jabs.map((j,ji)=><div key={ji} style={{fontSize:11,color:_isDone?C.lt:C.mid}}>• {j}</div>)}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div style={{marginTop:10,padding:"8px 10px",borderRadius:10,background:"var(--card-bg-alt)",fontSize:11,color:C.lt,lineHeight:1.5}}>
+                            Reference only — always book through your {_doctor}.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* 5. Today's summary stats — nap/bed card hidden (Hero Card handles this) */}
               {false && (()=>{
@@ -16378,76 +16461,7 @@ function App(){
             </div>
 
 
-          {/* ═══ 7. VACCINATIONS ═══ */}
-          {babyDob && (()=>{
-            const _dob = new Date(babyDob+"T00:00:00");
-            const _addW = (w)=>{ const d=new Date(_dob); d.setDate(d.getDate()+w*7); return d; };
-            const _addM = (m)=>{ const d=new Date(_dob); d.setMonth(d.getMonth()+m); return d; };
-            const _fmt = (d)=>d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
-            const _today = new Date();
-            const _key = "vaccs_v1_"+resolvedActiveId;
-            const _done = (()=>{try{return JSON.parse(localStorage.getItem(_key)||"[]");}catch{return [];}})();
-            const _sched = _isUS ? [
-              {id:"2mo",label:"2 months",due:_addM(2),jabs:["DTaP","IPV","Hib","PCV","RV","HepB"]},
-              {id:"4mo",label:"4 months",due:_addM(4),jabs:["DTaP","IPV","Hib","PCV","RV"]},
-              {id:"6mo",label:"6 months",due:_addM(6),jabs:["DTaP","IPV","Hib","PCV","RV","HepB","Flu"]},
-              {id:"12mo",label:"12 months",due:_addM(12),jabs:["MMR","Varicella","HepA","PCV booster"]},
-            ] : [
-              {id:"8w",label:"8 weeks",due:_addW(8),jabs:["6-in-1 (DTaP/IPV/Hib/HepB)","Rotavirus","MenB"]},
-              {id:"12w",label:"12 weeks",due:_addW(12),jabs:["6-in-1 2nd dose","Rotavirus 2nd dose","PCV"]},
-              {id:"16w",label:"16 weeks",due:_addW(16),jabs:["6-in-1 3rd dose","MenB 2nd dose"]},
-              {id:"1yr",label:"1 year",due:_addM(12),jabs:["Hib/MenC","MMR","PCV booster","MenB booster"]},
-              {id:"3yr",label:"3 years 4 months",due:_addM(40),jabs:["4-in-1 pre-school booster","MMR 2nd dose"]},
-            ];
-            const _next = _sched.filter(v=>!_done.includes(v.id)&&v.due>=_today).sort((a,b)=>a.due-b.due)[0];
-            const _overdue = _sched.filter(v=>!_done.includes(v.id)&&v.due<_today);
-            return (
-              <div style={{marginBottom:14}}>
-                <div style={{fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>💉 Vaccinations</div>
-                <div style={{background:"var(--card-bg)",border:"1px solid "+C.blush,borderRadius:16,overflow:"hidden"}}>
-                  <button onClick={()=>setVaccOpen(v=>!v)} style={{width:"100%",padding:"14px 16px",background:"none",border:"none",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:_cP,fontFamily:_fI}}>
-                    <div style={{textAlign:"left"}}>
-                      <div style={{fontSize:14,fontWeight:700,color:C.deep}}>{_overdue.length>0?"⚠️ "+_overdue.length+" overdue":_next?"Next: "+_next.label:"All done ✓"}</div>
-                      <div style={{fontSize:11,color:C.lt,marginTop:2}}>{_overdue.length>0?"Contact your GP surgery":_next?"Due "+_fmt(_next.due):""+_sched.filter(v=>v.due<=_today).length+" completed"}</div>
-                    </div>
-                    <span style={{color:C.lt,fontSize:12}}>▼</span>
-                  </button>
-                  {vaccOpen && (
-                    <div style={{borderTop:"1px solid "+C.blush,padding:"12px 16px"}}>
-                      <div style={{fontSize:11,color:C.lt,marginBottom:10}}>{_isUS?"AAP/CDC":"NHS UK"} schedule — tap circle to mark as given</div>
-                      {_sched.map((v,i)=>{
-                        const _isDone=_done.includes(v.id);
-                        const _isOd=!_isDone&&v.due<_today;
-                        return (
-                          <div key={v.id} style={{padding:"10px 0",borderTop:i?"1px solid "+C.blush:"none",display:"flex",gap:12,alignItems:"flex-start"}}>
-                            <button onClick={()=>{
-                              const cur=(()=>{try{return JSON.parse(localStorage.getItem(_key)||"[]");}catch{return [];}})();
-                              const nxt=cur.includes(v.id)?cur.filter(x=>x!==v.id):[...cur,v.id];
-                              try{localStorage.setItem(_key,JSON.stringify(nxt));}catch{}
-                              setVaccTick(t=>t+1);
-                            }} style={{width:24,height:24,borderRadius:"50%",border:"2px solid "+(_isDone?C.mint:_isOd?"#c04040":C.blush),background:_isDone?C.mint:"transparent",flexShrink:0,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",marginTop:2}}>
-                              {_isDone&&<span style={{color:"white",fontSize:11,fontWeight:700}}>✓</span>}
-                            </button>
-                            <div style={{flex:1}}>
-                              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
-                                <span style={{fontSize:13,fontWeight:700,color:_isDone?C.lt:_isOd?"#c04040":C.deep}}>{v.label}</span>
-                                {_isOd&&<span style={{fontSize:9,background:"rgba(232,87,74,0.12)",color:"#c04040",padding:"1px 6px",borderRadius:99,fontWeight:700}}>OVERDUE</span>}
-                              </div>
-                              <div style={{fontSize:11,color:C.lt,marginBottom:3}}>{_fmt(v.due)}</div>
-                              {v.jabs.map((j,ji)=><div key={ji} style={{fontSize:11,color:_isDone?C.lt:C.mid}}>• {j}</div>)}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      <div style={{marginTop:10,padding:"8px 10px",borderRadius:10,background:"var(--card-bg-alt)",fontSize:11,color:C.lt,lineHeight:1.5}}>
-                        Reference only — always book through your {_doctor}.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
+          {/* ═══ 7. VACCINATIONS — moved to Day tab (below Notes & Reminders) ═══ */}
 
           {/* ═══ 8. SIGN OUT ═══ */}
           {familyUsername&&(
