@@ -11348,13 +11348,7 @@ function App(){
                   const d=new Date(a.date+"T23:59:59");
                   return d>=new Date()&&d<=new Date(Date.now()+7*24*60*60*1000);
                 }).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
-                if (!upcoming.length) {
-                  return (
-                    <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:"",repeat:"none",travelMins:0});setShowAddAppt(true);}} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:99,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:12,fontWeight:600,color:C.lt,fontFamily:_fI,marginBottom:10}}>
-                      📅 Add appointment
-                    </button>
-                  );
-                }
+                if (!upcoming.length) return null;
                 const nextAppt=upcoming[0];
                 const isToday=nextAppt.date===todayStr();
                 const isTomorrow=nextAppt.date===nextDay(todayStr());
