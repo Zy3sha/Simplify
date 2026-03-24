@@ -2269,7 +2269,9 @@ function App(){
       if(!window._fb) { setAuthUsernameStatus("idle"); return; }
       const {db, doc, getDoc} = window._fb;
       try {
-        const snap = await fsGet("usernames", normaliseUsername(val));
+        let snap;
+        try { snap = await getDoc(doc(db, "usernames", normaliseUsername(val))); }
+        catch { snap = await fsGet("usernames", normaliseUsername(val)); }
         if(seq !== authCheckSeqRef.current) return; // stale response — ignore
         setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
         if(snap.exists()) try{document.activeElement.blur();}catch{}
