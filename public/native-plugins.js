@@ -763,6 +763,9 @@ const OBPreferences = {
   },
 };
 
+// ── Set global native flag used by app.jsx ──────────────────────
+window._isNative = isNative();
+
 // ── EXPORT ALL ──────────────────────────────────────────────────
 window.OBNative = {
   isNative,

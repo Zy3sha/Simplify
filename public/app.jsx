@@ -1,8 +1,7 @@
 
 const { useState, useEffect, useRef } = React;
 
-// Remove static splash screen (defined in index.html) once React has mounted
-try { const splash = document.getElementById("ob-splash"); if(splash) splash.style.opacity="0"; setTimeout(()=>{if(splash)splash.remove();},400); } catch {}
+// Splash removal is deferred — see useEffect in OBubbaApp below
 
 // Disable iOS WebView rubber-band bounce at scroll edges
 try {
@@ -1478,8 +1477,8 @@ function App(){
   const[themeKey,setThemeKey]=useState(0);
   useEffect(()=>{
     // Dismiss splash screen once React has mounted
-    const splash=document.getElementById("splash");
-    if(splash){splash.classList.add("hide");setTimeout(()=>{splash.remove();},600);}
+    const splash=document.getElementById("ob-splash");
+    if(splash){splash.style.transition="opacity 0.5s ease";splash.style.opacity="0";setTimeout(()=>{splash.remove();},600);}
   },[]);
 
   useEffect(()=>{

@@ -26,10 +26,11 @@ const config: CapacitorConfig = {
       sound: 'notification.wav',
     },
 
-    // ── Splash Screen — disabled so the HTML sleeping-baby splash shows ──
+    // ── Splash Screen ──
     SplashScreen: {
       launchShowDuration: 0,
       launchAutoHide: true,
+      launchFadeOutDuration: 300,
       backgroundColor: '#FFFEFD',
       showSpinner: false,
     },
@@ -101,7 +102,7 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'never',
     allowsLinkPreview: true,
-    backgroundColor: '#FFFEFD',
+    backgroundColor: '#FFFCF9',
     preferredContentMode: 'mobile',
     limitsNavigationsToAppBoundDomains: false,
     webContentsDebuggingEnabled: true,
