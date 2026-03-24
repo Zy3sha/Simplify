@@ -3473,22 +3473,22 @@ function App(){
         const _wakeNudgeAt = Math.round(_napMax * 0.85); // Nudge at 85% of max (e.g. 102 min)
 
         if (_napMins >= _napMax + 30) {
-          // Way over max — strongly suggest waking
+          // Way over max — gentle advisory with WHY
           _dot = "#E8937A"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected + " — very long";
-          _timing = "Sleeping " + hm(_napMins) + " · Well past the typical " + _napMax + " min max for " + fmtAge(age);
+          _timing = "Sleeping " + hm(_napMins) + " · Well past the typical " + _napMax + " min for " + fmtAge(age);
           if (_shouldSkipLastNap) {
-            _rightNow = "Right now: Total day sleep is " + hm(_totalDaySleepSoFar) + " (max ~" + hm(_dailySleepMax) + "). Consider gently waking " + _name + ", skip the last nap and bring bedtime earlier";
+            _rightNow = "Right now: " + _name + " has had " + hm(_totalDaySleepSoFar) + " of daytime sleep today (typical max ~" + hm(_dailySleepMax) + "). You may want to gently wake " + _name + " and skip the last nap — an earlier bedtime can help build enough sleep pressure for a smoother night";
           } else {
-            _rightNow = "Right now: Consider gently waking " + _name + " — very long naps can steal from overnight sleep and make the next nap harder. " + _name + " may not need all " + _adjustedExpected + " naps today";
+            _rightNow = "Right now: Very long naps can reduce sleep pressure, which may lead to shorter wake windows and more night waking. If it feels right, you may consider gently waking " + _name + " to help redistribute sleep across the day. Of course, if " + _name + " is resting peacefully and bedtime remains on track, it's perfectly okay to let the nap continue";
           }
         } else if (_napMins >= _napMax) {
-          // Over max — suggest waking
+          // Over max — gentle advisory
           _dot = "#D4A855"; _label = "Nap " + (_napsDone + 1) + " of " + _adjustedExpected + " — long";
-          _timing = "Sleeping " + hm(_napMins) + " · Past the typical " + _napMax + " min max";
+          _timing = "Sleeping " + hm(_napMins) + " · Past the typical " + _napMax + " min for " + fmtAge(age);
           if (_shouldSkipLastNap) {
-            _rightNow = "Right now: Big nap — total day sleep approaching " + hm(_totalDaySleepSoFar) + ". You may want to skip the last nap and bring bedtime earlier";
+            _rightNow = "Right now: " + _name + " has had a lovely long nap — total day sleep is approaching " + hm(_totalDaySleepSoFar) + ". You may want to skip the last nap and bring bedtime a little earlier to protect overnight sleep";
           } else {
-            _rightNow = "Right now: This nap has hit the age-appropriate max (" + _napMax + " min). It's OK to gently wake " + _name + " to protect the next wake window and bedtime";
+            _rightNow = "Right now: This nap has reached the age-typical max (" + _napMax + " min). Some babies benefit from being gently woken so they can build enough sleep pressure for the next wake window and bedtime. If " + _name + " is still resting peacefully, that's okay too";
           }
         } else if (_napMins >= _wakeNudgeAt) {
           // Approaching max — gentle heads up
@@ -3502,6 +3502,12 @@ function App(){
           const _rem = Math.max(0, _expDur - _napMins);
           _timing = "Sleeping " + _napMins + " min" + (_rem > 0 ? " · Expected wake ~" + _rem + " min" : " · May wake soon");
           if (_feedNappyHint) _feedNappyHint = "When " + _name + " wakes, " + _feedNappyHint;
+        }
+        // Age-aware long nap advisory for transitional ages (4–6mo)
+        // Gentle explanation of WHY long naps may affect night sleep
+        const _ageMonths = age ? age.totalWeeks / 4.33 : 0;
+        if (_profile.transitional && _napMins >= 105 && !_rightNow) {
+          _rightNow = _name + " has already had a good amount of daytime sleep today. At this age, many babies still do best with three naps and slightly longer wake windows. If this nap continues much longer, you may consider gently waking " + _name + " to help balance sleep across the day and support a smoother bedtime. Some babies benefit from slightly shorter naps so they can build enough sleep pressure for longer night stretches. Of course, if " + _name + " is still resting peacefully and bedtime remains on track, it's completely okay to let the nap continue.";
         }
       }
     } else if (_hasBed && (_h >= 19 || _h < 5) && _napsComplete) {
@@ -3917,10 +3923,10 @@ function App(){
     let min, max, label;
     if (ageWeeks < 6)     { min=30;  max=60;  label="30–60 min"; }     // 0–6wk
     else if (months < 3)  { min=45;  max=90;  label="45–90 min"; }     // 6wk–3mo
-    else if (months < 5)  { min=90;  max=150; label="1.5–2.5 hrs"; }   // 3–5mo
-    else if (months < 7)  { min=120; max=180; label="2–3 hrs"; }       // 5–7mo
-    else if (months < 9)  { min=150; max=210; label="2.5–3.5 hrs"; }   // 7–9mo
-    else if (months < 12) { min=180; max=240; label="3–4 hrs"; }       // 9–12mo
+    else if (months < 4)  { min=75;  max=120; label="1.25–2 hrs"; }    // 3–4mo
+    else if (months < 6)  { min=90;  max=150; label="1.5–2.5 hrs"; }   // 4–6mo
+    else if (months < 8)  { min=120; max=180; label="2–3 hrs"; }       // 6–8mo
+    else if (months < 12) { min=150; max=210; label="2.5–3.5 hrs"; }   // 8–12mo
     else if (months < 15) { min=210; max=270; label="3.5–4.5 hrs"; }   // 12–15mo (transition)
     else if (months < 19) { min=270; max=330; label="4.5–5.5 hrs"; }   // 15–18mo
     else if (months < 36) { min=300; max=360; label="5–6 hrs"; }       // 18mo–3yr
@@ -3950,10 +3956,10 @@ function App(){
     const months = ageWeeks / 4.33;
     if (ageWeeks < 6)  return { expectedNaps:5, idealNapDurMin:20, idealNapDurMax:60,  idealTotalMin:240, idealTotalMax:360 }; // 0–6wk
     if (months < 3)    return { expectedNaps:4, idealNapDurMin:30, idealNapDurMax:90,  idealTotalMin:180, idealTotalMax:300 }; // 6wk–3mo
-    if (months < 5)    return { expectedNaps:3, idealNapDurMin:40, idealNapDurMax:90,  idealTotalMin:150, idealTotalMax:240 }; // 3–5mo
-    if (months < 7)    return { expectedNaps:3, idealNapDurMin:45, idealNapDurMax:120, idealTotalMin:120, idealTotalMax:210 }; // 5–7mo
-    if (months < 9)    return { expectedNaps:2, idealNapDurMin:60, idealNapDurMax:120, idealTotalMin:120, idealTotalMax:210 }; // 7–9mo
-    if (months < 12)   return { expectedNaps:2, idealNapDurMin:60, idealNapDurMax:120, idealTotalMin:120, idealTotalMax:180 }; // 9–12mo
+    if (months < 4)    return { expectedNaps:4, idealNapDurMin:30, idealNapDurMax:90,  idealTotalMin:150, idealTotalMax:270 }; // 3–4mo
+    if (months < 6)    return { expectedNaps:3, idealNapDurMin:40, idealNapDurMax:105, idealTotalMin:150, idealTotalMax:240, transitional:true }; // 4–6mo (transitional)
+    if (months < 8)    return { expectedNaps:3, idealNapDurMin:45, idealNapDurMax:120, idealTotalMin:120, idealTotalMax:210 }; // 6–8mo (can transition to 2)
+    if (months < 12)   return { expectedNaps:2, idealNapDurMin:60, idealNapDurMax:120, idealTotalMin:120, idealTotalMax:210 }; // 8–12mo
     if (months < 15)   return { expectedNaps:2, idealNapDurMin:50, idealNapDurMax:110, idealTotalMin:90,  idealTotalMax:150 }; // 12–15mo (transition)
     if (ageWeeks < 78) return { expectedNaps:1, idealNapDurMin:60, idealNapDurMax:120, idealTotalMin:60,  idealTotalMax:120 }; // 15–18mo
     return               { expectedNaps:1, idealNapDurMin:60, idealNapDurMax:90,  idealTotalMin:60,  idealTotalMax:90  }; // 18mo+
@@ -4749,16 +4755,21 @@ function App(){
     const name = babyName || "Baby";
     const profile = getAgeNapProfile(w);
     const dk = Object.keys(days).sort().slice(-10);
-    if (dk.length < 5) return null;
+    if (dk.length < 7) return null; // Need at least 7 days of data
     const napCounts = dk.map(d => (days[d]||[]).filter(e=>e.type==="nap"&&!e.night).length);
     const daysWithFewer = napCounts.filter(n => n < profile.expectedNaps).length;
+    // Require 5–7 days consistency before suggesting a transition
+    const consistencyThreshold = Math.min(7, Math.max(5, Math.round(dk.length * 0.6)));
     const transitions = [
-      { from:4, to:3, ageRange:[17,26], ww:"2–3 hrs" },
-      { from:3, to:2, ageRange:[26,35], ww:"2.5–3.5 hrs" },
+      { from:4, to:3, ageRange:[13,26], ww:"1.5–2.5 hrs" },  // 3–6mo
+      { from:3, to:2, ageRange:[26,39], ww:"2.5–3.5 hrs" },  // 6–9mo (NOT before 6mo)
       { from:2, to:1, ageRange:[56,78], ww:"4–6 hrs" },
     ];
     const match = transitions.find(t => w >= t.ageRange[0] && w <= t.ageRange[1] && profile.expectedNaps === t.from);
-    if (!match || daysWithFewer < 4) return null;
+    if (!match || daysWithFewer < consistencyThreshold) return null;
+    // Guard: never suggest 3→2 naps during the 4–6mo transitional period
+    const months = w / 4.33;
+    if (match.from === 3 && match.to === 2 && months < 6) return null;
     const _adviceByTrans = {
       "3-2": `Stretch the morning wake window gradually — add 15 minutes every few days until it reaches 2.5–3 hours. The 3rd nap will start shortening naturally. When it disappears, shift the afternoon nap slightly earlier. Use a 6–6:30pm bedtime on days the 3rd nap is skipped — overtiredness causes more night wakes, not fewer. Give it 2–4 weeks. Some days will still need 3 naps and that's fine.`,
       "2-1": `Push the morning nap 15 minutes later every few days until it sits around 12–12:30pm. The afternoon nap will naturally shorten and drop. During the transition (which can take 4–6 weeks), some days will be 2-nap days and some 1-nap — that's normal. On 1-nap days, bedtime may need to move as early as 6pm. Watch for overtiredness signs: clinginess, eye-rubbing, falling asleep in the car.`,
@@ -5352,18 +5363,30 @@ function App(){
     const consec = consecutiveEarlyBedDays();
     const ebr = earlyBedtimeRisk();
 
-    // Base expected naps
+    // Base expected naps (age-aware)
+    const months = w / 4.33;
     let baseNaps;
-    if (w < 13) baseNaps = 4;
-    else if (w < 26) baseNaps = 3;
-    else if (w < 39) baseNaps = 2;
-    else if (w < 65) baseNaps = 2;
+    if (w < 13) baseNaps = 4;         // 0–3mo
+    else if (months < 4) baseNaps = 4; // 3–4mo
+    else if (months < 6) baseNaps = 3; // 4–6mo
+    else if (months < 8) baseNaps = 3; // 6–8mo (can transition to 2 if stable)
+    else if (w < 65) baseNaps = 2;     // 8mo–15mo
     else baseNaps = 1;
 
     let recommendation = null;
     let bridgeNap = false;
 
-    if (consec >= 3 && baseNaps === 3) {
+    // Transitional state for 4–6mo: support 3rd nap option even if some days are 2-nap days
+    const profile = getAgeNapProfile(w);
+    if (profile.transitional && dss) {
+      const totalDaySleep = dss.totalMin || 0;
+      if (totalDaySleep >= profile.idealTotalMax * 0.85) {
+        // Day sleep nearly met — allow day to unfold naturally, but keep 3rd nap available
+        recommendation = { type: "transitional", message: `${babyName||"Baby"} has had a good amount of daytime sleep. At this age, most babies still do well with three naps. If a third nap feels right, a short 20–30 minute bridging nap can help protect bedtime.`, naps: 3 };
+      }
+    }
+
+    if (!recommendation && consec >= 3 && baseNaps === 3) {
       recommendation = { type: "add_nap", message: `Your baby may temporarily benefit from 4 naps instead of 3 until naps lengthen.`, naps: 4 };
     }
 
