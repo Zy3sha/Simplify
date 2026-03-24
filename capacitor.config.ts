@@ -99,9 +99,9 @@ const config: CapacitorConfig = {
 
   // ── iOS-specific ──
   ios: {
-    contentInset: 'automatic',
+    contentInset: 'never',
     allowsLinkPreview: true,
-    backgroundColor: '#F0DDD6',
+    backgroundColor: '#FFFEFD',
     preferredContentMode: 'mobile',
     limitsNavigationsToAppBoundDomains: false,
     webContentsDebuggingEnabled: true,

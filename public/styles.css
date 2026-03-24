@@ -4,7 +4,7 @@
    backdrop-filter only on class-based elements
    ═══════════════════════════════════════════════════════════ */
 
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 html,body{height:100%;overscroll-behavior:none}
 html{background:var(--bg-solid, #FFF8F2)}
 body{font-family:'DM Sans',-apple-system,'SF Pro Display',system-ui,sans-serif;-webkit-font-smoothing:antialiased}

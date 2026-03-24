@@ -4,6 +4,36 @@ const { useState, useEffect, useRef } = React;
 // Remove static splash screen (defined in index.html) once React has mounted
 try { const splash = document.getElementById("ob-splash"); if(splash) splash.style.opacity="0"; setTimeout(()=>{if(splash)splash.remove();},400); } catch {}
 
+// Disable iOS WebView rubber-band bounce at scroll edges
+try {
+  if (window.Capacitor) {
+    let _startY = 0;
+    document.addEventListener('touchstart', function(e) { _startY = e.touches[0].pageY; }, { passive: true });
+    document.addEventListener('touchmove', function(e) {
+      // Find the nearest scrollable ancestor
+      let el = e.target;
+      while (el && el !== document.body && el !== document.documentElement) {
+        const s = window.getComputedStyle(el);
+        if (/(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight) {
+          const dy = e.touches[0].pageY - _startY;
+          // At top scrolling up, or at bottom scrolling down → prevent bounce
+          if ((el.scrollTop <= 0 && dy > 0) || (el.scrollTop + el.clientHeight >= el.scrollHeight && dy < 0)) {
+            e.preventDefault();
+          }
+          return;
+        }
+        el = el.parentElement;
+      }
+      // Body-level scroll: check document scroll position
+      const doc = document.scrollingElement || document.documentElement;
+      const dy = e.touches[0].pageY - _startY;
+      if ((doc.scrollTop <= 0 && dy > 0) || (doc.scrollTop + doc.clientHeight >= doc.scrollHeight && dy < 0)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+  }
+} catch(e) {}
+
 // roundRect polyfill for older Android WebViews
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
