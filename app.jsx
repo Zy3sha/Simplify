@@ -90,6 +90,8 @@ const fmtCountdown = s => {
 };
 const avgArr = arr => arr.length ? Math.round(arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
 
+const _src = _isUS ? "AAP" : _isAU ? "Raising Children Network" : "NHS";
+const _srcDev = _isUS ? "CDC" : _isAU ? "Raising Children Network" : "NHS";
 // ── Fluid unit conversion (always store ml internally) ──
 const ML_PER_OZ = 29.5735;
 const mlToOz = ml => Math.round(ml / ML_PER_OZ * 10) / 10;
@@ -1005,18 +1007,18 @@ const DEV_ACTIVITIES = [
   { id:"a19", weeks:[40,54], cat:"language","title":"Book Pointing",        how:"Open a simple picture book and say where is the dog? Wait, then point and label. Do this with 3-4 pictures.", why:"Builds receptive language, pointing, and joint attention skills." },
   { id:"a20", weeks:[40,54], cat:"social",  title:"Cause & Effect Toys",    how:"Offer a pop-up toy or anything with a button that makes something happen. Let them experiment freely.", why:"Reinforces goal-directed thinking and the satisfaction of cause-and-effect." },
 
-  { id:"a21", weeks:[54,78], cat:"motor",    title:"Walking Practice",       how:"Hold both hands and walk together on different surfaces — grass, carpet, pavement. Gradually move to one hand.", why:"Builds balance and confidence across terrains. NHS expects independent walking by 18 months." },
-  { id:"a22", weeks:[54,78], cat:"language",  title:"Name & Point",          how:"Throughout the day, point to objects and name them clearly. Ask where is the ball? and pause for them to point.", why:"NHS recommends this to build the 10+ word vocabulary expected by 18 months." },
-  { id:"a23", weeks:[54,78], cat:"cognitive", title:"Shape Sorter",          how:"Offer a simple shape sorter with 3–4 shapes. Show how one fits, then hand them a piece and let them try.", why:"Develops spatial reasoning and problem-solving — key skills assessed at NHS 1-year review." },
+  { id:"a21", weeks:[54,78], cat:"motor",    title:"Walking Practice",       how:"Hold both hands and walk together on different surfaces — grass, carpet, pavement. Gradually move to one hand.", why:"Builds balance and confidence across terrains. " + _srcDev + " expects independent walking by 18 months." },
+  { id:"a22", weeks:[54,78], cat:"language",  title:"Name & Point",          how:"Throughout the day, point to objects and name them clearly. Ask where is the ball? and pause for them to point.", why:_srcDev + " recommends this to build the 10+ word vocabulary expected by 18 months." },
+  { id:"a23", weeks:[54,78], cat:"cognitive", title:"Shape Sorter",          how:"Offer a simple shape sorter with 3–4 shapes. Show how one fits, then hand them a piece and let them try.", why:"Develops spatial reasoning and problem-solving — key skills assessed at " + _srcDev + " 1-year review." },
   { id:"a24", weeks:[54,78], cat:"social",    title:"Doll & Teddy Care",     how:"Give them a doll or teddy and show feeding, cuddling, putting to bed. Let them copy in their own time.", why:"Early pretend play is a key WHO cognitive milestone. It develops empathy and imitation." },
 
   { id:"a25", weeks:[78,104], cat:"motor",    title:"Climbing & Jumping",    how:"Visit a soft play area or use sofa cushions on the floor. Encourage climbing up and jumping off low surfaces.", why:"WHO physical activity guidelines recommend 180 min of activity daily for 1–2 year olds, including energetic play." },
-  { id:"a26", weeks:[78,104], cat:"language",  title:"Two-Word Phrases",     how:"Model two-word phrases: more milk, big dog, bye daddy. Expand what they say — if they say ball, say yes, red ball.", why:"NHS expects two-word combinations by age 2. Expanding their words is the best way to build sentences." },
+  { id:"a26", weeks:[78,104], cat:"language",  title:"Two-Word Phrases",     how:"Model two-word phrases: more milk, big dog, bye daddy. Expand what they say — if they say ball, say yes, red ball.", why:_srcDev + " expects two-word combinations by age 2. Expanding their words is the best way to build sentences." },
   { id:"a27", weeks:[78,104], cat:"cognitive", title:"Simple Puzzles",       how:"Offer 2–4 piece inset puzzles with knobs. Show where one piece goes, then let them complete the rest.", why:"Puzzle-solving builds problem-solving, fine motor control and spatial awareness." },
   { id:"a28", weeks:[78,104], cat:"social",    title:"Turn-Taking Games",    how:"Roll a ball back and forth saying my turn, your turn. Build to simple board games with taking turns.", why:"Turn-taking is a foundation of social skills. NHS 2-year check looks for interactive play." },
 
   { id:"a29", weeks:[104,156], cat:"motor",    title:"Obstacle Course",      how:"Set up cushions, boxes and tunnels to climb over, through and around. Time them for added fun.", why:"WHO recommends at least 60 min of energetic physical activity daily for 2–3 year olds." },
-  { id:"a30", weeks:[104,156], cat:"language",  title:"Storytelling Together", how:"Tell simple stories using toys or puppets. Pause and ask what happens next or where did teddy go.", why:"NHS guidelines for 2–3 years emphasise narrative skills and asking questions to build 3–5 word sentences." },
+  { id:"a30", weeks:[104,156], cat:"language",  title:"Storytelling Together", how:"Tell simple stories using toys or puppets. Pause and ask what happens next or where did teddy go.", why:_srcDev + " guidelines for 2–3 years emphasise narrative skills and asking questions to build 3–5 word sentences." },
   { id:"a31", weeks:[104,156], cat:"cognitive", title:"Counting Games",      how:"Count stairs as you climb, count grapes on the plate, count toes. Use fingers to show numbers.", why:"WHO early learning goals include counting to 3–5 with objects by age 3. Daily counting makes it natural." },
   { id:"a32", weeks:[104,156], cat:"social",    title:"Feelings & Emotions",  how:"Name emotions as they happen: you look frustrated, that made you happy. Use picture books about feelings.", why:"Emotional literacy is a key NHS developmental focus for 2–3 year olds. Naming feelings helps self-regulation." },
 
@@ -6531,7 +6533,7 @@ function App(){
 
     const dataQuality = dayPatterns.length >= 5 ? "high" : dayPatterns.length >= 3 ? "good" : "learning";
     const sleepBudget = { required: requiredDayMins, projected: projectedTotalNap, nightEst: avgNightMins, target24h, deficitBoost };
-    return { schedule: sanitizeSchedule(schedule, w), napCount, hasBridge, source: "NHS wake windows + personal rhythm + sleep budget", dataQuality, sleepBudget };
+    return { schedule: sanitizeSchedule(schedule, w), napCount, hasBridge, source: _src + " wake windows + personal rhythm + sleep budget", dataQuality, sleepBudget };
   }
 
   // ─── END ENHANCED SLEEP ENGINE ─────────────────────────────────────────────
@@ -12252,7 +12254,7 @@ function App(){
                   <div style={{marginBottom:12}}>
                     {dayMeds.length > 0 && (
                       <div style={{marginBottom:8}}>
-                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>💊 Medicine & Temperature <HelpBtn title="Medicine & Temperature" body="Log medicine (name, dose, time) and temperature readings to keep a record for yourself, your partner, or your GP. Fever alerts: 38°C+ in a baby under 3 months triggers an urgent call-111 warning. Always follow dosing instructions from your pharmacist or GP — OBubba does not give dosing advice."/></div>
+                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>💊 Medicine & Temperature <HelpBtn title="Medicine & Temperature" body={"Log medicine (name, dose, time) and temperature readings to keep a record for yourself, your partner, or your " + _doctorUrgent + ". Fever alerts: 38°C+ in a baby under 3 months triggers an urgent warning to contact " + _helpLine + ". Always follow dosing instructions from your " + _doctorUrgent + " or pharmacist — OBubba does not give dosing advice."}/></div>
                         {dayMeds.map(m=>(
                           <div key={m.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:10,padding:"7px 10px",marginBottom:4}}>
                             <div>
@@ -12315,13 +12317,13 @@ function App(){
                             <span style={{fontSize:16}}>💉</span>
                             <span style={{fontSize:14,fontWeight:700,color:C.deep}}>{_overdue.length>0?"⚠️ "+_overdue.length+" overdue":_next?"Next: "+_next.label:"All done ✓"}</span>
                           </div>
-                          <div style={{fontSize:11,color:C.lt,marginTop:2,paddingLeft:22}}>{_overdue.length>0?"Contact your GP surgery":_next?"Due "+_fmt(_next.due):""+_sched.filter(v=>v.due<=_today).length+" vaccinations completed"}</div>
+                          <div style={{fontSize:11,color:C.lt,marginTop:2,paddingLeft:22}}>{_overdue.length>0?("Contact your " + _doctorUrgent + (_isUS || _isIN || _isSG ? "'s office" : " surgery")):_next?"Due "+_fmt(_next.due):""+_sched.filter(v=>v.due<=_today).length+" vaccinations completed"}</div>
                         </div>
                         <span style={{color:C.lt,fontSize:12,transform:vaccOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
                       </button>
                       {vaccOpen && (
                         <div style={{borderTop:"1px solid "+C.blush,padding:"12px 16px"}}>
-                          <div style={{fontSize:11,color:C.lt,marginBottom:10}}>{_isUS?"AAP/CDC":"NHS UK"} schedule — tap circle to mark as given</div>
+                          <div style={{fontSize:11,color:C.lt,marginBottom:10}}>{_isUS?"AAP/CDC":_isAU?"NIP (AU)":"NHS UK"} schedule — tap circle to mark as given</div>
                           {_sched.map((v,i)=>{
                             const _isDone=_done.includes(v.id);
                             const _isOd=!_isDone&&v.due<_today;
@@ -14029,7 +14031,7 @@ function App(){
                         ["🔙","Always on their back","Place baby on their back for every sleep — naps and night. The single most important step to reduce SIDS risk."],
                         ["🛏️","Firm, flat surface","Use a firm, flat mattress in a cot or moses basket meeting safety standards. No inclined sleepers or car seats for routine sleep."],
                         ["🌡️","Room temperature 16–20°C","Overheating increases SIDS risk. Feel baby's tummy or back of neck — if clammy, remove a layer. No hats indoors."],
-                        ["🏠","Same room for 6 months","NHS and AAP recommend baby sleeps in your room (not your bed) for at least the first 6 months — naps and night."],
+                        ["🏠","Same room for 6 months",(_isUS ? "AAP recommends" : _isAU ? "Red Nose Australia and WHO recommend" : "NHS and WHO recommend") + " baby sleeps in your room (not your bed) for at least the first 6 months — naps and night."],
                         ["🧸","Clear sleep space","No pillows, duvets, bumpers, toys, or loose bedding. Use an appropriate sleeping bag instead of blankets."],
                         ["🤱","Breastfeeding helps","Breastfeeding for at least 2 months significantly reduces SIDS risk, even if partially breastfed."],
                         ["🚭","Smoke-free environment","Never smoke around baby or in rooms where baby sleeps. Applies to all caregivers."],
@@ -14652,7 +14654,7 @@ function App(){
               { icon:"👁", title:"Visual stimulation", body:"Babies can only focus 20–30cm away. Hold high-contrast black-and-white patterns near their face. Mobiles above the cot help develop tracking." },
               { icon:"🗣", title:"Talk constantly", body:"Narrate everything you do. Your voice is the most important stimulus. Babies recognise parents' voices from birth and respond to tone before words." },
               { icon:"🤱", title:"Skin-to-skin", body:"WHO recommends daily skin-to-skin contact in early weeks. Regulates baby's temperature, heart rate and stress hormones, and supports bonding." },
-              { icon:"🏋️", title:"Tummy time from day one", body:"NHS recommends starting supervised tummy time from birth. Even 1–2 minutes several times daily builds neck and shoulder strength essential for later motor development." },
+              { icon:"🏋️", title:"Tummy time from day one", body:_src + " recommends starting supervised tummy time from birth. Even 1–2 minutes several times daily builds neck and shoulder strength essential for later motor development." },
             ];
             if (ageWeeks < 13) return [
               { icon:"😄", title:"Respond to smiles", body:"First social smiles appear around 6–8 weeks. Mirror them immediately — this serve-and-return interaction is foundational for emotional development per WHO guidelines." },
@@ -14662,18 +14664,18 @@ function App(){
             ];
             if (ageWeeks < 26) return [
               { icon:"🔊", title:"Sound cause & effect", body:"Shake a rattle and watch them follow it. Let baby hold the rattle to discover they make the sound. This builds early understanding of cause and effect." },
-              { icon:"📚", title:"Board books daily", body:"NHS Start4Life recommends daily shared book reading from birth. At this age, simple faces and high-contrast illustrations are most engaging." },
+              { icon:"📚", title:"Board books daily", body:(_isUS ? "AAP" : _isAU ? "Raising Children Network" : "NHS Start4Life") + " recommends daily shared book reading from birth. At this age, simple faces and high-contrast illustrations are most engaging." },
               { icon:"🪞", title:"Mirror exploration", body:"Hold baby in front of a baby-safe mirror. They won't recognise themselves yet but will engage with the other baby — supporting social and visual development." },
               { icon:"🎶", title:"Baby music classes", body:"WHO developmental guidance notes that rhythmic movement and music together accelerate auditory processing. Even gentle bouncing to music counts." },
             ];
             if (ageWeeks < 40) return [
               { icon:"🧩", title:"Object permanence games", body:"This is the peak age for developing object permanence. Cover a toy with a cloth while they watch and encourage them to find it. Start simple, get more complex." },
-              { icon:"🍽️", title:"Weaning begins", body:"NHS and WHO recommend introducing solid foods at around 6 months (26 weeks). Start with smooth purees, offering a wide variety of tastes early reduces fussiness." },
+              { icon:"🍽️", title:"Weaning begins", body:_src + " and WHO recommend introducing solid foods at around 6 months (26 weeks). Start with smooth purees, offering a wide variety of tastes early reduces fussiness." },
               { icon:"🗣", title:"Babbling back", body:"When baby babbles (ba-ba, da-da), respond with the same sounds. This conversational turn-taking is the direct precursor to first words." },
               { icon:"🚶", title:"Supported standing", body:"Hold baby upright with feet flat and let them bounce and bear weight. NHS guidelines note this builds the leg strength needed for walking later." },
             ];
             if (ageWeeks < 54) return [
-              { icon:"👋", title:"Simple signs", body:"NHS recommends teaching simple baby sign language (more, milk, all done) alongside spoken words. Signs give pre-verbal babies a way to communicate and reduce frustration." },
+              { icon:"👋", title:"Simple signs", body:_srcDev + " recommends teaching simple baby sign language (more, milk, all done) alongside spoken words. Signs give pre-verbal babies a way to communicate and reduce frustration." },
               { icon:"📖", title:"Interactive reading", body:"Point to pictures and ask where is the dog? Pause and wait. This builds pointing, joint attention and receptive vocabulary — all key WHO language milestones." },
               { icon:"🧱", title:"Stacking and sorting", body:"Stacking cups and shape sorters build fine motor control, spatial reasoning and problem-solving. NHS developmental checks look for these skills at the 1-year review." },
               { icon:"🏃", title:"Walking support", body:"Encourage cruising along furniture. NHS guidance is that most babies walk independently by 18 months — provide safe furniture routes and celebrate every step." },
@@ -14685,13 +14687,13 @@ function App(){
               { icon:"🏃", title:"Physical confidence", body:"WHO recommends at least 180 minutes of physical activity per day for 1–2 year olds. Encourage walking on different surfaces, climbing safely, and dancing." },
             ];
             if (ageWeeks < 104) return [
-              { icon:"📚", title:"Expand vocabulary", body:"NHS expects 50+ words and two-word phrases by age 2. Read together daily, name new things, and expand what they say — if they say car, you say yes, big red car." },
+              { icon:"📚", title:"Expand vocabulary", body:_srcDev + " expects 50+ words and two-word phrases by age 2. Read together daily, name new things, and expand what they say — if they say car, you say yes, big red car." },
               { icon:"🧩", title:"Puzzles & problem-solving", body:"Simple 2–4 piece puzzles build spatial reasoning. Shape sorters and stacking toys develop the problem-solving skills assessed at the NHS 2-year review." },
               { icon:"🎨", title:"Mark-making", body:"Offer chunky crayons and large paper. Scribbling is a fine motor milestone and the precursor to drawing and writing. NHS looks for mark-making at the 2-year check." },
               { icon:"🤝", title:"Turn-taking", body:"Practice my turn, your turn with rolling a ball, building blocks, or simple games. Turn-taking is a key social skill that NHS assesses at age 2." },
             ];
             return [
-              { icon:"🗣", title:"Sentences & stories", body:"NHS expects 3–5 word sentences by age 3. Tell stories together, ask open-ended questions like what happened? and model full sentences back." },
+              { icon:"🗣", title:"Sentences & stories", body:_srcDev + " expects 3–5 word sentences by age 3. Tell stories together, ask open-ended questions like what happened? and model full sentences back." },
               { icon:"🏃", title:"Active play", body:"WHO recommends at least 60 minutes of energetic physical activity daily for 2–3 year olds, plus no more than 1 hour of sedentary screen time." },
               { icon:"🎭", title:"Imaginative play", body:"Pretend play with storylines (shops, kitchens, doctors) shows advanced cognitive development. NHS 2.5-year check looks for this as a key indicator." },
               { icon:"😊", title:"Emotional literacy", body:"Name emotions as they happen: you look cross, that was exciting. NHS guidance for 2–3 year olds emphasises that naming feelings helps children learn self-regulation." },
@@ -14861,7 +14863,7 @@ function App(){
                 const _normalQs = [
                   {q:"Grunting and straining", a:"Very normal — especially in the first few weeks. Babies grunt when moving stool because they haven't yet learned to relax their pelvic floor. It's not pain, it's effort. If there's no stool after several days or baby seems distressed, mention it to your "+_newbornTeam+"."},
                   {q:"Sneezing constantly", a:"Completely normal. Babies sneeze to clear their tiny nasal passages. It doesn't mean they have a cold. Newborns are obligate nose-breathers so they sneeze often to keep the airway clear."},
-                  {q:"Cross-eyed or eyes going in different directions", a:"Normal under 4 months. Eye muscles are still developing and it takes time for both eyes to track together. If it continues beyond 4 months or one eye is always turned in, mention it to your GP."},
+                  {q:"Cross-eyed or eyes going in different directions", a:"Normal under 4 months. Eye muscles are still developing and it takes time for both eyes to track together. If it continues beyond 4 months or one eye is always turned in, mention it to your "+_doctor+"."},
                   {q:"Breathing fast then pausing", a:"This is called periodic breathing and is normal in newborns. Breathing may speed up, slow down, or pause for up to 10 seconds. If a pause lasts longer than 15-20 seconds or baby turns blue or pale, call 999."},
                   {q:"Skin peeling or flaking", a:"Normal — especially in babies born at or after 40 weeks. The outer layer of skin that was protected by vernix in the womb sheds in the first 2 weeks. No lotion needed unless skin looks very dry."},
                   {q:"Soft spot on head (fontanelle)", a:"The soft spots are gaps between skull bones — there's one at the front (closes 9-18 months) and one at the back (closes at 6-8 weeks). It's normal to see it pulse with heartbeat. See a doctor if it bulges when baby isn't crying, or is sunken."},
@@ -15383,7 +15385,7 @@ function App(){
                               <div style={{fontSize:11,color:C.lt}}>💡 Tomorrow — why not try:</div>
                               <div style={{fontSize:13,fontWeight:600,color:_noProfile||_gpFirst?C.lt:C.deep}}>
                                 {_noProfile ? "Complete safety check to unlock allergen suggestions"
-                                 : _gpFirst ? "Speak to your GP before introducing allergens"
+                                 : _gpFirst ? ("Speak to your " + _doctorUrgent + " before introducing allergens")
                                  : _tmr.food}
                                 {!_noProfile && !_gpFirst && _tmrIsAllergen && <span style={{fontSize:9,background:"rgba(212,168,85,0.2)",color:C.gold,padding:"1px 6px",borderRadius:99,marginLeft:6,fontWeight:600}}>ALLERGEN</span>}
                               </div>
@@ -17130,7 +17132,7 @@ function App(){
                       <div style={{fontSize:13,color:C.mid,lineHeight:1.55}}>{ins.body}</div>
                     </div>
                   ))}
-                  <div style={{fontSize:11,color:C.lt,fontFamily:_fM,lineHeight:1.5,padding:"6px 4px"}}>⚠️ General observations from logged data — not medical advice. Consult your doctor with concerns.</div>
+                  <div style={{fontSize:11,color:C.lt,fontFamily:_fM,lineHeight:1.5,padding:"6px 4px"}}>⚠️ General observations from logged data — not medical advice. Consult your {_doctor} with concerns.</div>
                 </div>
               );
             })()}
@@ -17317,12 +17319,44 @@ function App(){
             {bfHubSection==="help"&&(
               <div>
                 <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:12}}>Where to get support</div>
-                {[
+                {(_isUS ? [
+                  {who:"Lactation Consultant (IBCLC)",when:"Persistent pain, tongue tie, supply",how:"Find one at uslca.org"},
+                  {who:"WIC Breastfeeding Support",when:"Free support for eligible families",how:"1-800-994-9662"},
+                  {who:"La Leche League USA",when:"Peer support & local groups",how:"lllusa.org — 877-452-5324"},
+                  {who:"Your pediatrician or OB-GYN",when:"Medical concerns",how:"Call your provider's office"},
+                ] : _isCA ? [
+                  {who:"Lactation Consultant (IBCLC)",when:"Persistent pain, tongue tie, supply",how:"Find one at ilca.org"},
+                  {who:"La Leche League Canada",when:"Peer support & local groups",how:"lllc.ca"},
+                  {who:"Your midwife or family doctor",when:"Medical concerns",how:"Call your provider"},
+                ] : _isAU ? [
+                  {who:"Australian Breastfeeding Association",when:"7 days a week, trained counsellors",how:"1800 686 268"},
+                  {who:"Lactation Consultant (IBCLC)",when:"Persistent pain, tongue tie, supply",how:"Find one at lcanz.org"},
+                  {who:"Child and family health nurse",when:"Routine feeding support",how:"Contact your local child health centre"},
+                  {who:"Your GP or midwife",when:"Medical concerns",how:"Book an appointment"},
+                ] : _isNZ ? [
+                  {who:"La Leche League NZ",when:"Peer support & local groups",how:"lalecheleague.org.nz"},
+                  {who:"Plunket",when:"Free support for all families",how:"0800 933 922"},
+                  {who:"Lactation Consultant (IBCLC)",when:"Persistent pain, tongue tie, supply",how:"Find one at lcanz.org"},
+                  {who:"Your midwife or GP",when:"Medical concerns",how:"Call your provider"},
+                ] : _isIE ? [
+                  {who:"La Leche League Ireland",when:"Peer support & local groups",how:"lalecheleagueireland.com"},
+                  {who:"Cuidiu (Irish Childbirth Trust)",when:"Breastfeeding support groups",how:"cuidiu.ie"},
+                  {who:"Lactation Consultant (IBCLC)",when:"Persistent pain, tongue tie, supply",how:"Find one at alcireland.ie"},
+                  {who:"Your public health nurse or GP",when:"Medical concerns",how:"Call your GP surgery or health centre"},
+                ] : _isDE ? [
+                  {who:"Hebamme (midwife)",when:"Your first call — free postpartum visits",how:"Contact your Hebamme directly"},
+                  {who:"Stillberaterin (lactation consultant)",when:"Persistent pain, tongue tie, supply",how:"Find one at bdl-stillen.de"},
+                  {who:"La Leche League Deutschland",when:"Peer support",how:"lalecheliga.de"},
+                ] : _isFR ? [
+                  {who:"Sage-femme (midwife)",when:"Your first call — postpartum visits",how:"Contact your sage-femme"},
+                  {who:"Conseillère en lactation IBCLC",when:"Persistent pain, tongue tie, supply",how:"consultants-lactation.org"},
+                  {who:"La Leche League France",when:"Peer support",how:"lllfrance.org — 01 39 584 584"},
+                ] : [
                   {who:"Health visitor",when:"Always your first call",how:"Call your GP surgery"},
                   {who:"National Breastfeeding Helpline",when:"Any time, day or night",how:"0300 100 0212 (9:30am-9:30pm)"},
                   {who:"La Leche League",when:"Peer support, overnight helpline",how:"laleche.org.uk — 0345 120 2918"},
                   {who:"IBCLC Lactation Consultant",when:"Persistent pain, tongue tie, supply",how:"Find one at lcgb.org"},
-                ].map((r,i)=>(
+                ]).map((r,i)=>(
                   <div key={i} style={{padding:"10px 0",borderTop:i?"1px solid "+C.blush:"none"}}>
                     <div style={{fontSize:13,fontWeight:700,color:C.deep,marginBottom:2}}>{r.who}</div>
                     <div style={{fontSize:12,color:C.mid,marginBottom:2}}>{r.when}</div>
@@ -17368,7 +17402,7 @@ function App(){
               <div style={{fontSize:24,textAlign:"center",marginBottom:8}}>🛡️</div>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:C.deep,textAlign:"center",marginBottom:6}}>Before we suggest allergens</div>
               <div style={{fontSize:12,color:C.mid,textAlign:"center",lineHeight:1.6,marginBottom:20}}>
-                A few quick questions help us give you the right guidance. Allergen introduction is safe for most babies — we just need to check for any factors that mean you should speak to your GP first.
+                A few quick questions help us give you the right guidance. Allergen introduction is safe for most babies — we just need to check for any factors that mean you should speak to your {_doctorUrgent} first.
               </div>
 
               {/* Q1 */}
@@ -17585,16 +17619,38 @@ function App(){
                 {name:"Postpartum Support International",num:"1-800-944-4773",hours:"Helpline + text support",primary:true},
                 {name:"988 Suicide & Crisis Lifeline",num:"988",hours:"24/7 — call or text",primary:false},
                 {name:"SAMHSA Helpline",num:"1-800-662-4357",hours:"24/7, free, confidential",primary:false},
+              ] : _isCA ? [
+                {name:"Pacific Postpartum Support Society",num:"604-255-7999",hours:"Helpline support",primary:true},
+                {name:"Crisis Services Canada",num:"988",hours:"24/7 — call or text",primary:false},
               ] : _isAU ? [
                 {name:"PANDA",num:"1300 726 306",hours:"Mon–Fri 9am–7:30pm AEST",primary:true},
                 {name:"Beyond Blue",num:"1300 22 4636",hours:"24/7",primary:false},
                 {name:"Lifeline",num:"13 11 14",hours:"24/7",primary:false},
+              ] : _isNZ ? [
+                {name:"1737",num:"1737",hours:"Free call or text, 24/7",primary:true},
+                {name:"Plunket",num:"0800 933 922",hours:"PlunketLine — 24/7",primary:false},
+              ] : _isIE ? [
+                {name:"Parentline",num:"1890 927 277",hours:"Mon–Fri 10am–9pm, Sat 12–4pm",primary:true},
+                {name:"Samaritans",num:"116 123",hours:"Free, 24/7",primary:false},
+              ] : _isDE ? [
+                {name:"Elterntelefon",num:"0800 111 0550",hours:"Mon–Fri 9am–5pm — free",primary:true},
+                {name:"TelefonSeelsorge",num:"0800 111 0111",hours:"Free, 24/7",primary:false},
+              ] : _isFR ? [
+                {name:"Allo Parents Bébé",num:"0800 00 34 56",hours:"Free helpline",primary:true},
+                {name:"SOS Amitié",num:"09 72 39 40 50",hours:"24/7",primary:false},
+              ] : _isZA ? [
+                {name:"SADAG",num:"0800 567 567",hours:"Free, 24/7",primary:true},
+              ] : _isIN ? [
+                {name:"iCall",num:"9152987821",hours:"Mon–Sat 8am–10pm",primary:true},
+                {name:"Vandrevala Foundation",num:"1860-2662-345",hours:"24/7",primary:false},
+              ] : _isSG ? [
+                {name:"National Care Hotline",num:"1800-202-6868",hours:"8am–12am daily",primary:true},
               ] : [
                 {name:"PANDAS Foundation",num:"0808 196 1776",hours:"Mon–Fri 11am–10pm — free, confidential",primary:true},
                 {name:"Samaritans",num:"116 123",hours:"Free, 24/7 — any reason, any time",primary:false},
                 {name:"NHS Talking Therapies",num:"nhs.uk/talking-therapies",hours:"Self-refer online — no GP needed",primary:false},
               ]).map((r,i)=>(
-                <a key={i} href={r.num.match(/^[0-9]/) ? "tel:"+r.num.replace(/[^0-9]/g,"") : "https://www.nhs.uk/mental-health/talking-therapies-medicine-treatments/talking-therapies-and-counselling/nhs-talking-therapies/"}
+                <a key={i} href={r.num.match(/^[0-9]/) ? "tel:"+r.num.replace(/[^0-9]/g,"") : "https://"+r.num}
                   style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderTop:i?`1px solid rgba(123,104,238,0.1)`:"none",textDecoration:"none",cursor:"pointer"}}>
                   <div style={{flex:1}}>
                     <div style={{fontSize:14,fontWeight:r.primary?700:600,color:r.primary?C.deep:C.mid}}>{r.name}</div>
@@ -17914,7 +17970,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             {/* Medical disclaimer */}
             <div style={{marginTop:14,padding:"12px",borderRadius:12,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`}}>
               <div style={{fontSize:12,color:C.lt,lineHeight:1.5,textAlign:"center"}}>
-                ⚠️ This is a guide based on logged data and age, not medical advice. If baby seems unwell, has a temperature, is inconsolable for 2+ hours, or you're worried, contact your doctor or local medical helpline.
+                ⚠️ This is a guide based on logged data and age, not medical advice. If baby seems unwell, has a temperature, is inconsolable for 2+ hours, or you're worried, contact your {_doctorUrgent} or {_helpLine}.
               </div>
             </div>
             <button onClick={()=>{setShowCryingHelper(false);setCryingResult(null);}} style={{width:"100%",marginTop:14,padding:"14px",borderRadius:99,border:_bN,background:C.blush,color:C.mid,fontSize:15,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
