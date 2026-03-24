@@ -83,6 +83,10 @@
         <string>audio</string>
     </array>
 
+    <!-- Live Activities -->
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+
     <!-- Siri -->
     <key>NSSiriUsageDescription</key>
     <string>OBubba uses Siri for hands-free baby logging. Say "Log a feed in OBubba".</string>

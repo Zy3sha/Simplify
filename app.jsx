@@ -1499,15 +1499,18 @@ function App(){
     OB.lifecycle.onResume(()=>{
       OB.statusBar.setStyle(document.body.classList.contains('dark-mode'));
       OB.widgets.updateWidgetData();
-      // Check for pending Siri entries (iOS)
+      // Check for pending Siri entries (reads from App Group UserDefaults via native bridge)
       if(_getPlatform()==='ios'){
         try {
-          const pending = localStorage.getItem('pendingSiriEntry');
-          if(pending){
-            const entry = JSON.parse(pending);
-            localStorage.removeItem('pendingSiriEntry');
-            if(entry.type==='feed') openLogPanel("feed");
-            else if(entry.type==='sleep'||entry.type==='nap') openLogPanel("sleep");
+          if(window.Capacitor?.Plugins?.OBSiriShortcuts) {
+            window.Capacitor.Plugins.OBSiriShortcuts.checkPendingEntry().then(function(r){
+              if(!r || !r.entry || r.entry === 'null') return;
+              try {
+                const entry = JSON.parse(r.entry);
+                if(entry.type==='feed') openLogPanel("feed");
+                else if(entry.type==='sleep'||entry.type==='nap') openLogPanel("sleep");
+              } catch{}
+            }).catch(function(){});
           }
         } catch{}
       }
@@ -2567,8 +2570,7 @@ function App(){
       if(onboarded)try{localStorage.setItem("onboarded_v2","1");}catch{}
       clearTimeout(cloudPushRef.current);
       cloudPushRef.current = setTimeout(()=>{ if(backupCodeRef.current && window._fbUid && cloudSyncedRef.current) pushToCloud(backupCodeRef.current, children); }, 500);
-      // Update native widgets with latest data
-      if(window.OBNative) window.OBNative.widgets.updateWidgetData();
+      // Widget data is pushed by the dedicated widget effect (resolvedDay dependency)
     }, 300);
     return ()=>clearTimeout(lsRef.current);
   },[children, childSyncCodes, resolvedActiveId, onboarded]);
@@ -3820,34 +3822,52 @@ function App(){
     });
   }, [age, days, selDay, babyName]);
 
-  // ── Widget data: write resolved OBubba day summary for native widget to read ──
+  // ── Widget data: push resolved day summary to native WidgetKit ──
+  // Data shape must match Swift WidgetData struct exactly
   React.useEffect(function() {
-    if (!window.OBNative || !age) return;
+    if (!age) return;
     try {
       var rd = resolvedDay.entries;
       var feeds = rd.filter(function(e) { return e.type === "feed" && !e.night; });
       var naps = rd.filter(function(e) { return e.type === "nap" && !e.night; });
+      var nappies = rd.filter(function(e) { return e.type === "poop" && !e.night; });
       var lastFeed = feeds.length ? feeds.sort(function(a,b) { return timeVal(a) - timeVal(b); }).pop() : null;
       var lastNap = naps.length ? naps.sort(function(a,b) { return timeVal(a) - timeVal(b); }).pop() : null;
-      var wakeEntry = rd.find(function(e) { return e.type === "wake" && !e.night; });
-      var totalNapMins = naps.reduce(function(s,n) { return s + minDiff(n.start, n.end); }, 0);
 
+      // Estimate next feed from average spacing
+      var nextFeedEst = null;
+      if(lastFeed && feeds.length >= 2) {
+        var feedTimes = feeds.map(function(f) { return timeVal(f); }).sort(function(a,b){return a-b;});
+        var gaps = [];
+        for(var i=1;i<feedTimes.length;i++) gaps.push(feedTimes[i]-feedTimes[i-1]);
+        if(gaps.length) {
+          var avgGap = gaps.reduce(function(a,b){return a+b;},0)/gaps.length;
+          var lastM = timeVal(lastFeed);
+          var nextM = lastM + avgGap;
+          var nh = Math.floor(nextM/60)%24, nm = Math.round(nextM%60);
+          nextFeedEst = String(nh).padStart(2,"0")+":"+String(nm).padStart(2,"0");
+        }
+      }
+
+      // Shape matches Swift WidgetData struct
       var widgetData = {
         babyName: babyName || "Baby",
-        ageWeeks: age.totalWeeks,
-        ageLabel: fmtAge(age),
+        feedCount: feeds.length,
+        sleepCount: naps.length,
+        nappyCount: nappies.length,
         lastFeedTime: lastFeed ? lastFeed.time : null,
-        lastFeedType: lastFeed ? (lastFeed.feedType || "milk") : null,
-        lastNapEnd: lastNap && lastNap.end ? lastNap.end : null,
-        napsDone: naps.length,
-        totalNapMins: totalNapMins,
-        wakeTime: wakeEntry ? wakeEntry.time : null,
-        napOn: napOn,
-        napStartT: napStartT,
-        updatedAt: new Date().toISOString()
+        lastFeedType: lastFeed ? (lastFeed.feedType || "bottle") : null,
+        lastSleepTime: lastNap ? (lastNap.start || lastNap.time || null) : null,
+        nextFeedEstimate: nextFeedEst,
+        theme: "light",
+        updatedAt: Date.now()
       };
       localStorage.setItem("ob_widget_data_v1", JSON.stringify(widgetData));
-      window.OBNative.widgets.updateWidgetData();
+
+      // Send directly to native WidgetKit bridge (bypasses native-plugins.js stale logic)
+      if(window.Capacitor?.Plugins?.OBWidgetBridge) {
+        window.Capacitor.Plugins.OBWidgetBridge.setData({ json: JSON.stringify(widgetData) }).catch(function(){});
+      }
     } catch(e) { console.warn("Widget data update failed:", e); }
   }, [resolvedDay, age, napOn, napStartT, babyName]);
 

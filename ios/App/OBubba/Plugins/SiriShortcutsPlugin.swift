@@ -13,7 +13,10 @@ public class SiriShortcutsPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "donate", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "donateAll", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "checkPendingEntry", returnType: CAPPluginReturnPromise),
     ]
+
+    private let appGroupId = "group.com.obubba.app"
 
     @objc func donate(_ call: CAPPluginCall) {
         guard let activityType = call.getString("activityType"),
@@ -71,5 +74,25 @@ public class SiriShortcutsPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         call.resolve(["count": shortcuts.count])
+    }
+
+    /// Reads pendingSiriEntry from App Group UserDefaults (written by IntentHandler)
+    /// and returns it to the web layer. Clears the entry after reading.
+    @objc func checkPendingEntry(_ call: CAPPluginCall) {
+        guard let defaults = UserDefaults(suiteName: appGroupId) else {
+            call.resolve(["entry": NSNull()])
+            return
+        }
+
+        guard let json = defaults.string(forKey: "pendingSiriEntry") else {
+            call.resolve(["entry": NSNull()])
+            return
+        }
+
+        // Clear after reading so it's not processed twice
+        defaults.removeObject(forKey: "pendingSiriEntry")
+        defaults.synchronize()
+
+        call.resolve(["entry": json])
     }
 }
