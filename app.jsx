@@ -2076,7 +2076,30 @@ function App(){
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
       const snap = await fsGet("usernames", key);
-      if(!snap.exists()) { setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false; }
+      if(!snap.exists()) {
+        // Double-check using Firebase SDK directly as fallback
+        let foundViaSDK = false;
+        try {
+          if(window._fb && window._fb.db && window._fb.doc && window._fb.getDoc) {
+            const sdkSnap = await window._fb.getDoc(window._fb.doc(window._fb.db, "usernames", key));
+            if(sdkSnap.exists()) {
+              // REST failed but SDK found it — use SDK data
+              const sdkData = sdkSnap.data();
+              if(sdkData.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
+              foundViaSDK = true;
+              // Continue with SDK data
+              const resolvedBackup2 = sdkData.backupCode || null;
+              if(resolvedBackup2) { setBackupCode(resolvedBackup2); try{ localStorage.setItem("backup_code", resolvedBackup2); }catch{} }
+              setFamilyUsername(key);
+              try{ localStorage.setItem("family_username", key); localStorage.setItem("auth_verified","1"); }catch{}
+              setAuthScreen(null);
+              showToast("Welcome back!",2000,1);
+              return true;
+            }
+          }
+        } catch {}
+        if(!foundViaSDK) { setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false; }
+      }
       const data = snap.data();
       if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
       const resolvedBackup = data.backupCode || null;
