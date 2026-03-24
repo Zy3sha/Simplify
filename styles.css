@@ -497,3 +497,69 @@ body.dark-mode input[style*="borderRadius"],body.dark-mode select[style*="border
 body.dark-mode .prio-glow {
   animation: prioGlowDark 6s ease-in-out infinite;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   COMPONENT CLASSES — replaces inline React style objects
+   These match the existing visual design exactly
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Sheet / Modal Overlays ── */
+.ob-sheet-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;background:var(--sheet-overlay)}
+.ob-sheet-body{background:var(--sheet-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-radius:24px 24px 0 0;padding:18px 18px calc(80px + var(--keyboard-height,0px));width:100%;max-width:520px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.ob-sheet-handle{width:48px;height:4px;background:var(--blush);border-radius:99px;margin:0 auto 16px}
+.ob-modal-center{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--sheet-overlay)}
+
+/* ── Cards ── */
+.ob-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:16px;box-shadow:var(--card-shadow)}
+.ob-card-solid{background:var(--card-bg-solid);border:1px solid var(--card-border);border-radius:14px;padding:14px}
+.ob-card-elevated{background:var(--card-bg-solid);border:1px solid var(--card-border);border-radius:20px;padding:16px;box-shadow:var(--card-shadow-elevated)}
+
+/* ── Chips / Tags ── */
+.ob-chip{padding:6px 14px;border-radius:99px;font-size:13px;font-weight:600;border:1.5px solid var(--card-border);background:var(--chip-bg);cursor:pointer;font-family:inherit}
+.ob-chip--active{background:var(--chip-bg-active);border-color:var(--ter);color:var(--ter)}
+
+/* ── Buttons ── */
+.ob-btn{width:100%;padding:12px;border-radius:99px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:6px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.ob-btn-pri{background:var(--ter);color:white}
+.ob-btn-ghost{background:var(--blush);color:var(--text-mid)}
+.ob-btn-danger{background:#e8574a;color:white}
+.ob-btn-outline{background:none;border:1px solid var(--blush);color:var(--text-lt)}
+
+/* ── Labels & Inputs ── */
+.ob-label{font-size:11px;font-family:monospace;color:var(--text-lt);text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px}
+.ob-label-md{font-size:15px;font-family:monospace;color:var(--text-mid);text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px}
+.ob-input{width:100%;padding:9px 12px;border-radius:12px;border:1.5px solid var(--card-border);background:var(--input-bg);color:var(--text-deep);font-size:15px;font-family:inherit;outline:none;box-sizing:border-box}
+.ob-input:focus{border-color:var(--ter)}
+
+/* ── Navigation ── */
+.ob-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;justify-content:space-evenly;align-items:center;max-width:520px;margin:0 auto;border-radius:22px 22px 0 0;padding:4px 8px calc(env(safe-area-inset-bottom,0px) + 8px);background:var(--nav-bg);border-top:1px solid var(--nav-border);box-shadow:var(--nav-shadow);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));will-change:transform;transform:translateZ(0)}
+.ob-nav button{box-shadow:none!important;border:none!important;animation:none!important}
+
+/* ── Badge ── */
+.ob-badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:13px;font-family:monospace;font-weight:600;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── Section Title ── */
+.ob-section-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:16px}
+
+/* ── Divider ── */
+.ob-divider{height:1px;background:var(--blush);margin:16px 0}
+
+/* ── Content Visibility — virtualize off-screen sections ── */
+.ob-lazy-section{content-visibility:auto;contain-intrinsic-size:auto 500px}
+
+/* ── Flex Utilities ── */
+.ob-flex{display:flex}
+.ob-flex-col{display:flex;flex-direction:column}
+.ob-flex-center{display:flex;align-items:center;justify-content:center}
+.ob-gap-4{gap:4px}
+.ob-gap-8{gap:8px}
+.ob-gap-12{gap:12px}
+.ob-gap-16{gap:16px}
+
+/* ── Spacing Utilities ── */
+.ob-mb-8{margin-bottom:8px}
+.ob-mb-12{margin-bottom:12px}
+.ob-mb-16{margin-bottom:16px}
+
+/* ── App Container ── */
+.ob-app{max-width:520px;margin:0 auto;padding:env(safe-area-inset-top,20px) 16px calc(80px + env(safe-area-inset-bottom,0px));min-height:100vh;position:relative}

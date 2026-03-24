@@ -8,7 +8,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,jpg,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,png,jpg,webp,svg,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -33,6 +33,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    target: 'es2020', // Modern WebView targets (iOS 14+, Android 7+)
+    cssCodeSplit: true, // Split CSS per lazy-loaded chunk
     rollupOptions: {
       output: {
         manualChunks: {
