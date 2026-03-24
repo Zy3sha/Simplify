@@ -54,15 +54,33 @@ const _toothLabels = {"UR-E":"Upper right 2nd molar","UR-D":"Upper right 1st mol
 const toothLabel = (id) => _toothLabels[id] || id;
 const _isUS = _locale.startsWith("en-us");
 const _isAU = _locale.startsWith("en-au");
-const _emergNum = _isUS ? "911" : _isAU ? "000" : "999";
-const _helpLine = _isUS ? "your pediatrician" : _isAU ? "your GP or Healthdirect (1800 022 222)" : "111 (NHS) or your GP";
-const _doctor = _isUS ? "pediatrician" : _isAU ? "GP" : "GP or health visitor";
-const _doctorUrgent = _isUS ? "pediatrician" : "GP";
-const _newbornTeam = _isUS ? "pediatrician" : _isAU ? "midwife or GP" : "midwife or health visitor";
-const _bfSupport = _isUS ? "pediatrician or lactation consultant (IBCLC)" : _isAU ? "GP, child and family health nurse, or ABA (1800 686 268)" : "health visitor, midwife, or breastfeeding specialist";
-const _devDoc = _isUS ? "pediatrician" : _isAU ? "child and family health nurse or GP" : "health visitor or GP";
-const _sleepDoc = _isUS ? "pediatrician" : _isAU ? "child and family health nurse or GP" : "health visitor";
-const _wellbeingDoc = _isUS ? "doctor or therapist" : _isAU ? "GP or child and family health nurse" : "GP or health visitor";
+const _isNZ = _locale.startsWith("en-nz");
+const _isIE = _locale.startsWith("en-ie");
+const _isCA = _locale.startsWith("en-ca") || _locale.startsWith("fr-ca");
+const _isZA = _locale.startsWith("en-za") || _locale.startsWith("af") || _locale.startsWith("zu") || _locale.startsWith("xh");
+const _isIN = _locale.startsWith("en-in") || _locale.startsWith("hi");
+const _isSG = _locale.startsWith("en-sg") || _locale.startsWith("zh-sg");
+const _isDE = _locale.startsWith("de");
+const _isFR = _locale.startsWith("fr") && !_isCA;
+const _isNL = _locale.startsWith("nl");
+const _isSE = _locale.startsWith("sv");
+const _isNO = _locale.startsWith("nb") || _locale.startsWith("nn") || _locale.startsWith("no");
+const _isDK = _locale.startsWith("da");
+const _isES = _locale.startsWith("es") && !_locale.startsWith("es-us") && !_locale.startsWith("es-mx") && !_locale.startsWith("es-ar") && !_locale.startsWith("es-co") && !_locale.startsWith("es-cl");
+const _isIT = _locale.startsWith("it");
+const _isPT = _locale.startsWith("pt-pt");
+const _isBR = _locale.startsWith("pt-br");
+const _isJP = _locale.startsWith("ja");
+const _isKR = _locale.startsWith("ko");
+const _emergNum = _isUS || _isCA ? "911" : _isAU ? "000" : _isNZ || _isZA ? "111" : _isIN ? "112" : _isSG ? "995" : _isDE || _isFR || _isNL || _isSE || _isNO || _isDK || _isES || _isIT || _isPT ? "112" : _isBR ? "192" : _isJP ? "119" : _isKR ? "119" : _isIE ? "112" : "999";
+const _helpLine = _isUS ? "your pediatrician" : _isCA ? "your paediatrician or Health Link (811)" : _isAU ? "your GP or Healthdirect (1800 022 222)" : _isNZ ? "your GP or Healthline (0800 611 116)" : _isIE ? "your GP or HSE Live (1800 700 700)" : _isZA ? "your clinic sister or GP" : _isIN ? "your paediatrician" : _isSG ? "your paediatrician or polyclinic" : _isDE ? "your Kinderarzt or Hebamme" : _isFR ? "your médecin or sage-femme" : "111 (NHS) or your GP";
+const _doctor = _isUS ? "pediatrician" : _isCA ? "paediatrician or family doctor" : _isAU ? "GP" : _isNZ ? "GP or Plunket nurse" : _isIE ? "GP or public health nurse" : _isZA ? "clinic sister or GP" : _isIN ? "paediatrician" : _isSG ? "paediatrician or polyclinic doctor" : _isDE ? "Kinderarzt (paediatrician)" : _isFR ? "médecin or sage-femme" : "GP or health visitor";
+const _doctorUrgent = _isUS ? "pediatrician" : _isCA ? "paediatrician or family doctor" : _isIN ? "paediatrician" : _isSG ? "paediatrician" : _isDE ? "Kinderarzt" : _isFR ? "médecin" : "GP";
+const _newbornTeam = _isUS ? "pediatrician" : _isCA ? "midwife or paediatrician" : _isAU ? "midwife or GP" : _isNZ ? "midwife or Plunket nurse" : _isIE ? "midwife or public health nurse" : _isZA ? "midwife or clinic sister" : _isIN ? "paediatrician" : _isSG ? "paediatrician or polyclinic" : _isDE ? "Hebamme (midwife) or Kinderarzt" : _isFR ? "sage-femme or médecin" : "midwife or health visitor";
+const _bfSupport = _isUS ? "lactation consultant (IBCLC) or WIC breastfeeding support (1-800-994-9662)" : _isCA ? "lactation consultant or La Leche League Canada" : _isAU ? "Australian Breastfeeding Association (1800 686 268) or lactation consultant" : _isNZ ? "La Leche League NZ or Plunket (0800 933 922)" : _isIE ? "lactation consultant, public health nurse, or La Leche League Ireland" : _isZA ? "La Leche League SA or clinic sister" : _isIN ? "lactation consultant or paediatrician" : _isSG ? "lactation consultant or polyclinic" : _isDE ? "Hebamme (midwife) or Stillberaterin (lactation consultant)" : _isFR ? "conseillère en lactation or sage-femme" : "National Breastfeeding Helpline (0300 100 0212), health visitor, or lactation consultant";
+const _devDoc = _isUS ? "pediatrician" : _isCA ? "paediatrician or family doctor" : _isAU ? "child and family health nurse or GP" : _isNZ ? "Plunket nurse or GP" : _isIE ? "public health nurse or GP" : _isZA ? "clinic sister or GP" : _isIN ? "paediatrician" : _isSG ? "paediatrician or polyclinic" : _isDE ? "Kinderarzt" : _isFR ? "médecin or PMI (Protection Maternelle et Infantile)" : "health visitor or GP";
+const _sleepDoc = _isUS ? "pediatrician" : _isCA ? "paediatrician or family doctor" : _isAU ? "child and family health nurse or GP" : _isNZ ? "Plunket nurse or GP" : _isIE ? "public health nurse or GP" : _isZA ? "clinic sister or GP" : _isIN ? "paediatrician" : _isSG ? "paediatrician or polyclinic" : _isDE ? "Kinderarzt or Hebamme" : _isFR ? "médecin or sage-femme" : "health visitor";
+const _wellbeingDoc = _isUS ? "doctor or therapist" : _isCA ? "family doctor or therapist" : _isAU ? "GP or child and family health nurse" : _isNZ ? "GP or Plunket nurse" : _isIE ? "GP or public health nurse" : _isZA ? "clinic sister or GP" : _isIN ? "doctor" : _isSG ? "GP or polyclinic" : _isDE ? "Hebamme or Hausarzt (GP)" : _isFR ? "médecin or sage-femme" : "GP or health visitor";
 const fmtCountdown = s => {
   if(s <= 0) return "Now!";
   const h = Math.floor(s/3600);
@@ -4330,15 +4348,15 @@ function App(){
     } else if (STORE_READY && !isPremium && Object.keys(days).length >= 3) {
       _whyLines.push("🔒 " + _name + "'s personal rhythm is forming — unlock Bubba Rhythm to see it.");
     }
-    _whyLines.push("Sleep timing based on NHS Start4Life, AASM (American Academy of Sleep Medicine), and WHO Infant Health guidelines for " + fmtAge(age) + ". Always follow your baby's individual cues.");
+    _whyLines.push("Sleep timing based on " + (_isUS ? "AAP, AASM" : _isAU ? "Raising Children Network, AASM" : "NHS Start4Life, AASM") + " (American Academy of Sleep Medicine), and WHO Infant Health guidelines for " + fmtAge(age) + ". Always follow your baby's individual cues.");
     // Feed & nappy prediction explanation
     const _latestWt = weights && weights.length > 0 ? weights[weights.length-1].kg : null;
     if (_latestWt) {
       const _dailyMl = Math.round(_latestWt * 150);
       const _fpd = age.totalWeeks < 4 ? 10 : age.totalWeeks < 8 ? 7 : age.totalWeeks < 13 ? 6 : age.totalWeeks < 26 ? 5 : age.totalWeeks < 39 ? 4 : 3;
-      _whyLines.push("🍼 Feed prediction: NHS recommends ~150ml per kg per day. At " + _latestWt + "kg that's ~" + _dailyMl + "ml/day or ~" + Math.round(_dailyMl/_fpd) + "ml per feed across " + _fpd + " feeds. Predictions adjust based on " + _name + "'s last feed size and usual rhythm at this time of day.");
+      _whyLines.push("🍼 Feed prediction: " + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + " recommends ~150ml per kg per day. At " + _latestWt + "kg that's ~" + _dailyMl + "ml/day or ~" + Math.round(_dailyMl/_fpd) + "ml per feed across " + _fpd + " feeds. Predictions adjust based on " + _name + "'s last feed size and usual rhythm at this time of day.");
     } else {
-      _whyLines.push("🍼 Feed prediction: Based on NHS age-appropriate guidelines and " + _name + "'s feeding rhythm over the last 7 days. Add " + _name + "'s weight in settings to get personalised per-feed targets (NHS 150ml/kg/day).");
+      _whyLines.push("🍼 Feed prediction: Based on " + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + " age-appropriate guidelines and " + _name + "'s feeding rhythm over the last 7 days. Add " + _name + "'s weight in settings to get personalised per-feed targets (" + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + " 150ml/kg/day).");
     }
     _whyLines.push("Feed and nappy times are gentle estimates — not medical advice. Every baby is different. Always follow " + _name + "'s hunger cues (rooting, lip smacking, fussiness) over any prediction. Unusual days are automatically excluded from the average. If you have concerns about feeding or weight gain, speak to your " + _doctor + ".");
 
@@ -4426,7 +4444,7 @@ function App(){
           </button>
           {heroWhyOpen&&(
             <div style={{marginTop:8,padding:"12px",borderRadius:12,background:"var(--card-bg-alt)",border:"1px solid var(--card-border)"}}>
-              <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>OBubba uses NHS Start4Life, AASM, and WHO guidelines to show age-appropriate sleep and feed guidance for your baby.</div>
+              <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>OBubba uses {_isUS ? "AAP, AASM" : _isAU ? "Raising Children Network, AASM" : "NHS Start4Life, AASM"}, and WHO guidelines to show age-appropriate sleep and feed guidance for your baby.</div>
               <div style={{fontSize:11,color:C.lt,marginTop:10,fontStyle:"italic",borderTop:"1px solid var(--card-border)",paddingTop:8}}>This is general guidance — not medical advice. If you have concerns, speak to your {_doctor}.</div>
             </div>
           )}
@@ -5779,7 +5797,7 @@ function App(){
     // Check hydration
     const wetCount = today.filter(e => e.type === "poop" && (e.poopType === "wet" || (e.poopType || "").includes("wet"))).length;
     const h = new Date().getHours();
-    if (h >= 14 && wetCount < 4) return { emoji: "💧", text: `${wetCount} wet nappies today — aim for 6+ in 24 hours for adequate hydration.`, priority: "med", why: "NHS guidance recommends 6+ wet nappies in 24 hours as a sign of adequate hydration. Fewer wet nappies, especially in the afternoon, may mean baby needs more milk." };
+    if (h >= 14 && wetCount < 4) return { emoji: "💧", text: `${wetCount} wet nappies today — aim for 6+ in 24 hours for adequate hydration.`, priority: "med", why: (_isUS ? "AAP" : _isAU ? "Raising Children Network" : "NHS") + " guidance recommends 6+ wet nappies in 24 hours as a sign of adequate hydration. Fewer wet nappies, especially in the afternoon, may mean baby needs more milk." };
 
     // Check bedtime approaching — two-stage alert
     const bed = bedtimePrediction();
@@ -6554,31 +6572,31 @@ function App(){
     let totalMin, totalMax, totalLabel, totalTarget, dayTarget, dayMin, targetFeeds, nhsNote;
     if (w < 4) {
       totalMin=400; totalMax=700; totalTarget=550; dayTarget=400; dayMin=280;
-      targetFeeds=8; totalLabel="400–700ml/day (NHS)";
+      targetFeeds=8; totalLabel="400–700ml/day (" + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + ")";
       nhsNote="Newborns feed 8–12 times in 24h. Frequent feeding builds your supply and helps baby regain birth weight.";
     } else if (w < 8) {
       totalMin=500; totalMax=800; totalTarget=650; dayTarget=480; dayMin=350;
-      targetFeeds=7; totalLabel="500–800ml/day (NHS)";
+      targetFeeds=7; totalLabel="500–800ml/day (" + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + ")";
       nhsNote="At this age babies typically feed every 2.5–3.5h. Consistent day feeds help night stretches extend naturally.";
     } else if (w < 13) {
       totalMin=600; totalMax=900; totalTarget=750; dayTarget=560; dayMin=400;
-      targetFeeds=6; totalLabel="600–900ml/day (NHS)";
-      nhsNote="NHS recommends ~150ml per kg/day. Stronger day feeds often reduce hunger-driven night waking.";
+      targetFeeds=6; totalLabel="600–900ml/day (" + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + ")";
+      nhsNote=(_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + " recommends ~150ml per kg/day. Stronger day feeds often reduce hunger-driven night waking.";
     } else if (w < 26) {
       totalMin=700; totalMax=1000; totalTarget=850; dayTarget=650; dayMin=480;
-      targetFeeds=5; totalLabel="700–1000ml/day (NHS)";
+      targetFeeds=5; totalLabel="700–1000ml/day (" + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + ")";
       nhsNote="Babies 3–6 months benefit from full day feeds. Low day intake is a common cause of frequent night waking at this age.";
     } else if (w < 39) {
       totalMin=500; totalMax=800; totalTarget=700; dayTarget=560; dayMin=380;
-      targetFeeds=4; totalLabel="500–800ml/day + solids (NHS)";
+      targetFeeds=4; totalLabel="500–800ml/day + solids (" + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + ")";
       nhsNote="With solids introduced, milk remains the main nutrition. Offering milk before solids helps maintain day intake.";
     } else if (w < 52) {
       totalMin=400; totalMax=700; totalTarget=600; dayTarget=480; dayMin=320;
-      targetFeeds=3; totalLabel="400–700ml/day + solids (NHS)";
+      targetFeeds=3; totalLabel="400–700ml/day + solids (" + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + ")";
       nhsNote="At 9–12 months, 3 milk feeds per day alongside meals is typical. Solids shouldn't displace milk entirely.";
     } else {
       totalMin=300; totalMax=500; totalTarget=400; dayTarget=320; dayMin=200;
-      targetFeeds=2; totalLabel="300–500ml/day (NHS)";
+      targetFeeds=2; totalLabel="300–500ml/day (" + (_isUS ? "AAP" : _isAU ? "NHMRC" : "NHS") + ")";
       nhsNote="After 12 months, cow's milk can replace formula. 300–400ml/day supports calcium needs alongside a varied diet.";
     }
 
@@ -7530,7 +7548,7 @@ function App(){
         type: "teething", score: 65,
         title: "Recent teething",
         brief: "A tooth came through recently" + (_recentTeeth.length > 1 ? " (" + _recentTeeth.length + " in the last 2 weeks)" : "") + ". Teething discomfort often peaks 3–5 days before and after eruption, and night wakes are very common during this window.",
-        detail: "Teething pain is often worse at night because there are fewer distractions. Cool teething rings, gentle gum massage, and age-appropriate pain relief (check with your " + _doctor + ") can help."
+        detail: "Teething pain is often worse at night because there are fewer distractions. If your baby seems uncomfortable, speak to your " + _doctor + " about how to help."
       });
     } else if (_aw >= 16 && _aw <= 100) {
       // Check if teething symptoms reported in recent entries
@@ -8643,7 +8661,7 @@ function App(){
     // Powered by text
     ctx.font="18px sans-serif";ctx.fillStyle="#B0A0A0";
     ctx.fillText("Powered by OBubba\u2019s rhythm learning +",W/2,fy+170);
-    ctx.fillText("NHS & WHO guidance",W/2,fy+195);
+    ctx.fillText((_isUS ? "AAP" : _isAU ? "RCN" : "NHS") + " & WHO guidance",W/2,fy+195);
 
     // Bottom branding section — inside card
     const brandY=cardY+cardH-130;
@@ -9116,7 +9134,7 @@ function App(){
         reasons.push({
           emoji: "🦷", title: "Teething pain",
           detail: `At ${fmtAge(age)}, teething is common`,
-          action: "Try a cold teething ring or gentle gum massage. If baby seems in pain, speak to your pharmacist or doctor about age-appropriate relief",
+          action: "If baby seems in pain or uncomfortable, speak to your " + _doctor + " for advice on how to help",
           urgency: "med", score: 50
         });
       }
@@ -9291,7 +9309,7 @@ function App(){
     if (m.temp && parseFloat(m.temp) >= 38 && age && age.totalWeeks < 13) {
       setTimeout(() => showToast(`🚨 38°C+ in a baby under 3 months — call ${_helpLine} now.`, 8000, 4), 300);
     } else if (m.temp && parseFloat(m.temp) >= 38) {
-      setTimeout(() => showToast(`🌡️ Temperature logged. Keep baby cool and hydrated. If concerned, contact ${_helpLine}.`, 5000, 3), 300);
+      setTimeout(() => showToast(`🌡️ Temperature logged. If concerned, contact ${_helpLine}.`, 5000, 3), 300);
     } else {
       showToast(m.name ? "💊 Logged. Always follow dosing instructions on the packaging or from your pharmacist." : "💊 Logged", m.name ? 3000 : 1200, 1);
     }
@@ -9718,7 +9736,7 @@ function App(){
         </td></tr>
         <tr><td style="padding:4px 0;color:#A898AC">Hydration target</td><td style="padding:4px 0;font-weight:600">${wetCount}/6 wet nappies${wetCount>=6?" ✅":""}</td></tr>
       </table>
-      <p style="font-size:12px;color:#A898AC;margin:8px 0 0">NHS guidance: 6+ wet nappies in 24h indicates adequate hydration. Check nappy every 2-3 hours.</p>
+      <p style="font-size:12px;color:#A898AC;margin:8px 0 0">${_isUS ? "AAP" : _isAU ? "Raising Children Network" : "NHS"} guidance: 6+ wet nappies in 24h indicates adequate hydration. Check nappy every 2-3 hours.</p>
     </div>`);
 
     // SLEEP & ROUTINE
@@ -10025,7 +10043,7 @@ function App(){
     }
 
     lines.push("Report generated by OBubba — obubba.com");
-    lines.push("Sleep: NHS/AASM · Growth: WHO · Feeding: NHS/WHO · Development: NHS Start4Life");
+    lines.push(_isUS ? "Sleep: AAP/AASM · Growth: WHO · Feeding: AAP/WHO · Development: CDC" : _isAU ? "Sleep: RCN/AASM · Growth: WHO · Feeding: NHMRC/WHO · Development: Raising Children Network" : "Sleep: NHS/AASM · Growth: WHO · Feeding: NHS/WHO · Development: NHS Start4Life");
 
     return { text: lines.join("\n"), name, period: `${fmtDate(dk[0])} – ${fmtDate(dk[dk.length-1])}`, days: dk.length };
   }
@@ -11159,7 +11177,7 @@ function App(){
                 </div>
               ))}
             </div>
-            <div style={{fontSize:12,color:_wMute,textAlign:"center",zIndex:1,marginBottom:24,lineHeight:1.5,maxWidth:300}}>Sleep timing: <strong style={{color:_wTrustHi,fontWeight:600}}>NHS Start4Life</strong> & <strong style={{color:_wTrustHi,fontWeight:600}}>AASM</strong>. Growth: <strong style={{color:_wTrustHi,fontWeight:600}}>WHO Child Growth Standards</strong>. Development: <strong style={{color:_wTrustHi,fontWeight:600}}>NHS Start4Life</strong> milestones.</div>
+            <div style={{fontSize:12,color:_wMute,textAlign:"center",zIndex:1,marginBottom:24,lineHeight:1.5,maxWidth:300}}>Sleep timing: <strong style={{color:_wTrustHi,fontWeight:600}}>{_isUS ? "AAP" : _isAU ? "Raising Children Network" : "NHS Start4Life"}</strong> & <strong style={{color:_wTrustHi,fontWeight:600}}>AASM</strong>. Growth: <strong style={{color:_wTrustHi,fontWeight:600}}>WHO Child Growth Standards</strong>. Development: <strong style={{color:_wTrustHi,fontWeight:600}}>{_isUS ? "CDC" : _isAU ? "Raising Children Network" : "NHS Start4Life"}</strong> milestones.</div>
             <button onClick={()=>setObStep(1)} style={{width:"100%",maxWidth:320,padding:16,border:_bN,borderRadius:99,fontSize:17,fontWeight:700,color:"white",cursor:_cP,zIndex:1,background:"linear-gradient(135deg, #c9705a, #a85a44)",boxShadow:_wCtaShadow,marginBottom:12,fontFamily:_fI}}>Start Tracking →</button>
 
           </div>
@@ -11334,7 +11352,7 @@ function App(){
           { icon:"🧩", title:"Development Tab", body:"Activities: age-appropriate play ideas with 'why this matters'. Milestones: what baby is working on now — tap to mark achieved. Teeth: visual tooth chart. Weaning: daily food suggestions, allergen detection for all 14 UK allergens, foods to avoid, and reaction tracking. Appears from around 6 months." },
           { icon:"🔍", title:"Hidden features", body:"Long-press any log button for the advanced form (e.g. long-press Nap for a custom start time). Scroll down past the summary stats to find the full detailed log with pump, tummy time, medicine, and notes. Shake your phone to undo any accidental log within 15 seconds. Smart text parsing understands 'fed 120ml at 2pm' or 'napped 45 mins from 1'." },
           { icon:"👩‍🍼", title:"Sharing & Carer Portal", body:"Share a Care Guide with babysitters, grandparents, or nursery — it includes feeding info, sleep windows, and emergency contacts. The QR code opens a Carer Portal where they can log feeds, naps, and nappy changes. You'll see their entries in the app under 'Carer Activity' and can accept or dismiss each one. Carers can only see what they log — they never see your data. Partner sync lets both parents share the same data in real time." },
-          { icon:"💜", title:"You matter too", body:`Weekly wellbeing check-in on the Insights tab — Great, Okay, Struggling, or Need Support. If you're struggling, real support resources: ${_isUS?"Postpartum Support International (1-800-944-4773), 988 Crisis Lifeline":_isAU?"PANDA (1300 726 306), Beyond Blue (1300 22 4636)":"PANDAS (0808 196 1776), Samaritans (116 123)"}. You'll also see gentle nudges like 'Have you had water today?'` },
+          { icon:"💜", title:"You matter too", body:`Weekly wellbeing check-in on the Insights tab — Great, Okay, Struggling, or Need Support. If you're struggling, real support resources: ${_isUS?"Postpartum Support International (1-800-944-4773), 988 Crisis Lifeline":_isCA?"Crisis Services Canada (988), Pacific Postpartum Support":_isAU?"PANDA (1300 726 306), Beyond Blue (1300 22 4636)":_isNZ?"1737 free call/text, Plunket (0800 933 922)":_isIE?"Parentline (1890 927 277), Samaritans (116 123)":_isZA?"SADAG (0800 567 567)":_isIN?"iCall (9152987821), Vandrevala Foundation (1860-2662-345)":_isSG?"National Care Hotline (1800-202-6868)":_isDE?"Elterntelefon (0800 111 0550), TelefonSeelsorge (0800 111 0111)":_isFR?"Allo Parents Bébé (0800 00 34 56)":_isNL?"Luisterlijn (088 0767 000)":_isSE?"BRIS Vuxentelefon (077-150 50 50)":_isNO?"Mental Helses hjelpetelefon (116 123)":_isDK?"Mødrehjælpen (33 45 86 30)":_isES?"Teléfono de la Esperanza (717 003 717)":_isIT?"Telefono Amico (02 2327 2327)":_isBR?"CVV (188)":_isJP?"Yorisoi Hotline (0120-279-338)":_isKR?"정신건강 위기상담 (1577-0199)":"PANDAS (0808 196 1776), Samaritans (116 123)"}. You'll also see gentle nudges like 'Have you had water today?'` },
           { icon:"🎉", title:"You're all set!", body:"Log a wake time to start your day. Predictions get smarter with every log — by day 3, OBubba starts learning your baby's unique rhythm. Tap any ? icon for help. Replay this tour anytime from Account." },
         ];
 
@@ -12250,7 +12268,7 @@ function App(){
                     )}
                     {dayTummy.length > 0 && (
                       <div>
-                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🤸 Tummy Time <HelpBtn title="Tummy Time" body="NHS recommends supervised tummy time from birth, building to 30 minutes per day spread across multiple sessions. Builds neck and shoulder strength essential for rolling, sitting, and crawling. Tap the Tummy button to start a timer."/></div>
+                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🤸 Tummy Time <HelpBtn title="Tummy Time" body={(_isUS ? "AAP" : _isAU ? "Raising Children Network" : "NHS") + " recommends supervised tummy time from birth, building to 30 minutes per day spread across multiple sessions. Builds neck and shoulder strength essential for rolling, sitting, and crawling. Tap the Tummy button to start a timer."/></div>
                         <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                           {dayTummy.map(t=>(
                             <span key={t.id} style={{fontSize:12,background:"rgba(111,168,152,0.1)",border:`1px solid ${C.mint}30`,borderRadius:8,padding:"4px 8px",color:C.mint,fontWeight:600}}>{fmt12(t.time)} · {t.duration}min</span>
@@ -13058,9 +13076,45 @@ function App(){
             ]
           };
           const wellbeingResources = _isUS
-            ? "\n\n📞 Postpartum Support International: 1-800-944-4773\n📞 988 Suicide & Crisis Lifeline: 988 (24/7)\n🌐 SAMHSA Helpline: 1-800-662-4357\n📞 Your pediatrician or OB-GYN"
+            ? "\n\n📞 Postpartum Support International: 1-800-944-4773\n📞 988 Suicide & Crisis Lifeline: 988 (24/7)\n📞 Your pediatrician or OB-GYN"
+            : _isCA
+            ? "\n\n📞 Pacific Postpartum Support Society: 604-255-7999\n📞 Crisis Services Canada: 988 (24/7)\n📞 Your midwife, family doctor, or public health nurse"
             : _isAU
-            ? "\n\n📞 PANDA: 1300 726 306 (Mon–Fri 9am–7:30pm AEST)\n📞 Beyond Blue: 1300 22 4636 (24/7)\n📞 Lifeline: 13 11 14 (24/7)\n📞 Your GP or child health nurse"
+            ? "\n\n📞 PANDA: 1300 726 306 (Mon–Fri 9am–7:30pm AEST)\n📞 Beyond Blue: 1300 22 4636 (24/7)\n📞 Lifeline: 13 11 14 (24/7)\n📞 Your GP or child and family health nurse"
+            : _isNZ
+            ? "\n\n📞 1737 — free call or text, 24/7\n📞 Plunket: 0800 933 922\n📞 Perinatal Anxiety & Depression Aotearoa (PADA)\n📞 Your midwife, Plunket nurse, or GP"
+            : _isIE
+            ? "\n\n📞 Parentline: 1890 927 277\n📞 Samaritans: 116 123 (free, 24/7)\n📞 Nurture Health perinatal mental health\n📞 Your GP or public health nurse"
+            : _isZA
+            ? "\n\n📞 SADAG Helpline: 0800 567 567 (free, 24/7)\n📞 Postpartum Support International (SA chapter)\n📞 Your clinic sister or GP"
+            : _isIN
+            ? "\n\n📞 iCall: 9152987821\n📞 Vandrevala Foundation: 1860-2662-345 (24/7)\n📞 Your paediatrician or doctor"
+            : _isSG
+            ? "\n\n📞 National Care Hotline: 1800-202-6868\n📞 KK Women's & Children's Hospital perinatal mental health\n📞 Your paediatrician or polyclinic"
+            : _isDE
+            ? "\n\n📞 Elterntelefon: 0800 111 0550 (free)\n📞 TelefonSeelsorge: 0800 111 0111 (free, 24/7)\n📞 Your Hebamme (midwife) or Hausarzt (GP)"
+            : _isFR
+            ? "\n\n📞 Allo Parents Bébé: 0800 00 34 56 (free)\n📞 SOS Amitié: 09 72 39 40 50 (24/7)\n📞 Your sage-femme (midwife) or médecin"
+            : _isNL
+            ? "\n\n📞 Luisterlijn: 088 0767 000 (24/7)\n📞 Korrelatie: 0900-1450\n📞 Your kraamzorg (postnatal care) or huisarts (GP)"
+            : _isSE
+            ? "\n\n📞 BRIS Vuxentelefon: 077-150 50 50\n📞 Mind Självmordslinjen: 90101 (24/7)\n📞 Your barnmorska (midwife) or BVC-sköterska"
+            : _isNO
+            ? "\n\n📞 Amathea: 23 32 57 00\n📞 Mental Helses hjelpetelefon: 116 123 (24/7)\n📞 Your jordmor (midwife) or helsestasjon (health centre)"
+            : _isDK
+            ? "\n\n📞 Mødrehjælpen: 33 45 86 30\n📞 Livslinien: 70 201 201 (24/7)\n📞 Your sundhedsplejerske (health visitor) or læge (GP)"
+            : _isES
+            ? "\n\n📞 Teléfono de la Esperanza: 717 003 717 (24/7)\n📞 Your matrona (midwife) or pediatra"
+            : _isIT
+            ? "\n\n📞 Telefono Amico: 02 2327 2327 (24/7)\n📞 Your ostetrica (midwife) or pediatra"
+            : _isPT
+            ? "\n\n📞 SOS Voz Amiga: 213 544 545 (24/7)\n📞 Your enfermeira de saúde materna or médico de família"
+            : _isBR
+            ? "\n\n📞 CVV: 188 (24/7)\n📞 Your pediatra or enfermeira da UBS"
+            : _isJP
+            ? "\n\n📞 Yorisoi Hotline: 0120-279-338 (24/7)\n📞 Your 助産師 (midwife) or 小児科医 (paediatrician)"
+            : _isKR
+            ? "\n\n📞 정신건강 위기상담: 1577-0199 (24/7)\n📞 Your 소아과 (paediatrician) or 산후조리원"
             : "\n\n📞 PANDAS Foundation: 0808 196 1776 (free, Mon–Fri 11am–10pm)\n📞 Samaritans: 116 123 (free, 24/7)\n🌐 NHS Talking Therapies: self-refer via nhs.uk\n📞 Health visitor — call your GP surgery to be connected";
 
           const wellbeingCard = wellbeingDue ? (
@@ -15535,7 +15589,7 @@ function App(){
                                   "Flushed or blotchy skin",
                                 ].map((s,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"1px 0"}}>• {s}</div>)}
                                 <div style={{fontSize:11,color:C.mid,marginTop:6,padding:"8px",background:"var(--card-bg-alt)",borderRadius:8,lineHeight:1.5}}>
-                                  Remove the food. Give antihistamine (e.g. {_isUS ? "Benadryl/diphenhydramine" : "Piriton/chlorphenamine"}) if prescribed. Contact {_isUS ? "your " + _doctorUrgent : _isAU ? "Healthdirect (1800 022 222) or your " + _doctorUrgent : "111 or your " + _doctorUrgent} for advice. Watch closely for the next 2 hours.
+                                  Remove the food and contact {_isUS ? "your " + _doctorUrgent : _isAU ? "Healthdirect (1800 022 222) or your " + _doctorUrgent : "111 or your " + _doctorUrgent} for advice. Watch closely for the next 2 hours.
                                 </div>
                               </div>
 
@@ -16108,10 +16162,10 @@ function App(){
             <div style={{display:"inline-flex",background:"var(--card-bg)",borderRadius:99,border:`1px solid ${C.blush}`,overflow:"hidden",marginBottom:12}}>
               <button onClick={()=>{setUsePersonalRecs(true);try{localStorage.setItem("use_personal_recs_v1","true");}catch{};updateChild({personalRecs:true});}} style={{padding:"7px 16px",fontSize:13,fontFamily:_fM,fontWeight:700,border:"none",background:usePersonalRecs===true?"linear-gradient(135deg,#50a888,#3a8870)":"transparent",color:usePersonalRecs===true?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap",borderRadius:99}}>✨ Personal</button>
               <div style={{width:1,background:C.blush}}/>
-              <button onClick={()=>{setUsePersonalRecs(false);try{localStorage.setItem("use_personal_recs_v1","false");}catch{};updateChild({personalRecs:false});}} style={{padding:"7px 16px",fontSize:13,fontFamily:_fM,fontWeight:700,border:"none",background:(usePersonalRecs===false||usePersonalRecs===null)?"#4a5a80":"transparent",color:(usePersonalRecs===false||usePersonalRecs===null)?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap",borderRadius:99}}>NHS</button>
+              <button onClick={()=>{setUsePersonalRecs(false);try{localStorage.setItem("use_personal_recs_v1","false");}catch{};updateChild({personalRecs:false});}} style={{padding:"7px 16px",fontSize:13,fontFamily:_fM,fontWeight:700,border:"none",background:(usePersonalRecs===false||usePersonalRecs===null)?"#4a5a80":"transparent",color:(usePersonalRecs===false||usePersonalRecs===null)?"white":C.lt,cursor:"pointer",whiteSpace:"nowrap",borderRadius:99}}>{_isUS ? "AAP" : _isAU ? "RCN" : "NHS"}</button>
             </div>
             <div style={{fontSize:12,color:C.lt,lineHeight:1.55}}>
-              {usePersonalRecs===true?"Learns from your baby's patterns and blends with age guidance. Gets smarter the more you log.":"Uses NHS Start4Life and AASM wake windows for your baby's age."}
+              {usePersonalRecs===true?"Learns from your baby's patterns and blends with age guidance. Gets smarter the more you log.":_isUS?"Uses AAP and AASM wake windows for your baby's age.":_isAU?"Uses Raising Children Network and AASM wake windows for your baby's age.":"Uses NHS Start4Life and AASM wake windows for your baby's age."}
               <div style={{marginTop:6}}>Switch between modes at any time — your data is always kept.</div>
             </div>
           </div>
@@ -17683,11 +17737,11 @@ function App(){
             {(()=>{
               const _lower = (weaningForm.food||"").toLowerCase();
               const _avoid = [];
-              if (_lower.includes("honey")) _avoid.push({food:"Honey",reason:"Risk of infant botulism — not safe under 12 months (NHS)"});
+              if (_lower.includes("honey")) _avoid.push({food:"Honey",reason:"Risk of infant botulism — not safe under 12 months (" + (_isUS ? "AAP" : _isAU ? "FSANZ" : "NHS") + ")"});
               if (/whole nut|nuts/.test(_lower) && !_lower.includes("butter") && !_lower.includes("ground") && !_lower.includes("crushed")) _avoid.push({food:"Whole nuts",reason:"Choking hazard — under 5s. Use smooth butter or finely ground instead"});
-              if (/shark|swordfish|marlin/.test(_lower)) _avoid.push({food:"High-mercury fish",reason:"Can affect baby's developing nervous system (NHS)"});
+              if (/shark|swordfish|marlin/.test(_lower)) _avoid.push({food:"High-mercury fish",reason:"Can affect baby's developing nervous system (" + (_isUS ? "FDA" : _isAU ? "FSANZ" : "NHS") + ")"});
               if (/raw (shellfish|prawn|shrimp|oyster)/.test(_lower)) _avoid.push({food:"Raw shellfish",reason:"Risk of food poisoning — must be thoroughly cooked"});
-              if (/rice (milk|drink)/.test(_lower)) _avoid.push({food:"Rice milk",reason:"Contains arsenic — not suitable under 5 years (NHS)"});
+              if (/rice (milk|drink)/.test(_lower)) _avoid.push({food:"Rice milk",reason:"Contains arsenic — not suitable under 5 years (" + (_isUS ? "AAP" : _isAU ? "FSANZ" : "NHS") + ")"});
               if (_avoid.length) return (
                 <div style={{background:"rgba(232,87,74,0.08)",border:"1.5px solid rgba(232,87,74,0.25)",borderRadius:12,padding:"8px 12px",marginBottom:10}}>
                   <div style={{fontSize:11,fontWeight:700,color:"#e8574a",marginBottom:3}}>🚫 Not recommended for babies</div>
