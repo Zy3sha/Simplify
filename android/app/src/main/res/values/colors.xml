@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="obubba_pink">#C07088</color>
+    <color name="obubba_bg">#F0DDD6</color>
+    <color name="obubba_dark">#080e1c</color>
+    <color name="obubba_text">#5B4F5F</color>
+    <color name="obubba_green">#7FB5A0</color>
+    <color name="obubba_purple">#8B7EC8</color>
+    <color name="widget_bg">#FBF5F3</color>
+    <color name="widget_button">#C07088</color>
+</resources>

@@ -185,9 +185,34 @@ window.onerror = function(msg, src, line, col, err) {
   }catch(e){}
 })();
 
-// ── Remove any previously installed service workers ──
+// ── Register Service Worker for offline support ──
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(function(regs) {
-    regs.forEach(function(reg) { reg.unregister(); });
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+      // Check for updates every 30 minutes
+      setInterval(function() { reg.update(); }, 30 * 60 * 1000);
+      // Listen for sync requests from service worker
+      navigator.serviceWorker.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'sync_requested') {
+          // Trigger cloud sync from main thread
+          if (window._fb && window._fbUid) {
+            console.log('[OBubba] Service worker requested sync');
+          }
+        }
+        if (event.data && event.data.type === 'notification_action') {
+          window.dispatchEvent(new CustomEvent('nativeAction', { detail: { action: event.data.action } }));
+        }
+      });
+    }).catch(function(err) {
+      console.warn('[OBubba] SW registration failed:', err);
+    });
   });
 }
+
+// ── Load native plugin bridge ──
+(function() {
+  var s = document.createElement('script');
+  s.src = 'native-plugins.js';
+  s.async = true;
+  document.head.appendChild(s);
+})();

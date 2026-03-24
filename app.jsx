@@ -38,7 +38,10 @@ const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${String
 const localDateStr = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const hm = m => { if(!m||m<=0)return"—"; return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`; };
 const fmtSec = s => s>=3600 ? `${Math.floor(s/3600)}:${String(Math.floor((s%3600)/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}` : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
-const haptic=(ms=10)=>{try{if(window._nativeHaptic){window._nativeHaptic(typeof ms==="string"?ms:"medium");return;}if(navigator.vibrate){navigator.vibrate(typeof ms==="number"?ms:10);}}catch{}};
+const haptic=(ms=10)=>{try{if(window.OBNative){window.OBNative.haptics.impact(typeof ms==="string"?ms.charAt(0).toUpperCase()+ms.slice(1):"Medium");return;}if(window._nativeHaptic){window._nativeHaptic(typeof ms==="string"?ms:"medium");return;}if(navigator.vibrate){navigator.vibrate(typeof ms==="number"?ms:10);}}catch{}};
+// ── Native Feature Integration ──
+const _isNativePlatform = () => window.OBNative && window.OBNative.isNative();
+const _getPlatform = () => window.OBNative ? window.OBNative.getPlatform() : 'web';
 // Native keyboard: adjust viewport when keyboard appears
 // Global share function for print overlay buttons
 window._obShare=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html=el.outerHTML;var blob=new Blob(["<!DOCTYPE html><html><head><meta charset=utf-8><style>@media print{.no-print{display:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>"+html+"</body></html>"],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});if(navigator.share){navigator.share({title:"Care Guide",files:[file]}).catch(function(){});}else{var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="OBubba-Care-Guide.html";a.click();}}catch(e){}};
@@ -1253,6 +1256,91 @@ function App(){
     obs.observe(document.body,{attributes:true,attributeFilter:['class']});
     return()=>{obs.disconnect();window._themeCallback=null;};
   },[]);
+
+  // ── Native platform integration (Siri, Widgets, Shortcuts, Live Activities, etc.) ──
+  useEffect(()=>{
+    if(!window.OBNative) return;
+    const OB = window.OBNative;
+
+    // Listen for native actions (app shortcuts, Siri, deep links, widget taps)
+    const handleNativeAction = (e) => {
+      const action = e.detail?.action;
+      if(!action) return;
+      haptic("light");
+      switch(action) {
+        case 'log_feed': openLogPanel("feed"); break;
+        case 'log_sleep': openLogPanel("sleep"); break;
+        case 'log_nappy': openLogPanel("nappy"); break;
+        case 'start_timer': startBreastTimer("L"); break;
+        case 'log_temperature': setShowMedForm(true); break;
+        case 'log_medicine': setShowMedForm(true); break;
+        case 'baby_summary': setTab("insights"); break;
+      }
+    };
+    window.addEventListener('nativeAction', handleNativeAction);
+
+    // Update status bar to match theme
+    OB.statusBar.setStyle(document.body.classList.contains('dark-mode'));
+
+    // Listen for app resume — refresh data + update widgets
+    OB.lifecycle.onResume(()=>{
+      OB.statusBar.setStyle(document.body.classList.contains('dark-mode'));
+      OB.widgets.updateWidgetData();
+      // Check for pending Siri entries (iOS)
+      if(_getPlatform()==='ios'){
+        try {
+          const pending = localStorage.getItem('pendingSiriEntry');
+          if(pending){
+            const entry = JSON.parse(pending);
+            localStorage.removeItem('pendingSiriEntry');
+            if(entry.type==='feed') openLogPanel("feed");
+            else if(entry.type==='sleep'||entry.type==='nap') openLogPanel("sleep");
+          }
+        } catch{}
+      }
+    });
+
+    // Listen for app pause — save widget data
+    OB.lifecycle.onPause(()=>{
+      OB.widgets.updateWidgetData();
+    });
+
+    // Handle deep links
+    OB.lifecycle.onUrlOpen((url)=>{
+      try{
+        const u = new URL(url);
+        const action = u.searchParams.get('action');
+        if(action) window.dispatchEvent(new CustomEvent('nativeAction',{detail:{action}}));
+      }catch{}
+    });
+
+    // Handle Android back button
+    OB.lifecycle.onBackButton(({canGoBack})=>{
+      // Close any open sheet first, then navigate back
+      // The app handles this via its own sheet management
+    });
+
+    // Set up push notification tap handler
+    OB.push.onNotificationTapped((notification, actionId)=>{
+      const action = notification.data?.action;
+      if(action) window.dispatchEvent(new CustomEvent('nativeAction',{detail:{action}}));
+    });
+
+    // Network status monitoring
+    OB.network.onStatusChange((status)=>{
+      if(status.connected){
+        // Re-sync when back online
+        try{
+          if(window._fb && window._fbUid) {
+            // Trigger cloud sync
+          }
+        }catch{}
+      }
+    });
+
+    return ()=> window.removeEventListener('nativeAction', handleNativeAction);
+  },[]);
+
   const[children,setChildren]=useState(()=>{
     try {
       const saved = localStorage.getItem("children_v1");
@@ -2260,6 +2348,8 @@ function App(){
       if(onboarded)try{localStorage.setItem("onboarded_v2","1");}catch{}
       clearTimeout(cloudPushRef.current);
       cloudPushRef.current = setTimeout(()=>{ if(backupCodeRef.current && window._fbUid && cloudSyncedRef.current) pushToCloud(backupCodeRef.current, children); }, 500);
+      // Update native widgets with latest data
+      if(window.OBNative) window.OBNative.widgets.updateWidgetData();
     }, 300);
     return ()=>clearTimeout(lsRef.current);
   },[children, childSyncCodes, resolvedActiveId, onboarded]);
@@ -9176,6 +9266,8 @@ function App(){
     try{localStorage.setItem("nap_startT",t);localStorage.setItem("nap_on","1");localStorage.setItem("nap_sec","0");localStorage.setItem("nap_entry_id",entryId);}catch{}
     setNapStartT(t);setNapSec(0);setNapOn(true);setNapEntryId(entryId);
     setTimerMode("activeSleep");
+    // Start Live Activity on iOS (Dynamic Island + Lock Screen timer)
+    if(window.OBNative) window.OBNative.liveActivity.startTimer({type:'sleep',startTime:Date.now(),babyName:babyName||'Baby'});
   }
 
   // ── Medicine & Temperature Tracker ──
@@ -9331,11 +9423,15 @@ function App(){
     }
     setBreastSide(side);
     setBreastActive(true);
+    // Start Live Activity for feed timer (Dynamic Island)
+    if(window.OBNative) window.OBNative.liveActivity.startTimer({type:'feed',startTime:Date.now(),babyName:babyName||'Baby',side:side==='L'?'left':'right'});
   }
   function pauseBreastTimer(){setBreastActive(false);}
   function switchBreastSide(side){
     setBreastActive(true);
     setBreastSide(side);
+    // Update Live Activity with new side
+    if(window.OBNative) window.OBNative.liveActivity.updateTimer({elapsed:breastSec.L+breastSec.R,side:side==='L'?'left':'right'});
   }
   // ═══ Breastfeeding Support — contextual reassurance ═══
   function getBreastfeedingInsight(entryTime) {
@@ -9378,6 +9474,8 @@ function App(){
 
     setBreastSide(null);setBreastSec({L:0,R:0});setBreastActive(false);setBreastStartTime(null);
     try{["breast_side","breast_sec","breast_active","breast_startTime"].forEach(k=>localStorage.removeItem(k));}catch{}
+    // Stop Live Activity when feed saved
+    if(window.OBNative) window.OBNative.liveActivity.stopTimer();
     setDays(d=>{const updated=[...(d[selDay]||[]),entry];const _pd=(()=>{const dt=new Date(selDay+"T12:00:00");dt.setDate(dt.getDate()-1);return dt.toISOString().slice(0,10);})();return{...d,[selDay]:autoClassifyNight(updated,d[_pd]||null)};});
     trackEvent("entry_logged",{type:"breast_feed"});
     haptic("medium")
@@ -9453,6 +9551,8 @@ function App(){
     }
     setNapStartT(null);setNapSec(0);setNapEntryId(null);
     setTimerMode("prediction");
+    // Stop Live Activity on iOS
+    if(window.OBNative) window.OBNative.liveActivity.stopTimer();
     try{["nap_on","nap_startT","nap_sec","nap_entry_id","nap_paused","nap_paused_sec"].forEach(k=>localStorage.removeItem(k));}catch{}
 
     // Contextual micro-advice based on nap duration

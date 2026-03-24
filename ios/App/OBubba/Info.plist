@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Bundle Info -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>OBubba</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleName</key>
+    <string>OBubba</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <!-- Required Device Capabilities -->
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>armv7</string>
+    </array>
+
+    <!-- Supported Orientations (Portrait only) -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    </array>
+
+    <!-- Status Bar -->
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleDefault</string>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <true/>
+
+    <!-- Launch Storyboard -->
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+
+    <!-- Face ID Usage -->
+    <key>NSFaceIDUsageDescription</key>
+    <string>OBubba uses Face ID to securely unlock your baby's data.</string>
+
+    <!-- Camera Usage -->
+    <key>NSCameraUsageDescription</key>
+    <string>OBubba needs camera access to take photos for your baby's photo diary.</string>
+
+    <!-- Photo Library Usage -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>OBubba needs photo library access to add photos to your baby's diary.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>OBubba needs permission to save milestone cards and share images.</string>
+
+    <!-- Microphone (for voice logging via Siri) -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>OBubba uses the microphone for voice logging.</string>
+
+    <!-- Speech Recognition -->
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>OBubba uses speech recognition for hands-free baby logging.</string>
+
+    <!-- HealthKit -->
+    <key>NSHealthShareUsageDescription</key>
+    <string>OBubba can read baby growth data from Health to keep your records in sync.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>OBubba can save baby weight and height measurements to Health.</string>
+
+    <!-- Notifications -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>remote-notification</string>
+        <string>audio</string>
+    </array>
+
+    <!-- Siri -->
+    <key>NSSiriUsageDescription</key>
+    <string>OBubba uses Siri for hands-free baby logging. Say "Log a feed in OBubba".</string>
+
+    <!-- Universal Links / Associated Domains -->
+    <!-- Configured in Signing & Capabilities:
+         applinks:obubba.com
+         activitycontinuation:obubba.com
+         appclips:obubba.com
+    -->
+
+    <!-- App Transport Security -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>obubba.com</key>
+            <dict>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
+                <false/>
+            </dict>
+        </dict>
+    </dict>
+
+    <!-- Supported URL Schemes -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>obubba</string>
+            </array>
+            <key>CFBundleURLName</key>
+            <string>com.obubba.app</string>
+        </dict>
+    </array>
+
+    <!-- App Queries Schemes (for Sign in with Apple, Google) -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>googlechrome</string>
+    </array>
+
+    <!-- Entitlements reference -->
+    <!-- App Groups: group.com.obubba.app -->
+    <!-- HealthKit -->
+    <!-- Push Notifications -->
+    <!-- Siri -->
+    <!-- Sign in with Apple -->
+    <!-- Associated Domains -->
+
+    <!-- Supports multiple windows on iPad -->
+    <key>UIApplicationSupportsMultipleScenes</key>
+    <false/>
+
+    <!-- Appearance -->
+    <key>UIUserInterfaceStyle</key>
+    <string>Automatic</string>
+</dict>
+</plist>
