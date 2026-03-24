@@ -2075,18 +2075,13 @@ function App(){
     if(!key) { setAuthError("Enter a username"); return false; }
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
-      let snap = await fsGet("usernames", key);
-      // If REST failed (auth/network error, not genuine 404), try Firebase SDK directly
-      if(!snap.exists() && snap._error) {
-        try {
-          if(window._fb.db && window._fb.doc && window._fb.getDoc) {
-            const sdkSnap = await window._fb.getDoc(window._fb.doc(window._fb.db, "usernames", key));
-            if(sdkSnap.exists()) {
-              const sd = sdkSnap.data();
-              snap = {exists:()=>true, data:()=>sd, _error: null};
-            }
-          }
-        } catch {}
+      // Use Firebase SDK directly for login — more reliable than REST in native WebView
+      let snap;
+      try {
+        snap = await getDoc(doc(db, "usernames", key));
+      } catch(sdkErr) {
+        // SDK failed (e.g. offline, auth not ready) — fall back to REST
+        snap = await fsGet("usernames", key);
       }
       if(!snap.exists()) {
         if(snap._error) { setAuthError("Connection issue — check your internet and try again"); return false; }
@@ -2102,7 +2097,8 @@ function App(){
       const code = resolvedBackup || data.familyCode;
       if(code) {
         try {
-          const fSnap = await fsGet("families", code);
+          let fSnap;
+          try { fSnap = await getDoc(doc(db, "families", code)); } catch { fSnap = await fsGet("families", code); }
           if(fSnap.exists()) {
             const d = fSnap.data();
             if(d.children) {
@@ -2159,15 +2155,7 @@ function App(){
   // Returns {exists(), data(), _error} — _error is set on auth/network failure vs genuine 404.
   async function fsGet(collection, docId) {
     try {
-      // Wait for auth token if not ready yet (up to 4s)
-      let _user = window._fb?.auth?.currentUser;
-      if(!_user) {
-        for(let i=0; i<20; i++) {
-          await new Promise(r=>setTimeout(r,200));
-          _user = window._fb?.auth?.currentUser;
-          if(_user) break;
-        }
-      }
+      const _user = window._fb?.auth?.currentUser;
       const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
       const _url = `https://firestore.googleapis.com/v1/projects/obubba-d9ccc/databases/(default)/documents/${collection}/${encodeURIComponent(docId)}`;
       const _headers = _token ? {"Authorization":`Bearer ${_token}`} : {};
