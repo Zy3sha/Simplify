@@ -2075,7 +2075,9 @@ function App(){
     if(!key) { setAuthError("Enter a username"); return false; }
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
-      const snap = await fsGet("usernames", key);
+      let snap;
+      try { snap = await getDoc(doc(db, "usernames", key)); }
+      catch { snap = await fsGet("usernames", key); }
       if(!snap.exists()) { setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false; }
       const data = snap.data();
       if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
@@ -2087,7 +2089,8 @@ function App(){
       const code = resolvedBackup || data.familyCode;
       if(code) {
         try {
-          const fSnap = await fsGet("families", code);
+          let fSnap;
+          try { fSnap = await getDoc(doc(db, "families", code)); } catch { fSnap = await fsGet("families", code); }
           if(fSnap.exists()) {
             const d = fSnap.data();
             if(d.children) {
@@ -2241,7 +2244,10 @@ function App(){
       if(!window._fb) { setAuthUsernameStatus("idle"); return; }
       const {db, doc, getDoc} = window._fb;
       try {
-        const snap = await fsGet("usernames", normaliseUsername(val));
+        // Try Firebase SDK first (handles auth internally), fall back to REST
+        let snap;
+        try { snap = await getDoc(doc(db, "usernames", normaliseUsername(val))); }
+        catch { snap = await fsGet("usernames", normaliseUsername(val)); }
         if(seq !== authCheckSeqRef.current) return; // stale response — ignore
         setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
         if(snap.exists()) try{document.activeElement.blur();}catch{}
@@ -10118,7 +10124,7 @@ function App(){
           }
           setOnboarded(true); setAuthScreen(null); setTab("day");
         } else {
-          setAuthError("Wrong PIN — try again");
+          // verifyLogin already set the specific error (username not found, wrong PIN, etc.)
           setAuthPin(""); setAuthLoading(false);
         }
       } else {
