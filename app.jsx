@@ -2075,13 +2075,11 @@ function App(){
     if(!key) { setAuthError("Enter a username"); return false; }
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
-      let snap;
-      try {
-        snap = await Promise.race([
-          getDoc(doc(db, "usernames", key)),
-          new Promise((_,rej) => setTimeout(()=>rej(new Error("timeout")),3000))
-        ]);
-      } catch { snap = await fsGet("usernames", key); }
+      // Wait for auth before login (REST needs token)
+      if(!window._fb?.auth?.currentUser) {
+        await new Promise(r => { let w=0; const p=setInterval(()=>{ w+=100; if(window._fb?.auth?.currentUser||w>=3000){clearInterval(p);r();}},100); });
+      }
+      const snap = await fsGet("usernames", key);
       if(!snap.exists()) { setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false; }
       const data = snap.data();
       if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
@@ -2093,13 +2091,7 @@ function App(){
       const code = resolvedBackup || data.familyCode;
       if(code) {
         try {
-          let fSnap;
-          try {
-            fSnap = await Promise.race([
-              getDoc(doc(db, "families", code)),
-              new Promise((_,rej) => setTimeout(()=>rej(new Error("timeout")),3000))
-            ]);
-          } catch { fSnap = await fsGet("families", code); }
+          const fSnap = await fsGet("families", code);
           if(fSnap.exists()) {
             const d = fSnap.data();
             if(d.children) {
@@ -2253,14 +2245,11 @@ function App(){
       if(!window._fb) { setAuthUsernameStatus("idle"); return; }
       const {db, doc, getDoc} = window._fb;
       try {
-        // Try Firebase SDK first with 3s timeout, fall back to REST
-        let snap;
-        try {
-          snap = await Promise.race([
-            getDoc(doc(db, "usernames", normaliseUsername(val))),
-            new Promise((_,rej) => setTimeout(()=>rej(new Error("timeout")),3000))
-          ]);
-        } catch { snap = await fsGet("usernames", normaliseUsername(val)); }
+        // Wait for auth before checking (REST needs token)
+        if(!window._fb?.auth?.currentUser) {
+          await new Promise(r => { let w=0; const p=setInterval(()=>{ w+=100; if(window._fb?.auth?.currentUser||w>=3000){clearInterval(p);r();}},100); });
+        }
+        const snap = await fsGet("usernames", normaliseUsername(val));
         if(seq !== authCheckSeqRef.current) return; // stale response — ignore
         setAuthUsernameStatus(snap.exists() ? "found" : "notfound");
         if(snap.exists()) try{document.activeElement.blur();}catch{}
