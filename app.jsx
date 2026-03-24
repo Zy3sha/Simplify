@@ -1656,11 +1656,15 @@ function App(){
   },[]);
   function waitForUid() {
     if(window._fbUid) return Promise.resolve();
+    // Retry anonymous auth if it hasn't completed
+    if(window._fb?.auth && !window._fb.auth.currentUser) {
+      try { window._fb.signInAnonymously(window._fb.auth).catch(()=>{}); } catch {}
+    }
     return new Promise(resolve => {
       let waited = 0;
       const poll = setInterval(() => {
         waited += 200;
-        if(window._fbUid || waited >= 5000) { clearInterval(poll); resolve(); }
+        if(window._fbUid || waited >= 8000) { clearInterval(poll); resolve(); }
       }, 200);
     });
   }
