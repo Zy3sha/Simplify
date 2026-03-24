@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, collection, addDoc, getDocs, deleteDoc, query, orderBy }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInAnonymously, onAuthStateChanged }
+import { getAuth, signInAnonymously, onAuthStateChanged, indexedDBLocalPersistence, initializeAuth }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getAnalytics, logEvent }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
@@ -19,8 +19,15 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
-const auth = getAuth(app);
-const analytics = getAnalytics(app);
+// Use indexedDB persistence to avoid WKWebView iframe blocking issue
+let auth;
+try {
+  auth = initializeAuth(app, { persistence: indexedDBLocalPersistence });
+} catch(e) {
+  auth = getAuth(app);
+}
+let analytics;
+try { analytics = getAnalytics(app); } catch(e) { console.warn("Analytics init failed", e); }
 
 window._fb = { db, auth, analytics, doc, setDoc, getDoc, onSnapshot, serverTimestamp, signInAnonymously, onAuthStateChanged, logEvent, collection, addDoc, getDocs, deleteDoc, query, orderBy };
 
