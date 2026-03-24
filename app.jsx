@@ -2405,18 +2405,30 @@ function App(){
     return merged;
   }
   async function createChildSyncCode(childId) {
-    if(!window._fb) return null;
+    if(!window._fb) { showToast("Not connected — please try again",2000,2); return null; }
+    // If code already exists for this child, reuse it
+    const existingCode = childSyncCodes[childId];
+    if(existingCode) {
+      showToast("Code already exists: " + existingCode,2000,1);
+      return existingCode;
+    }
+    // Wait for auth if not ready
+    if(!window._fbUid) {
+      try { await waitForUid(); } catch { showToast("Auth not ready — please try again",2000,2); return null; }
+    }
     const {db, doc, getDoc, setDoc, serverTimestamp} = window._fb;
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let code, exists = true;
-    while(exists) {
+    let attempts = 0;
+    while(exists && attempts < 10) {
       code = Array.from({length:6}, ()=>chars[Math.floor(Math.random()*chars.length)]).join("");
       try{ const s = await fsGet("child_syncs", code); exists = s.exists(); }
       catch{ exists = false; }
+      attempts++;
     }
     const child = children[childId];
 
-    await fsSet("child_syncs", code, {
+    const ok = await fsSet("child_syncs", code, {
       childId,
       childName: child?.name || "",
       ownerUid: window._fbUid || "",
@@ -2425,9 +2437,14 @@ function App(){
       updatedAt: serverTimestamp(),
       updatedBy: window._fbUid || ""
     });
+    if(!ok) {
+      showToast("Failed to save code — check internet connection",3000,2);
+      return null;
+    }
     setChildSyncCodes(prev => ({...prev, [childId]: code}));
     subscribeToChildSync(childId, code);
     trackEvent("child_sync_created");
+    showToast("Code created: " + code,2000,1);
     return code;
   }
   async function pushChildSync(childId, code, childData) {
