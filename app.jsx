@@ -1656,16 +1656,12 @@ function App(){
   },[]);
   function waitForUid() {
     if(window._fbUid) return Promise.resolve();
-    // Retry anonymous auth if it hasn't completed
-    if(window._fb?.auth && !window._fb.auth.currentUser) {
-      try { window._fb.signInAnonymously(window._fb.auth).catch(()=>{}); } catch {}
-    }
     return new Promise(resolve => {
       let waited = 0;
       const poll = setInterval(() => {
-        waited += 200;
-        if(window._fbUid || waited >= 8000) { clearInterval(poll); resolve(); }
-      }, 200);
+        waited += 100;
+        if(window._fbUid || waited >= 5000) { clearInterval(poll); resolve(); }
+      }, 100);
     });
   }
   const pushToCloud = React.useCallback(async(code, allChildren) => {
@@ -2173,7 +2169,8 @@ function App(){
   async function fsGet(collection, docId) {
     try {
       const _user = window._fb?.auth?.currentUser;
-      const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
+      let _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
+      if(!_token && window._fbRestToken) _token = window._fbRestToken;
       const _url = `https://firestore.googleapis.com/v1/projects/obubba-d9ccc/databases/(default)/documents/${collection}/${encodeURIComponent(docId)}`;
       const _headers = _token ? {"Authorization":`Bearer ${_token}`} : {};
       const _capHttp = window.Capacitor?.Plugins?.CapacitorHttp;
@@ -2208,7 +2205,8 @@ function App(){
   async function fsSet(collection, docId, data, merge=false) {
     try {
       const _user = window._fb?.auth?.currentUser;
-      const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
+      let _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
+      if(!_token && window._fbRestToken) _token = window._fbRestToken;
       if(!_token) return false;
       const toField = (v) => {
         if(v === null || v === undefined) return {nullValue: null};

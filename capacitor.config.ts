@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
-    hostname: 'obubba-d9ccc.firebaseapp.com',
+    hostname: 'obubba.com',
   },
 
   plugins: {
