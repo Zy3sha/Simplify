@@ -4132,12 +4132,12 @@ function App(){
     ];
     const _isFeed = (e) => e.time && (e.type === "feed" || (e.amount && e.amount > 0) || (e.night && (e.assistedType === "milk" || e.feedType === "milk")));
     const _allPoolFeeds = _feedPool.filter(_isFeed);
+    const _nowMs = Date.now();
     const _wallGap = (e) => {
-      const tv = timeVal(e);
-      let gap = _nowM - tv;
-      if (e._dk === _calToday) { if (gap < 0) gap += 1440; }
-      else { if (gap < 0) gap += 1440; const dd = Math.round((new Date(_calToday+"T12:00:00") - new Date(e._dk+"T12:00:00")) / 86400000); if (dd > 0) gap += (dd - 1) * 1440; }
-      return Math.max(0, gap);
+      const t = (e.time||"00:00").split(":").map(Number);
+      const d = new Date(e._dk + "T00:00:00");
+      d.setHours(t[0], t[1], 0, 0);
+      return Math.max(0, Math.round((_nowMs - d.getTime()) / 60000));
     };
     const _lastFeed = _allPoolFeeds.length > 0 ? _allPoolFeeds.reduce((best, e) => _wallGap(e) < _wallGap(best) ? e : best) : null;
     const _feedGapM = _lastFeed ? _wallGap(_lastFeed) : 9999;
