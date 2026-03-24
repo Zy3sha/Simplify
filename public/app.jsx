@@ -1958,6 +1958,7 @@ function App(){
   const[poopWhyOpen,setPoopWhyOpen]=useState(false);
   const[todayPlanOpen,setTodayPlanOpen]=useState(false);
   const[notesOpen,setNotesOpen]=useState(false);
+  const[detailLogOpen,setDetailLogOpen]=useState(true);
   const[showNapStartPicker,setShowNapStartPicker]=useState(false);
   const[showPaywall,setShowPaywall]=useState(false);
   const[paywallContext,setPaywallContext]=useState(""); // which trigger
@@ -12682,6 +12683,76 @@ function App(){
 
               {/* Pending bottle snaps banner */}
 
+              {/* ═══ Detailed Log — collapsible ═══ */}
+              <button onClick={()=>{haptic();setDetailLogOpen(!detailLogOpen);}} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:detailLogOpen?"14px 14px 0 0":14,border:"1px solid var(--card-border)",background:"var(--card-bg)",boxShadow:"var(--card-shadow)",cursor:_cP,marginBottom:detailLogOpen?0:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:13,fontWeight:700,color:C.deep}}>📝 Detailed Log</span>
+                </div>
+                <span style={{fontSize:10,color:C.lt,transform:detailLogOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
+              </button>
+              <div style={{display:detailLogOpen?"block":"none",border:"1px solid var(--card-border)",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"10px 14px 2px",marginBottom:10,background:"var(--card-bg-solid)"}}>
+              <div data-actions-grid="true" id="detail-log-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
+                {[
+                  {id:"feed",  icon:"🍼", label:"Feed"},
+                  {id:"nappy", icon:"💩", label:"Nappy"},
+                  {id:"sleep", icon:"😴", label:"Sleep"},
+                  {id:"pump",  icon:"🫙", label:"Pump"},
+                  {id:"wake",  icon:"☀️", label:"Wake Up"},
+                  {id:"med",   icon:"💊", label:"Med/Temp"},
+                  {id:"photo", icon:"📷", label:"Photo"},
+                  {id:"paste", icon:"📋", label:"Notes"},
+                ].map(({id,icon,label})=>(
+                  <button key={id} onClick={()=>{haptic();
+                    if(id==="paste") openPaste();
+                    else if(id==="photo") capturePhoto(null);
+                    else if(id==="med"){ setMedForm({name:"",dose:"",time:nowTime(),temp:"",note:""});setShowMedForm(true); }
+                    else openLogPanel(id);
+                  }}
+                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"10px 4px",borderRadius:14,border:`2px solid ${logPanel===id?"var(--ter)":(id==="tummy"&&tummyOn)?C.mint+"80":"rgba(255,255,255,0.45)"}`,background:logPanel===id?"var(--chip-bg-active)":(id==="tummy"&&tummyOn)?"rgba(111,168,152,0.12)":"var(--card-bg)",cursor:_cP,fontFamily:_fI,transition:"all 0.15s, transform 0.1s",boxShadow:logPanel===id?"0 0 12px rgba(192,112,136,0.30), inset 0 1px 0 rgba(255,255,255,0.60)":"inset 0 0 5px rgba(246,221,227,0.35), inset 0 1px 0 rgba(255,255,255,0.50)"}}>
+                    <span style={{fontSize:22}}>{icon}</span>
+                    <span style={{fontSize:11,fontWeight:700,color:logPanel===id?C.ter:(id==="tummy"&&tummyOn)?C.mint:C.mid,letterSpacing:"0.01em",textAlign:"center",lineHeight:1.2}}>{id==="tummy"&&tummyOn?fmtSec(tummySec):label}</span>
+                  </button>
+                ))}
+              </div>
+              {/* Medicine & Temperature entries */}
+              {(()=>{
+                const dayMeds = meds[selDay] || [];
+                const dayTummy = (days[selDay]||[]).filter(e=>e.type==="tummy");
+                if (!dayMeds.length && !dayTummy.length) return null;
+                return (
+                  <div style={{marginBottom:12}}>
+                    {dayMeds.length > 0 && (
+                      <div style={{marginBottom:8}}>
+                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>💊 Medicine & Temperature</div>
+                        {dayMeds.map(m=>(
+                          <div key={m.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:10,padding:"7px 10px",marginBottom:4}}>
+                            <div>
+                              <span style={{fontSize:13,color:C.deep,fontWeight:600}}>{fmt12(m.time)}</span>
+                              {m.name && <span style={{fontSize:13,color:C.mid}}> — {m.name}{m.dose?" ("+m.dose+")":""}</span>}
+                              {m.temp && <span style={{fontSize:13,color:parseFloat(m.temp)>=38?"#e8574a":C.mint,fontWeight:600}}> 🌡️ {m.temp}°C</span>}
+                              {m.note && <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>{m.note}</div>}
+                            </div>
+                            <button onClick={()=>deleteMed(m.id)} style={{width:22,height:22,borderRadius:"50%",border:_bN,background:"rgba(232,87,74,0.1)",color:"#e8574a",fontSize:11,cursor:_cP}}>✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {dayTummy.length > 0 && (
+                      <div>
+                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🤸 Tummy Time</div>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                          {dayTummy.map(t=>(
+                            <span key={t.id} style={{fontSize:12,background:"rgba(111,168,152,0.1)",border:`1px solid ${C.mint}30`,borderRadius:8,padding:"4px 8px",color:C.mint,fontWeight:600}}>{fmt12(t.time)} · {t.duration}min</span>
+                          ))}
+                          <span style={{fontSize:12,color:C.mint,fontWeight:700,padding:"4px 8px"}}>Total: {dayTummy.reduce((s,t)=>s+(t.duration||0),0)}min</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+              </div>{/* ── end Detailed Log collapsible ── */}
+
               {/* ═══ Notes & Reminders — collapsible ═══ */}
               {(()=>{
                 const _nrCount = appointments.filter(a=>{const d=new Date(a.date+"T23:59:59");return d>=new Date()&&d<=new Date(Date.now()+7*24*60*60*1000);}).length + reminders.filter(r=>!r.done).length + pinnedNotes.length;
@@ -12849,94 +12920,6 @@ function App(){
                   </div>
                 </div>
               )}
-              {/* 3. Quick actions */}
-              <div data-actions-grid="true" id="detail-log-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
-                {[
-                  {id:"feed",  icon:"🍼", label:"Feed"},
-                  {id:"nappy", icon:"💩", label:"Nappy"},
-                  {id:"sleep", icon:"😴", label:"Sleep"},
-                  {id:"pump",  icon:"🫙", label:"Pump"},
-                  {id:"wake",  icon:"☀️", label:"Wake Up"},
-
-                  {id:"med",   icon:"💊", label:"Med/Temp"},
-                  {id:"photo", icon:"📷", label:"Photo"},
-                  {id:"paste", icon:"📋", label:"Notes"},
-                ].map(({id,icon,label})=>(
-                  <button key={id} onClick={()=>{haptic();
-                    if(id==="paste") openPaste();
-                    else if(id==="photo") capturePhoto(null);
-
-                    else if(id==="med"){ setMedForm({name:"",dose:"",time:nowTime(),temp:"",note:""});setShowMedForm(true); }
-                    else openLogPanel(id);
-                  }}
-                    style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,padding:"10px 4px",borderRadius:14,border:`2px solid ${logPanel===id?"var(--ter)":(id==="tummy"&&tummyOn)?C.mint+"80":"rgba(255,255,255,0.45)"}`,background:logPanel===id?"var(--chip-bg-active)":(id==="tummy"&&tummyOn)?"rgba(111,168,152,0.12)":"var(--card-bg)",cursor:_cP,fontFamily:_fI,transition:"all 0.15s, transform 0.1s",boxShadow:logPanel===id?"0 0 12px rgba(192,112,136,0.30), inset 0 1px 0 rgba(255,255,255,0.60)":"inset 0 0 5px rgba(246,221,227,0.35), inset 0 1px 0 rgba(255,255,255,0.50)"}}
-                    onMouseDown={e=>{e.currentTarget.style.transform="scale(0.92)";}}
-                    onMouseUp={e=>{e.currentTarget.style.transform="scale(1)";}}
-                    onTouchStart={e=>{e.currentTarget.style.transform="scale(0.92)";}}
-                    onTouchEnd={e=>{e.currentTarget.style.transform="scale(1)";}}>
-                    <span style={{fontSize:22}}>{icon}</span>
-                    <span style={{fontSize:11,fontWeight:700,color:logPanel===id?C.ter:(id==="tummy"&&tummyOn)?C.mint:C.mid,letterSpacing:"0.01em",textAlign:"center",lineHeight:1.2}}>{id==="tummy"&&tummyOn?fmtSec(tummySec):label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Photo diary — moved to Development > Memories */}
-              {false && (()=>{
-                const dayPhotos = photos.filter(p=>p.date===selDay);
-                if(!dayPhotos.length) return null;
-                return (
-                  <div style={{marginBottom:12}}>
-                    <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>📷 Photos · {fmtDate(selDay)}</div>
-                    <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4}}>
-                      {dayPhotos.map((p,i)=>(
-                        <div key={p.id||i} onClick={()=>setViewPhoto(p)} style={{flexShrink:0,width:72,height:72,borderRadius:12,overflow:"hidden",border:`1px solid ${C.blush}`,position:"relative",cursor:_cP}}>
-                          <img src={p.dataUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                          <div style={{position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,0.45)",color:"white",fontSize:8,fontFamily:_fM,padding:"1px 4px",textAlign:"center"}}>{fmt12(p.time)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Medicine & Temperature entries */}
-              {(()=>{
-                const dayMeds = meds[selDay] || [];
-                const dayTummy = (days[selDay]||[]).filter(e=>e.type==="tummy");
-                if (!dayMeds.length && !dayTummy.length) return null;
-                return (
-                  <div style={{marginBottom:12}}>
-                    {dayMeds.length > 0 && (
-                      <div style={{marginBottom:8}}>
-                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>💊 Medicine & Temperature <HelpBtn title="Medicine & Temperature" body="Log medicine (name, dose, time) and temperature readings to keep a record for yourself, your partner, or your GP. Fever alerts: 38°C+ in a baby under 3 months triggers an urgent call-111 warning. Always follow dosing instructions from your pharmacist or GP — OBubba does not give dosing advice."/></div>
-                        {dayMeds.map(m=>(
-                          <div key={m.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--card-bg)",border:`1px solid ${C.blush}`,borderRadius:10,padding:"7px 10px",marginBottom:4}}>
-                            <div>
-                              <span style={{fontSize:13,color:C.deep,fontWeight:600}}>{fmt12(m.time)}</span>
-                              {m.name && <span style={{fontSize:13,color:C.mid}}> — {m.name}{m.dose?" ("+m.dose+")":""}</span>}
-                              {m.temp && <span style={{fontSize:13,color:parseFloat(m.temp)>=38?"#e8574a":C.mint,fontWeight:600}}> 🌡️ {m.temp}°C</span>}
-                              {m.note && <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>{m.note}</div>}
-                            </div>
-                            <button onClick={()=>deleteMed(m.id)} style={{width:22,height:22,borderRadius:"50%",border:_bN,background:"rgba(232,87,74,0.1)",color:"#e8574a",fontSize:11,cursor:_cP}}>✕</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {dayTummy.length > 0 && (
-                      <div>
-                        <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:6}}>🤸 Tummy Time <HelpBtn title="Tummy Time" body="NHS recommends supervised tummy time from birth, building to 30 minutes per day spread across multiple sessions. Builds neck and shoulder strength essential for rolling, sitting, and crawling. Tap the Tummy button to start a timer."/></div>
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                          {dayTummy.map(t=>(
-                            <span key={t.id} style={{fontSize:12,background:"rgba(111,168,152,0.1)",border:`1px solid ${C.mint}30`,borderRadius:8,padding:"4px 8px",color:C.mint,fontWeight:600}}>{fmt12(t.time)} · {t.duration}min</span>
-                          ))}
-                          <span style={{fontSize:12,color:C.mint,fontWeight:700,padding:"4px 8px"}}>Total: {dayTummy.reduce((s,t)=>s+(t.duration||0),0)}min</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
               {/* 5. Today's summary stats — nap/bed card hidden (Hero Card handles this) */}
               {false && (()=>{
                 const hasBed = dayE.some(e=>e.type==="sleep");
@@ -18875,8 +18858,8 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
 
       {/* ═══ Carer Card Modal ═══ */}
       {showCarerCard&&(
-        <div onClick={()=>setShowCarerCard(false)} onTouchEnd={e=>{if(e.target===e.currentTarget)setShowCarerCard(false);}} style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-          <div onClick={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",position:"relative",display:"flex",flexDirection:"column"}}>
+        <div onClick={e=>{if(e.target===e.currentTarget)setShowCarerCard(false);}} style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:520,maxHeight:"92vh",position:"relative",display:"flex",flexDirection:"column"}}>
             <div style={{display:"flex",justifyContent:"flex-end",padding:"16px 16px 0",flexShrink:0}}>
               <button onTouchEnd={e=>e.stopPropagation()} onClick={()=>setShowCarerCard(false)} style={{width:36,height:36,borderRadius:"50%",border:_bN,background:"var(--card-bg-solid)",color:C.deep,fontSize:18,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>✕</button>
             </div>
@@ -18944,10 +18927,11 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             </div>
 
             {/* Action buttons */}
-            <button onTouchEnd={e=>{e.stopPropagation();haptic();shareCarerCard();}} onClick={e=>{e.stopPropagation();haptic();shareCarerCard();}} style={{width:"100%",padding:"15px",borderRadius:99,border:_bN,background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:8,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",position:"relative",zIndex:5}}>
+            <div onClick={e=>e.stopPropagation()} onTouchEnd={e=>e.stopPropagation()} style={{position:"relative",zIndex:10}}>
+            <button onClick={e=>{e.stopPropagation();e.preventDefault();haptic();shareCarerCard();}} style={{width:"100%",padding:"15px",borderRadius:99,border:_bN,background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:8,touchAction:"manipulation"}}>
               📤 Share Care Guide
             </button>
-            <button onTouchEnd={e=>{e.stopPropagation();}} onClick={e=>{e.stopPropagation();
+            <button onClick={e=>{e.stopPropagation();e.preventDefault();
               haptic();
               const html = generateCarerCardHTML();
               const closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back</button><div style="display:flex;gap:8px"><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button><button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div></div>`;
@@ -18960,12 +18944,13 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
               try{return window.open("","_blank");}catch{return null;}
             })();
               if(w){ w.document.write(html.replace("<body>","<body>"+closeBar)); w.document.close(); }
-            }} style={{width:"100%",padding:"13px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginBottom:8,touchAction:"manipulation",WebkitTapHighlightColor:"transparent",position:"relative",zIndex:5}}>
+            }} style={{width:"100%",padding:"13px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginBottom:8,touchAction:"manipulation"}}>
               📋 Preview
             </button>
-            <button onClick={()=>setShowCarerCard(false)} style={{width:"100%",padding:"12px",borderRadius:99,border:_bN,background:C.blush,color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+            <button onClick={e=>{e.stopPropagation();setShowCarerCard(false);}} style={{width:"100%",padding:"12px",borderRadius:99,border:_bN,background:C.blush,color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,touchAction:"manipulation"}}>
               Close
             </button>
+            </div>
             </div>{/* end scroll container */}
           </div>
         </div>
