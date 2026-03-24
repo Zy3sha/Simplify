@@ -986,6 +986,8 @@ function App(){
   const[poopWhyOpen,setPoopWhyOpen]=useState(false);
   const[todayPlanOpen,setTodayPlanOpen]=useState(false);
   const[notesOpen,setNotesOpen]=useState(false);
+  const[logGridOpen,setLogGridOpen]=useState(false);
+  const[todayLogOpen,setTodayLogOpen]=useState(true);
   const[showNapStartPicker,setShowNapStartPicker]=useState(false);
   const[showPaywall,setShowPaywall]=useState(false);
   const[paywallContext,setPaywallContext]=useState(""); // which trigger
@@ -2995,7 +2997,7 @@ function App(){
     const _ww = getWakeWindow(age.totalWeeks);
     const _pred = predictNextNap();
     const _bed = bedtimePrediction();
-    const _adjustedExpected = _profile.expectedNaps + (bridgeNapScheduled ? 1 : 0);
+    const _adjustedExpected = (_profile.expectedNaps || 3) + (bridgeNapScheduled ? 1 : 0);
     const _napsComplete = _napsDone >= _adjustedExpected;
     const _dailySleepMax = _profile.idealTotalMax || 300;
     // Awake time
@@ -11358,36 +11360,50 @@ function App(){
                 </div>
               )}
 
-              {/* Upcoming Appointments card */}
+              {/* Upcoming Appointments — pill when empty, full card when populated */}
               {(()=>{
                 const upcoming=appointments.filter(a=>{
                   const d=new Date(a.date+"T23:59:59");
                   return d>=new Date()&&d<=new Date(Date.now()+7*24*60*60*1000);
                 }).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+                if (!upcoming.length) {
+                  return (
+                    <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:"",repeat:"none",travelMins:0});setShowAddAppt(true);}} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:99,border:`1.5px dashed ${C.blush}`,background:"var(--card-bg)",cursor:_cP,fontSize:12,fontWeight:600,color:C.lt,fontFamily:_fI,marginBottom:10}}>
+                      📅 Add appointment
+                    </button>
+                  );
+                }
+                const nextAppt=upcoming[0];
+                const isToday=nextAppt.date===todayStr();
+                const isTomorrow=nextAppt.date===nextDay(todayStr());
+                const dayLabel=isToday?"Today":isTomorrow?"Tomorrow":fmtLong(nextAppt.date);
                 return (
-                  <div className="glass-card" style={{...card,padding:"12px 14px",marginBottom:10}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:upcoming.length?8:0}}>
-                      <div style={{display:"flex",alignItems:"center",gap:4,fontSize:11,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1}}>📅 Appointments{upcoming.length>0&&<span style={{background:C.ter,color:"white",borderRadius:99,padding:"1px 7px",fontSize:10,fontWeight:700,marginLeft:6}}>{upcoming.length}</span>} <HelpBtn title="Appointments" body="Add appointments with optional travel time alerts. OBubba will offer to plan your baby's schedule around tomorrow's appointments. Recurring appointments repeat automatically."/></div>
+                  <div className="glass-card lg-prio-info" style={{padding:"14px 16px",marginBottom:10}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <span style={{fontSize:18}}>{isToday?"🔔":"📅"}</span>
+                        <div>
+                          <div style={{fontSize:14,fontWeight:700,color:isToday?C.ter:C.deep}}>{nextAppt.title}</div>
+                          <div style={{fontSize:12,color:C.mid,fontFamily:_fM}}>{dayLabel}{nextAppt.time?" · "+fmt12(nextAppt.time):""}{nextAppt.travelMins>0?" · 🚗 Leave "+nextAppt.travelMins+"min early":""}</div>
+                        </div>
+                      </div>
                       <button onClick={()=>{setApptForm({date:todayStr(),time:"",title:"",note:"",repeat:"none",travelMins:0});setShowAddAppt(true);}} style={{background:_bN,border:_bN,fontSize:11,color:C.ter,cursor:_cP,fontWeight:700,fontFamily:_fM}}>+ Add</button>
                     </div>
-                    {!upcoming.length&&<div style={{fontSize:12,color:C.lt,fontStyle:"italic",padding:"6px 0"}}>No upcoming appointments</div>}
-                    {upcoming.map(a=>{
-                      const isToday=a.date===todayStr();
-                      const isTomorrow=a.date===nextDay(todayStr());
-                      const dayLabel=isToday?"Today":isTomorrow?"Tomorrow":fmtLong(a.date);
-                      return (
-                        <div key={a.id} onClick={()=>{setApptForm({date:a.date,time:a.time||"",title:a.title,note:a.note||"",repeat:a.repeat||"none",travelMins:a.travelMins||0});setEditApptId(a.id);setShowAddAppt(true);}} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"7px 0",borderBottom:`1px solid ${C.blush}`,cursor:_cP}}>
-                          <div style={{width:32,height:32,borderRadius:9,background:isToday?`${C.ter}18`:"var(--chip-bg)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:14}}>
-                            {isToday?"🔔":"📅"}
-                          </div>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:13,fontWeight:700,color:isToday?C.ter:C.deep}}>{a.title}</div>
-                            <div style={{fontSize:11,color:C.lt,fontFamily:_fM}}>{dayLabel}{a.time?" · "+fmt12(a.time):""}{a.repeat&&a.repeat!=="none"?" · 🔄 "+a.repeat:""}{a.travelMins>0?" · 🚗 "+a.travelMins+"min":""}</div>
-                          </div>
-                          <button onClick={()=>deleteAppointment(a.id)} style={{background:_bN,border:_bN,fontSize:11,color:C.lt,cursor:_cP,padding:"4px"}}>✕</button>
-                        </div>
-                      );
-                    })}
+                    {upcoming.length>1&&(
+                      <div style={{borderTop:`1px solid ${C.blush}`,paddingTop:8}}>
+                        {upcoming.slice(1).map(a=>{
+                          const aToday=a.date===todayStr();
+                          const aTomorrow=a.date===nextDay(todayStr());
+                          const aLabel=aToday?"Today":aTomorrow?"Tomorrow":fmtLong(a.date);
+                          return (
+                            <div key={a.id} onClick={()=>{setApptForm({date:a.date,time:a.time||"",title:a.title,note:a.note||"",repeat:a.repeat||"none",travelMins:a.travelMins||0});setEditApptId(a.id);setShowAddAppt(true);}} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"5px 0",cursor:_cP}}>
+                              <div style={{fontSize:12,color:C.mid}}><span style={{fontWeight:600}}>{a.title}</span> · {aLabel}{a.time?" · "+fmt12(a.time):""}</div>
+                              <button onClick={(e)=>{e.stopPropagation();deleteAppointment(a.id);}} style={{background:_bN,border:_bN,fontSize:10,color:C.lt,cursor:_cP}}>✕</button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
@@ -11485,7 +11501,14 @@ function App(){
                   </div>
                 </div>
               )}
-              {/* 3. Quick actions */}
+              {/* 3. Quick actions — collapsible */}
+              <button onClick={()=>{haptic();setLogGridOpen(!logGridOpen);}} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:logGridOpen?"14px 14px 0 0":14,border:"1px solid var(--card-border)",background:"var(--card-bg)",boxShadow:"var(--card-shadow)",cursor:_cP,marginBottom:logGridOpen?0:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:13,fontWeight:700,color:C.deep}}>🏷️ Detailed Log</span>
+                </div>
+                <span style={{fontSize:10,color:C.lt,transform:logGridOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
+              </button>
+              <div style={{display:logGridOpen?"block":"none",border:"1px solid var(--card-border)",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"10px 12px 2px",marginBottom:10,background:"var(--card-bg-solid)"}}>
               <div data-actions-grid="true" id="detail-log-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
                 {[
                   {id:"feed",  icon:"🍼", label:"Feed"},
@@ -11654,6 +11677,8 @@ function App(){
                   return "These numbers update as you log throughout the day. Here's what's typical for " + fmtAge(age) + ":\n\n" + _milkTip + "\n\n" + _nappyTip + "\n\n" + _sleepTip + "\n\n" + _napLen + "\n\nThese are general ranges, not targets. Every baby is different — if " + _n + " is content, feeding well, and gaining weight, you're doing great.\n\n💬 If anything concerns you, your " + _doctor + " is always happy to help.";
                 })()}/>
               </div>
+              </div>{/* end Detailed Log collapsible */}
+
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:14}}>
                 {[
                   {big:totalMlWithNight?mlToDisplay(totalMlWithNight,FU):dayE.filter(e=>e.type==="feed"&&e.feedType==="solids").length,unit:totalMlWithNight?volLabel(FU):"meals",label:totalMlWithNight?"Total Milk":"Solids",color:C.ter,bg:"var(--card-bg)"},
@@ -11876,11 +11901,15 @@ function App(){
                 );
               })()}
 
-              {/* 7. Daily timeline header */}
-
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700}}>Today's Log</div>
-              </div>
+              {/* 7. Today's Log — collapsible */}
+              <button onClick={()=>{haptic();setTodayLogOpen(!todayLogOpen);}} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:todayLogOpen?"14px 14px 0 0":14,border:"1px solid var(--card-border)",background:"var(--card-bg)",boxShadow:"var(--card-shadow)",cursor:_cP,marginBottom:todayLogOpen?0:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{fontSize:13,fontWeight:700,color:C.deep}}>📝 Today's Log</span>
+                  <span style={{fontSize:11,color:C.lt}}>{dayE.length} entries</span>
+                </div>
+                <span style={{fontSize:10,color:C.lt,transform:todayLogOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
+              </button>
+              <div style={{display:todayLogOpen?"block":"none",border:"1px solid var(--card-border)",borderTop:"none",borderRadius:"0 0 14px 14px",padding:"10px 12px 2px",marginBottom:10,background:"var(--card-bg-solid)"}}>
               {/* Why Is My Baby Crying? — in log row, hidden from scroll */}
               <button onClick={()=>{haptic();setShowCryingHelper(true);}} style={{display:"none",width:"100%",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:16,border:`1px solid ${C.blush}`,background:"var(--card-bg-solid)",cursor:_cP,marginBottom:12,boxShadow:"var(--card-shadow)"}}>
                 <span style={{fontSize:22}}>😢</span>
@@ -12229,6 +12258,8 @@ function App(){
               })()}
 
 
+
+              </div>{/* end Today's Log collapsible */}
 
               {/* ═══ DAY NARRATIVE — story of the day (bottom of page) ═══ */}
               {selDay===todayStr()&&(()=>{
