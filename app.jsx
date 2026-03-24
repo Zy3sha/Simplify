@@ -3045,6 +3045,8 @@ function App(){
                   setActiveChildId(cloudIds[0]);
                   try{ localStorage.setItem("active_child", cloudIds[0]); }catch{}
                 }
+                // Restore child sync codes from cloud (child_code_map is source of truth)
+                restoreChildSyncCodesFromCloud(cloudIds);
               }
             }
           }
@@ -3348,6 +3350,26 @@ function App(){
   async function createChildSyncCode(childId) {
     if(!window._fb) return null;
     const {db, doc, getDoc, setDoc, serverTimestamp} = window._fb;
+
+    // Check cloud for existing stable code (child_code_map is source of truth)
+    try {
+      const mapSnap = await fsGet("child_code_map", childId);
+      if(mapSnap.exists()) {
+        const mapData = mapSnap.data();
+        if(mapData.code) {
+          // Verify the code document still exists and is active
+          const codeSnap = await fsGet("child_syncs", mapData.code);
+          if(codeSnap.exists() && !codeSnap.data().replacedBy) {
+            // Restore existing stable code — do not generate a new one
+            setChildSyncCodes(prev => ({...prev, [childId]: mapData.code}));
+            subscribeToChildSync(childId, mapData.code);
+            return mapData.code;
+          }
+        }
+      }
+    } catch(e) { console.warn("child_code_map lookup error", e); }
+
+    // No existing stable code found — generate a new one
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let code, exists = true;
     while(exists) {
@@ -3357,19 +3379,54 @@ function App(){
     }
     const child = children[childId];
 
+    // Write share code document
     await fsSet("child_syncs", code, {
       childId,
       childName: child?.name || "",
       ownerUid: window._fbUid || "",
       ownerUsername: familyUsername || "",
       child: JSON.stringify(child),
+      isActive: true,
+      replacedBy: "",
       updatedAt: serverTimestamp(),
       updatedBy: window._fbUid || ""
     });
+
+    // Write stable reverse lookup (source of truth for childId → code)
+    await fsSet("child_code_map", childId, {
+      code,
+      ownerUid: window._fbUid || "",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
     setChildSyncCodes(prev => ({...prev, [childId]: code}));
     subscribeToChildSync(childId, code);
     trackEvent("child_sync_created");
     return code;
+  }
+  // Restore child sync codes from cloud after login/device switch.
+  // child_code_map is the source of truth; localStorage is a cache.
+  async function restoreChildSyncCodesFromCloud(childIds) {
+    if(!window._fb || !childIds?.length) return;
+    const restored = {};
+    await Promise.all(childIds.map(async (cid) => {
+      try {
+        const mapSnap = await fsGet("child_code_map", cid);
+        if(!mapSnap.exists()) return;
+        const mapData = mapSnap.data();
+        if(!mapData.code) return;
+        // Verify the code document still exists and is active
+        const codeSnap = await fsGet("child_syncs", mapData.code);
+        if(codeSnap.exists() && !codeSnap.data().replacedBy) {
+          restored[cid] = mapData.code;
+        }
+      } catch(e) { /* skip — will retry on next login */ }
+    }));
+    if(Object.keys(restored).length) {
+      setChildSyncCodes(prev => ({...prev, ...restored}));
+      // Subscriptions will be set up by the existing fbReady effect
+    }
   }
   async function pushChildSync(childId, code, childData) {
     if(!window._fb || !code) return;
@@ -3389,6 +3446,7 @@ function App(){
       await fsSet("child_syncs", code, {
         child: JSON.stringify(child),
         childName: child.name || "",
+        isActive: true,
         updatedAt: serverTimestamp(),
         updatedBy: window._fbUid || "anon",
         writeToken: writeTokenRef.current
@@ -3438,12 +3496,23 @@ function App(){
   async function joinChildByCode(code) {
     if(!window._fb) return {ok:false, error:"Not connected"};
     const {db, doc, getDoc} = window._fb;
-    const clean = code.trim().toUpperCase();
+    let clean = code.trim().toUpperCase();
     if(clean.length !== 6) return {ok:false, error:"Code must be 6 characters"};
     try {
-      const snap = await fsGet("child_syncs", clean);
+      let snap = await fsGet("child_syncs", clean);
       if(!snap.exists()) return {ok:false, error:"Code not found — ask the other parent to check"};
-      const d = snap.data();
+      let d = snap.data();
+
+      // Migration bridge: if this code was replaced, follow redirect (one hop max)
+      if(d.replacedBy) {
+        const redirectSnap = await fsGet("child_syncs", d.replacedBy);
+        if(redirectSnap.exists()) {
+          clean = d.replacedBy;
+          d = redirectSnap.data();
+        }
+        // If redirect target doesn't exist, fall through and use original code
+      }
+
       const childId = d.childId;
       if(!childId) return {ok:false, error:"Invalid sync code"};
 
@@ -3467,6 +3536,38 @@ function App(){
     setChildSyncCodes(prev => {const n={...prev};delete n[childId];return n;});
     setChildren(prev => {const n={...prev};delete n[childId];return n;});
   }
+  // Backfill: migrate existing localStorage child sync codes to child_code_map.
+  // Runs once when Firebase is ready. Only writes if no cloud mapping exists yet.
+  const backfillDoneRef = React.useRef(false);
+  useEffect(() => {
+    if(!fbReady || backfillDoneRef.current) return;
+    backfillDoneRef.current = true;
+    const localCodes = childSyncCodes;
+    if(!Object.keys(localCodes).length) return;
+    (async () => {
+      for(const [childId, code] of Object.entries(localCodes)) {
+        try {
+          // Only backfill if no cloud mapping exists yet (cloud is source of truth)
+          const mapSnap = await fsGet("child_code_map", childId);
+          if(mapSnap.exists()) continue;
+          // Verify the code actually exists in child_syncs
+          const codeSnap = await fsGet("child_syncs", code);
+          if(!codeSnap.exists()) continue;
+          const codeData = codeSnap.data();
+          // Only backfill if this device created the code (ownerUid matches)
+          // or if no owner is recorded (legacy codes before ownerUid was added)
+          if(codeData.ownerUid && window._fbUid && codeData.ownerUid !== window._fbUid) continue;
+          const {serverTimestamp} = window._fb;
+          await fsSet("child_code_map", childId, {
+            code,
+            ownerUid: codeData.ownerUid || window._fbUid || "",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+        } catch(e) { console.warn("child_code_map backfill error for", childId, e); }
+      }
+    })();
+  }, [fbReady]);
   useEffect(()=>{
     if(!fbReady) return;
     Object.entries(childSyncCodes).forEach(([childId, code]) => {
