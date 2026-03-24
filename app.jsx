@@ -255,9 +255,10 @@ const haptic=(ms=10)=>{try{if(window.OBNative){window.OBNative.haptics.impact(ty
 const _isNativePlatform = () => window.OBNative && window.OBNative.isNative();
 const _getPlatform = () => window.OBNative ? window.OBNative.getPlatform() : 'web';
 // Native keyboard: adjust viewport when keyboard appears
-// Global share function for print overlay buttons
-window._obShare=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html=el.outerHTML;var blob=new Blob(["<!DOCTYPE html><html><head><meta charset=utf-8><style>@media print{.no-print{display:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>"+html+"</body></html>"],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});if(navigator.share){navigator.share({title:"Care Guide",files:[file]}).catch(function(){});}else{var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="OBubba-Care-Guide.html";a.click();}}catch(e){}};
-window._obPrint=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html=el.innerHTML;var fullHtml="<!DOCTYPE html><html><head><meta charset=utf-8><style>*{box-sizing:border-box}body{font-family:-apple-system,sans-serif;max-width:100%;margin:0;padding:20px;font-size:14px;line-height:1.5}@media print{.no-print{display:none!important}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>"+html+"</body></html>";var blob=new Blob([fullHtml],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});if(navigator.share){navigator.share({title:"Save as PDF",files:[file]}).catch(function(){});}else{var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="OBubba-Care-Guide.html";a.click();}}catch(e){}};
+// Global share function for print overlay — generates PDF on native, HTML fallback on web
+window._obShare=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html=el.innerHTML;var fullHtml="<!DOCTYPE html><html><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><style>*{box-sizing:border-box;margin:0}body{font-family:-apple-system,system-ui,sans-serif;max-width:100%;margin:0;padding:20px;font-size:14px;line-height:1.5}.no-print{display:none!important}@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>"+html+"</body></html>";if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.OBCareCard){window.Capacitor.Plugins.OBCareCard.generatePDF({html:fullHtml,fileName:"OBubba-Care-Guide.pdf"}).then(function(r){if(r&&r.filePath&&navigator.share){var shareUrl="file://"+r.filePath;navigator.share({title:"Care Guide",url:shareUrl}).catch(function(){});}}).catch(function(){});}else if(navigator.share){var blob=new Blob([fullHtml],{type:"text/html"});var file=new File([blob],"OBubba-Care-Guide.html",{type:"text/html"});navigator.share({title:"Care Guide",files:[file]}).catch(function(){});}else{var a=document.createElement("a");var b=new Blob([fullHtml],{type:"text/html"});a.href=URL.createObjectURL(b);a.download="OBubba-Care-Guide.html";a.click();}}catch(e){console.warn("_obShare error",e)}};
+// Global print function — native iOS print dialog or browser window.print()
+window._obPrint=function(){try{var el=document.getElementById("print-overlay");if(!el)return;var html=el.innerHTML;var fullHtml="<!DOCTYPE html><html><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><style>*{box-sizing:border-box;margin:0}body{font-family:-apple-system,system-ui,sans-serif;max-width:100%;margin:0;padding:20px;font-size:14px;line-height:1.5}.no-print{display:none!important}@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{margin:1cm;size:A4 portrait}}</style></head><body>"+html+"</body></html>";if(window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.OBCareCard){window.Capacitor.Plugins.OBCareCard.printHTML({html:fullHtml,jobName:"OBubba Care Guide"}).catch(function(){});}else{window.print();}}catch(e){console.warn("_obPrint error",e)}};
 if(typeof window!=="undefined"&&window.visualViewport){let _lastFocused=null;document.addEventListener("focusin",function(ev){_lastFocused=ev.target;});window.visualViewport.addEventListener("resize",function(){const kbH=window.innerHeight-window.visualViewport.height;document.documentElement.style.setProperty("--keyboard-height",kbH+"px");if(_lastFocused&&kbH>100){setTimeout(function(){_lastFocused.scrollIntoView({behavior:"smooth",block:"center"});},100);}});window.visualViewport.addEventListener("scroll",function(){document.documentElement.style.setProperty("--vv-offset",window.visualViewport.offsetTop+"px");});}
 const _locale = (navigator.language||"en-GB").toLowerCase();
 const _toothLabels = {"UR-E":"Upper right 2nd molar","UR-D":"Upper right 1st molar","UR-C":"Upper right canine","UR-B":"Upper right lateral","UR-A":"Upper right central","UL-A":"Upper left central","UL-B":"Upper left lateral","UL-C":"Upper left canine","UL-D":"Upper left 1st molar","UL-E":"Upper left 2nd molar","LR-E":"Lower right 2nd molar","LR-D":"Lower right 1st molar","LR-C":"Lower right canine","LR-B":"Lower right lateral","LR-A":"Lower right central","LL-A":"Lower left central","LL-B":"Lower left lateral","LL-C":"Lower left canine","LL-D":"Lower left 1st molar","LL-E":"Lower left 2nd molar"};
@@ -10434,33 +10435,31 @@ function App(){
       }
     } catch(e) { /* fallback to URL */ }
 
-    const _closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
-    // Try native share first (mobile)
-    if (navigator.share) {
-      const blob = new Blob([finalHtml], { type: "text/html" });
-      const file = new File([blob], `${name}-care-guide.html`, { type: "text/html" });
-      navigator.share({ title: `${name}'s Care Guide`, files: [file] }).catch(() => {
-        const w = (()=>{
-              if(window._isNative){
-                const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
-                document.body.appendChild(d);
-                return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
-              }
-              try{return window.open("","_blank");}catch{return null;}
-            })();
-        if (w) { w.document.write(finalHtml.replace("<body>","<body>"+_closeBar)); w.document.close(); }
-      });
-    } else {
-      const w = (()=>{
-              if(window._isNative){
-                const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
-                document.body.appendChild(d);
-                return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
-              }
-              try{return window.open("","_blank");}catch{return null;}
-            })();
-      if (w) { w.document.write(finalHtml.replace("<body>","<body>"+_closeBar)); w.document.close(); }
+    // Native iOS: generate PDF via CareCardPlugin, then share via system sheet
+    if(window.Capacitor?.Plugins?.OBCareCard) {
+      try {
+        const result = await window.Capacitor.Plugins.OBCareCard.generatePDF({
+          html: finalHtml,
+          fileName: `${name}-Care-Guide.pdf`
+        });
+        if(result?.filePath && navigator.share) {
+          await navigator.share({ title: `${name}'s Care Guide`, url: "file://" + result.filePath });
+          return;
+        }
+      } catch(e) { console.warn("Native PDF share failed, falling back", e); }
     }
+
+    // Web / fallback: open preview with print/share bar
+    const _closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back</button><div style="display:flex;gap:8px"><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button><button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div></div>`;
+    const w = (()=>{
+      if(window._isNative){
+        const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
+        document.body.appendChild(d);
+        return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
+      }
+      try{return window.open("","_blank");}catch{return null;}
+    })();
+    if (w) { w.document.write(finalHtml.replace("<body>","<body>"+_closeBar)); w.document.close(); }
   }
 
   function generateWeeklyDigest() {
@@ -18896,7 +18895,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             <button onClick={()=>{
               haptic();
               const html = generateCarerCardHTML();
-              const closeBar = `<div style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back to App</button><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div>`;
+              const closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back</button><div style="display:flex;gap:8px"><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button><button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div></div>`;
               const w = (()=>{
               if(window._isNative){
                 const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
