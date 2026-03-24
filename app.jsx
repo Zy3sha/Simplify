@@ -2077,15 +2077,27 @@ function App(){
     try {
       // Use Firebase SDK directly for login — more reliable than REST in native WebView
       let snap;
+      let _debugInfo = "";
+      const _hasAuth = !!window._fb?.auth?.currentUser;
+      const _uid = window._fbUid || "none";
       try {
         snap = await getDoc(doc(db, "usernames", key));
+        _debugInfo = `SDK:${snap.exists()?"found":"miss"}`;
       } catch(sdkErr) {
-        // SDK failed (e.g. offline, auth not ready) — fall back to REST
-        snap = await fsGet("usernames", key);
+        _debugInfo = `SDK-err:${sdkErr?.code||sdkErr?.message||"unknown"}`;
+        // SDK failed — fall back to REST
+        try {
+          snap = await fsGet("usernames", key);
+          _debugInfo += ` REST:${snap.exists()?"found":"miss"}${snap._error?"/e:"+snap._error:""}`;
+        } catch(restErr) {
+          _debugInfo += ` REST-err:${restErr?.message||"unknown"}`;
+          snap = {exists:()=>false, data:()=>({}), _error:"both-failed"};
+        }
       }
       if(!snap.exists()) {
-        if(snap._error) { setAuthError("Connection issue — check your internet and try again"); return false; }
-        setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false;
+        const detail = `[key:${key} auth:${_hasAuth} uid:${_uid} ${_debugInfo}]`;
+        if(snap._error) { setAuthError(`Connection issue — try again ${detail}`); return false; }
+        setAuthError(`Username not found ${detail}`); return false;
       }
       const data = snap.data();
       if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
