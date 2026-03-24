@@ -3,6 +3,8 @@
 // Unified API for all Capacitor native features
 // Falls back gracefully to web APIs when not running natively
 // ══════════════════════════════════════════════════════════════════
+(function() {
+"use strict";
 
 const isNative = () =>
   typeof window !== 'undefined' &&
@@ -815,3 +817,5 @@ if (isNative()) {
     }
   })();
 }
+
+})();
