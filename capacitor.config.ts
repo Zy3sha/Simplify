@@ -107,7 +107,6 @@ const config: CapacitorConfig = {
 
   // ── iOS-specific ──
   ios: {
-    scheme: 'OBubba',
     contentInset: 'automatic',
     allowsLinkPreview: true,
     backgroundColor: '#F0DDD6',
