@@ -2075,30 +2075,22 @@ function App(){
     if(!key) { setAuthError("Enter a username"); return false; }
     if(pin.length !== 4) { setAuthError("PIN must be 4 digits"); return false; }
     try {
-      const snap = await fsGet("usernames", key);
-      if(!snap.exists()) {
-        // Double-check using Firebase SDK directly as fallback
-        let foundViaSDK = false;
+      let snap = await fsGet("usernames", key);
+      // If REST failed (auth/network error, not genuine 404), try Firebase SDK directly
+      if(!snap.exists() && snap._error) {
         try {
-          if(window._fb && window._fb.db && window._fb.doc && window._fb.getDoc) {
+          if(window._fb.db && window._fb.doc && window._fb.getDoc) {
             const sdkSnap = await window._fb.getDoc(window._fb.doc(window._fb.db, "usernames", key));
             if(sdkSnap.exists()) {
-              // REST failed but SDK found it — use SDK data
-              const sdkData = sdkSnap.data();
-              if(sdkData.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
-              foundViaSDK = true;
-              // Continue with SDK data
-              const resolvedBackup2 = sdkData.backupCode || null;
-              if(resolvedBackup2) { setBackupCode(resolvedBackup2); try{ localStorage.setItem("backup_code", resolvedBackup2); }catch{} }
-              setFamilyUsername(key);
-              try{ localStorage.setItem("family_username", key); localStorage.setItem("auth_verified","1"); }catch{}
-              setAuthScreen(null);
-              showToast("Welcome back!",2000,1);
-              return true;
+              const sd = sdkSnap.data();
+              snap = {exists:()=>true, data:()=>sd, _error: null};
             }
           }
         } catch {}
-        if(!foundViaSDK) { setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false; }
+      }
+      if(!snap.exists()) {
+        if(snap._error) { setAuthError("Connection issue — check your internet and try again"); return false; }
+        setAuthError("Username not found — check spelling or sign in with your backup code instead"); return false;
       }
       const data = snap.data();
       if(data.pinHash !== hashPin(pin)) { setAuthError("Incorrect PIN — try again or use your backup code"); return false; }
@@ -2164,9 +2156,18 @@ function App(){
 
   // Firestore REST read via CapacitorHttp — bypasses WKWebView CORS block
   // Falls back to fetch (works in browser). Mirrors getDoc() snap interface.
+  // Returns {exists(), data(), _error} — _error is set on auth/network failure vs genuine 404.
   async function fsGet(collection, docId) {
     try {
-      const _user = window._fb?.auth?.currentUser;
+      // Wait for auth token if not ready yet (up to 4s)
+      let _user = window._fb?.auth?.currentUser;
+      if(!_user) {
+        for(let i=0; i<20; i++) {
+          await new Promise(r=>setTimeout(r,200));
+          _user = window._fb?.auth?.currentUser;
+          if(_user) break;
+        }
+      }
       const _token = _user ? await _user.getIdToken(false).catch(()=>null) : null;
       const _url = `https://firestore.googleapis.com/v1/projects/obubba-d9ccc/databases/(default)/documents/${collection}/${encodeURIComponent(docId)}`;
       const _headers = _token ? {"Authorization":`Bearer ${_token}`} : {};
@@ -2179,7 +2180,11 @@ function App(){
         const _r = await fetch(_url, {headers:_headers}).catch(()=>null);
         _status = _r?.status; _data = _r ? await _r.json().catch(()=>null) : null;
       }
-      if(_status === 404 || !_data || _data.error) return {exists:()=>false, data:()=>({})};
+      // Distinguish genuine 404 from auth/network errors
+      if(_status === 404) return {exists:()=>false, data:()=>({}), _error: null};
+      if(!_data || _data.error || _status === 403 || _status === 401 || !_status) {
+        return {exists:()=>false, data:()=>({}), _error: _status || "network"};
+      }
       const fields = _data.fields || {};
       const parsed = {};
       for(const [k,v] of Object.entries(fields)) {
@@ -2190,8 +2195,8 @@ function App(){
         else if(v.mapValue) parsed[k] = v.mapValue;
         else parsed[k] = v;
       }
-      return {exists:()=>true, data:()=>parsed};
-    } catch(e) { return {exists:()=>false, data:()=>({})}; }
+      return {exists:()=>true, data:()=>parsed, _error: null};
+    } catch(e) { return {exists:()=>false, data:()=>({}), _error: "exception"}; }
   }
 
   // Firestore REST write via CapacitorHttp — bypasses WKWebView CORS block
@@ -2287,6 +2292,7 @@ function App(){
       if(!_isReclaim) {
         const snap = await fsGet("usernames", key);
         if(snap.exists()) return false;
+        if(snap._error) return false; // Don't create if we couldn't verify availability
       }
       // Generate a fresh backup code for this new account — NEVER reuse existing codes
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -2294,7 +2300,7 @@ function App(){
       for(let attempt=0;attempt<20;attempt++){
         newCode = "BK"+Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join("");
         const codeSnap = await fsGet("families", newCode);
-        if(!codeSnap.exists()) break;
+        if(!codeSnap.exists() && !codeSnap._error) break;
       }
       // Clear any previous account data from this device — CRITICAL for multi-account safety
       const blankChild = {id:uid(),name:"",dob:"",sex:"",unborn:false,days:{},weights:[],heights:[],photos:[],milestones:{}};

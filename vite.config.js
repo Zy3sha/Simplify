@@ -24,6 +24,7 @@ function copyNativePlugins() {
 }
 
 export default defineConfig({
+  base: './', // Relative paths — required for Capacitor file:// protocol
   plugins: [
     react(),
     copyNativePlugins(),
