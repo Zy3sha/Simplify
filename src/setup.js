@@ -5,9 +5,10 @@
 // provides backward compatibility without modifying every file.
 
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import * as ReactDOMClient from 'react-dom/client';
+import * as ReactDOMFull from 'react-dom';
 
 window.React = React;
-window.ReactDOM = { createRoot: ReactDOM.createRoot };
+window.ReactDOM = { ...ReactDOMFull, createRoot: ReactDOMClient.createRoot };
 
-export { React, ReactDOM };
+export { React };
