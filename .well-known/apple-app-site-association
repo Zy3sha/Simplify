@@ -1,0 +1,23 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAM_ID.com.obubba.app"],
+        "paths": ["*"],
+        "components": [
+          { "/": "/*" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAM_ID.com.obubba.app"]
+  },
+  "activitycontinuation": {
+    "apps": ["TEAM_ID.com.obubba.app"]
+  },
+  "appclips": {
+    "apps": ["TEAM_ID.com.obubba.app.Clip"]
+  }
+}

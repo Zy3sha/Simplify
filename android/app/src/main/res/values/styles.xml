@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base app theme -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/obubba_pink</item>
+        <item name="colorPrimaryDark">@color/obubba_pink</item>
+        <item name="colorAccent">@color/obubba_pink</item>
+        <item name="android:navigationBarColor">@color/obubba_bg</item>
+        <item name="android:statusBarColor">@color/obubba_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- No action bar variant for main activity -->
+    <style name="AppTheme.NoActionBar" parent="AppTheme">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <!-- Splash screen theme -->
+    <style name="AppTheme.Splash" parent="AppTheme.NoActionBar">
+        <item name="android:windowBackground">@color/obubba_bg</item>
+    </style>
+</resources>
