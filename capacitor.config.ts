@@ -113,6 +113,7 @@ const config: CapacitorConfig = {
     backgroundColor: '#F0DDD6',
     preferredContentMode: 'mobile',
     limitsNavigationsToAppBoundDomains: false,
+    webContentsDebuggingEnabled: true,
     // Enable associated domains for Universal Links & Siri
     // Configured in Xcode: applinks:obubba.com, activitycontinuation:obubba.com
   },
