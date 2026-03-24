@@ -243,7 +243,7 @@ function getNightWindows(thisDayEntries, nextDayEntries) {
 const ICONS={feed:"🍼",nap:"😴",wake:"☀️",sleep:"🌙",poop:"💩"};
 const NAMES={feed:"Feed",nap:"Nap",wake:"Wake Up",sleep:"Bedtime",poop:"Nappy"};
 const POOP_TYPES=["Yellow/seedy","Mustard","Green","Brown","Dark green","Orange","Black/tarry","White/pale","Mucousy","Watery","Formed/solid","Pellet-like","Frothy","Bloody/streaked","Meconium","Other"];
-const POOP_SAFETY_FLAGS={"Black/tarry":`Black or tarry stools after the first few days may need medical attention — contact your ${_doctor}.`,"White/pale":`Persistently pale or chalky stools can indicate a liver condition — mention this to your ${_doctor} promptly.`,"Bloody/streaked":`Blood in stools can have many causes, but if new or persistent, contact your ${_doctor}.`,"Meconium":"Meconium (dark, sticky first stools) is normal in the first 48–72 hours. If still passing meconium after day 3–4, mention it to your midwife or health visitor."};
+const POOP_SAFETY_FLAGS={"Black/tarry":`Black or tarry stools after the first few days may need medical attention — contact your ${_doctor}.`,"White/pale":`Persistently pale or chalky stools can indicate a liver condition — mention this to your ${_doctor} promptly.`,"Bloody/streaked":`Blood in stools can have many causes, but if new or persistent, contact your ${_doctor}.`,"Meconium":`Meconium (dark, sticky first stools) is normal in the first 48–72 hours. If still passing meconium after day 3–4, mention it to your midwife or ${_doctor}.`};
 
 // 14 major UK allergens — NHS/FSA
 const ALLERGENS = {
@@ -4335,7 +4335,7 @@ function App(){
     } else {
       _whyLines.push("🍼 Feed prediction: Based on NHS age-appropriate guidelines and " + _name + "'s feeding rhythm over the last 7 days. Add " + _name + "'s weight in settings to get personalised per-feed targets (NHS 150ml/kg/day).");
     }
-    _whyLines.push("Feed and nappy times are gentle estimates — not medical advice. Every baby is different. Always follow " + _name + "'s hunger cues (rooting, lip smacking, fussiness) over any prediction. Unusual days are automatically excluded from the average. If you have concerns about feeding or weight gain, speak to your health visitor or GP.");
+    _whyLines.push("Feed and nappy times are gentle estimates — not medical advice. Every baby is different. Always follow " + _name + "'s hunger cues (rooting, lip smacking, fussiness) over any prediction. Unusual days are automatically excluded from the average. If you have concerns about feeding or weight gain, speak to your " + _doctor + ".");
 
     // ── Premium gate: strip prediction details for free users ──
     if (STORE_READY && !isPremium && !trialActive) {
@@ -4422,7 +4422,7 @@ function App(){
           {heroWhyOpen&&(
             <div style={{marginTop:8,padding:"12px",borderRadius:12,background:"var(--card-bg-alt)",border:"1px solid var(--card-border)"}}>
               <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>OBubba uses NHS Start4Life, AASM, and WHO guidelines to show age-appropriate sleep and feed guidance for your baby.</div>
-              <div style={{fontSize:11,color:C.lt,marginTop:10,fontStyle:"italic",borderTop:"1px solid var(--card-border)",paddingTop:8}}>This is general guidance — not medical advice. If you have concerns, speak to your health visitor or GP.</div>
+              <div style={{fontSize:11,color:C.lt,marginTop:10,fontStyle:"italic",borderTop:"1px solid var(--card-border)",paddingTop:8}}>This is general guidance — not medical advice. If you have concerns, speak to your {_doctor}.</div>
             </div>
           )}
         </div>
@@ -5314,7 +5314,7 @@ function App(){
     if (recentWakes > prevWakes + 1.2) {
       alerts.push({
         title: "More night wakes recently",
-        body: "Night wakes have picked up a bit over the last 3 days. This often happens during developmental phases — it's very normal and usually settles within 1–2 weeks. Keeping bedtime consistent really helps. Remember: broken sleep is exhausting. If you're struggling, talk to your partner, a friend, or your health visitor — looking after yourself matters too.",
+        body: "Night wakes have picked up a bit over the last 3 days. This often happens during developmental phases — it's very normal and usually settles within 1–2 weeks. Keeping bedtime consistent really helps. Remember: broken sleep is exhausting. If you're struggling, talk to your partner, a friend, or your " + _doctor + " — looking after yourself matters too.",
         icon: "🌙"
       });
     }
@@ -5367,7 +5367,7 @@ function App(){
     const regressions = [
       { weeks:[15,19], label:"4-Month Sleep Regression", emoji:"🌊",
         desc:`${name}'s sleep architecture is maturing from newborn cycles to adult-style 4-stage sleep. This is permanent brain development — not a setback.`,
-        advice:"Expect 2–4 weeks of disrupted sleep. Keep routines consistent, offer extra feeds if needed, and avoid introducing new sleep props. This regression means the brain is developing normally. It's OK to feel exhausted — this phase passes. If you need support, your health visitor or GP is always there." },
+        advice:"Expect 2–4 weeks of disrupted sleep. Keep routines consistent, offer extra feeds if needed, and avoid introducing new sleep props. This regression means the brain is developing normally. It's OK to feel exhausted — this phase passes. If you need support, your " + _doctor + " is always there." },
       { weeks:[34,42], label:"8–10 Month Sleep Regression", emoji:"🧗",
         desc:`Separation anxiety + major motor milestones (crawling, pulling up) are disrupting ${name}'s sleep. The brain is practising new skills even during sleep.`,
         advice:"Usually lasts 2–6 weeks. Practice new skills during the day, maintain bedtime routine, offer reassurance without creating new habits. Separation anxiety is a sign of healthy attachment — you're doing something right." },
@@ -9456,7 +9456,7 @@ function App(){
     if (recent3h.length >= 3 && !nearbyBottle) return { icon: "\uD83E\uDD0D", title: "This looks like cluster feeding", body: "Very normal, especially in the evening or during growth spurts. Your body is responding exactly as it should." };
     if (isNight) return { icon: "\uD83C\uDF19", title: "Night feeds are doing important work", body: "Overnight feeds are common and can help support milk supply. You\u2019re doing brilliantly." };
     if (breastFeeds.length >= 5 && wetCount >= 4 && nowH >= 14) return { icon: "\uD83D\uDC9A", title: "Today\u2019s signs look reassuring", body: "Feeding pattern and wet nappies suggest things may be going well. Trust yourself." };
-    if (nowH >= 16 && breastFeeds.length <= 3 && wetCount <= 2) return { icon: "\uD83D\uDC9B", title: "Worth a closer look", body: "If this keeps happening and you\u2019re worried, it may help to speak to your health visitor, midwife, or breastfeeding specialist." };
+    if (nowH >= 16 && breastFeeds.length <= 3 && wetCount <= 2) return { icon: "\uD83D\uDC9B", title: "Worth a closer look", body: "If this keeps happening and you\u2019re worried, it may help to speak to your " + _doctor + ", midwife, or breastfeeding specialist." };
     if (breastFeeds.length >= 2) {
       const msgs = [
         { title: "You\u2019re feeding beautifully", body: _bfName + " is lucky to have you. Every feed counts." },
@@ -12182,7 +12182,7 @@ function App(){
                                           {/* Age guidance */}
               {ageStage&&(
                 <div style={{background:"var(--card-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",border:"1px solid var(--card-border)",borderRadius:16,padding:"12px 14px",marginBottom:12,boxShadow:"var(--card-shadow)"}}>
-                  <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4,display:"flex",alignItems:"center"}}>{ageStage.label} <HelpBtn title="Age Guidance" body="These ranges are from AASM (American Academy of Sleep Medicine) and NHS Start4Life — not rigid targets. Every baby is different. The prediction engine uses your baby's actual patterns alongside these ranges to give personalised suggestions. If you have concerns about your baby's sleep or development, speak to your GP or health visitor."/></div>
+                  <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08,marginBottom:4,display:"flex",alignItems:"center"}}>{ageStage.label} <HelpBtn title="Age Guidance" body="These ranges are from AASM (American Academy of Sleep Medicine) and NHS Start4Life — not rigid targets. Every baby is different. The prediction engine uses your baby's actual patterns alongside these ranges to give personalised suggestions. If you have concerns about your baby's sleep or development, speak to your " + _doctor + "."/></div>
                   <div style={{fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:8}}>{ageStage.tip}</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                     {[{icon:"😴",val:ageStage.napGoal},{icon:"🍼",val:ageStage.feedGoal},{icon:"🌙",val:ageStage.nightNote}].map((x,i)=>(
@@ -13146,9 +13146,9 @@ function App(){
                     You've mentioned feeling tough a couple of times recently. That's worth paying attention to — not because something is wrong, but because you deserve support too.
                   </div>
                   <div style={{fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:12}}>
-                    Prolonged parenting stress is real. It's not weakness — it's a signal your mind and body need care. One conversation with your GP or health visitor can make a genuine difference.
+                    Prolonged parenting stress is real. It's not weakness — it's a signal your mind and body need care. One conversation with your {_doctor} can make a genuine difference.
                   </div>
-                  <button onClick={()=>setShowWellbeing({msg:"Please don't carry this alone. Your health visitor or GP genuinely wants to hear from you — this is exactly what they're there for. You don't need to be in crisis to reach out.", label:"Need support", resources:wellbeingResources})}
+                  <button onClick={()=>setShowWellbeing({msg:"Please don't carry this alone. Your " + _doctor + " genuinely wants to hear from you — this is exactly what they're there for. You don't need to be in crisis to reach out.", label:"Need support", resources:wellbeingResources})}
                     style={{width:"100%",padding:"10px",borderRadius:99,border:"none",background:"rgba(123,104,238,0.15)",color:"#7b68ee",fontSize:13,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
                     💜 See support resources
                   </button>
@@ -14198,7 +14198,7 @@ function App(){
               {/* ── Growth summary line (when collapsed) ── */}
               {!insightSection.trends && latestW && latestW.pct !== null && (
                 <div style={{fontSize:12,color:C.lt,fontStyle:"italic",padding:"0 16px 4px"}}>
-                  {wTrend==="stable"?"Tracking well on growth curve":wTrend==="dropping"?"Worth discussing with your health visitor":"Growth trending upward"}
+                  {wTrend==="stable"?"Tracking well on growth curve":wTrend==="dropping"?"Worth discussing with your "+_doctor:"Growth trending upward"}
                 </div>
               )}
 
@@ -14803,7 +14803,7 @@ function App(){
                 const _isPurpleWindow = ageWeeks >= 4 && ageWeeks < 14;
 
                 const _normalQs = [
-                  {q:"Grunting and straining", a:"Very normal — especially in the first few weeks. Babies grunt when moving stool because they haven't yet learned to relax their pelvic floor. It's not pain, it's effort. If there's no stool after several days or baby seems distressed, mention it to your health visitor."},
+                  {q:"Grunting and straining", a:"Very normal — especially in the first few weeks. Babies grunt when moving stool because they haven't yet learned to relax their pelvic floor. It's not pain, it's effort. If there's no stool after several days or baby seems distressed, mention it to your "+_doctor+"."},
                   {q:"Sneezing constantly", a:"Completely normal. Babies sneeze to clear their tiny nasal passages. It doesn't mean they have a cold. Newborns are obligate nose-breathers so they sneeze often to keep the airway clear."},
                   {q:"Cross-eyed or eyes going in different directions", a:"Normal under 4 months. Eye muscles are still developing and it takes time for both eyes to track together. If it continues beyond 4 months or one eye is always turned in, mention it to your GP."},
                   {q:"Breathing fast then pausing", a:"This is called periodic breathing and is normal in newborns. Breathing may speed up, slow down, or pause for up to 10 seconds. If a pause lasts longer than 15-20 seconds or baby turns blue or pale, call 999."},
@@ -14812,7 +14812,7 @@ function App(){
                   {q:"Hiccups all the time", a:"Normal and harmless. The diaphragm is immature and easily triggered. Feed slowly and pause to wind if they happen during feeds. They stop on their own."},
                   {q:"Jerky movements or startle reflex", a:"Normal — this is the Moro reflex and all healthy newborns have it. Baby throws arms out when startled. It disappears around 3-4 months. Swaddling can help calm babies who startle themselves awake."},
                   {q:"Jaundice (yellow skin or eyes)", a:"Common in the first week — affects around 60% of newborns. Mild jaundice usually clears by 2 weeks. If baby looks very yellow, is difficult to wake for feeds, or jaundice appears in the first 24 hours after birth, contact your midwife or GP promptly."},
-                  {q:"Poo colour — green, yellow, black", a:"Black/dark green in first 2 days (meconium) is normal. Then changes to yellow/seedy (breastfed) or tan/yellow (formula). Green can be normal but if persistent with other symptoms, mention it to your health visitor. White, pale or chalky poo needs same-day GP attention."},
+                  {q:"Poo colour — green, yellow, black", a:"Black/dark green in first 2 days (meconium) is normal. Then changes to yellow/seedy (breastfed) or tan/yellow (formula). Green can be normal but if persistent with other symptoms, mention it to your "+_doctor+". White, pale or chalky poo needs same-day GP attention."},
                   {q:"Not focusing eyes or looking at me", a:"Normal under 6-8 weeks. Newborns can see clearly about 20-30cm — roughly the distance to your face during feeding. By 6-8 weeks they start making real eye contact and smiling."},
                   {q:"Cluster feeding — feeding constantly", a:"Completely normal, especially in evenings. Cluster feeding is not a sign of low milk supply — it's baby topping up, stimulating supply, and preparing for a longer stretch. It typically eases by 12 weeks."},
                 ];
@@ -15727,7 +15727,7 @@ function App(){
                 <div className="glass-card" style={{...card,padding:"4px 14px 8px",marginBottom:10}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 0 6px",borderBottom:`1px solid ${C.blush}`,marginBottom:2}}>
                     <span style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Due now · tap to mark achieved</span>
-                    <HelpBtn title="Milestones" body="Showing milestones for your baby's current age. Tap the circle to mark as achieved — it'll move to the Achieved section. Every baby develops at their own pace. If concerned, speak to your GP or health visitor."/>
+                    <HelpBtn title="Milestones" body="Showing milestones for your baby's current age. Tap the circle to mark as achieved — it'll move to the Achieved section. Every baby develops at their own pace. If concerned, speak to your " + _doctor + "."/>
                   </div>
                   {nowMsPending.length === 0
                     ? <div style={{textAlign:"center",padding:"18px 0",color:C.lt,fontSize:13}}>All caught up! No pending milestones for this age.</div>
@@ -15743,7 +15743,7 @@ function App(){
                 <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:12,padding:"12px 14px",marginTop:6,marginBottom:14}}>
                   <div style={{fontSize:11,color:C.mid,lineHeight:1.7}}>
                     <span style={{fontWeight:700,color:C.deep}}>ℹ️ A note on milestones</span><br/>
-                    Every baby develops at their own pace — these ranges are general guidelines. If you have concerns, speak to your GP or health visitor.
+                    Every baby develops at their own pace — these ranges are general guidelines. If you have concerns, speak to your {_doctor}.
                   </div>
                 </div>
                 </>
@@ -15814,7 +15814,7 @@ function App(){
               <div style={{background:"var(--card-bg-alt)",border:"1px solid var(--card-border)",borderRadius:12,padding:"12px 14px",marginBottom:4}}>
                 <div style={{fontSize:11,color:C.mid,lineHeight:1.7}}>
                   <span style={{fontWeight:700,color:C.deep}}>ℹ️ About this guidance</span><br/>
-                  Activities: NHS Start4Life developmental play guidance. Milestones: NHS developmental reviews framework. Growth: WHO Child Growth Standards. Every baby develops at their own pace — use these as inspiration, not a checklist. If you have concerns, speak to your GP or health visitor.
+                  Activities: NHS Start4Life developmental play guidance. Milestones: NHS developmental reviews framework. Growth: WHO Child Growth Standards. Every baby develops at their own pace — use these as inspiration, not a checklist. If you have concerns, speak to your {_doctor}.
                 </div>
               </div>
 
@@ -17110,7 +17110,7 @@ function App(){
               : paywallContext==="tomorrow" ? "Plan ahead with tomorrow's predicted schedule."
               : paywallContext==="growth" ? "See " + (babyName||"baby") + "'s growth on WHO percentile charts."
               : paywallContext==="partner" ? "Share tracking with your partner so you're both in sync."
-              : paywallContext==="export" ? "Export " + (babyName||"baby") + "'s data to share with your health visitor or GP."
+              : paywallContext==="export" ? "Export " + (babyName||"baby") + "'s data to share with your " + _doctor + "."
               : paywallContext==="trial" ? "Your free trial has ended. Keep the insights that help you understand " + (babyName||"baby") + "."
               : "Unlock personalised predictions, sleep intelligence, and insights based on " + (babyName||"baby") + "'s real data."}
             </div>
@@ -17242,7 +17242,7 @@ function App(){
                   {["6+ wet nappies in 24 hours","Baby is gaining weight","Baby seems satisfied after most feeds","You can hear swallowing during feeds","Breasts feel softer after feeds"].map((t,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>)}
                 </div>
                 <div style={{background:"rgba(212,168,85,0.06)",border:"1px solid rgba(212,168,85,0.2)",borderRadius:12,padding:"10px 12px"}}>
-                  <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>Speak to your health visitor if</div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>Speak to your {_doctor} if</div>
                   {["Fewer than 6 wet nappies a day","Baby not gaining weight","Every feed leaves baby unsettled","Significant pain during every feed"].map((t,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>)}
                 </div>
               </div>
@@ -17255,7 +17255,7 @@ function App(){
                   <div style={{fontSize:12,fontWeight:700,color:C.gold,marginBottom:6}}>Signs during feeding</div>
                   {["Significant pain throughout feeds — not just at latch","Clicking sounds while feeding","Baby slips off breast frequently","Very long feeds without satisfaction","Poor weight gain despite frequent feeding","Baby cannot stick tongue past lower lip","Tongue looks heart-shaped when crying"].map((t,i)=><div key={i} style={{fontSize:12,color:C.mid,padding:"2px 0"}}>• {t}</div>)}
                 </div>
-                <div style={{padding:"10px 12px",borderRadius:12,background:"var(--card-bg-alt)",border:"1px solid "+C.blush,fontSize:12,color:C.mid,lineHeight:1.6}}>Ask your midwife, health visitor, or GP to check. Treatment (a simple snip called a frenotomy) can transform feeding. An IBCLC lactation consultant can also assess.</div>
+                <div style={{padding:"10px 12px",borderRadius:12,background:"var(--card-bg-alt)",border:"1px solid "+C.blush,fontSize:12,color:C.mid,lineHeight:1.6}}>Ask your midwife or {_doctor} to check. Treatment (a simple snip called a frenotomy) can transform feeding. An IBCLC lactation consultant can also assess.</div>
               </div>
             )}
             {bfHubSection==="help"&&(
