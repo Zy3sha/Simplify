@@ -1,9 +1,6 @@
 import Foundation
 import Capacitor
-
-#if canImport(ActivityKit)
 import ActivityKit
-#endif
 
 /// Manages Live Activities for active feed/sleep timers on the Lock Screen and Dynamic Island.
 @objc(OBLiveActivity)
@@ -19,11 +16,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func isAvailable(_ call: CAPPluginCall) {
         if #available(iOS 16.1, *) {
-            #if canImport(ActivityKit)
             call.resolve(["available": ActivityAuthorizationInfo().areActivitiesEnabled])
-            #else
-            call.resolve(["available": false])
-            #endif
         } else {
             call.resolve(["available": false])
         }
@@ -31,7 +24,6 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func start(_ call: CAPPluginCall) {
         if #available(iOS 16.1, *) {
-            #if canImport(ActivityKit)
             let type = call.getString("type") ?? "feed"
             let babyName = call.getString("babyName") ?? "Baby"
             let startTime = call.getDouble("startTime") ?? Date().timeIntervalSince1970 * 1000
@@ -49,18 +41,15 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             )
 
             do {
-                let activity = try Activity.request(
+                let act = try Activity<OBubbaTimerAttributes>.request(
                     attributes: attributes,
                     content: .init(state: state, staleDate: nil),
                     pushType: nil
                 )
-                call.resolve(["activityId": activity.id])
+                call.resolve(["activityId": act.id])
             } catch {
                 call.reject("Failed to start Live Activity: \(error.localizedDescription)")
             }
-            #else
-            call.reject("ActivityKit not available")
-            #endif
         } else {
             call.reject("Live Activities require iOS 16.1+")
         }
@@ -68,7 +57,6 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func update(_ call: CAPPluginCall) {
         if #available(iOS 16.1, *) {
-            #if canImport(ActivityKit)
             let elapsed = call.getInt("elapsed") ?? 0
             let side = call.getString("side")
 
@@ -79,14 +67,11 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             )
 
             Task {
-                for activity in Activity<OBubbaTimerAttributes>.activities {
-                    await activity.update(.init(state: state, staleDate: nil))
+                for act in Activity<OBubbaTimerAttributes>.activities {
+                    await act.update(.init(state: state, staleDate: nil))
                 }
                 call.resolve()
             }
-            #else
-            call.reject("ActivityKit not available")
-            #endif
         } else {
             call.reject("Live Activities require iOS 16.1+")
         }
@@ -94,16 +79,12 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func stop(_ call: CAPPluginCall) {
         if #available(iOS 16.1, *) {
-            #if canImport(ActivityKit)
             Task {
-                for activity in Activity<OBubbaTimerAttributes>.activities {
-                    await activity.end(nil, dismissalPolicy: .immediate)
+                for act in Activity<OBubbaTimerAttributes>.activities {
+                    await act.end(nil, dismissalPolicy: .immediate)
                 }
                 call.resolve()
             }
-            #else
-            call.resolve()
-            #endif
         } else {
             call.resolve()
         }
