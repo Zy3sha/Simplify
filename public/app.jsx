@@ -2653,24 +2653,25 @@ function App(){
 
   // ── Restore critical settings from native Preferences if localStorage is empty ──
   useEffect(()=>{
-    if(!window.OBNative) return;
-    (async () => {
+    // Delay to ensure native bridge is ready
+    const t = setTimeout(async () => {
       try {
-        // Only restore if localStorage appears wiped (no children data)
+        if(!window.OBNative || !window.OBNative.preferences) return;
         if (localStorage.getItem("children_v1")) return;
         const raw = await window.OBNative.preferences.get("obubba_critical_backup");
         if (!raw) return;
         const backup = JSON.parse(raw);
+        if (!backup || !backup.children_v1) return;
         console.log("[OBubba] Restoring settings from native backup");
         Object.entries(backup).forEach(([key, val]) => {
           if (val !== null && val !== undefined && !localStorage.getItem(key)) {
             localStorage.setItem(key, val);
           }
         });
-        // Reload to pick up restored data
         window.location.reload();
       } catch(e) { console.warn("[OBubba] Restore from backup failed:", e); }
-    })();
+    }, 3000);
+    return () => clearTimeout(t);
   },[]);
 
   useEffect(()=>{
