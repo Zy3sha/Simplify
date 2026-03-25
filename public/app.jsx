@@ -13664,14 +13664,7 @@ function App(){
                     else badgeVal=e.amount?fmtVol(e.amount,FU):null;
                   } else if(e.type==="nap"){
                     if(e._active || !e.end || e.start===e.end){
-                      const [_sh,_sm]=e.start?e.start.split(':').map(Number):[0,0];
-                      const _now=new Date();
-                      const startSec=_sh*3600+_sm*60;
-                      const nowSec=_now.getHours()*3600+_now.getMinutes()*60+_now.getSeconds();
-                      let elSec=nowSec-startSec; if(elSec<0)elSec+=86400;
-                      const elMin=Math.floor(elSec/60);
-                      const elS=elSec%60;
-                      badgeVal=elMin>0?(hm(elMin)+':'+String(elS).padStart(2,'0')+' ⏱'):elS+'s ⏱';
+                      badgeVal='ongoing ⏱';
                     } else {
                       const dur=e.start&&e.end?minDiff(e.start,e.end):0;
                       badgeVal=dur>0?hm(dur):null;
