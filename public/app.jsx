@@ -5691,6 +5691,358 @@ function App(){
     };
   }
 
+  // ══════════════════════════════════════════════════════════════════
+  // SLEEP CONSULTANT ENGINE — Three-Drive Model
+  // Acute sleep pressure + Chronic sleep debt + Circadian alignment
+  // Sources: AASM, NHS, Lullaby Trust, WHO, Journal of Sleep Research
+  // ══════════════════════════════════════════════════════════════════
+
+  // ── AASM Sleep Ranges (evidence-based, not single targets) ──
+  function getAASMRange(ageWeeks) {
+    const m = ageWeeks / 4.33;
+    if (m < 4)  return { min: 14, max: 17, label: "14–17h" };    // 0-3mo: no AASM rec, use NHS/consensus
+    if (m < 12) return { min: 12, max: 16, label: "12–16h" };    // 4-12mo: AASM
+    if (m < 24) return { min: 11, max: 14, label: "11–14h" };    // 1-2yr: AASM
+    if (m < 60) return { min: 10, max: 13, label: "10–13h" };    // 3-5yr: AASM
+    return { min: 9, max: 12, label: "9–12h" };
+  }
+
+  // ── PHASE 1: Sleep Budget Dashboard ──
+  // Returns complete 24h sleep budget with day/night split, AASM comparison, and 7-day trend
+  function sleepBudgetDashboard() {
+    if (!age) return null;
+    const w = age.totalWeeks;
+    const name = babyName || "Baby";
+    const aasm = getAASMRange(w);
+    const dayRange = getExpectedDaySleepRange(w);
+    const recent = getResolvedRecentDays(days, selDay, 7);
+    if (recent.length < 2) return null;
+
+    const dailyData = recent.map(rd => {
+      const entries = rd.entries;
+      const naps = entries.filter(e => e.type === "nap" && !e.night);
+      const napMins = naps.reduce((s, n) => s + minDiff(n.start, n.end), 0);
+      const napCount = naps.length;
+      const bedEntry = entries.find(e => e.type === "sleep" && !e.night);
+      const wakeEntry = entries.find(e => e.type === "wake" && !e.night);
+
+      // Night sleep: bedtime to next morning wake
+      let nightMins = 0;
+      if (bedEntry) {
+        try {
+          const nextDayEntries = resolveHistoricalDay(nextCalDay(rd.dayKey), days);
+          const nextWake = nextDayEntries.find(e => e.type === "wake" && !e.night);
+          if (nextWake) {
+            const [bh, bm] = bedEntry.time.split(":").map(Number);
+            const [wh, wm] = nextWake.time.split(":").map(Number);
+            nightMins = (wh * 60 + wm + 1440) - (bh * 60 + bm);
+            if (nightMins > 1440) nightMins -= 1440;
+            if (nightMins > 840) nightMins = 720; // cap at 14h (sanity)
+          }
+        } catch {}
+      }
+
+      // Night wakes
+      const nightWakes = entries.filter(e => e.night).length;
+
+      const totalMins = napMins + nightMins;
+      return {
+        dayKey: rd.dayKey,
+        napMins, nightMins, totalMins,
+        totalHrs: Math.round(totalMins / 6) / 10,
+        napCount, nightWakes,
+        isComplete: !!bedEntry && !!wakeEntry
+      };
+    }).filter(d => d.isComplete);
+
+    if (dailyData.length < 2) return null;
+
+    // Averages
+    const avgTotal = Math.round(dailyData.reduce((s, d) => s + d.totalHrs, 0) / dailyData.length * 10) / 10;
+    const avgDay = Math.round(dailyData.reduce((s, d) => s + d.napMins, 0) / dailyData.length);
+    const avgNight = Math.round(dailyData.reduce((s, d) => s + d.nightMins, 0) / dailyData.length);
+    const avgNightWakes = Math.round(dailyData.reduce((s, d) => s + d.nightWakes, 0) / dailyData.length * 10) / 10;
+
+    // AASM comparison
+    const withinRange = avgTotal >= aasm.min && avgTotal <= aasm.max;
+    const belowRange = avgTotal < aasm.min;
+    const aboveRange = avgTotal > aasm.max;
+
+    // Day sleep status
+    const dayWithinRange = avgDay >= dayRange.min && avgDay <= dayRange.max;
+    const dayTooMuch = avgDay > dayRange.max;
+    const dayTooLittle = avgDay < dayRange.min;
+
+    // Chronic sleep debt: consecutive days below AASM minimum
+    const debtDays = dailyData.filter(d => d.totalHrs < aasm.min - 0.3).length;
+    const hasChronicDebt = debtDays >= 3;
+
+    // 7-day trend: is total sleep improving or declining?
+    let trend = "stable";
+    if (dailyData.length >= 4) {
+      const firstHalf = dailyData.slice(0, Math.floor(dailyData.length / 2));
+      const secondHalf = dailyData.slice(Math.floor(dailyData.length / 2));
+      const firstAvg = firstHalf.reduce((s, d) => s + d.totalHrs, 0) / firstHalf.length;
+      const secondAvg = secondHalf.reduce((s, d) => s + d.totalHrs, 0) / secondHalf.length;
+      if (secondAvg > firstAvg + 0.3) trend = "improving";
+      else if (secondAvg < firstAvg - 0.3) trend = "declining";
+    }
+
+    // Day/night split ratio
+    const totalAvgMins = avgDay + avgNight;
+    const dayPercent = totalAvgMins > 0 ? Math.round((avgDay / totalAvgMins) * 100) : 0;
+    const nightPercent = 100 - dayPercent;
+
+    return {
+      name, aasm, dayRange,
+      avgTotal, avgDay, avgNight, avgNightWakes,
+      dailyData,
+      withinRange, belowRange, aboveRange,
+      dayWithinRange, dayTooMuch, dayTooLittle,
+      hasChronicDebt, debtDays,
+      trend,
+      dayPercent, nightPercent,
+      // Summary line for hero card / quick display
+      summary: withinRange
+        ? `${name}'s total sleep (${avgTotal}h) is within the healthy range for this age`
+        : belowRange
+          ? `${name}'s total sleep (${avgTotal}h) is below the typical ${aasm.label} range — consider an earlier bedtime`
+          : `${name}'s total sleep (${avgTotal}h) is above typical — this is often fine but check nap lengths aren't stealing from night sleep`
+    };
+  }
+
+  // ── PHASE 2: Three-Drive Sleep Pressure Model ──
+  // Returns current state of all three sleep drives
+  function threeDriveSleepModel() {
+    if (!age) return null;
+    const w = age.totalWeeks;
+    const name = babyName || "Baby";
+    const ww = getWakeWindow(w);
+    const now = new Date();
+    const nowM = now.getHours() * 60 + now.getMinutes();
+
+    // ── Drive 1: Acute Sleep Pressure (adenosine) ──
+    const todayEntries = resolvedDay.entries;
+    const naps = todayEntries.filter(e => e.type === "nap" && !e.night);
+    const morningWake = todayEntries.find(e => e.type === "wake" && !e.night);
+    const lastNapEnd = naps.length > 0 ? Math.max(...naps.map(n => {
+      try { const [h, m] = n.end.split(":").map(Number); return h * 60 + m; } catch { return 0; }
+    })) : null;
+    const wakeTime = morningWake ? timeVal(morningWake) : null;
+    const lastSleep = lastNapEnd || wakeTime;
+    const awakeMin = lastSleep !== null ? Math.max(0, nowM - lastSleep) : 0;
+
+    let acutePressure = "unknown";
+    let acuteScore = 50;
+    if (lastSleep !== null) {
+      const ratio = awakeMin / ww.max;
+      if (ratio < 0.5) { acutePressure = "low"; acuteScore = 20; }
+      else if (ratio < 0.8) { acutePressure = "building"; acuteScore = 50; }
+      else if (ratio < 1.0) { acutePressure = "ready"; acuteScore = 75; }
+      else if (ratio < 1.15) { acutePressure = "high"; acuteScore = 90; }
+      else { acutePressure = "overtired"; acuteScore = 100; }
+    }
+
+    // ── Drive 2: Chronic Sleep Debt ──
+    const budget = sleepBudgetDashboard();
+    let chronicPressure = "none";
+    let chronicScore = 0;
+    if (budget) {
+      if (budget.hasChronicDebt) { chronicPressure = "accumulated"; chronicScore = 80; }
+      else if (budget.belowRange) { chronicPressure = "building"; chronicScore = 50; }
+      else { chronicPressure = "none"; chronicScore = 10; }
+    }
+
+    // ── Drive 3: Circadian Alignment ──
+    const circ = circadianAnalysis();
+    let circadianState = "unknown";
+    let circadianScore = 50;
+    if (circ) {
+      if (!circ.isDrifted) { circadianState = "aligned"; circadianScore = 90; }
+      else if (Math.abs(circ.adjustment) <= 30) { circadianState = "slightly_drifted"; circadianScore = 60; }
+      else { circadianState = "drifted"; circadianScore = 30; }
+    }
+
+    // ── Combined interpretation ──
+    const combinedScore = Math.round((acuteScore * 0.5 + chronicScore * 0.3 + (100 - circadianScore) * 0.2));
+    let overallState, overallMessage;
+    if (combinedScore < 30) {
+      overallState = "rested";
+      overallMessage = `${name} is well-rested right now`;
+    } else if (combinedScore < 55) {
+      overallState = "normal";
+      overallMessage = `Sleep pressure is building normally`;
+    } else if (combinedScore < 75) {
+      overallState = "ready";
+      overallMessage = `${name} is getting ready for sleep`;
+    } else {
+      overallState = "high";
+      overallMessage = `Sleep pressure is high — ${name} needs sleep soon`;
+    }
+
+    return {
+      acute: { pressure: acutePressure, score: acuteScore, awakeMin, wwMax: ww.max },
+      chronic: { pressure: chronicPressure, score: chronicScore, debt: budget?.hasChronicDebt ? budget.debtDays : 0 },
+      circadian: { state: circadianState, score: circadianScore, driftMin: circ?.adjustment || 0 },
+      combined: { score: combinedScore, state: overallState, message: overallMessage }
+    };
+  }
+
+  // ── PHASE 2: Advanced Pattern Detection ──
+  // Detects: catnapping, early waking, split nights, overtired cascade, nap transition readiness
+  function advancedSleepPatterns() {
+    if (!age) return [];
+    const w = age.totalWeeks;
+    const name = babyName || "Baby";
+    const ww = getWakeWindow(w);
+    const patterns = [];
+    const recent = getResolvedRecentDays(days, selDay, 7);
+    if (recent.length < 3) return patterns;
+
+    // ── Catnapping: all naps <45min for 3+ days ──
+    const catnapDays = recent.filter(rd => {
+      const naps = rd.entries.filter(e => e.type === "nap" && !e.night && e.start && e.end);
+      return naps.length >= 2 && naps.every(n => minDiff(n.start, n.end) < 45);
+    }).length;
+    if (catnapDays >= 3) {
+      const isNormal = w < 22; // under 5 months catnapping is normal
+      patterns.push({
+        type: "catnapping",
+        priority: isNormal ? 3 : 1,
+        icon: "😴",
+        title: isNormal ? "Short naps are normal at this age" : "Catnapping pattern detected",
+        detail: isNormal
+          ? `${name} is catnapping (all naps under 45min) on ${catnapDays} of the last ${recent.length} days. Before 5 months this is completely normal — nap cycles haven't matured yet. By 5-6 months, at least one nap usually starts to lengthen.`
+          : `${name} has taken only short naps (<45min) on ${catnapDays} of the last ${recent.length} days. After 5 months, this often points to: the room being too light, wake windows being slightly off, or a sleep association (needing help to connect sleep cycles).`,
+        action: isNormal
+          ? "No action needed — enjoy the frequent feeding windows between naps"
+          : "Try making the room completely dark, check wake windows match " + name + "'s rhythm, and give 5 minutes before responding to a nap wake"
+      });
+    }
+
+    // ── Early Morning Waking: before 6am for 5+ of 7 days ──
+    const earlyWakes = recent.filter(rd => {
+      const wake = rd.entries.find(e => e.type === "wake" && !e.night && e.time);
+      if (!wake) return false;
+      try { const [h] = wake.time.split(":").map(Number); return h < 6; } catch { return false; }
+    }).length;
+    if (earlyWakes >= 5) {
+      // Check first nap time
+      const firstNapTimes = recent.map(rd => {
+        const nap = rd.entries.filter(e => e.type === "nap" && !e.night).sort((a, b) => timeVal(a) - timeVal(b))[0];
+        if (!nap || !nap.start) return null;
+        try { const [h, m] = nap.start.split(":").map(Number); return h * 60 + m; } catch { return null; }
+      }).filter(Boolean);
+      const avgFirstNap = firstNapTimes.length ? Math.round(firstNapTimes.reduce((a, b) => a + b, 0) / firstNapTimes.length) : null;
+      const firstNapTooEarly = avgFirstNap !== null && avgFirstNap < 8 * 60; // before 8am
+
+      patterns.push({
+        type: "early_waking",
+        priority: 1,
+        icon: "🌅",
+        title: "Early morning waking pattern",
+        detail: `${name} has woken before 6am on ${earlyWakes} of the last ${recent.length} days.` +
+          (firstNapTooEarly ? ` The first nap is also early (before 8am) which can reinforce the pattern.` : "") +
+          ` Common causes: light in the room, too much day sleep, or bedtime too early.`,
+        action: firstNapTooEarly
+          ? "Try pushing the first nap to after 8am (even if " + name + " seems tired) — this helps reset the body clock. Keep the room completely dark until desired wake time."
+          : "Check for light leaks in the room. If total day sleep is high, try capping the last nap. Treat any wake before 6am as a night wake — dark room, minimal interaction."
+      });
+    }
+
+    // ── Split Nights: mid-night wake >45min, 3+ of 7 days ──
+    const splitNightDays = recent.filter(rd => {
+      const nightEntries = rd.entries.filter(e => e.night);
+      return nightEntries.some(e => {
+        const dur = e.duration || e.assistedDuration || 0;
+        return dur >= 45;
+      });
+    }).length;
+    if (splitNightDays >= 3) {
+      const budget = sleepBudgetDashboard();
+      const likelyUndertired = budget && budget.aboveRange;
+      patterns.push({
+        type: "split_nights",
+        priority: 1,
+        icon: "🌙",
+        title: "Split night pattern",
+        detail: `${name} has been awake for 45+ minutes in the middle of the night on ${splitNightDays} of the last ${recent.length} days. ` +
+          (likelyUndertired
+            ? `Total sleep is above the AASM range — ${name} may be getting too much day sleep, leaving less sleep pressure for the night.`
+            : `This can happen when overtired (cortisol keeps the brain alert) or during a developmental phase.`),
+        action: likelyUndertired
+          ? "Try reducing total day sleep by 15-20min (cap the longest nap). This should shift sleep pressure back to night."
+          : "Maintain a calm, dark, boring environment during the wake. Avoid screens or stimulation. An earlier bedtime can sometimes help by reducing overtiredness."
+      });
+    }
+
+    // ── Overtired Cascade: short naps → early bed → early wake → repeat ──
+    if (recent.length >= 4) {
+      const cascadeDays = recent.filter(rd => {
+        const naps = rd.entries.filter(e => e.type === "nap" && !e.night && e.start && e.end);
+        const avgDur = naps.length ? naps.reduce((s, n) => s + minDiff(n.start, n.end), 0) / naps.length : 999;
+        const bed = rd.entries.find(e => e.type === "sleep" && !e.night);
+        const earlyBed = bed && bed.time ? (() => { try { const [h] = bed.time.split(":").map(Number); return h < 19; } catch { return false; } })() : false;
+        return avgDur < 35 && earlyBed;
+      }).length;
+      if (cascadeDays >= 3) {
+        patterns.push({
+          type: "overtired_cascade",
+          priority: 1,
+          icon: "🔄",
+          title: "Overtired cycle detected",
+          detail: `${name} is in an overtired cycle: short naps lead to early bedtime, which leads to early waking, which leads to more short naps. This is common and fixable.`,
+          action: "Break the cycle: offer a rescue nap (even 20min in the pram/car), keep wake windows short, and aim for a bedtime that's early but not before 6:30pm. It usually takes 2-3 days of extra sleep opportunities to reset."
+        });
+      }
+    }
+
+    // ── Celebration: Personal bests and improvements ──
+    const celebrations = [];
+    if (recent.length >= 5) {
+      // Longest stretch improvement
+      const recentStretches = recent.slice(-3).map(rd => {
+        const nw = getNightWindows(rd.entries, []);
+        return nw.length ? Math.max(...nw.map(w2 => w2.mins)) : 0;
+      }).filter(v => v > 0);
+      const olderStretches = recent.slice(0, -3).map(rd => {
+        const nw = getNightWindows(rd.entries, []);
+        return nw.length ? Math.max(...nw.map(w2 => w2.mins)) : 0;
+      }).filter(v => v > 0);
+      if (recentStretches.length && olderStretches.length) {
+        const recentBest = Math.max(...recentStretches);
+        const olderBest = Math.max(...olderStretches);
+        if (recentBest > olderBest + 30) {
+          celebrations.push({ icon: "🎉", text: `Longest stretch improved to ${hm(recentBest)} — new personal best!` });
+        }
+      }
+
+      // Night wakes improving
+      const recentWakes = recent.slice(-3).map(rd => rd.entries.filter(e => e.night).length);
+      const olderWakes = recent.slice(0, -3).map(rd => rd.entries.filter(e => e.night).length);
+      const avgRecentWakes = recentWakes.length ? recentWakes.reduce((a, b) => a + b, 0) / recentWakes.length : 0;
+      const avgOlderWakes = olderWakes.length ? olderWakes.reduce((a, b) => a + b, 0) / olderWakes.length : 0;
+      if (avgRecentWakes < avgOlderWakes - 0.5 && avgOlderWakes > 1) {
+        celebrations.push({ icon: "⭐", text: `Night wakes trending down: ${Math.round(avgOlderWakes * 10) / 10} → ${Math.round(avgRecentWakes * 10) / 10}/night` });
+      }
+
+      // Bedtime consistency
+      const bedtimes = recent.map(rd => {
+        const bed = rd.entries.find(e => e.type === "sleep" && !e.night && e.time);
+        if (!bed) return null;
+        try { const [h, m] = bed.time.split(":").map(Number); return h * 60 + m; } catch { return null; }
+      }).filter(Boolean);
+      if (bedtimes.length >= 5) {
+        const spread = Math.max(...bedtimes) - Math.min(...bedtimes);
+        if (spread <= 20) {
+          celebrations.push({ icon: "🏆", text: "Bedtime within 20min all week — excellent consistency!" });
+        }
+      }
+    }
+
+    return { patterns, celebrations };
+  }
+
     // 1 & 2. Circadian rhythm detection + gradual adjustment
   // ── Sleep Intelligence: Pattern Detection ──
   function detectSleepPatterns() {
