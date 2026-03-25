@@ -10960,9 +10960,9 @@ function App(){
     // ═══ SCHEDULE MAKER — builds optimal day around a fixed event ═══
   function buildScheduleAroundEvent(eventTimeMins, eventLabel, eventDurMins) {
     // AWAKE event: baby must be awake during this window.
-    // Strategy: nap ends (or morning wake) shortly before event so baby
-    // wakes fresh, then next nap starts after the event ends — both
-    // fitting comfortably within age-appropriate wake windows.
+    // Strategy: anchor to the event. Work backwards to place a nap ending
+    // ~10-15min before the event (baby wakes fresh), then work backwards
+    // from there for earlier naps. Work forwards from event end for later naps.
     if (!age) return null;
     const w = age.totalWeeks;
     const ww = getWakeWindow(w);
@@ -10970,9 +10970,10 @@ function App(){
     const napCount = profile.expectedNaps;
     const mtp = m => {const h=Math.floor(((m%1440)+1440)%1440/60);const mm=((m%60)+60)%60;return `${String(h).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;};
 
-    // Personal averages from last 7 days
+    // Personal averages from last 7 days — including actual wake windows
     const dk = Object.keys(days).sort().slice(-7);
     let avgNapDur = 50, avgWakeMins = 7*60, avgBedMins = 19*60;
+    const personalWWs = []; // actual observed wake windows from logged data
     if (dk.length >= 3) {
       const napDurs = [], wakes = [], beds = [];
       dk.forEach(d => {
@@ -10982,6 +10983,23 @@ function App(){
         if(wake){const[hh,mm]=wake.time.split(":").map(Number);wakes.push(hh*60+mm);}
         const bed = entries.find(e=>e.type==="sleep"&&!e.night);
         if(bed){const[hh,mm]=bed.time.split(":").map(Number);beds.push(hh*60+mm);}
+        // Calculate actual wake windows: time from wake/nap-end to next nap-start/bed
+        const dayTimeline = [];
+        if(wake){const[h2,m2]=wake.time.split(":").map(Number);dayTimeline.push({type:"awake",mins:h2*60+m2});}
+        entries.filter(e=>e.type==="nap"&&!e.night&&e.start&&e.end).sort((a,b)=>timeVal(a)-timeVal(b)).forEach(n=>{
+          const[sh,sm]=n.start.split(":").map(Number);
+          const[eh,em]=n.end.split(":").map(Number);
+          dayTimeline.push({type:"nap_start",mins:sh*60+sm});
+          dayTimeline.push({type:"awake",mins:eh*60+em});
+        });
+        if(bed){const[h2,m2]=bed.time.split(":").map(Number);dayTimeline.push({type:"sleep",mins:h2*60+m2});}
+        dayTimeline.sort((a,b)=>a.mins-b.mins);
+        for(let t=0;t<dayTimeline.length;t++){
+          if(dayTimeline[t].type==="awake"){
+            const next=dayTimeline.find((x,k)=>k>t&&(x.type==="nap_start"||x.type==="sleep"));
+            if(next){const gap=next.mins-dayTimeline[t].mins;if(gap>=15&&gap<=400)personalWWs.push(gap);}
+          }
+        }
       });
       if(napDurs.length) avgNapDur = Math.round(napDurs.reduce((a,b)=>a+b,0)/napDurs.length);
       if(wakes.length) avgWakeMins = Math.round(wakes.reduce((a,b)=>a+b,0)/wakes.length);
@@ -10991,101 +11009,141 @@ function App(){
     const eventEnd = eventTimeMins + (eventDurMins || 60);
     const warnings = [];
 
-    // Build the full day forward from wake, placing naps at age-appropriate
-    // wake windows. The nap closest before the event must END so baby wakes
-    // with enough margin. The nap after event starts after event ends.
+    // Use baby's PERSONAL wake window if we have enough data, otherwise age guideline
+    let personalWW = null;
+    if (personalWWs.length >= 3) {
+      personalWWs.sort((a,b) => a - b);
+      const p25 = personalWWs[Math.floor(personalWWs.length * 0.25)];
+      const p75 = personalWWs[Math.floor(personalWWs.length * 0.75)];
+      const pMed = personalWWs[Math.floor(personalWWs.length * 0.5)];
+      personalWW = { min: p25, max: p75, midpoint: pMed };
+    }
+    // Blend: use personal WW if available, constrained by age floor/ceiling
+    const effectiveWW = personalWW ? {
+      min: Math.max(Math.min(personalWW.min, ww.max), 15),
+      max: Math.max(Math.min(personalWW.max, ww.max + 30), personalWW.min + 15),
+      midpoint: personalWW.midpoint
+    } : ww;
+    const wwMid = effectiveWW.midpoint || Math.round((effectiveWW.min + effectiveWW.max) / 2);
+
+    // ── ANCHOR-BASED APPROACH ──
+    // 1. Place a nap ending 10-15min before event (baby wakes fresh)
+    // 2. Work backwards for earlier naps using age-appropriate WW
+    // 3. Derive wake time from earliest nap
+    // 4. Work forwards from event end for remaining naps
+    // 5. Derive bedtime from last nap
+
+    // Try different "anchor nap" positions (which nap number ends before event)
     const bestCandidates = [];
 
-    for (let shift = -30; shift <= 30; shift += 5) {
-      const wake = clampWake(avgWakeMins + shift);
-      const sched = [{type:"wake", mins:wake, label:"Wake up"}];
-      let cursor = wake;
-      let totalPenalty = 0;
+    // Personal progressive WW: scales from effectiveWW.min (first WW) to effectiveWW.max (last WW)
+    const personalProgWW = (napIdx, total) => {
+      if (total <= 1) return wwMid;
+      const ratio = Math.min(napIdx / total, 1);
+      return Math.round(effectiveWW.min + (effectiveWW.max - effectiveWW.min) * ratio);
+    };
 
-      for (let i = 0; i < napCount; i++) {
-        const wwLen = clampWakeWindow(progressiveWW(w, i, napCount), w);
-        let napStart = cursor + wwLen;
-        let napEnd = napStart + avgNapDur;
+    for (let anchorIdx = 0; anchorIdx < napCount; anchorIdx++) {
+      // The nap at anchorIdx ends just before the event
+      const anchorNapEnd = eventTimeMins - 10; // baby wakes 10min before event
+      const anchorNapStart = anchorNapEnd - avgNapDur;
 
-        // If this nap overlaps the event, adjust it
-        if (napStart < eventEnd && napEnd > eventTimeMins) {
-          // Option A: end nap before event (baby wakes fresh for event)
-          const endBefore = eventTimeMins - 10; // 10min buffer to get ready
-          const startBefore = endBefore - avgNapDur;
-          const wwToBefore = startBefore - cursor;
+      // Build backwards from anchor nap for earlier naps
+      const preNaps = [];
+      preNaps.push({ start: anchorNapStart, end: anchorNapEnd, idx: anchorIdx });
 
-          // Option B: start nap after event
-          const startAfter = eventEnd + 10;
-          const wwToAfter = startAfter - cursor;
-
-          if (wwToBefore >= ww.min - 10 && wwToBefore <= ww.max + 10) {
-            // Nap ends just before event — ideal!
-            napStart = startBefore;
-            napEnd = endBefore;
-            totalPenalty += Math.abs(wwToBefore - wwLen);
-          } else if (wwToAfter >= ww.min - 10 && wwToAfter <= ww.max + 10) {
-            // Nap starts after event
-            napStart = startAfter;
-            napEnd = startAfter + avgNapDur;
-            totalPenalty += Math.abs(wwToAfter - wwLen);
-          } else {
-            // Neither fits well — skip this nap or shorten it
-            const shortened = eventTimeMins - 15;
-            if (shortened - cursor >= ww.min - 10) {
-              napStart = shortened - Math.min(avgNapDur, 30);
-              napEnd = shortened;
-              totalPenalty += 30;
-            } else {
-              // Skip nap — too tight
-              totalPenalty += 60;
-              continue;
-            }
-          }
-        }
-
-        if (napStart > 17*60+30) break;
-        sched.push({type:"nap_start", mins:napStart, label:`Nap ${i+1} start`});
-        sched.push({type:"nap_end", mins:napEnd, label:`Nap ${i+1} end`});
-        cursor = napEnd;
+      let backCursor = anchorNapStart;
+      for (let i = anchorIdx - 1; i >= 0; i--) {
+        const wwBack = personalProgWW(i + 1, napCount);
+        const prevEnd = backCursor - wwBack;
+        const prevStart = prevEnd - avgNapDur;
+        if (prevStart < 4 * 60) break; // too early
+        preNaps.unshift({ start: prevStart, end: prevEnd, idx: i });
+        backCursor = prevStart;
       }
 
-      sched.push({type:"event", mins:eventTimeMins, label:eventLabel||"Event", endMins:eventEnd});
-      const bedWW = clampWakeWindow(progressiveWW(w, napCount, napCount), w);
-      sched.push({type:"bed", mins:clampBedtime(cursor + bedWW), label:"Bedtime"});
+      // Wake time: first WW before earliest nap
+      const ww0 = personalProgWW(0, napCount);
+      const earliestNap = preNaps[0];
+      const wakeTime = clampWake(earliestNap.start - ww0);
 
-      // Score: penalise wake window violations
-      let wwPenalty = 0;
-      const sorted = sched.filter(s=>s.type==="wake"||s.type==="nap_end"||s.type==="nap_start"||s.type==="bed").sort((a,b)=>a.mins-b.mins);
-      for (let j = 0; j < sorted.length; j++) {
-        const s = sorted[j];
+      // Build forwards from event end for remaining naps
+      const postNaps = [];
+      let fwdCursor = eventEnd;
+      for (let i = anchorIdx + 1; i < napCount; i++) {
+        const wwFwd = personalProgWW(i, napCount);
+        const napStart = fwdCursor + wwFwd;
+        if (napStart > 17 * 60 + 30) break;
+        const napEnd = napStart + avgNapDur;
+        postNaps.push({ start: napStart, end: napEnd, idx: i });
+        fwdCursor = napEnd;
+      }
+
+      // Bedtime
+      const bedWW = personalProgWW(napCount, napCount);
+      const lastNapEnd = postNaps.length ? postNaps[postNaps.length - 1].end : anchorNapEnd;
+      // If event ends after anchor nap, bedtime WW counts from event end
+      const bedCursor = Math.max(lastNapEnd, eventEnd);
+      const bedtime = clampBedtime(bedCursor + bedWW);
+
+      // Assemble schedule
+      const sched = [{ type: "wake", mins: wakeTime, label: "Wake up" }];
+      const allNaps = [...preNaps, ...postNaps];
+      allNaps.forEach(n => {
+        sched.push({ type: "nap_start", mins: n.start, label: `Nap ${n.idx + 1} start` });
+        sched.push({ type: "nap_end", mins: n.end, label: `Nap ${n.idx + 1} end` });
+      });
+      sched.push({ type: "event", mins: eventTimeMins, label: eventLabel || "Event", endMins: eventEnd });
+      sched.push({ type: "bed", mins: bedtime, label: "Bedtime" });
+
+      // Score: check all wake windows are age-appropriate
+      let penalty = 0;
+      const timeline = sched.filter(s => s.type === "wake" || s.type === "nap_end" || s.type === "nap_start" || s.type === "bed")
+        .sort((a, b) => a.mins - b.mins);
+
+      for (let j = 0; j < timeline.length; j++) {
+        const s = timeline[j];
         if (s.type === "wake" || s.type === "nap_end") {
-          const next = sorted.find((n,k) => k > j && (n.type === "nap_start" || n.type === "bed"));
+          const next = timeline.find((n, k) => k > j && (n.type === "nap_start" || n.type === "bed"));
           if (next) {
             const gap = next.mins - s.mins;
-            if (gap > ww.max + 15) wwPenalty += (gap - ww.max) * 2;
-            if (gap < ww.min - 15) wwPenalty += (ww.min - gap) * 2;
+            // Penalise violations — heavily for over max, moderately for under min
+            if (gap > effectiveWW.max + 10) penalty += (gap - effectiveWW.max) * 3;
+            else if (gap < effectiveWW.min - 10) penalty += (effectiveWW.min - gap) * 3;
+            else penalty += Math.abs(gap - wwMid); // slight preference for midpoint
           }
         }
       }
 
-      bestCandidates.push({ sched, wake, penalty: totalPenalty + wwPenalty });
+      // Penalise unrealistic wake times
+      penalty += Math.abs(wakeTime - avgWakeMins) * 0.5;
+      // Penalise if wake is before 5am or naps before 5am
+      if (wakeTime < 5 * 60) penalty += 500;
+      if (allNaps.some(n => n.start < 5 * 60)) penalty += 500;
+      // Penalise fewer naps than expected
+      penalty += (napCount - allNaps.length) * 100;
+
+      bestCandidates.push({ sched, wake: wakeTime, penalty, napTotal: allNaps.length });
     }
 
     // Pick best candidate (lowest penalty)
-    bestCandidates.sort((a,b) => a.penalty - b.penalty);
+    bestCandidates.sort((a, b) => a.penalty - b.penalty);
     const best = bestCandidates[0];
-    const sched = best.sched;
-    sched.sort((a,b) => a.mins - b.mins);
+    if (!best) return null;
 
-    // Validate and warn about any remaining wake window issues
-    const sorted2 = sched.filter(s=>s.type==="wake"||s.type==="nap_end"||s.type==="nap_start"||s.type==="bed").sort((a,b)=>a.mins-b.mins);
-    for (let j = 0; j < sorted2.length; j++) {
-      const s = sorted2[j];
+    const sched = best.sched;
+    sched.sort((a, b) => a.mins - b.mins);
+
+    // Validate and warn
+    const timeline2 = sched.filter(s => s.type === "wake" || s.type === "nap_end" || s.type === "nap_start" || s.type === "bed")
+      .sort((a, b) => a.mins - b.mins);
+    for (let j = 0; j < timeline2.length; j++) {
+      const s = timeline2[j];
       if (s.type === "wake" || s.type === "nap_end") {
-        const next = sorted2.find((n,k) => k > j && (n.type === "nap_start" || n.type === "bed"));
+        const next = timeline2.find((n, k) => k > j && (n.type === "nap_start" || n.type === "bed"));
         if (next) {
           const gap = next.mins - s.mins;
-          if (gap > ww.max + 20) warnings.push(`Wake window of ${hm(gap)} is longer than ideal (${hm(ww.max)} max)`);
+          if (gap > effectiveWW.max + 20) warnings.push(`Wake window of ${hm(gap)} is longer than ideal (${hm(effectiveWW.max)} max)`);
         }
       }
     }
@@ -11107,7 +11165,7 @@ function App(){
       adjustMins: adjustment,
       eventLabel: eventLabel || "Event",
       eventTime: fmt12(mtp(eventTimeMins)),
-      napCount: formatted.filter(s=>s.type==="nap_start").length,
+      napCount: formatted.filter(s => s.type === "nap_start").length,
       warnings
     };
   }
