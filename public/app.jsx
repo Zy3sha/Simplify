@@ -11018,11 +11018,12 @@ function App(){
       const pMed = personalWWs[Math.floor(personalWWs.length * 0.5)];
       personalWW = { min: p25, max: p75, midpoint: pMed };
     }
-    // Blend: use personal WW if available, constrained by age floor/ceiling
+    // Blend: use personal WW if available. Guideline max is the HARD CEILING —
+    // never show a wake window longer than the age-appropriate guideline.
     const effectiveWW = personalWW ? {
       min: Math.max(Math.min(personalWW.min, ww.max), 15),
-      max: Math.max(Math.min(personalWW.max, ww.max + 30), personalWW.min + 15),
-      midpoint: personalWW.midpoint
+      max: Math.min(Math.max(personalWW.max, personalWW.min + 15), ww.max),
+      midpoint: Math.min(personalWW.midpoint, ww.max)
     } : ww;
     const wwMid = effectiveWW.midpoint || Math.round((effectiveWW.min + effectiveWW.max) / 2);
 
