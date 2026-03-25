@@ -3425,6 +3425,39 @@ function App(){
       }
     } catch(e) { console.warn("child_code_map lookup error", e); }
 
+    // Fallback: query child_syncs directly for any existing code for this child.
+    // This handles codes created before child_code_map was added (legacy codes).
+    try {
+      const {collection, query, where, getDocs, limit} = window._fb;
+      const q = query(
+        collection(db, "child_syncs"),
+        where("childId", "==", childId),
+        where("ownerUid", "==", window._fbUid || ""),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if(!snap.empty) {
+        const existingDoc = snap.docs[0];
+        const existingCode = existingDoc.id;
+        const existingData = existingDoc.data();
+        if(!existingData.replacedBy) {
+          // Found a legacy code — restore it and backfill child_code_map
+          setChildSyncCodes(prev => ({...prev, [childId]: existingCode}));
+          subscribeToChildSync(childId, existingCode);
+          // Backfill child_code_map so we don't need this query next time
+          try {
+            await setDoc(doc(db, "child_code_map", childId), {
+              code: existingCode,
+              ownerUid: window._fbUid || "",
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+          } catch(e2) { console.warn("child_code_map backfill error", e2); }
+          return existingCode;
+        }
+      }
+    } catch(e) { console.warn("child_syncs fallback query error", e); }
+
     // No existing stable code found — generate a new one
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     let code, exists = true;

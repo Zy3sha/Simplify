@@ -1,6 +1,6 @@
 // ── Firebase SDK Initialization ──
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, collection, addDoc, getDocs, deleteDoc, query, orderBy }
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, collection, addDoc, getDocs, deleteDoc, query, orderBy, where, limit }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInAnonymously, onAuthStateChanged, indexedDBLocalPersistence, initializeAuth }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -29,7 +29,7 @@ try {
 let analytics;
 try { analytics = getAnalytics(app); } catch(e) { console.warn("Analytics init failed", e); }
 
-window._fb = { db, auth, analytics, doc, setDoc, getDoc, onSnapshot, serverTimestamp, signInAnonymously, onAuthStateChanged, logEvent, collection, addDoc, getDocs, deleteDoc, query, orderBy };
+window._fb = { db, auth, analytics, doc, setDoc, getDoc, onSnapshot, serverTimestamp, signInAnonymously, onAuthStateChanged, logEvent, collection, addDoc, getDocs, deleteDoc, query, orderBy, where, limit };
 
 signInAnonymously(auth).catch(e => console.warn("Auth error", e));
 onAuthStateChanged(auth, user => { if (user) window._fbUid = user.uid; });
