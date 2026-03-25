@@ -14842,7 +14842,7 @@ function App(){
                 </div>
               )}
 
-              {/* ── 📊 INSIGHTS HERO CARD — powered by Sleep Consultant Engine ── */}
+              {/* ── 📊 INSIGHTS HERO CARD ── */}
               {(()=>{ try {
                 const _tName = babyName || "Baby";
                 const _dk = Object.keys(days).sort().slice(-7);
@@ -14854,14 +14854,76 @@ function App(){
                   </div>
                 );
 
-                // Use Sleep Consultant Engine for data
-                const _budget = sleepBudgetDashboard();
-                const _patterns = advancedSleepPatterns();
-                const _celebrations = _patterns?.celebrations || [];
-                const _detected = _patterns?.patterns || [];
-
-                // Gather positives
+                // Simple direct data — no engine dependency
                 const _positives = [];
+                const _actions = [];
+
+                // Nap trend (direct)
+                try {
+                  const _r3 = _dk.slice(-3).flatMap(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night&&e.start&&e.end).map(n=>minDiff(n.start,n.end)));
+                  const _o3 = _dk.slice(0,3).flatMap(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night&&e.start&&e.end).map(n=>minDiff(n.start,n.end)));
+                  const _rAvgN = _r3.length ? Math.round(_r3.reduce((a,b)=>a+b,0)/_r3.length) : 0;
+                  const _oAvgN = _o3.length ? Math.round(_o3.reduce((a,b)=>a+b,0)/_o3.length) : 0;
+                  if (_rAvgN > _oAvgN + 5 && _rAvgN > 0) _positives.push("Naps are getting longer");
+                  else if (_rAvgN >= 30) _positives.push("Nap lengths are steady");
+                } catch {}
+
+                // Night wakes trend (direct)
+                try {
+                  const _rNW = _dk.slice(-3).map(d=>(days[d]||[]).filter(e=>e.night).length);
+                  const _oNW = _dk.slice(0,3).map(d=>(days[d]||[]).filter(e=>e.night).length);
+                  const _rAvgW = _rNW.length ? _rNW.reduce((a,b)=>a+b,0)/_rNW.length : 99;
+                  const _oAvgW = _oNW.length ? _oNW.reduce((a,b)=>a+b,0)/_oNW.length : 99;
+                  if (_rAvgW < _oAvgW - 0.3 && _oAvgW > 0) _positives.push("Night wakes are improving");
+                  else if (_rAvgW <= 2) _positives.push("Nights are looking good");
+                } catch {}
+
+                // Wake consistency (direct)
+                try {
+                  const _wt = _dk.map(d=>{const w=(days[d]||[]).find(e=>e.type==="wake"&&!e.night&&e.time);if(!w||!w.time)return null;const[h,m]=w.time.split(":").map(Number);return h*60+m;}).filter(Boolean);
+                  if (_wt.length >= 3 && Math.max(..._wt) - Math.min(..._wt) <= 45) _positives.push("Wake time is consistent");
+                } catch {}
+
+                // Try engine enhancements (optional — won't break if they fail)
+                try {
+                  const _budget = sleepBudgetDashboard();
+                  if (_budget && _budget.withinRange && !_positives.some(p=>p.includes("sleep"))) _positives.push("Total sleep is within range (" + _budget.avgTotal + "h)");
+                  if (_budget && _budget.belowRange) _actions.push("Consider an earlier bedtime — even 15min helps");
+                  if (_budget && _budget.dayTooMuch) _actions.push("Try capping the longest nap by 10-15min");
+                } catch {}
+
+                try {
+                  const _pats = advancedSleepPatterns();
+                  if (_pats && _pats.celebrations) _pats.celebrations.slice(0,1).forEach(c => _positives.push(c.text));
+                  if (_pats && _pats.patterns && _pats.patterns.length) {
+                    const top = _pats.patterns.sort((a,b)=>(a.priority||3)-(b.priority||3))[0];
+                    if (top.action) _actions.push(top.action.length > 80 ? top.action.slice(0,80)+"…" : top.action);
+                  }
+                } catch {}
+
+                if (!_positives.length) _positives.push("Rhythm is building");
+                if (!_actions.length) _actions.push("Keep wake windows consistent");
+
+                const _intro = _positives.length >= 2 ? "You're doing really well 💛" : "You're doing well 💛";
+
+                return (
+                  <div className="glass-card" style={{padding:"16px 18px",marginBottom:12}}>
+                    <div style={{fontSize:15,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif",marginBottom:8}}>📊 Your rhythm check</div>
+                    <div style={{fontSize:13,color:C.mid,marginBottom:10}}>{_intro}</div>
+                    <div style={{marginBottom:10}}>
+                      {_positives.slice(0,2).map((p,i)=>(
+                        <div key={i} style={{fontSize:13,color:C.mint,fontWeight:600,marginBottom:3}}>✔ {p}</div>
+                      ))}
+                    </div>
+                    {_actions.length > 0 && (
+                      <div>
+                        <div style={{fontSize:12,color:C.lt,fontWeight:600,marginBottom:4}}>→ Try this next:</div>
+                        {_actions.slice(0,2).map((a,i)=>(
+                          <div key={i} style={{fontSize:12,color:C.mid,marginBottom:2,paddingLeft:14}}>{a}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                 // From sleep budget
                 if (_budget && _budget.withinRange) _positives.push("Total sleep is within the healthy range (" + _budget.avgTotal + "h)");
