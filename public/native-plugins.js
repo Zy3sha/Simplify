@@ -1,6 +1,7 @@
 // ══════════════════════════════════════════════════════════════════
 // OBubba Native Plugin Bridge
 // Unified API for all Capacitor native features
+// Uses window.Capacitor.Plugins directly (no bundler needed)
 // Falls back gracefully to web APIs when not running natively
 // ══════════════════════════════════════════════════════════════════
 (function() {
@@ -14,6 +15,12 @@ const isNative = () =>
 const getPlatform = () =>
   isNative() ? window.Capacitor.getPlatform() : 'web';
 
+// Helper to safely get a Capacitor plugin
+const cap = (name) => {
+  try { return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]; }
+  catch { return null; }
+};
+
 // ── 1. HAPTICS ──────────────────────────────────────────────────
 const OBHaptics = {
   async impact(style = 'Medium') {
@@ -21,28 +28,28 @@ const OBHaptics = {
       if (navigator.vibrate) navigator.vibrate(style === 'Heavy' ? 30 : style === 'Light' ? 5 : 15);
       return;
     }
-    const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
-    await Haptics.impact({ style: ImpactStyle[style] });
+    const p = cap('Haptics');
+    if (p) await p.impact({ style });
   },
   async notification(type = 'Success') {
     if (!isNative()) return;
-    const { Haptics, NotificationType } = await import('@capacitor/haptics');
-    await Haptics.notification({ type: NotificationType[type] });
+    const p = cap('Haptics');
+    if (p) await p.notification({ type });
   },
   async selectionStart() {
     if (!isNative()) return;
-    const { Haptics } = await import('@capacitor/haptics');
-    await Haptics.selectionStart();
+    const p = cap('Haptics');
+    if (p) await p.selectionStart();
   },
   async selectionChanged() {
     if (!isNative()) return;
-    const { Haptics } = await import('@capacitor/haptics');
-    await Haptics.selectionChanged();
+    const p = cap('Haptics');
+    if (p) await p.selectionChanged();
   },
   async selectionEnd() {
     if (!isNative()) return;
-    const { Haptics } = await import('@capacitor/haptics');
-    await Haptics.selectionEnd();
+    const p = cap('Haptics');
+    if (p) await p.selectionEnd();
   },
 };
 
@@ -51,11 +58,12 @@ const OBBiometric = {
   async isAvailable() {
     if (!isNative()) return { available: false, type: 'none' };
     try {
-      const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
-      const result = await BiometricAuth.checkBiometry();
+      const p = cap('BiometricAuth');
+      if (!p) return { available: false, type: 'none' };
+      const result = await p.checkBiometry();
       return {
         available: result.isAvailable,
-        type: result.biometryType, // 'faceId', 'touchId', 'fingerprintAuthentication', 'faceAuthentication'
+        type: result.biometryType,
         reason: result.reason,
       };
     } catch { return { available: false, type: 'none' }; }
@@ -63,8 +71,9 @@ const OBBiometric = {
   async authenticate(reason = 'Verify your identity') {
     if (!isNative()) return { success: false, error: 'not_native' };
     try {
-      const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
-      await BiometricAuth.authenticate({ reason, allowDeviceCredential: true });
+      const p = cap('BiometricAuth');
+      if (!p) return { success: false, error: 'not_available' };
+      await p.authenticate({ reason, allowDeviceCredential: true });
       return { success: true };
     } catch (e) {
       return { success: false, error: e.message || 'auth_failed' };
@@ -80,8 +89,9 @@ const OBAppleSignIn = {
   async signIn() {
     if (getPlatform() !== 'ios') return { success: false, error: 'not_ios' };
     try {
-      const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
-      const result = await SignInWithApple.authorize({
+      const p = cap('SignInWithApple');
+      if (!p) return { success: false, error: 'plugin_not_found' };
+      const result = await p.authorize({
         clientId: 'com.obubba.app',
         redirectURI: 'https://obubba.com/auth/apple/callback',
         scopes: 'email name',
@@ -107,12 +117,13 @@ const OBAppleSignIn = {
 const OBGoogleSignIn = {
   async signIn() {
     try {
-      const { GoogleAuth } = await import('@capacitor-community/google-auth');
-      await GoogleAuth.initialize({
+      const p = cap('GoogleAuth');
+      if (!p) return { success: false, error: 'plugin_not_found' };
+      await p.initialize({
         clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
         scopes: ['profile', 'email'],
       });
-      const result = await GoogleAuth.signIn();
+      const result = await p.signIn();
       return {
         success: true,
         user: result.id,
@@ -127,8 +138,8 @@ const OBGoogleSignIn = {
   },
   async signOut() {
     try {
-      const { GoogleAuth } = await import('@capacitor-community/google-auth');
-      await GoogleAuth.signOut();
+      const p = cap('GoogleAuth');
+      if (p) await p.signOut();
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
@@ -145,20 +156,22 @@ const OBPushNotifications = {
       }
       return { granted: false };
     }
-    const { PushNotifications } = await import('@capacitor/push-notifications');
-    const perm = await PushNotifications.requestPermissions();
+    const p = cap('PushNotifications');
+    if (!p) return { granted: false };
+    const perm = await p.requestPermissions();
     return { granted: perm.receive === 'granted' };
   },
 
   async register() {
     if (!isNative()) return { token: null };
-    const { PushNotifications } = await import('@capacitor/push-notifications');
-    await PushNotifications.register();
+    const p = cap('PushNotifications');
+    if (!p) return { token: null };
+    await p.register();
     return new Promise((resolve) => {
-      PushNotifications.addListener('registration', (token) => {
+      p.addListener('registration', (token) => {
         resolve({ token: token.value });
       });
-      PushNotifications.addListener('registrationError', (err) => {
+      p.addListener('registrationError', (err) => {
         resolve({ token: null, error: err.error });
       });
     });
@@ -166,15 +179,17 @@ const OBPushNotifications = {
 
   async onNotificationReceived(callback) {
     if (!isNative()) return;
-    const { PushNotifications } = await import('@capacitor/push-notifications');
-    const listener = await PushNotifications.addListener('pushNotificationReceived', callback);
+    const p = cap('PushNotifications');
+    if (!p) return;
+    const listener = await p.addListener('pushNotificationReceived', callback);
     this._listeners.push(listener);
   },
 
   async onNotificationTapped(callback) {
     if (!isNative()) return;
-    const { PushNotifications } = await import('@capacitor/push-notifications');
-    const listener = await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+    const p = cap('PushNotifications');
+    if (!p) return;
+    const listener = await p.addListener('pushNotificationActionPerformed', (action) => {
       callback(action.notification, action.actionId);
     });
     this._listeners.push(listener);
@@ -182,15 +197,15 @@ const OBPushNotifications = {
 
   async setBadgeCount(count) {
     try {
-      const { Badge } = await import('@capawesome/capacitor-badge');
-      await Badge.set({ count });
+      const p = cap('Badge');
+      if (p) await p.set({ count });
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 
   async clearBadge() {
     try {
-      const { Badge } = await import('@capawesome/capacitor-badge');
-      await Badge.clear();
+      const p = cap('Badge');
+      if (p) await p.clear();
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
@@ -199,7 +214,6 @@ const OBPushNotifications = {
 const OBLocalNotifications = {
   async schedule({ id, title, body, scheduleAt, extra, channelId }) {
     if (!isNative()) {
-      // Web fallback: schedule with setTimeout if within reasonable time
       if ('Notification' in window && Notification.permission === 'granted') {
         const delay = new Date(scheduleAt).getTime() - Date.now();
         if (delay > 0 && delay < 86400000) {
@@ -208,8 +222,9 @@ const OBLocalNotifications = {
       }
       return;
     }
-    const { LocalNotifications } = await import('@capacitor/local-notifications');
-    await LocalNotifications.schedule({
+    const p = cap('LocalNotifications');
+    if (!p) return;
+    await p.schedule({
       notifications: [{
         id: id || Math.floor(Math.random() * 100000),
         title,
@@ -224,17 +239,19 @@ const OBLocalNotifications = {
 
   async cancelAll() {
     if (!isNative()) return;
-    const { LocalNotifications } = await import('@capacitor/local-notifications');
-    const pending = await LocalNotifications.getPending();
+    const p = cap('LocalNotifications');
+    if (!p) return;
+    const pending = await p.getPending();
     if (pending.notifications.length > 0) {
-      await LocalNotifications.cancel(pending);
+      await p.cancel(pending);
     }
   },
 
   async createChannels() {
     if (getPlatform() !== 'android') return;
-    const { LocalNotifications } = await import('@capacitor/local-notifications');
-    await LocalNotifications.createChannel({
+    const p = cap('LocalNotifications');
+    if (!p) return;
+    await p.createChannel({
       id: 'obubba_reminders',
       name: 'Reminders',
       description: 'Feed, sleep, and medicine reminders',
@@ -242,7 +259,7 @@ const OBLocalNotifications = {
       sound: 'notification.wav',
       vibration: true,
     });
-    await LocalNotifications.createChannel({
+    await p.createChannel({
       id: 'obubba_timers',
       name: 'Active Timers',
       description: 'Running feed and sleep timers',
@@ -250,7 +267,7 @@ const OBLocalNotifications = {
       sound: null,
       vibration: false,
     });
-    await LocalNotifications.createChannel({
+    await p.createChannel({
       id: 'obubba_milestones',
       name: 'Milestones',
       description: 'Developmental milestone reminders',
@@ -266,8 +283,9 @@ const OBAppShortcuts = {
   async set(shortcuts) {
     if (!isNative()) return;
     try {
-      const { AppShortcuts } = await import('@capawesome/capacitor-app-shortcuts');
-      await AppShortcuts.set({
+      const p = cap('AppShortcuts');
+      if (!p) return;
+      await p.set({
         shortcuts: shortcuts.map((s) => ({
           id: s.id,
           title: s.title,
@@ -281,8 +299,9 @@ const OBAppShortcuts = {
   async onShortcutUsed(callback) {
     if (!isNative()) return;
     try {
-      const { AppShortcuts } = await import('@capawesome/capacitor-app-shortcuts');
-      AppShortcuts.addListener('shortcut', (event) => {
+      const p = cap('AppShortcuts');
+      if (!p) return;
+      p.addListener('shortcut', (event) => {
         callback(event.shortcutId);
       });
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
@@ -293,7 +312,6 @@ const OBAppShortcuts = {
 const OBCamera = {
   async takePhoto() {
     if (!isNative()) {
-      // Web fallback: file input
       return new Promise((resolve) => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -309,12 +327,13 @@ const OBCamera = {
         input.click();
       });
     }
-    const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
-    const photo = await Camera.getPhoto({
+    const p = cap('Camera');
+    if (!p) return null;
+    const photo = await p.getPhoto({
       quality: 85,
       allowEditing: false,
-      resultType: CameraResultType.DataUrl,
-      source: CameraSource.Prompt, // Let user choose camera or gallery
+      resultType: 'dataUrl',
+      source: 'prompt',
       width: 1200,
       correctOrientation: true,
     });
@@ -322,13 +341,14 @@ const OBCamera = {
   },
 
   async pickFromGallery() {
-    if (!isNative()) return this.takePhoto(); // Same web fallback
-    const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
-    const photo = await Camera.getPhoto({
+    if (!isNative()) return this.takePhoto();
+    const p = cap('Camera');
+    if (!p) return null;
+    const photo = await p.getPhoto({
       quality: 85,
       allowEditing: false,
-      resultType: CameraResultType.DataUrl,
-      source: CameraSource.Photos,
+      resultType: 'dataUrl',
+      source: 'photos',
       width: 1200,
       correctOrientation: true,
     });
@@ -344,12 +364,12 @@ const OBShare = {
         await navigator.share({ title, text, url });
         return { shared: true };
       }
-      // Fallback: copy to clipboard
       await navigator.clipboard.writeText(url || text || '');
       return { shared: false, copied: true };
     }
-    const { Share } = await import('@capacitor/share');
-    const result = await Share.share({ title, text, url, files });
+    const p = cap('Share');
+    if (!p) return { shared: false };
+    const result = await p.share({ title, text, url, files });
     return { shared: true, activityType: result.activityType };
   },
 };
@@ -360,8 +380,9 @@ const OBNetwork = {
     if (!isNative()) {
       return { connected: navigator.onLine, connectionType: navigator.onLine ? 'wifi' : 'none' };
     }
-    const { Network } = await import('@capacitor/network');
-    const status = await Network.getStatus();
+    const p = cap('Network');
+    if (!p) return { connected: navigator.onLine, connectionType: 'unknown' };
+    const status = await p.getStatus();
     return { connected: status.connected, connectionType: status.connectionType };
   },
 
@@ -371,8 +392,8 @@ const OBNetwork = {
       window.addEventListener('offline', () => callback({ connected: false, connectionType: 'none' }));
       return;
     }
-    const { Network } = await import('@capacitor/network');
-    Network.addListener('networkStatusChange', callback);
+    const p = cap('Network');
+    if (p) p.addListener('networkStatusChange', callback);
   },
 };
 
@@ -383,12 +404,12 @@ const OBDatabase = {
   async init() {
     if (!isNative()) return false;
     try {
-      const { CapacitorSQLite } = await import('@capacitor-community/sqlite');
-      await CapacitorSQLite.createConnection({ database: 'obubba', version: 1, encrypted: false, mode: 'no-encryption' });
-      await CapacitorSQLite.open({ database: 'obubba' });
+      const p = cap('CapacitorSQLite');
+      if (!p) return false;
+      await p.createConnection({ database: 'obubba', version: 1, encrypted: false, mode: 'no-encryption' });
+      await p.open({ database: 'obubba' });
 
-      // Create tables
-      await CapacitorSQLite.execute({
+      await p.execute({
         database: 'obubba',
         statements: `
           CREATE TABLE IF NOT EXISTS entries (
@@ -429,9 +450,10 @@ const OBDatabase = {
 
   async put(table, id, data) {
     if (!this._db) return;
-    const { CapacitorSQLite } = await import('@capacitor-community/sqlite');
+    const p = cap('CapacitorSQLite');
+    if (!p) return;
     const json = JSON.stringify(data);
-    await CapacitorSQLite.run({
+    await p.run({
       database: 'obubba',
       statement: `INSERT OR REPLACE INTO ${table} (id, data, synced) VALUES (?, ?, 0)`,
       values: [id, json],
@@ -440,8 +462,9 @@ const OBDatabase = {
 
   async get(table, id) {
     if (!this._db) return null;
-    const { CapacitorSQLite } = await import('@capacitor-community/sqlite');
-    const result = await CapacitorSQLite.query({
+    const p = cap('CapacitorSQLite');
+    if (!p) return null;
+    const result = await p.query({
       database: 'obubba',
       statement: `SELECT data FROM ${table} WHERE id = ?`,
       values: [id],
@@ -454,8 +477,9 @@ const OBDatabase = {
 
   async getAll(table) {
     if (!this._db) return [];
-    const { CapacitorSQLite } = await import('@capacitor-community/sqlite');
-    const result = await CapacitorSQLite.query({
+    const p = cap('CapacitorSQLite');
+    if (!p) return [];
+    const result = await p.query({
       database: 'obubba',
       statement: `SELECT id, data FROM ${table}`,
       values: [],
@@ -465,14 +489,13 @@ const OBDatabase = {
 };
 
 // ── 12. SIRI SHORTCUTS (iOS) ────────────────────────────────────
-// Siri integration uses native Swift code (see ios/App/SiriIntents/)
-// This bridge communicates with the native Siri handler
 const OBSiri = {
   async donateShortcut({ id, title, phrase }) {
     if (getPlatform() !== 'ios') return;
-    // Call native Swift bridge via Capacitor plugin message
     try {
-      await window.Capacitor.Plugins.OBSiriShortcuts.donate({
+      const p = cap('OBSiriShortcuts');
+      if (!p) return;
+      await p.donate({
         activityType: `com.obubba.app.${id}`,
         title,
         suggestedPhrase: phrase,
@@ -498,14 +521,21 @@ const OBSiri = {
       await this.donateShortcut(s);
     }
   },
+
+  async checkPendingEntry() {
+    if (getPlatform() !== 'ios') return null;
+    try {
+      const p = cap('OBSiriShortcuts');
+      if (!p) return null;
+      return await p.checkPendingEntry();
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); return null; }
+  },
 };
 
 // ── 13. WIDGETS (iOS WidgetKit + Android Glance) ────────────────
-// Widgets use native code but we provide data through shared storage
 const OBWidgets = {
   async updateWidgetData() {
     if (!isNative()) return;
-    // Collect current baby data for widget display
     try {
       const activeChild = localStorage.getItem('active_child');
       const childrenRaw = localStorage.getItem('children_v1');
@@ -520,7 +550,6 @@ const OBWidgets = {
       const entries = entriesRaw ? JSON.parse(entriesRaw) : {};
       const todayEntries = entries[today] || [];
 
-      // Calculate summary for widget
       const feeds = todayEntries.filter((e) => e.type === 'feed');
       const sleeps = todayEntries.filter((e) => e.type === 'sleep' || e.type === 'nap');
       const nappies = todayEntries.filter((e) => e.type === 'nappy');
@@ -535,17 +564,13 @@ const OBWidgets = {
         lastFeedTime: lastFeed ? lastFeed.time : null,
         lastFeedType: lastFeed ? lastFeed.subtype : null,
         lastSleepTime: lastSleep ? lastSleep.time : null,
-        nextFeedEstimate: null, // App calculates predictions
+        nextFeedEstimate: null,
         theme: localStorage.getItem('theme_v1') || 'light',
         updatedAt: Date.now(),
       };
 
-      // Write to shared UserDefaults (iOS) / SharedPreferences (Android)
-      if (getPlatform() === 'ios') {
-        await window.Capacitor.Plugins.OBWidgetBridge.setData({ json: JSON.stringify(widgetData) });
-      } else if (getPlatform() === 'android') {
-        await window.Capacitor.Plugins.OBWidgetBridge.setData({ json: JSON.stringify(widgetData) });
-      }
+      const p = cap('OBWidgetBridge');
+      if (p) await p.setData({ json: JSON.stringify(widgetData) });
     } catch (e) {
       console.warn('Widget update failed:', e);
     }
@@ -554,7 +579,8 @@ const OBWidgets = {
   async reloadWidgets() {
     if (!isNative()) return;
     try {
-      await window.Capacitor.Plugins.OBWidgetBridge.reloadAll();
+      const p = cap('OBWidgetBridge');
+      if (p) await p.reloadAll();
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
@@ -564,11 +590,13 @@ const OBLiveActivity = {
   async startTimer({ type, startTime, babyName, side }) {
     if (getPlatform() !== 'ios') return;
     try {
-      await window.Capacitor.Plugins.OBLiveActivity.start({
-        type, // 'feed' or 'sleep'
+      const p = cap('OBLiveActivity');
+      if (!p) return;
+      await p.start({
+        type,
         startTime: startTime || Date.now(),
         babyName: babyName || 'Baby',
-        side: side || null, // 'left' or 'right' for breastfeeding
+        side: side || null,
       });
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
@@ -576,14 +604,16 @@ const OBLiveActivity = {
   async updateTimer({ elapsed, side }) {
     if (getPlatform() !== 'ios') return;
     try {
-      await window.Capacitor.Plugins.OBLiveActivity.update({ elapsed, side });
+      const p = cap('OBLiveActivity');
+      if (p) await p.update({ elapsed, side });
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 
   async stopTimer() {
     if (getPlatform() !== 'ios') return;
     try {
-      await window.Capacitor.Plugins.OBLiveActivity.stop();
+      const p = cap('OBLiveActivity');
+      if (p) await p.stop();
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
@@ -594,16 +624,20 @@ const OBHealth = {
     if (!isNative()) return false;
     try {
       if (getPlatform() === 'ios') {
-        return await window.Capacitor.Plugins.OBHealthKit.isAvailable();
+        const p = cap('OBHealthKit');
+        if (!p) return false;
+        return await p.isAvailable();
       }
-      return false; // Google Fit requires separate setup
+      return false;
     } catch { return false; }
   },
 
   async requestPermission() {
     if (!isNative()) return false;
     try {
-      await window.Capacitor.Plugins.OBHealthKit.requestAuthorization({
+      const p = cap('OBHealthKit');
+      if (!p) return false;
+      await p.requestAuthorization({
         read: ['weight', 'height'],
         write: ['weight', 'height'],
       });
@@ -614,14 +648,16 @@ const OBHealth = {
   async saveWeight({ kg, date }) {
     if (!isNative()) return;
     try {
-      await window.Capacitor.Plugins.OBHealthKit.saveWeight({ kg, date });
+      const p = cap('OBHealthKit');
+      if (p) await p.saveWeight({ kg, date });
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 
   async saveHeight({ cm, date }) {
     if (!isNative()) return;
     try {
-      await window.Capacitor.Plugins.OBHealthKit.saveHeight({ cm, date });
+      const p = cap('OBHealthKit');
+      if (p) await p.saveHeight({ cm, date });
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
@@ -633,15 +669,15 @@ const OBSpeech = {
       return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
     }
     try {
-      const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-      const result = await SpeechRecognition.available();
+      const p = cap('SpeechRecognition');
+      if (!p) return false;
+      const result = await p.available();
       return result.available;
     } catch { return false; }
   },
 
   async listen(language = 'en-GB') {
     if (!isNative()) {
-      // Web Speech API fallback
       return new Promise((resolve, reject) => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) return reject(new Error('Not supported'));
@@ -654,16 +690,17 @@ const OBSpeech = {
         recognition.start();
       });
     }
-    const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-    await SpeechRecognition.requestPermission();
-    const result = await SpeechRecognition.start({ language, popup: false });
+    const p = cap('SpeechRecognition');
+    if (!p) return '';
+    await p.requestPermission();
+    const result = await p.start({ language, popup: false });
     return result.matches?.[0] || '';
   },
 
   async stop() {
     if (!isNative()) return;
-    const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-    await SpeechRecognition.stop();
+    const p = cap('SpeechRecognition');
+    if (p) await p.stop();
   },
 };
 
@@ -676,8 +713,8 @@ const OBAppLifecycle = {
       });
       return;
     }
-    const { App } = await import('@capacitor/app');
-    App.addListener('appStateChange', (state) => {
+    const p = cap('App');
+    if (p) p.addListener('appStateChange', (state) => {
       if (state.isActive) callback();
     });
   },
@@ -689,22 +726,22 @@ const OBAppLifecycle = {
       });
       return;
     }
-    const { App } = await import('@capacitor/app');
-    App.addListener('appStateChange', (state) => {
+    const p = cap('App');
+    if (p) p.addListener('appStateChange', (state) => {
       if (!state.isActive) callback();
     });
   },
 
   async onBackButton(callback) {
     if (!isNative()) return;
-    const { App } = await import('@capacitor/app');
-    App.addListener('backButton', callback);
+    const p = cap('App');
+    if (p) p.addListener('backButton', callback);
   },
 
   async onUrlOpen(callback) {
     if (!isNative()) return;
-    const { App } = await import('@capacitor/app');
-    App.addListener('appUrlOpen', (data) => {
+    const p = cap('App');
+    if (p) p.addListener('appUrlOpen', (data) => {
       callback(data.url);
     });
   },
@@ -715,8 +752,8 @@ const OBScreen = {
   async lockPortrait() {
     if (!isNative()) return;
     try {
-      const { ScreenOrientation } = await import('@capacitor/screen-orientation');
-      await ScreenOrientation.lock({ orientation: 'portrait' });
+      const p = cap('ScreenOrientation');
+      if (p) await p.lock({ orientation: 'portrait' });
     } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
@@ -725,21 +762,28 @@ const OBScreen = {
 const OBStatusBar = {
   async setStyle(isDark) {
     if (!isNative()) return;
-    const { StatusBar, Style } = await import('@capacitor/status-bar');
-    await StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light });
-    if (getPlatform() === 'android') {
-      await StatusBar.setBackgroundColor({ color: isDark ? '#080e1c' : '#F0DDD6' });
-    }
+    try {
+      const p = cap('StatusBar');
+      if (!p) return;
+      await p.setStyle({ style: isDark ? 'DARK' : 'LIGHT' });
+      if (getPlatform() === 'android') {
+        await p.setBackgroundColor({ color: isDark ? '#080e1c' : '#F0DDD6' });
+      }
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
   async hide() {
     if (!isNative()) return;
-    const { StatusBar } = await import('@capacitor/status-bar');
-    await StatusBar.hide();
+    try {
+      const p = cap('StatusBar');
+      if (p) await p.hide();
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
   async show() {
     if (!isNative()) return;
-    const { StatusBar } = await import('@capacitor/status-bar');
-    await StatusBar.show();
+    try {
+      const p = cap('StatusBar');
+      if (p) await p.show();
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
 
@@ -747,19 +791,22 @@ const OBStatusBar = {
 const OBPreferences = {
   async get(key) {
     if (!isNative()) return localStorage.getItem(key);
-    const { Preferences } = await import('@capacitor/preferences');
-    const result = await Preferences.get({ key });
+    const p = cap('Preferences');
+    if (!p) return localStorage.getItem(key);
+    const result = await p.get({ key });
     return result.value;
   },
   async set(key, value) {
     if (!isNative()) { localStorage.setItem(key, value); return; }
-    const { Preferences } = await import('@capacitor/preferences');
-    await Preferences.set({ key, value });
+    const p = cap('Preferences');
+    if (!p) { localStorage.setItem(key, value); return; }
+    await p.set({ key, value });
   },
   async remove(key) {
     if (!isNative()) { localStorage.removeItem(key); return; }
-    const { Preferences } = await import('@capacitor/preferences');
-    await Preferences.remove({ key });
+    const p = cap('Preferences');
+    if (!p) { localStorage.removeItem(key); return; }
+    await p.remove({ key });
   },
 };
 
