@@ -839,6 +839,12 @@ window.OBNative = {
   preferences: OBPreferences,
 };
 
+// ── DIAGNOSTICS — log native state for debugging ──────────────────
+console.log('[OBubba] Native:', isNative(), '| Platform:', getPlatform());
+if (typeof window !== 'undefined' && window.Capacitor) {
+  console.log('[OBubba] Capacitor.Plugins:', Object.keys(window.Capacitor.Plugins || {}));
+}
+
 // ── AUTO-INIT on native ─────────────────────────────────────────
 if (isNative()) {
   (async () => {
