@@ -129,7 +129,7 @@ const OBGoogleSignIn = {
     try {
       const { GoogleAuth } = await import('@capacitor-community/google-auth');
       await GoogleAuth.signOut();
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
 
@@ -184,14 +184,14 @@ const OBPushNotifications = {
     try {
       const { Badge } = await import('@capawesome/capacitor-badge');
       await Badge.set({ count });
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 
   async clearBadge() {
     try {
       const { Badge } = await import('@capawesome/capacitor-badge');
       await Badge.clear();
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
 
@@ -275,7 +275,7 @@ const OBAppShortcuts = {
           iconName: s.icon || undefined,
         })),
       });
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 
   async onShortcutUsed(callback) {
@@ -285,7 +285,7 @@ const OBAppShortcuts = {
       AppShortcuts.addListener('shortcut', (event) => {
         callback(event.shortcutId);
       });
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
 
@@ -479,7 +479,7 @@ const OBSiri = {
         isEligibleForSearch: true,
         isEligibleForPrediction: true,
       });
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 
   async donateAllShortcuts() {
@@ -555,7 +555,7 @@ const OBWidgets = {
     if (!isNative()) return;
     try {
       await window.Capacitor.Plugins.OBWidgetBridge.reloadAll();
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
 
@@ -570,21 +570,21 @@ const OBLiveActivity = {
         babyName: babyName || 'Baby',
         side: side || null, // 'left' or 'right' for breastfeeding
       });
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 
   async updateTimer({ elapsed, side }) {
     if (getPlatform() !== 'ios') return;
     try {
       await window.Capacitor.Plugins.OBLiveActivity.update({ elapsed, side });
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 
   async stopTimer() {
     if (getPlatform() !== 'ios') return;
     try {
       await window.Capacitor.Plugins.OBLiveActivity.stop();
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
 
@@ -615,14 +615,14 @@ const OBHealth = {
     if (!isNative()) return;
     try {
       await window.Capacitor.Plugins.OBHealthKit.saveWeight({ kg, date });
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 
   async saveHeight({ cm, date }) {
     if (!isNative()) return;
     try {
       await window.Capacitor.Plugins.OBHealthKit.saveHeight({ cm, date });
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
 
@@ -717,7 +717,7 @@ const OBScreen = {
     try {
       const { ScreenOrientation } = await import('@capacitor/screen-orientation');
       await ScreenOrientation.lock({ orientation: 'portrait' });
-    } catch {}
+    } catch(e) { console.warn('[OBubba Native]', e.message || e); }
   },
 };
 
