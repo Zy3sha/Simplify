@@ -10931,6 +10931,10 @@ function App(){
 
     // ═══ SCHEDULE MAKER — builds optimal day around a fixed event ═══
   function buildScheduleAroundEvent(eventTimeMins, eventLabel, eventDurMins) {
+    // AWAKE event: baby must be awake during this window.
+    // Strategy: nap ends (or morning wake) shortly before event so baby
+    // wakes fresh, then next nap starts after the event ends — both
+    // fitting comfortably within age-appropriate wake windows.
     if (!age) return null;
     const w = age.totalWeeks;
     const ww = getWakeWindow(w);
@@ -10938,6 +10942,7 @@ function App(){
     const napCount = profile.expectedNaps;
     const mtp = m => {const h=Math.floor(((m%1440)+1440)%1440/60);const mm=((m%60)+60)%60;return `${String(h).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;};
 
+    // Personal averages from last 7 days
     const dk = Object.keys(days).sort().slice(-7);
     let avgNapDur = 50, avgWakeMins = 7*60, avgBedMins = 19*60;
     if (dk.length >= 3) {
@@ -10946,9 +10951,9 @@ function App(){
         const entries = days[d]||[];
         entries.filter(e=>e.type==="nap"&&!e.night&&e.start&&e.end).forEach(n=>{const d2=minDiff(n.start,n.end);if(d2>=10&&d2<=180)napDurs.push(d2);});
         const wake = entries.find(e=>e.type==="wake"&&!e.night);
-        if(wake){const[h,m]=wake.time.split(":").map(Number);wakes.push(h*60+m);}
+        if(wake){const[hh,mm]=wake.time.split(":").map(Number);wakes.push(hh*60+mm);}
         const bed = entries.find(e=>e.type==="sleep"&&!e.night);
-        if(bed){const[h,m]=bed.time.split(":").map(Number);beds.push(h*60+m);}
+        if(bed){const[hh,mm]=bed.time.split(":").map(Number);beds.push(hh*60+mm);}
       });
       if(napDurs.length) avgNapDur = Math.round(napDurs.reduce((a,b)=>a+b,0)/napDurs.length);
       if(wakes.length) avgWakeMins = Math.round(wakes.reduce((a,b)=>a+b,0)/wakes.length);
@@ -10956,107 +10961,103 @@ function App(){
     }
     avgNapDur = Math.max(20, Math.min(90, avgNapDur));
     const eventEnd = eventTimeMins + (eventDurMins || 60);
-    const wwMin = ww.min;
-    const wwMax = ww.max;
     const warnings = [];
 
-    // ─── CORE LOGIC ───
-    // Event is AWAKE time within a wake window.
-    // Total awake from last nap end → event → next nap start must be ≤ wwMax.
-    // Place nap ending shortly before event, then nap starting right after.
+    // Build the full day forward from wake, placing naps at age-appropriate
+    // wake windows. The nap closest before the event must END so baby wakes
+    // with enough margin. The nap after event starts after event ends.
+    const bestCandidates = [];
 
-    // Gap before event: ensure gap + eventDur fits within wwMax
-    const gapBeforeEvent = Math.max(10, Math.min(wwMax - eventDurMins - 10, 30));
-    const napEndBeforeEvent = eventTimeMins - gapBeforeEvent;
+    for (let shift = -30; shift <= 30; shift += 5) {
+      const wake = clampWake(avgWakeMins + shift);
+      const sched = [{type:"wake", mins:wake, label:"Wake up"}];
+      let cursor = wake;
+      let totalPenalty = 0;
 
-    // Build naps before event working backwards
-    const preNap = {start: napEndBeforeEvent - avgNapDur, end: napEndBeforeEvent};
-    const earlierNaps = [];
-    let preCursor = preNap.start;
-    for (let i = 0; i < napCount - 1; i++) {
-      const wwBack = clampWakeWindow(progressiveWW(w, i, napCount), w);
-      const prevEnd = preCursor - wwBack;
-      const prevStart = prevEnd - avgNapDur;
-      if (prevStart < 5*60) break;
-      earlierNaps.unshift({start: prevStart, end: prevEnd});
-      preCursor = prevStart;
-    }
+      for (let i = 0; i < napCount; i++) {
+        const wwLen = clampWakeWindow(progressiveWW(w, i, napCount), w);
+        let napStart = cursor + wwLen;
+        let napEnd = napStart + avgNapDur;
 
-    // Wake time
-    const firstNapStart = earlierNaps.length ? earlierNaps[0].start : preNap.start;
-    const ww0 = clampWakeWindow(progressiveWW(w, 0, napCount), w);
-    let wakeTime = clampWake(Math.max(firstNapStart - ww0, avgWakeMins - 30));
+        // If this nap overlaps the event, adjust it
+        if (napStart < eventEnd && napEnd > eventTimeMins) {
+          // Option A: end nap before event (baby wakes fresh for event)
+          const endBefore = eventTimeMins - 10; // 10min buffer to get ready
+          const startBefore = endBefore - avgNapDur;
+          const wwToBefore = startBefore - cursor;
 
-    // Build schedule forward from wake
-    const sched = [{type:"wake", mins:wakeTime, label:"Wake up"}];
-    let cursor = wakeTime;
-    let napNum = 0;
-    const allPreNaps = [...earlierNaps, preNap];
+          // Option B: start nap after event
+          const startAfter = eventEnd + 10;
+          const wwToAfter = startAfter - cursor;
 
-    for (let i = 0; i < allPreNaps.length; i++) {
-      napNum++;
-      const wwLen = clampWakeWindow(progressiveWW(w, i, napCount), w);
-      const napStart = cursor + wwLen;
-      let napEnd = napStart + avgNapDur;
-      // Enforce: nap must end before the event starts (with 5min buffer)
-      if (napEnd > eventTimeMins - 5 && napStart < eventTimeMins) {
-        napEnd = Math.max(napStart + 15, eventTimeMins - 10); // shorten nap but keep at least 15min
-        if (napEnd > eventTimeMins - 5) {
-          // Nap is too close — shift start earlier
-          const shifted = eventTimeMins - 10 - avgNapDur;
-          if (shifted > cursor + 20) {
-            sched.push({type:"nap_start", mins:shifted, label:`Nap ${napNum} start`});
-            sched.push({type:"nap_end", mins:eventTimeMins - 10, label:`Nap ${napNum} end`});
-            cursor = eventTimeMins - 10;
-            continue;
+          if (wwToBefore >= ww.min - 10 && wwToBefore <= ww.max + 10) {
+            // Nap ends just before event — ideal!
+            napStart = startBefore;
+            napEnd = endBefore;
+            totalPenalty += Math.abs(wwToBefore - wwLen);
+          } else if (wwToAfter >= ww.min - 10 && wwToAfter <= ww.max + 10) {
+            // Nap starts after event
+            napStart = startAfter;
+            napEnd = startAfter + avgNapDur;
+            totalPenalty += Math.abs(wwToAfter - wwLen);
+          } else {
+            // Neither fits well — skip this nap or shorten it
+            const shortened = eventTimeMins - 15;
+            if (shortened - cursor >= ww.min - 10) {
+              napStart = shortened - Math.min(avgNapDur, 30);
+              napEnd = shortened;
+              totalPenalty += 30;
+            } else {
+              // Skip nap — too tight
+              totalPenalty += 60;
+              continue;
+            }
+          }
+        }
+
+        if (napStart > 17*60+30) break;
+        sched.push({type:"nap_start", mins:napStart, label:`Nap ${i+1} start`});
+        sched.push({type:"nap_end", mins:napEnd, label:`Nap ${i+1} end`});
+        cursor = napEnd;
+      }
+
+      sched.push({type:"event", mins:eventTimeMins, label:eventLabel||"Event", endMins:eventEnd});
+      const bedWW = clampWakeWindow(progressiveWW(w, napCount, napCount), w);
+      sched.push({type:"bed", mins:clampBedtime(cursor + bedWW), label:"Bedtime"});
+
+      // Score: penalise wake window violations
+      let wwPenalty = 0;
+      const sorted = sched.filter(s=>s.type==="wake"||s.type==="nap_end"||s.type==="nap_start"||s.type==="bed").sort((a,b)=>a.mins-b.mins);
+      for (let j = 0; j < sorted.length; j++) {
+        const s = sorted[j];
+        if (s.type === "wake" || s.type === "nap_end") {
+          const next = sorted.find((n,k) => k > j && (n.type === "nap_start" || n.type === "bed"));
+          if (next) {
+            const gap = next.mins - s.mins;
+            if (gap > ww.max + 15) wwPenalty += (gap - ww.max) * 2;
+            if (gap < ww.min - 15) wwPenalty += (ww.min - gap) * 2;
           }
         }
       }
-      sched.push({type:"nap_start", mins:napStart, label:`Nap ${napNum} start`});
-      sched.push({type:"nap_end", mins:napEnd, label:`Nap ${napNum} end`});
-      cursor = napEnd;
+
+      bestCandidates.push({ sched, wake, penalty: totalPenalty + wwPenalty });
     }
 
-    const lastNapEnd = cursor;
-    sched.push({type:"event", mins:eventTimeMins, label:eventLabel||"Event", endMins:eventEnd});
-
-    // Nap right after event: total awake from lastNapEnd must stay ≤ wwMax
-    const remainingNaps = napCount - napNum;
-    if (remainingNaps > 0) {
-      const maxNapStart = lastNapEnd + wwMax;
-      let nextNapStart = Math.min(maxNapStart, eventEnd + 15);
-      if (nextNapStart < eventEnd + 5) nextNapStart = eventEnd + 5;
-      napNum++;
-      const thisDur = remainingNaps === 1 ? Math.min(avgNapDur, 30) : avgNapDur;
-      sched.push({type:"nap_start", mins:nextNapStart, label:`Nap ${napNum} start`});
-      sched.push({type:"nap_end", mins:nextNapStart + thisDur, label:`Nap ${napNum} end`});
-      cursor = nextNapStart + thisDur;
-
-      for (let i = 1; i < remainingNaps; i++) {
-        napNum++;
-        const wwLen = clampWakeWindow(progressiveWW(w, napNum - 1, napCount), w);
-        const ns = cursor + wwLen;
-        if (ns > 17*60+30) break;
-        sched.push({type:"nap_start", mins:ns, label:`Nap ${napNum} start`});
-        sched.push({type:"nap_end", mins:ns + avgNapDur, label:`Nap ${napNum} end`});
-        cursor = ns + avgNapDur;
-      }
-    } else {
-      cursor = eventEnd;
-    }
-
-    const bedWW = clampWakeWindow(progressiveWW(w, napCount, napCount), w);
-    sched.push({type:"bed", mins:clampBedtime(cursor + bedWW), label:"Bedtime"});
+    // Pick best candidate (lowest penalty)
+    bestCandidates.sort((a,b) => a.penalty - b.penalty);
+    const best = bestCandidates[0];
+    const sched = best.sched;
     sched.sort((a,b) => a.mins - b.mins);
 
-    // Validate wake windows
-    for (let i = 0; i < sched.length; i++) {
-      const s = sched[i];
+    // Validate and warn about any remaining wake window issues
+    const sorted2 = sched.filter(s=>s.type==="wake"||s.type==="nap_end"||s.type==="nap_start"||s.type==="bed").sort((a,b)=>a.mins-b.mins);
+    for (let j = 0; j < sorted2.length; j++) {
+      const s = sorted2[j];
       if (s.type === "wake" || s.type === "nap_end") {
-        const next = sched.find((n,j) => j > i && (n.type === "nap_start" || n.type === "bed"));
+        const next = sorted2.find((n,k) => k > j && (n.type === "nap_start" || n.type === "bed"));
         if (next) {
           const gap = next.mins - s.mins;
-          if (gap > wwMax + 20) warnings.push(`Wake window of ${hm(gap)} is longer than ideal (${hm(wwMax)} max)`);
+          if (gap > ww.max + 20) warnings.push(`Wake window of ${hm(gap)} is longer than ideal (${hm(ww.max)} max)`);
         }
       }
     }
@@ -11067,7 +11068,7 @@ function App(){
       isEvent: s.type === "event"
     }));
 
-    const adjustment = Math.round(wakeTime - avgWakeMins);
+    const adjustment = Math.round(best.wake - avgWakeMins);
     const adjustText = Math.abs(adjustment) <= 5 ? "No schedule change needed" :
       adjustment > 0 ? `Wake ${adjustment}min later than usual` :
       `Wake ${Math.abs(adjustment)}min earlier than usual`;
@@ -19912,7 +19913,7 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
                         {/* ═══ Schedule Maker Modal ═══ */}
       {showScheduleMaker && (
         <div style={{position:"fixed",inset:0,zIndex:9990,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>{setShowScheduleMaker(false);setSmResult(null);}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px 80px",width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px calc(80px + var(--keyboard-height, 0px))",width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
             <div style={{position:"sticky",top:0,zIndex:2,display:"flex",justifyContent:"flex-end",marginBottom:-16}}>
               <button onTouchEnd={e=>e.stopPropagation()} onClick={()=>{setShowScheduleMaker(false);setSmResult(null);}} style={{width:36,height:36,borderRadius:"50%",border:_bN,background:"var(--card-bg-solid)",color:C.deep,fontSize:18,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>✕</button>
             </div>
