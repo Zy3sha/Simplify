@@ -11063,16 +11063,29 @@ function App(){
         backCursor = prevStart;
       }
 
-      // Wake time: first WW before earliest nap
+      // Wake time: first WW before earliest nap, but never shift more than 30min
       const ww0 = personalProgWW(0, napCount);
-      const earliestNap = preNaps[0];
-      const wakeTime = clampWake(earliestNap.start - ww0);
+      const firstNap = preNaps[0];
+      const naturalWake = firstNap.start - ww0;
+      const wakeTime = clampWake(Math.max(naturalWake, avgWakeMins - 30));
 
-      // Build forwards from event end for remaining naps
+      // Build forwards from event end for remaining naps.
+      // Key insight: baby was already awake from anchor nap end through the event.
+      // So the first post-event WW should account for time already awake during event.
       const postNaps = [];
       let fwdCursor = eventEnd;
+      const awakeBeforeEvent = eventTimeMins - anchorNapEnd; // already awake this long
       for (let i = anchorIdx + 1; i < napCount; i++) {
-        const wwFwd = personalProgWW(i, napCount);
+        let wwFwd;
+        if (i === anchorIdx + 1) {
+          // First nap after event: subtract time already awake before/during event
+          const totalWW = personalProgWW(i, napCount);
+          wwFwd = Math.max(10, totalWW - awakeBeforeEvent - (eventDurMins || 60));
+          // But ensure at least a short gap after event ends
+          wwFwd = Math.max(wwFwd, 10);
+        } else {
+          wwFwd = personalProgWW(i, napCount);
+        }
         const napStart = fwdCursor + wwFwd;
         if (napStart > 17 * 60 + 30) break;
         const napEnd = napStart + avgNapDur;
@@ -11083,7 +11096,6 @@ function App(){
       // Bedtime
       const bedWW = personalProgWW(napCount, napCount);
       const lastNapEnd = postNaps.length ? postNaps[postNaps.length - 1].end : anchorNapEnd;
-      // If event ends after anchor nap, bedtime WW counts from event end
       const bedCursor = Math.max(lastNapEnd, eventEnd);
       const bedtime = clampBedtime(bedCursor + bedWW);
 
@@ -11116,10 +11128,12 @@ function App(){
         }
       }
 
-      // Penalise unrealistic wake times
-      penalty += Math.abs(wakeTime - avgWakeMins) * 0.5;
-      // Penalise if wake is before 5am or naps before 5am
-      if (wakeTime < 5 * 60) penalty += 500;
+      // Penalise unrealistic wake times — heavily penalise shifts > 30min
+      const wakeShift = Math.abs(wakeTime - avgWakeMins);
+      penalty += wakeShift * 3;
+      if (wakeShift > 30) penalty += (wakeShift - 30) * 10; // exponential penalty past 30min
+      // Penalise if wake is before 5:30am or naps before 5am
+      if (wakeTime < 5 * 60 + 30) penalty += 1000;
       if (allNaps.some(n => n.start < 5 * 60)) penalty += 500;
       // Penalise fewer naps than expected
       penalty += (napCount - allNaps.length) * 100;
