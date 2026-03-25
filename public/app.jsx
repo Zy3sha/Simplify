@@ -14929,40 +14929,7 @@ function App(){
 
               {/* "Today with Baby" card removed — replaced by Insights hero card above */}
 
-              {/* ── Weekly Summary Card ── */}
-              {(()=>{
-                const _dk=Object.keys(days).sort().slice(-7);
-                if(!_dk.length)return null;
-                const _totalNaps=_dk.reduce((s,d)=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night).length+s,0);
-                const _nightWakes=_dk.reduce((s,d)=>(days[d]||[]).filter(e=>e.night).length+s,0);
-                const _headline=_nightWakes<=7?"This week looks good 👍":_nightWakes<=14?"A mixed week — some good stretches":"A bit of disruption this week — and that's okay";
-                return (
-                  <div className="glass-card" style={{padding:"16px",marginBottom:12}}>
-                    <div style={{fontSize:16,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif",marginBottom:8}}>{_headline}</div>
-                    <div style={{fontSize:12,color:C.mid,lineHeight:1.6}}>{_totalNaps} naps · {_nightWakes} night wakes this week</div>
-                    {STORE_READY && !isPremium && _dk.length >= 5 && (
-                      <button onClick={()=>triggerPaywall("weekly")} style={{marginTop:8,padding:"6px 14px",borderRadius:99,border:"1px solid "+C.ter+"40",background:C.ter+"08",color:C.ter,fontSize:11,fontWeight:600,cursor:_cP}}>
-                        See how {babyName||"baby"}'s patterns are evolving →
-                      </button>
-                    )}
-                    {(()=>{
-                      const _celeb = [];
-                      const _allDk = Object.keys(days).sort();
-                      if (_allDk.length >= 2) {
-                        const _prevWk = _allDk.slice(-14,-7);
-                        const _prevWakes = _prevWk.reduce((s,d)=>(days[d]||[]).filter(e=>e.night).length+s,0);
-                        if (_prevWakes > 0 && _nightWakes < _prevWakes) _celeb.push("Fewer night wakes than last week");
-                      }
-                      const _allNaps = _dk.flatMap(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night).map(n=>minDiff(n.start,n.end)));
-                      const _longestEver = Math.max(...Object.keys(days).flatMap(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night).map(n=>minDiff(n.start,n.end))),0);
-                      const _thisWeekLongest = _allNaps.length ? Math.max(..._allNaps) : 0;
-                      if (_thisWeekLongest > 0 && _thisWeekLongest >= _longestEver) _celeb.push("Longest nap yet — " + hm(_thisWeekLongest));
-                      if (!_celeb.length) return null;
-                      return <div style={{fontSize:11,color:C.mint,fontWeight:600,marginTop:6}}>{_celeb[0]} ✨</div>;
-                    })()}
-                  </div>
-                );
-              })()}
+              {/* Weekly Summary + Wins removed — covered by hero card */}
 
               {/* ═══ Bubba Rhythm Profile (PREMIUM placeholder) ═══ */}
               {STORE_READY && Object.keys(days).length >= 3 && (
@@ -14986,9 +14953,8 @@ function App(){
                 </div>
               )}
 
-              {/* ── Weekly Wins ── */}
-              {(true) && <div>
-              {(()=>{
+              {/* Weekly Wins removed — covered by hero card celebrations */}
+              {false && (()=>{
                 const dk = Object.keys(days).sort();
                 if (dk.length < 7) return null;
                 const thisWeek = dk.slice(-7);
