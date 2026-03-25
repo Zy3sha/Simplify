@@ -4594,6 +4594,7 @@ function App(){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
           <div style={{width:10,height:10,borderRadius:"50%",background:_dot,boxShadow:"0 0 8px "+_dot+"60",animation:"candlePulse 4s ease-in-out infinite"}}/>
           <span style={{fontSize:16,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif"}}>{_label}</span>
+          <span style={{marginLeft:"auto",fontSize:9,padding:"2px 8px",borderRadius:99,background:usePersonalRecs===true?C.mint+"20":"#4a5a8020",color:usePersonalRecs===true?C.mint:"#4a5a80",fontWeight:700,fontFamily:_fM}}>{usePersonalRecs===true?"Personal":"NHS"}</span>
         </div>
         <div style={{fontSize:13,color:C.mid,marginBottom:_secondary||_rightNow?4:8,paddingLeft:20}}>{_timing}</div>
         {_wakeMissing && (
@@ -4923,7 +4924,7 @@ function App(){
     });
 
     // Blend: personal position data (60%) + NHS progressive (40%)
-    if (positionWWs.length >= 3) {
+    if (positionWWs.length >= 2) {
       const sorted2 = [...positionWWs].sort((a,b)=>a.gap-b.gap);
       const trim = Math.max(1, Math.floor(sorted2.length * 0.15));
       const trimmed = sorted2.slice(trim, sorted2.length - trim);
