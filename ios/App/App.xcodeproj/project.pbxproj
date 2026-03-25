@@ -23,6 +23,7 @@
 		OB000006000000000000001A /* WidgetBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000006000000000000001F /* WidgetBridgePlugin.swift */; };
 		OB000007000000000000001A /* OBubbaTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000007000000000000001F /* OBubbaTimerAttributes.swift */; };
 		OB000011000000000000001A /* OBubba.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = OB000011000000000000001F /* OBubba.entitlements */; };
+		OB000020000000000000001A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = OB000020000000000000001F /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +50,7 @@
 		OB000011000000000000001F /* OBubba.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OBubba.entitlements; sourceTree = "<group>"; };
 		OB000012000000000000001F /* IntentHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentHandler.swift; sourceTree = "<group>"; };
 		OB000013000000000000001F /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		OB000020000000000000001F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +100,7 @@
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
 				504EC3131FED79650016851F /* Info.plist */,
+				OB000020000000000000001F /* GoogleService-Info.plist */,
 				OB000011000000000000001F /* OBubba.entitlements */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
@@ -253,6 +256,7 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				OB000020000000000000001A /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
