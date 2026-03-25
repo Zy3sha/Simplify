@@ -22,7 +22,6 @@
 		OB000005000000000000001A /* SiriShortcutsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000005000000000000001F /* SiriShortcutsPlugin.swift */; };
 		OB000006000000000000001A /* WidgetBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000006000000000000001F /* WidgetBridgePlugin.swift */; };
 		OB000007000000000000001A /* OBubbaTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000007000000000000001F /* OBubbaTimerAttributes.swift */; };
-		OB000010000000000000001A /* OBubbaWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000010000000000000001F /* OBubbaWidgets.swift */; };
 		OB000011000000000000001A /* OBubba.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = OB000011000000000000001F /* OBubba.entitlements */; };
 /* End PBXBuildFile section */
 
@@ -308,7 +307,6 @@
 				OB000005000000000000001A /* SiriShortcutsPlugin.swift in Sources */,
 				OB000006000000000000001A /* WidgetBridgePlugin.swift in Sources */,
 				OB000007000000000000001A /* OBubbaTimerAttributes.swift in Sources */,
-				OB000010000000000000001A /* OBubbaWidgets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
