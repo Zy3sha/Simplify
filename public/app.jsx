@@ -626,7 +626,7 @@ const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em"
 function Sheet({onClose,title,children}){
   return(
     <div onClick={onClose} style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px calc(80px + var(--keyboard-height, 0px))",width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px 24px",paddingBottom:"calc(24px + var(--keyboard-height, 0px))",width:"100%",maxWidth:520,maxHeight:"calc(85vh - var(--keyboard-height, 0px))",overflowY:"auto",WebkitOverflowScrolling:"touch",transition:"max-height 0.25s ease, padding-bottom 0.25s ease"}}>
         <div style={{width:48,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
         {title&&<div style={{fontFamily:"'Playfair Display',serif",fontSize:20,marginBottom:16}}>{title}</div>}
         {children}
