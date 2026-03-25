@@ -5887,22 +5887,8 @@ function App(){
       return naps.length < napProfile4.expectedNaps;
     }).length;
 
-    // 3→2 transition: 6.5-9 months, refusing 3rd nap
-    if (w >= 28 && w <= 39 && napProfile4.expectedNaps >= 3 && lastNapRefusals >= 4) {
-      patterns.push({
-        type: "nap_transition", emoji: "🔄", title: "Ready for 3→2 nap transition?",
-        detail: `${name} has taken fewer than 3 naps on ${lastNapRefusals} of the last ${dk.length} days. At ${fmtAge(age)}, this could signal readiness to drop to 2 naps.`,
-        suggestion: "Stretch wake windows to 2.5–3 hours between naps. The morning and afternoon naps should lengthen. Use an early bedtime (6-6:30pm) on days the 3rd nap is skipped. Give it 2-4 weeks before committing — some days may still need 3 naps."
-      });
-    }
-    // 2→1 transition: 13-18 months
-    if (w >= 56 && w <= 78 && napProfile4.expectedNaps >= 2 && lastNapRefusals >= 5) {
-      patterns.push({
-        type: "nap_transition", emoji: "🔄", title: "Ready for 2→1 nap transition?",
-        detail: `${name} has taken fewer than 2 naps on ${lastNapRefusals} of the last ${dk.length} days.`,
-        suggestion: "Gradually push the morning nap later (by 15min every few days) until it sits around 12:30pm. The afternoon nap will naturally shorten and eventually drop. Use an early bedtime during transition. This process can take 2-4 weeks."
-      });
-    }
+    // Nap transitions (3→2, 2→1) are handled by napTransitionGuide()
+    // on the Insights tab — not duplicated here
     // 12-month regression warning — NOT a nap transition
     if (w >= 48 && w < 56 && lastNapRefusals >= 3) {
       patterns.push({
@@ -14409,31 +14395,7 @@ function App(){
                 );
               })()}
 
-              {/* ── Today with Baby — emotional summary ── */}
-              {(()=>{
-                const _tName = babyName || "Baby";
-                const _tToday = days[todayStr()] || [];
-                const _tNaps = _tToday.filter(e=>e.type==="nap"&&!e.night);
-                const _tFeeds = _tToday.filter(e=>e.type==="feed"&&!e.night);
-                const _tNightWakes = _tToday.filter(e=>e.night);
-                if (_tNaps.length + _tFeeds.length < 2) return null;
-                const _tLongestNap = _tNaps.length ? Math.max(..._tNaps.map(n=>minDiff(n.start,n.end))) : 0;
-                const _tTotalSleep = _tNaps.reduce((s,n)=>s+minDiff(n.start,n.end),0);
-                const _tIsStable = _tNaps.length >= 2 && _tNaps.every(n=>minDiff(n.start,n.end)>=25);
-                const _tIsHighNeed = _tFeeds.length >= 8 || (_tNaps.length >= 1 && _tNaps.every(n=>minDiff(n.start,n.end)<30));
-                const _tVerdict = _tIsStable ? "A steady day overall" : _tIsHighNeed ? "A higher-need day — completely normal" : "Building the day together";
-                const _tStats = [];
-                if (_tNaps.length) _tStats.push(_tNaps.length + " nap" + (_tNaps.length>1?"s":""));
-                if (_tFeeds.length) _tStats.push(_tFeeds.length + " feed" + (_tFeeds.length>1?"s":""));
-                if (_tLongestNap >= 45) _tStats.push("longest nap " + hm(_tLongestNap));
-                return (
-                  <div className="glass-card" style={{padding:"14px 16px",marginBottom:12}}>
-                    <div style={{fontSize:14,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif",marginBottom:6}}>Today with {_tName}</div>
-                    <div style={{fontSize:12,color:C.mid,marginBottom:4}}>{_tStats.join(" · ")}</div>
-                    <div style={{fontSize:12,color:C.lt,fontStyle:"italic"}}>{_tVerdict}</div>
-                  </div>
-                );
-              })()}
+              {/* "Today with Baby" card removed — replaced by Insights hero card above */}
 
               {/* ── Weekly Summary Card ── */}
               {(()=>{
