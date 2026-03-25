@@ -647,19 +647,8 @@ window.toggleTheme=function(){
 };
 const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em",_ls08="0.08em",_bN="none",_oN="none";
 function Sheet({onClose,title,children}){
-  const[kbH,setKbH]=React.useState(0);
-  React.useEffect(()=>{
-    // Poll visualViewport every 100ms — most reliable cross-platform approach
-    const poll=setInterval(()=>{
-      if(window.visualViewport){
-        const h=Math.round(window.innerHeight-window.visualViewport.height);
-        setKbH(prev=>Math.abs(prev-h)>10?(h>50?h:0):prev);
-      }
-    },100);
-    return()=>clearInterval(poll);
-  },[]);
   return(
-    <div onClick={onClose} style={{position:"fixed",top:0,left:0,right:0,bottom:kbH,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+    <div onClick={onClose} style={{position:"fixed",inset:0,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px 24px",width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         <div style={{width:48,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
         {title&&<div style={{fontFamily:"'Playfair Display',serif",fontSize:20,marginBottom:16}}>{title}</div>}
