@@ -4899,7 +4899,7 @@ function App(){
     }
 
     // ── Sleep pressure adjustment: short nap = shorter next WW ──
-    // Research consensus (Taking Cara Babies, Baby Sleep Site, Huckleberry):
+    // Research consensus (evidence-based infant sleep research):
     // After a nap ≤ 40 min, shorten next WW by 30-45 min to prevent overtiredness
     // After a very short nap (< 20 min), shorten by up to 45-60 min
     // After a long nap, slightly extend next WW (more sleep pressure cleared)
@@ -6782,7 +6782,7 @@ function App(){
     };
   }
 
-  // Known developmental leap / regression windows
+  // Known developmental phase / regression windows
   function isInLeapWindow(ageWeeks) {
     return (ageWeeks >= 15 && ageWeeks <= 21) ||
            (ageWeeks >= 34 && ageWeeks <= 42) ||
@@ -6900,7 +6900,7 @@ function App(){
         long_naps: "longer naps than usual",
         immature_wake_windows: "wake windows that are still in the current nap-count range",
         fragmented_nights: "a rougher night recently",
-        leap_window: "a developmental leap or growth spurt",
+        leap_window: "a developmental phase or growth spurt",
         catch_up_sleep: "the body catching up on missed sleep"
       };
       var readable = [];
@@ -8148,7 +8148,7 @@ function App(){
       const leapDuration = Math.round((currentLeap.windowEnd - currentLeap.windowStart) * 7);
       causes.push({
         type: "leap", score: 80,
-        title: "Developmental leap — " + currentLeap.name,
+        title: "Developmental phase — " + currentLeap.name,
         brief: "This lines up with a developmental phase (" + currentLeap.name + ", starting around " + Math.round(currentLeap.windowStart) + " weeks). " + _n + " is learning new skills — the fussiness usually settles within " + Math.max(1, Math.round((leapDuration - dayInLeap) / 7)) + " week" + (Math.round((leapDuration - dayInLeap) / 7) !== 1 ? "s" : "") + ".",
         detail: currentLeap.fussy || "Brain development causes temporary sleep disruption. This is a sign of progress, not a problem."
       });
@@ -8285,7 +8285,7 @@ function App(){
     let _label, _message;
     if (_score >= 80) { _label = "Strong rhythm"; _message = _n + "'s schedule is becoming very predictable. Wake times, naps, and bedtimes are landing in consistent windows. This consistency helps their body clock strengthen."; }
     else if (_score >= 60) { _label = "Building rhythm"; _message = _n + "'s patterns are forming. Some days are more predictable than others — that's normal at " + fmtAge(age) + ". The trend is positive."; }
-    else if (_score >= 40) { _label = "Finding a rhythm"; _message = "There's more variation day-to-day right now. This is common during transitions, growth spurts, or developmental leaps. Keep offering consistent wake and bedtimes — the rhythm will come."; }
+    else if (_score >= 40) { _label = "Finding a rhythm"; _message = "There's more variation day-to-day right now. This is common during transitions, growth spurts, or developmental phases. Keep offering consistent wake and bedtimes — the rhythm will come."; }
     else { _label = "Flexible phase"; _message = "Schedules are variable right now. At " + fmtAge(age) + ", many babies haven't settled into a fixed pattern yet. Focus on wake windows rather than clock times, and it'll come together."; }
 
     if (_trend !== null && _trend >= 8) _message += " Rhythm confidence is up from last week — " + _n + "'s body clock is learning.";
@@ -12119,7 +12119,7 @@ function App(){
           { icon:"📱", title:"Today Tab — your home screen", body:"Everything you need right now lives here. Hero Card shows what baby needs and why. One-tap log row for feeds, naps, nappies. Notes & Reminders (tap to expand) holds appointments, pinned notes, and medicine logs. Scroll down past the summary stats to find the detailed log — every entry for the day with full times and edit options. Day Story and tracking streaks live at the bottom." },
           { icon:"🧠", title:"Hero Card — the brain", body:"The coloured dot shows baby's state. The timing line counts wake/sleep time. When predictions use your baby's personal data, you'll see 'OBubba Rhythm' beside the time. 'Right now:' tells you what to do — nap approaching, feed due, bedtime starting, tummy time window, and more. Tap 'Why?' to see the science." },
           { icon:"📖", title:"Day Story & Victories", body:"Below the Hero Card, the Day Story explains what's happening — night wake count, nap quality vs average, feed pace, and what to expect next. Victory cards celebrate progress you might miss: self-settling improvements, longer stretches, nap gains." },
-          { icon:"🔍", title:"When things are tough", body:"If sleep is disrupted for 2+ nights, a Disruption Card appears automatically. It cross-references developmental leaps, teething, regressions, and illness to explain WHY and tell you when it usually passes. No guessing." },
+          { icon:"🔍", title:"When things are tough", body:"If sleep is disrupted for 2+ nights, a Disruption Card appears automatically. It cross-references developmental phases, teething, regressions, and illness to explain WHY and tell you when it usually passes. No guessing." },
           { icon:"⏱", title:"Smart Timers", body:"Nap: tap to start, tap the green pill in the header to stop. Tap ✎ to adjust start time. Long-press Nap for a custom start time. Breast: tap L/R to switch sides — warns at 40/60 min. Night: calm blue timer tracks sleep since bedtime. If you forget to stop a timer, OBubba alerts you." },
           { icon:"😢", title:"Crying? & Sounds", body:"Both live in the header bar on Today. Crying helper ranks likely reasons using feeds, wake windows, nappy timing, teething, and past data — tap 'What helped?' to teach it. Sound machine plays white noise, rain, heartbeat, and shush sounds. Audio continues when your screen locks." },
           { icon:"🌙", title:"Night mode", body:"After bedtime, the Hero Card goes into night mode. It shows how long baby has been sleeping, which wake number this is tonight, the likely reason (e.g. last feed was 4h ago), and what's worked recently. One button to log a night wake — under 10 seconds." },
@@ -13569,7 +13569,7 @@ function App(){
               <button onClick={()=>{haptic();setShowCryingHelper(true);}} style={{display:"none",width:"100%",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:16,border:`1px solid ${C.blush}`,background:"var(--card-bg-solid)",cursor:_cP,marginBottom:12,boxShadow:"var(--card-shadow)"}}>
                 <span style={{fontSize:22}}>😢</span>
                 <div style={{flex:1,textAlign:"left"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:4,fontSize:14,fontWeight:700,color:C.deep}}>Why is my baby crying? <HelpBtn title="Crying Helper" body="OBubba analyses time since last feed, how long baby has been awake, age-specific factors like teething windows and developmental leaps, temperature, and your past data to rank the most likely reasons. Tap 'What helped?' to teach it what works for your baby — accuracy improves over time. Quick-action buttons let you log a feed or start a nap directly."/></div>
+                  <div style={{display:"flex",alignItems:"center",gap:4,fontSize:14,fontWeight:700,color:C.deep}}>Why is my baby crying? <HelpBtn title="Crying Helper" body="OBubba analyses time since last feed, how long baby has been awake, age-specific factors like teething windows and developmental phases, temperature, and your past data to rank the most likely reasons. Tap 'What helped?' to teach it what works for your baby — accuracy improves over time. Quick-action buttons let you log a feed or start a nap directly."/></div>
                   <div style={{fontSize:11,color:C.lt,marginTop:1}}>Quick check — ranked by what's most likely right now</div>
                 </div>
                 <span style={{fontSize:14,color:C.lt}}>→</span>
@@ -13816,7 +13816,7 @@ function App(){
                   if (w2 < 13 && wakeCount <= 4) tip = `Night wakes are completely normal at this age. Expected feeds: ${expectedFeeds}/night — baby genuinely needs feeding overnight.`;
                   else if (w2 >= 14 && w2 <= 22 && wakeCount >= 3) tip = `Frequent wakes around 4 months are due to sleep cycle maturation — not a sign of anything wrong. Expected feeds: ${expectedFeeds}/night. This is temporary.`;
                   else if (w2 < 26 && wakeCount <= 2) tip = hasFeed ? `Feeding at night is still normal (expected: ${expectedFeeds}/night). As daytime feeds increase, night feeds will naturally reduce.` : "Good settling tonight. Consistent responses help baby learn to self-soothe over time.";
-                  else if (w2 < 26 && wakeCount >= 3) tip = `More wakes than usual (expected feeds: ${expectedFeeds}/night). Check for growth spurt, teething, or developmental leap.`;
+                  else if (w2 < 26 && wakeCount >= 3) tip = `More wakes than usual (expected feeds: ${expectedFeeds}/night). Check for growth spurt, teething, or developmental phase.`;
                   else if (w2 >= 26 && wakeCount === 0) tip = "No wakes yet — well done! Consistent routine is paying off.";
                   else if (w2 >= 26 && wakeCount <= 1) tip = hasFeed ? `One feed overnight is still normal up to 9-12 months (expected: ${expectedFeeds}). Gradually reducing the amount by 10-20ml every few nights can help it drop.` : "One wake that settled without a feed — great progress toward sleeping through.";
                   else if (w2 >= 26 && wakeCount >= 3 && feedCount >= 2) tip = `${feedCount} feeds tonight — try shifting calories to daytime. Offer fuller feeds every 2.5-3.5 hours during the day and gradually reduce night feed amounts.`;
@@ -14190,7 +14190,7 @@ function App(){
                 if(_aw >= 5 && _aw <= 8) _hardCard = {
                   emoji:"😭",
                   title:`Week ${Math.round(_aw)} — this is the peak`,
-                  body:`Crying peaks at 6–8 weeks for every single baby. What you're going through right now is the hardest it gets. It is not because you're doing anything wrong. It is not colic necessarily. It is PURPLE crying — developmental, predictable, and temporary. It ends around 12 weeks. You are not alone in this.`,
+                  body:`Crying peaks at 6–8 weeks for every single baby. What you're going through right now is the hardest it gets. It is not because you're doing anything wrong. It is not colic necessarily. It is the peak crying phase — developmental, predictable, and temporary. It ends around 12 weeks. You are not alone in this.`,
                   sub:"Based on data from thousands of families. This phase passes.",
                 };
                 else if(_aw >= 15 && _aw <= 19) _hardCard = {
@@ -15923,10 +15923,10 @@ function App(){
                 }
 
                 // Check if any regression/leap is likely
-                const _leapWeeks = [5,8,12,19,26,37,46,55,64,75];
-                const _nearLeap = _leapWeeks.some(w => Math.abs(ageWeeks - w) <= 2);
-                if (_nearLeap) {
-                  _behaviours.push("May be fussier — a developmental leap is close");
+                const _phaseWeeks = [5,8,12,19,26,37,46,55,64,75];
+                const _nearPhase = _phaseWeeks.some(w => Math.abs(ageWeeks - w) <= 2);
+                if (_nearPhase) {
+                  _behaviours.push("May be fussier — a developmental phase is underway");
                 }
 
                 return (
@@ -15967,7 +15967,7 @@ function App(){
               {devFilter==="newborn" && ageWeeks < 13 && (()=>{
                 const [_expandedQ, _setExpandedQ] = React.useState(null);
                 const _isBrand = ageWeeks < 2;
-                const _isPurpleWindow = ageWeeks >= 4 && ageWeeks < 14;
+                const _isPeakCryingWindow = ageWeeks >= 4 && ageWeeks < 14;
 
                 const _normalQs = [
                   {q:"Grunting and straining", a:"Very normal — especially in the first few weeks. Babies grunt when moving stool because they haven't yet learned to relax their pelvic floor. It's not pain, it's effort. If there's no stool after several days or baby seems distressed, mention it to your health visitor."},
@@ -16001,13 +16001,13 @@ function App(){
                       </div>
                     </div>
 
-                    {/* PURPLE Crying card — 4-12 weeks */}
-                    {_isPurpleWindow && (
+                    {/* Peak Crying Phase card — 4-12 weeks */}
+                    {_isPeakCryingWindow && (
                       <div style={{background:"rgba(123,104,238,0.05)",border:"1.5px solid rgba(123,104,238,0.2)",borderRadius:16,padding:"14px 16px",marginBottom:12}}>
-                        <div style={{fontSize:12,fontFamily:_fM,color:"#7b68ee",textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>😭 PURPLE Crying — Why your baby cries so much right now</div>
+                        <div style={{fontSize:12,fontFamily:_fM,color:"#7b68ee",textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>😭 Peak Crying Phase — Why your baby cries so much right now</div>
                         <div style={{fontSize:13,color:C.deep,fontWeight:700,marginBottom:6}}>This is a developmental phase, not a problem</div>
                         <div style={{fontSize:12,color:C.mid,lineHeight:1.6,marginBottom:10}}>
-                          PURPLE crying is the medical term for the intense crying phase all healthy newborns go through. It peaks around 6-8 weeks and resolves by 3 months.
+                          The peak crying phase is something all healthy newborns go through. It peaks around 6-8 weeks and resolves by 3 months.
                         </div>
                         {[
                           {letter:"P", word:"Peak pattern", desc:"Crying peaks at 6-8 weeks then decreases"},
@@ -18487,7 +18487,7 @@ function App(){
             {bfHubSection==="spurts"&&(
               <div>
                 <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:12}}>Growth spurt timeline</div>
-                {[[3,"3 weeks","First major spurt. Cluster feeding 2-3 days. Trust your body."],[6,"6 weeks","Most intense. Feeds feel constant. Peak supply-building time."],[12,"3 months","Coincides with PURPLE crying ending. Feeds intensify briefly then settle."],[19,"4 months","Alongside sleep regression. Night feeds expected — not a supply issue."],[26,"6 months","As weaning begins. Milk remains primary nutrition."]].map(([wk,lbl,desc],i)=>{
+                {[[3,"3 weeks","First major spurt. Cluster feeding 2-3 days. Trust your body."],[6,"6 weeks","Most intense. Feeds feel constant. Peak supply-building time."],[12,"3 months","Coincides with peak crying phase ending. Feeds intensify briefly then settle."],[19,"4 months","Alongside sleep regression. Night feeds expected — not a supply issue."],[26,"6 months","As weaning begins. Milk remains primary nutrition."]].map(([wk,lbl,desc],i)=>{
                   const _aw=age?age.totalWeeks:0;
                   const _cur=Math.abs(_aw-wk)<=1;
                   const _past=_aw>wk+2;
