@@ -649,21 +649,17 @@ const _fM="monospace",_fI="inherit",_cP="pointer",_bBB="border-box",_ls1="0.1em"
 function Sheet({onClose,title,children}){
   const[kbH,setKbH]=React.useState(0);
   React.useEffect(()=>{
-    let showId,hideId;
-    const Kb=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Keyboard;
-    if(Kb){
-      Kb.addListener("keyboardWillShow",info=>{setKbH(info.keyboardHeight||300);}).then(id=>{showId=id;});
-      Kb.addListener("keyboardWillHide",()=>{setKbH(0);}).then(id=>{hideId=id;});
-    } else {
-      // Web fallback
-      const onResize=()=>{const h=window.innerHeight-(window.visualViewport?window.visualViewport.height:window.innerHeight);setKbH(h>50?h:0);};
-      window.visualViewport&&window.visualViewport.addEventListener("resize",onResize);
-      return()=>{window.visualViewport&&window.visualViewport.removeEventListener("resize",onResize);};
-    }
-    return()=>{if(showId&&showId.remove)showId.remove();if(hideId&&hideId.remove)hideId.remove();};
+    // Poll visualViewport every 100ms — most reliable cross-platform approach
+    const poll=setInterval(()=>{
+      if(window.visualViewport){
+        const h=Math.round(window.innerHeight-window.visualViewport.height);
+        setKbH(prev=>Math.abs(prev-h)>10?(h>50?h:0):prev);
+      }
+    },100);
+    return()=>clearInterval(poll);
   },[]);
   return(
-    <div onClick={onClose} style={{position:"fixed",top:0,left:0,right:0,bottom:kbH,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center",transition:"bottom 0.15s ease-out"}}>
+    <div onClick={onClose} style={{position:"fixed",top:0,left:0,right:0,bottom:kbH,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
       <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px 24px",width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         <div style={{width:48,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
         {title&&<div style={{fontFamily:"'Playfair Display',serif",fontSize:20,marginBottom:16}}>{title}</div>}
@@ -3565,8 +3561,9 @@ function App(){
   function _saveCodeToUsername(codes) {
     if(!familyUsername || !window._fb) return;
     try {
+      const {db, doc, setDoc} = window._fb;
       const key = familyUsername.trim().toLowerCase();
-      fsSet("usernames", key, {childSyncCodes: JSON.stringify(codes)}, true);
+      setDoc(doc(db, "usernames", key), {childSyncCodes: JSON.stringify(codes)}, {merge: true});
     } catch(e) { console.warn("_saveCodeToUsername error", e); }
   }
   // Restore child sync codes from cloud after login/device switch.
