@@ -14972,8 +14972,11 @@ function App(){
 
                 // Bedtime prediction
                 if (!_actions.length) {
-                  const _bedP = bedtimePrediction ? bedtimePrediction() : null;
-                  if (_bedP) _actions.push("Aim bedtime around " + fmt12(_bedP));
+                  try {
+                    const _bedP = bedtimePrediction ? bedtimePrediction() : null;
+                    const _bedTime = typeof _bedP === "string" ? _bedP : (_bedP && _bedP.time ? _bedP.time : null);
+                    if (_bedTime) _actions.push("Aim bedtime around " + fmt12(_bedTime));
+                  } catch {}
                 }
                 if (!_actions.length) _actions.push("Keep wake windows consistent");
 
