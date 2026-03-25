@@ -10522,7 +10522,20 @@ function App(){
   function logBedtimeNow(){
     const already = (days[selDay]||[]).some(e => e.type==="sleep" && !e.night);
     if (already) return;
-    quickAddLog("sleep",{type:"sleep",time:nowTime(),night:false,note:""});
+    const bedTime = nowTime();
+    // If a nap timer is running, stop it and set end time to bedtime
+    if (napOn && napEntryId) {
+      setDays(d => {
+        const existing = d[selDay] || [];
+        return {...d, [selDay]: existing.map(x =>
+          x.id === napEntryId ? {...x, end: bedTime, _active: false} : x
+        )};
+      });
+      setNapOn(false); setNapSec(0); setNapStartT(null); setNapEntryId(null); setNapPaused(false);
+      try{["nap_on","nap_startT","nap_sec","nap_entry_id","nap_paused","nap_paused_sec"].forEach(k=>localStorage.removeItem(k));}catch{}
+      if(window.OBNative) window.OBNative.liveActivity.stopTimer();
+    }
+    quickAddLog("sleep",{type:"sleep",time:bedTime,night:false,note:""});
     fireEventReminders("after_bedtime");
     // One-time safe sleep signpost for babies under 6 months
     try {
