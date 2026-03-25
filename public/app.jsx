@@ -4617,7 +4617,7 @@ function App(){
       const _tdWhy = threeDriveSleepModel();
       if (_tdWhy) {
         let _driveExplain = "OBubba tracks three forces:\n";
-        _driveExplain += "⏱ Awake pressure — " + (_tdWhy.acute.pressure === "low" ? "Low. " + _name + " is well-rested." : _tdWhy.acute.pressure === "building" ? "Building. Awake " + hm(_tdWhy.acute.awakeMin) + " of " + hm(_tdWhy.acute.wwMax) + " max." : _tdWhy.acute.pressure === "ready" ? "Ready for sleep. Near the wake window limit." : _tdWhy.acute.pressure === "high" ? "High. Past the usual wake window." : "Overtired. " + _name + " needs sleep now.") + "\n";
+        _driveExplain += "⏱ Awake pressure — " + (_tdWhy.acute.pressure === "low" ? "Low. " + _name + " is well-rested." : _tdWhy.acute.pressure === "building" ? "Building. Awake " + hm(_tdWhy.acute.awakeMin) + " of " + hm(_tdWhy.acute.wwMax) + " max." : _tdWhy.acute.pressure === "ready" ? "Ready for sleep. Near the wake window limit." : _tdWhy.acute.pressure === "high" ? "High. Past the usual wake window." : "Past the usual wake window — look for sleepy cues.") + "\n";
         _driveExplain += "📊 Sleep debt — " + (_tdWhy.chronic.pressure === "none" ? "No accumulated debt." : _tdWhy.chronic.pressure === "building" ? "Slightly below target recently." : "Accumulated over " + _tdWhy.chronic.debt + " days. An early bedtime helps.") + "\n";
         _driveExplain += "🕐 Body clock — " + (_tdWhy.circadian.state === "aligned" ? "Well-aligned. Consistent routine is helping." : _tdWhy.circadian.state === "slightly_drifted" ? "Slightly drifted (" + Math.abs(_tdWhy.circadian.driftMin) + "min). Anchor the morning wake." : "Drifted. Consistent morning wake time resets this fastest.");
         _whyLines.push(_driveExplain);
@@ -5940,7 +5940,7 @@ function App(){
       else if (ratio < 0.8) { acutePressure = "building"; acuteScore = 50; }
       else if (ratio < 1.0) { acutePressure = "ready"; acuteScore = 75; }
       else if (ratio < 1.15) { acutePressure = "high"; acuteScore = 90; }
-      else { acutePressure = "overtired"; acuteScore = 100; }
+      else { acutePressure = "past_window"; acuteScore = 100; }
     }
 
     // ── Drive 2: Chronic Sleep Debt ──
@@ -5977,7 +5977,7 @@ function App(){
       overallMessage = `${name} is getting ready for sleep`;
     } else {
       overallState = "high";
-      overallMessage = `Sleep pressure is high — ${name} needs sleep soon`;
+      overallMessage = `Sleep pressure is high — look for sleepy cues`;
     }
 
     return {
@@ -14495,7 +14495,7 @@ function App(){
                       <div>
                         <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:4}}>How are <em>you</em> doing?</div>
                         <div style={{fontSize:13,color:C.mid,lineHeight:1.6}}>
-                          {babyName||"Baby"} has been waking {Math.round(avgNightWakes*10)/10} times a night on average. That's a lot of broken sleep for you too. You're doing an incredible job — but please don't forget to look after yourself.
+                          {babyName||"Baby"} has been waking {Math.round(avgNightWakes*10)/10} times a night on average. That's a lot of broken sleep for you too. You're doing an incredible job — please remember to look after yourself too.
                         </div>
                         <div style={{fontSize:12,color:"#7b68ee",lineHeight:1.6,marginTop:8}}>
                           💬 Talk to your partner, a friend, or family{"\n"}
@@ -15850,7 +15850,7 @@ function App(){
                           {!_milkOk && _aw < 39 && "Milk is still the main nutrition at 6-9 months — offer milk before solids. "}
                           {!_milkOk && _aw >= 39 && "Milk remains important at 9-12 months — aim for 400ml+ per day. "}
                           {_milkOk && _hasSolids && "Looking balanced today ✓"}
-                          {_milkOk && !_hasSolids && _h >= 16 && "Good milk intake — don't forget to log any solids given today."}
+                          {_milkOk && !_hasSolids && _h >= 16 && "Good milk intake — remember to log any solids given today."}
                         </div>
                       </div>
                     );
