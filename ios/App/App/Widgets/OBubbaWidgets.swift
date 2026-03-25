@@ -56,7 +56,18 @@ struct OBubbaTimelineProvider: TimelineProvider {
               let json = defaults.string(forKey: "widgetData"),
               let jsonData = json.data(using: .utf8),
               let data = try? JSONDecoder().decode(WidgetData.self, from: jsonData) else {
-            return placeholder(in: .init())
+            return OBubbaEntry(date: Date(), data: WidgetData(
+                babyName: "Baby",
+                feedCount: 0,
+                sleepCount: 0,
+                nappyCount: 0,
+                lastFeedTime: nil,
+                lastFeedType: nil,
+                lastSleepTime: nil,
+                nextFeedEstimate: nil,
+                theme: "light",
+                updatedAt: Date().timeIntervalSince1970 * 1000
+            ))
         }
         return OBubbaEntry(date: Date(), data: data)
     }
