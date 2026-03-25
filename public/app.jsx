@@ -2190,16 +2190,7 @@ function App(){
   const[showSoundMachine,setShowSoundMachine]=useState(false);
   const[showSafeSleepPopup,setShowSafeSleepPopup]=useState(false);
   const[showRecModeChoice,setShowRecModeChoice]=useState(false);
-  // Show recommendation mode choice once when enough data exists
-  useEffect(()=>{
-    if (usePersonalRecs !== null) return; // already chosen
-    try { if (localStorage.getItem("rec_mode_asked_v1")) return; } catch {}
-    const daysLogged = Object.keys(days).filter(d => (days[d]||[]).length > 0).length;
-    if (daysLogged >= 3) {
-      const t = setTimeout(() => setShowRecModeChoice(true), 2000);
-      return () => clearTimeout(t);
-    }
-  },[usePersonalRecs, days]);
+  /* Rec mode popup deferred — will trigger from hero card instead */
   const[soundPlaying,setSoundPlaying]=useState(null); // "white"|"brown"|"pink"|"rain"|"heartbeat"|"shush"
   const[soundVolume,setSoundVolume]=useState(0.5);
   const[soundTimer,setSoundTimer]=useState(0); // minutes, 0=no timer
