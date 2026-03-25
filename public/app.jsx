@@ -2619,6 +2619,58 @@ function App(){
     return ()=>clearTimeout(lsRef.current);
   },[children, childSyncCodes, resolvedActiveId, onboarded]);
 
+  // ── Backup critical settings to native Preferences (survives app updates) ──
+  useEffect(()=>{
+    if(!window.OBNative) return;
+    const backup = async () => {
+      try {
+        const critical = {
+          children_v1: localStorage.getItem("children_v1"),
+          child_sync_codes_v1: localStorage.getItem("child_sync_codes_v1"),
+          active_child: localStorage.getItem("active_child"),
+          backup_code: localStorage.getItem("backup_code"),
+          family_code: localStorage.getItem("family_code"),
+          family_username: localStorage.getItem("family_username"),
+          use_personal_recs_v1: localStorage.getItem("use_personal_recs_v1"),
+          onboarded_v2: localStorage.getItem("onboarded_v2"),
+          carer_contacts_v1: localStorage.getItem("carer_contacts_v1"),
+          carer_comfort_v1: localStorage.getItem("carer_comfort_v1"),
+          carer_notes_v1: localStorage.getItem("carer_notes_v1"),
+          fluid_unit_v1: localStorage.getItem("fluid_unit_v1"),
+          measure_unit_v1: localStorage.getItem("measure_unit_v1"),
+          theme_v1: localStorage.getItem("theme_v1"),
+          bio_enabled: localStorage.getItem("bio_enabled"),
+          safe_sleep_shown_v1: localStorage.getItem("safe_sleep_shown_v1"),
+        };
+        await window.OBNative.preferences.set("obubba_critical_backup", JSON.stringify(critical));
+      } catch {}
+    };
+    const t = setTimeout(backup, 2000);
+    return () => clearTimeout(t);
+  },[children, childSyncCodes, familyUsername, backupCode, usePersonalRecs]);
+
+  // ── Restore critical settings from native Preferences if localStorage is empty ──
+  useEffect(()=>{
+    if(!window.OBNative) return;
+    (async () => {
+      try {
+        // Only restore if localStorage appears wiped (no children data)
+        if (localStorage.getItem("children_v1")) return;
+        const raw = await window.OBNative.preferences.get("obubba_critical_backup");
+        if (!raw) return;
+        const backup = JSON.parse(raw);
+        console.log("[OBubba] Restoring settings from native backup");
+        Object.entries(backup).forEach(([key, val]) => {
+          if (val !== null && val !== undefined && !localStorage.getItem(key)) {
+            localStorage.setItem(key, val);
+          }
+        });
+        // Reload to pick up restored data
+        window.location.reload();
+      } catch(e) { console.warn("[OBubba] Restore from backup failed:", e); }
+    })();
+  },[]);
+
   useEffect(()=>{
     const check = setInterval(()=>{
       if(window._fb){ setFbReady(true); clearInterval(check); }
