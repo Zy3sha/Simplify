@@ -255,16 +255,85 @@ struct OBubbaLockScreenAccessoryWidget: Widget {
     }
 }
 
+// ── Live Activity Widget ────────────────────────────────────────
+struct OBubbaTimerLiveActivity: Widget {
+    let kind: String = "OBubbaTimer"
+
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: OBubbaTimerAttributes.self) { context in
+            // Lock Screen banner
+            HStack(spacing: 16) {
+                Image(systemName: context.attributes.timerType == "feed" ? "drop.fill" : "moon.zzz.fill")
+                    .font(.title2)
+                    .foregroundColor(Color(hex: "#C07088"))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(context.attributes.babyName)'s \(context.attributes.timerType == "feed" ? "Feed" : "Sleep")")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    if let side = context.state.side {
+                        Text("\(side.capitalized) side")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                Text(context.state.startTime, style: .timer)
+                    .font(.system(.title, design: .monospaced))
+                    .foregroundColor(Color(hex: "#C07088"))
+                    .monospacedDigit()
+            }
+            .padding(16)
+            .background(Color(hex: "#FBF5F3"))
+
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Image(systemName: context.attributes.timerType == "feed" ? "drop.fill" : "moon.zzz.fill")
+                        .foregroundColor(Color(hex: "#C07088"))
+                }
+                DynamicIslandExpandedRegion(.center) {
+                    VStack(spacing: 2) {
+                        Text("\(context.attributes.babyName)'s \(context.attributes.timerType == "feed" ? "Feed" : "Sleep")")
+                            .font(.headline)
+                        if let side = context.state.side {
+                            Text("\(side.capitalized) side")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text(context.state.startTime, style: .timer)
+                        .font(.system(.title3, design: .monospaced))
+                        .foregroundColor(Color(hex: "#C07088"))
+                        .monospacedDigit()
+                }
+            } compactLeading: {
+                Image(systemName: context.attributes.timerType == "feed" ? "drop.fill" : "moon.zzz.fill")
+                    .foregroundColor(Color(hex: "#C07088"))
+            } compactTrailing: {
+                Text(context.state.startTime, style: .timer)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundColor(Color(hex: "#C07088"))
+                    .monospacedDigit()
+            } minimal: {
+                Image(systemName: context.attributes.timerType == "feed" ? "drop.fill" : "moon.zzz.fill")
+                    .foregroundColor(Color(hex: "#C07088"))
+            }
+        }
+    }
+}
+
 // ── Widget Bundle ───────────────────────────────────────────────
 @main
 struct OBubbaWidgetBundle: WidgetBundle {
     var body: some Widget {
         OBubbaSummaryWidget()
-        if #available(iOS 16.0, *) {
-            OBubbaLockScreenAccessoryWidget()
-        }
-        if #available(iOS 16.1, *) {
-            OBubbaTimerLiveActivity()
-        }
+        OBubbaLockScreenAccessoryWidget()
+        OBubbaTimerLiveActivity()
     }
 }
