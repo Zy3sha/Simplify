@@ -3433,7 +3433,11 @@ function App(){
           const codeSnap = await getDoc(codeRef);
           if(codeSnap.exists() && !codeSnap.data().replacedBy) {
             // Restore existing stable code — do not generate a new one
-            setChildSyncCodes(prev => ({...prev, [childId]: mapData.code}));
+            setChildSyncCodes(prev => {
+              const updated = {...prev, [childId]: mapData.code};
+              _saveCodeToUsername(updated);
+              return updated;
+            });
             subscribeToChildSync(childId, mapData.code);
             return mapData.code;
           }
@@ -3458,7 +3462,11 @@ function App(){
         const existingData = existingDoc.data();
         if(!existingData.replacedBy) {
           // Found a legacy code — restore it and backfill child_code_map
-          setChildSyncCodes(prev => ({...prev, [childId]: existingCode}));
+          setChildSyncCodes(prev => {
+            const updated = {...prev, [childId]: existingCode};
+            _saveCodeToUsername(updated);
+            return updated;
+          });
           subscribeToChildSync(childId, existingCode);
           // Backfill child_code_map so we don't need this query next time
           try {
@@ -3505,10 +3513,23 @@ function App(){
       updatedAt: serverTimestamp()
     });
 
-    setChildSyncCodes(prev => ({...prev, [childId]: code}));
+    setChildSyncCodes(prev => {
+      const updated = {...prev, [childId]: code};
+      // Immediately save to username doc so codes survive reinstalls
+      _saveCodeToUsername(updated);
+      return updated;
+    });
     subscribeToChildSync(childId, code);
     trackEvent("child_sync_created");
     return code;
+  }
+  // Save sync codes to username document immediately (not debounced)
+  function _saveCodeToUsername(codes) {
+    if(!familyUsername || !window._fb) return;
+    try {
+      const key = familyUsername.trim().toLowerCase();
+      fsSet("usernames", key, {childSyncCodes: JSON.stringify(codes)}, true);
+    } catch(e) { console.warn("_saveCodeToUsername error", e); }
   }
   // Restore child sync codes from cloud after login/device switch.
   // child_code_map is the source of truth; localStorage is a cache.
