@@ -3582,6 +3582,21 @@ function App(){
     setChildSyncCodes(prev => {const n={...prev};delete n[childId];return n;});
     setChildren(prev => {const n={...prev};delete n[childId];return n;});
   }
+  // Restore sync codes from cloud on startup if localStorage is empty.
+  // This fixes the issue where app updates / reinstalls wipe localStorage
+  // but the codes are safely stored in Firestore child_code_map.
+  const restoreDoneRef = React.useRef(false);
+  useEffect(() => {
+    if(!fbReady || restoreDoneRef.current) return;
+    restoreDoneRef.current = true;
+    const localCodes = childSyncCodes;
+    const childIds = Object.keys(children);
+    // If we have children but no local sync codes, try restoring from cloud
+    if (childIds.length > 0 && Object.keys(localCodes).length === 0) {
+      restoreChildSyncCodesFromCloud(childIds);
+    }
+  }, [fbReady]);
+
   // Backfill: migrate existing localStorage child sync codes to child_code_map.
   // Runs once when Firebase is ready. Only writes if no cloud mapping exists yet.
   const backfillDoneRef = React.useRef(false);
