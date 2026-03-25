@@ -14313,7 +14313,7 @@ function App(){
               )}
 
               {/* ── 📊 INSIGHTS HERO CARD ── */}
-              {(()=>{
+              {(()=>{ try {
                 const _tName = babyName || "Baby";
                 const _dk = Object.keys(days).sort().slice(-7);
                 if (_dk.length < 2) return (
@@ -14345,7 +14345,7 @@ function App(){
                 else if (_recentAvgNW <= 2) _positives.push("Nights are looking good");
 
                 // Rhythm building
-                const _wakeTimes = _dk.map(d=>{const w=(days[d]||[]).find(e=>e.type==="wake"&&!e.night);return w?timeVal(w):null;}).filter(Boolean);
+                const _wakeTimes = _dk.map(d=>{const w=(days[d]||[]).find(e=>e.type==="wake"&&!e.night&&e.time);if(!w||!w.time)return null;try{const[h,m]=w.time.split(":").map(Number);return h*60+m;}catch{return null;}}).filter(Boolean);
                 if (_wakeTimes.length >= 3) {
                   const _wakeSpread = Math.max(..._wakeTimes) - Math.min(..._wakeTimes);
                   if (_wakeSpread <= 45) _positives.push("Wake time is consistent");
@@ -14393,7 +14393,7 @@ function App(){
                     )}
                   </div>
                 );
-              })()}
+              } catch(e) { console.warn("Insights hero error:", e); return null; } })()}
 
               {/* "Today with Baby" card removed — replaced by Insights hero card above */}
 
