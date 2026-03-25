@@ -3405,13 +3405,16 @@ function App(){
     const {db, doc, getDoc, setDoc, serverTimestamp} = window._fb;
 
     // Check cloud for existing stable code (child_code_map is source of truth)
+    // Use Firebase SDK directly (not REST) to avoid auth token timing issues
     try {
-      const mapSnap = await fsGet("child_code_map", childId);
+      const mapRef = doc(db, "child_code_map", childId);
+      const mapSnap = await getDoc(mapRef);
       if(mapSnap.exists()) {
         const mapData = mapSnap.data();
         if(mapData.code) {
           // Verify the code document still exists and is active
-          const codeSnap = await fsGet("child_syncs", mapData.code);
+          const codeRef = doc(db, "child_syncs", mapData.code);
+          const codeSnap = await getDoc(codeRef);
           if(codeSnap.exists() && !codeSnap.data().replacedBy) {
             // Restore existing stable code — do not generate a new one
             setChildSyncCodes(prev => ({...prev, [childId]: mapData.code}));
@@ -3462,19 +3465,23 @@ function App(){
   // child_code_map is the source of truth; localStorage is a cache.
   async function restoreChildSyncCodesFromCloud(childIds) {
     if(!window._fb || !childIds?.length) return;
+    const {db, doc, getDoc} = window._fb;
     const restored = {};
     await Promise.all(childIds.map(async (cid) => {
       try {
-        const mapSnap = await fsGet("child_code_map", cid);
+        // Use Firebase SDK directly (not REST) to avoid auth token timing issues
+        const mapRef = doc(db, "child_code_map", cid);
+        const mapSnap = await getDoc(mapRef);
         if(!mapSnap.exists()) return;
         const mapData = mapSnap.data();
         if(!mapData.code) return;
         // Verify the code document still exists and is active
-        const codeSnap = await fsGet("child_syncs", mapData.code);
+        const codeRef = doc(db, "child_syncs", mapData.code);
+        const codeSnap = await getDoc(codeRef);
         if(codeSnap.exists() && !codeSnap.data().replacedBy) {
           restored[cid] = mapData.code;
         }
-      } catch(e) { /* skip — will retry on next login */ }
+      } catch(e) { console.warn("child_code_map restore error for", cid, e); }
     }));
     if(Object.keys(restored).length) {
       setChildSyncCodes(prev => ({...prev, ...restored}));
@@ -3615,13 +3622,17 @@ function App(){
     const localCodes = childSyncCodes;
     if(!Object.keys(localCodes).length) return;
     (async () => {
+      const {db, doc, getDoc} = window._fb;
       for(const [childId, code] of Object.entries(localCodes)) {
         try {
           // Only backfill if no cloud mapping exists yet (cloud is source of truth)
-          const mapSnap = await fsGet("child_code_map", childId);
+          // Use Firebase SDK directly (not REST) to avoid auth token timing issues
+          const mapRef = doc(db, "child_code_map", childId);
+          const mapSnap = await getDoc(mapRef);
           if(mapSnap.exists()) continue;
           // Verify the code actually exists in child_syncs
-          const codeSnap = await fsGet("child_syncs", code);
+          const codeRef = doc(db, "child_syncs", code);
+          const codeSnap = await getDoc(codeRef);
           if(!codeSnap.exists()) continue;
           const codeData = codeSnap.data();
           // Only backfill if this device created the code (ownerUid matches)
