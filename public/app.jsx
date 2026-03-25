@@ -4884,12 +4884,17 @@ function App(){
       const totalWeight = trimmed.reduce((s,p)=>s+p.weight,0);
       const posAvg = Math.round(trimmed.reduce((s,p)=>s+p.gap*p.weight,0) / totalWeight);
       const blended = usePersonalRecs === true
-        ? Math.round(posAvg * 0.6 + nhsProgressive * 0.4)
-        : Math.round(posAvg * 0.4 + nhsProgressive * 0.6);
-      const clamped = Math.max(ww.min, Math.min(ww.max, blended));
-      wakeWindowMin = Math.max(ww.min, Math.round(clamped * 0.9));
+        ? Math.round(posAvg * 0.65 + nhsProgressive * 0.35)
+        : nhsProgressive;
+      // Personal mode: allow baby's rhythm below NHS min (but cap at NHS max for safety)
+      // NHS mode: strict NHS range
+      const floor = usePersonalRecs === true ? Math.max(15, Math.round(ww.min * 0.6)) : ww.min;
+      const clamped = Math.max(floor, Math.min(ww.max, blended));
+      wakeWindowMin = Math.max(floor, Math.round(clamped * 0.9));
       wakeWindowMax = Math.min(ww.max, Math.round(clamped * 1.1));
-      sourceLabel = `${possessive(babyName||"Baby")} nap ${napsDoneToday2+1} pattern (${posAvg}min avg)`;
+      sourceLabel = usePersonalRecs === true
+        ? `${possessive(babyName||"Baby")} nap ${napsDoneToday2+1} pattern (${posAvg}min avg)`
+        : `NHS wake windows for ${fmtAge(age)}`;
     } else {
       // Fall back to progressive NHS
       const clamped = Math.max(ww.min, Math.min(ww.max, nhsProgressive));
@@ -6661,7 +6666,9 @@ function App(){
       const personalWW = weightedAvg(positionWWs[i] || []);
       const nhsWW = progressiveWW(w, i, napCount);
       const blendedWW = personalWW !== null && dayPatterns.length >= 3
-        ? Math.round(personalWW * 0.6 + nhsWW * 0.4)
+        ? (usePersonalRecs === true
+            ? Math.round(personalWW * 0.65 + nhsWW * 0.35)
+            : nhsWW)
         : nhsWW;
       const clampedWW = clampWakeWindow(blendedWW, w);
       cursor += clampedWW;
@@ -6671,7 +6678,9 @@ function App(){
       // Nap duration: blend personal data with sleep-budget-aware target
       const personalDur = weightedAvg(positionDurs[i] || []);
       const blendedDur = personalDur !== null && dayPatterns.length >= 3
-        ? Math.round(personalDur * 0.5 + targetPerNap * 0.5)
+        ? (usePersonalRecs === true
+            ? Math.round(personalDur * 0.6 + targetPerNap * 0.4)
+            : targetPerNap)
         : targetPerNap;
       const cappedDur = clampNapDuration(blendedDur, w);
 
