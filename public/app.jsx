@@ -1942,6 +1942,18 @@ function App(){
   });
 
   const[selDay,setSelDay]=useState(()=>{
+    // Start on the current OBubba day — today if it has data,
+    // otherwise the most recent day with entries
+    try {
+      const child = children[activeChildId] || children[Object.keys(children)[0]];
+      const d = (child && child.days) || {};
+      // First try the smart OBubba-day detection (today or yesterday)
+      const key = getCurrentObubbaDayKey(d);
+      if (key && d[key] && d[key].length) return key;
+      // Fall back to the latest calendar day that has any entries
+      const sorted = Object.keys(d).filter(k => d[k] && d[k].length).sort();
+      if (sorted.length) return sorted[sorted.length - 1];
+    } catch {}
     return todayStr();
   });
   const[tab,setTab]=useState("day");
