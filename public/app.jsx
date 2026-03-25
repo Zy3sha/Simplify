@@ -2189,6 +2189,17 @@ function App(){
   const[showCryingHelper,setShowCryingHelper]=useState(false);
   const[showSoundMachine,setShowSoundMachine]=useState(false);
   const[showSafeSleepPopup,setShowSafeSleepPopup]=useState(false);
+  const[showRecModeChoice,setShowRecModeChoice]=useState(false);
+  // Show recommendation mode choice once when enough data exists
+  useEffect(()=>{
+    if (usePersonalRecs !== null) return; // already chosen
+    try { if (localStorage.getItem("rec_mode_asked_v1")) return; } catch {}
+    const daysLogged = Object.keys(days).filter(d => (days[d]||[]).length > 0).length;
+    if (daysLogged >= 3) {
+      const t = setTimeout(() => setShowRecModeChoice(true), 2000);
+      return () => clearTimeout(t);
+    }
+  },[usePersonalRecs, days]);
   const[soundPlaying,setSoundPlaying]=useState(null); // "white"|"brown"|"pink"|"rain"|"heartbeat"|"shush"
   const[soundVolume,setSoundVolume]=useState(0.5);
   const[soundTimer,setSoundTimer]=useState(0); // minutes, 0=no timer
@@ -4998,16 +5009,18 @@ function App(){
       if (totalWeight === 0) { /* fallback handled below */ }
       const posAvg = totalWeight > 0 ? Math.round(trimmed.reduce((s,p)=>s+p.gap*p.weight,0) / totalWeight) : null;
       if (posAvg === null) { /* fall through to NHS fallback below */ }
-      const blended = posAvg !== null ? (usePersonalRecs === true
+      // Personal mode (true): blend personal + NHS
+      // NHS mode (false): pure NHS only
+      // null (never chosen): default to personal blending when data exists
+      const _usePersonal = usePersonalRecs === null ? true : usePersonalRecs;
+      const blended = posAvg !== null ? (_usePersonal
         ? Math.round(posAvg * 0.65 + nhsProgressive * 0.35)
         : nhsProgressive) : nhsProgressive;
-      // Personal mode: allow baby's rhythm below NHS min (but cap at NHS max for safety)
-      // NHS mode: strict NHS range
-      const floor = usePersonalRecs === true ? Math.max(15, Math.round(ww.min * 0.6)) : ww.min;
+      const floor = _usePersonal ? Math.max(15, Math.round(ww.min * 0.6)) : ww.min;
       const clamped = Math.max(floor, Math.min(ww.max, blended));
       wakeWindowMin = Math.max(floor, Math.round(clamped * 0.9));
       wakeWindowMax = Math.min(ww.max, Math.round(clamped * 1.1));
-      sourceLabel = usePersonalRecs === true && posAvg !== null
+      sourceLabel = _usePersonal && posAvg !== null
         ? `${possessive(babyName||"Baby")} nap ${napsDoneToday2+1} pattern (${posAvg}min avg)`
         : `NHS wake windows for ${fmtAge(age)}`;
     } else {
@@ -7132,8 +7145,9 @@ function App(){
     for (let i = 0; i < napCount; i++) {
       const personalWW = weightedAvg(positionWWs[i] || []);
       const nhsWW = progressiveWW(w, i, napCount);
+      const _useP2 = usePersonalRecs === null ? true : usePersonalRecs;
       const blendedWW = personalWW !== null && dayPatterns.length >= 3
-        ? (usePersonalRecs === true
+        ? (_useP2
             ? Math.round(personalWW * 0.65 + nhsWW * 0.35)
             : nhsWW)
         : nhsWW;
@@ -7145,7 +7159,7 @@ function App(){
       // Nap duration: blend personal data with sleep-budget-aware target
       const personalDur = weightedAvg(positionDurs[i] || []);
       const blendedDur = personalDur !== null && dayPatterns.length >= 3
-        ? (usePersonalRecs === true
+        ? (_useP2
             ? Math.round(personalDur * 0.6 + targetPerNap * 0.4)
             : targetPerNap)
         : targetPerNap;
@@ -18773,6 +18787,39 @@ function App(){
       )}
 
       {/* ═══ Sound Machine ═══ */}
+      {/* ═══ RECOMMENDATION MODE CHOICE — one-time popup ═══ */}
+      {showRecModeChoice && (
+        <div style={{position:"fixed",inset:0,background:"rgba(20,15,30,0.6)",backdropFilter:"blur(6px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg-solid)",borderRadius:24,padding:"24px 20px",maxWidth:360,width:"100%",boxShadow:"0 8px 40px rgba(0,0,0,0.2)"}}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <span style={{fontSize:32}}>🧠</span>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginTop:8}}>How should OBubba predict?</div>
+              <div style={{fontSize:13,color:C.mid,marginTop:6,lineHeight:1.5}}>We've learned enough about {babyName||"your baby"}'s rhythm to personalise predictions.</div>
+            </div>
+            <button onClick={()=>{
+              setUsePersonalRecs(true);
+              try{localStorage.setItem("use_personal_recs_v1","true");localStorage.setItem("rec_mode_asked_v1","1");}catch{}
+              updateChild({personalRecs:true});
+              setShowRecModeChoice(false);
+              haptic();
+            }} style={{width:"100%",padding:"14px",borderRadius:16,border:"none",background:"linear-gradient(135deg,#50a888,#3a8870)",color:"white",fontSize:14,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
+              ✨ Personal — learn {babyName||"baby"}'s rhythm
+            </button>
+            <div style={{fontSize:11,color:C.lt,textAlign:"center",marginBottom:12,lineHeight:1.5}}>Blends {babyName||"baby"}'s actual patterns with NHS guidance. Gets smarter the more you log.</div>
+            <button onClick={()=>{
+              setUsePersonalRecs(false);
+              try{localStorage.setItem("use_personal_recs_v1","false");localStorage.setItem("rec_mode_asked_v1","1");}catch{}
+              updateChild({personalRecs:false});
+              setShowRecModeChoice(false);
+              haptic();
+            }} style={{width:"100%",padding:"12px",borderRadius:16,border:`1.5px solid ${C.blush}`,background:"var(--card-bg)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginBottom:8}}>
+              📋 NHS — use age-based guidance only
+            </button>
+            <div style={{fontSize:11,color:C.lt,textAlign:"center",lineHeight:1.5}}>You can switch anytime in Account → Sleep Recommendations</div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ SAFE SLEEP POPUP — first timer for babies 0-8 months ═══ */}
       {showSafeSleepPopup && (
         <div onClick={()=>setShowSafeSleepPopup(false)} style={{position:"fixed",inset:0,background:"rgba(20,15,30,0.6)",backdropFilter:"blur(6px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
