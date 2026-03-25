@@ -866,6 +866,26 @@ if (isNative()) {
       await OBAppShortcuts.onShortcutUsed((shortcutId) => {
         window.dispatchEvent(new CustomEvent('nativeAction', { detail: { action: shortcutId } }));
       });
+      // Also check for shortcut that launched the app (cold start)
+      // The App plugin may have the launch URL with the shortcut action
+      try {
+        const appPlugin = cap('App');
+        if (appPlugin) {
+          const launchUrl = await appPlugin.getLaunchUrl();
+          if (launchUrl && launchUrl.url) {
+            try {
+              const u = new URL(launchUrl.url);
+              const action = u.searchParams.get('action') || u.pathname.replace(/^\//, '');
+              if (action) {
+                // Delay to ensure React has mounted and listeners are ready
+                setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('nativeAction', { detail: { action } }));
+                }, 1500);
+              }
+            } catch {}
+          }
+        }
+      } catch(e) { console.warn('[OBubba] Launch URL check:', e); }
       // Donate Siri shortcuts
       if (getPlatform() === 'ios') {
         await OBSiri.donateAllShortcuts();
