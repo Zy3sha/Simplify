@@ -9383,6 +9383,8 @@ function App(){
 
     return entries.map(e => {
       if (e.nightLocked) return e;
+      // Naps are ALWAYS daytime — never reclassify as night
+      if (e.type === "nap") { if (e.night) return {...e, night: false}; return e; }
       if (e.type !== "wake" && e.type !== "feed") return e;
       const t = e.time;
       if (!t) return e;
