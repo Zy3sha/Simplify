@@ -2188,6 +2188,7 @@ function App(){
   const[nightSummaryText,setNightSummaryText]=useState(null);
   const[showCryingHelper,setShowCryingHelper]=useState(false);
   const[showSoundMachine,setShowSoundMachine]=useState(false);
+  const[showSafeSleepPopup,setShowSafeSleepPopup]=useState(false);
   const[soundPlaying,setSoundPlaying]=useState(null); // "white"|"brown"|"pink"|"rain"|"heartbeat"|"shush"
   const[soundVolume,setSoundVolume]=useState(0.5);
   const[soundTimer,setSoundTimer]=useState(0); // minutes, 0=no timer
@@ -10394,6 +10395,13 @@ function App(){
     setTimerMode("activeSleep");
     // Start Live Activity on iOS (Dynamic Island + Lock Screen timer)
     if(window.OBNative) window.OBNative.liveActivity.startTimer({type:'sleep',startTime:Date.now(),babyName:babyName||'Baby'});
+    // Safe sleep popup for new parents (0-8 months, first timer use)
+    try {
+      if (age && age.totalWeeks <= 35 && !localStorage.getItem("safe_sleep_shown_v1")) {
+        localStorage.setItem("safe_sleep_shown_v1", "1");
+        setTimeout(() => setShowSafeSleepPopup(true), 800);
+      }
+    } catch {}
   }
 
   // ── Medicine & Temperature Tracker ──
@@ -15107,51 +15115,7 @@ function App(){
               {insightSection.sleep && (
                 <div style={{background:"var(--card-bg-solid)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
 
-                  {/* ═══ KEY PREDICTIONS — compact ═══ */}
-                  {(()=>{
-                    const pred = predictNextNap();
-                    const suggestedBed = bedtimePrediction();
-                    const hasBedtime = (days[selDay]||[]).some(e=>e.type==="sleep"&&!e.night);
-                    const ebr = earlyBedtimeRisk();
-                    if (hasBedtime) return (
-                      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--card-bg-alt)",borderRadius:14,marginBottom:14}}>
-                        <span style={{fontSize:20}}>🌙</span>
-                        <div><div style={{fontSize:13,fontWeight:700,color:C.sky}}>Bedtime Logged</div><div style={{fontSize:12,color:C.lt}}>Sleep tight!</div></div>
-                      </div>
-                    );
-                    return (
-                      <div style={{display:"flex",gap:8,marginBottom:14}}>
-                        {pred && (
-                          <div style={{flex:1,padding:"10px 12px",background:"var(--card-bg-alt)",borderRadius:14,borderLeft:`3px solid ${C.mint}`}}>
-                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Next Nap</div>
-                            <div style={{fontSize:15,fontWeight:700,color:C.mint}}>{fmt12(pred.napStart_min)} – {fmt12(pred.napStart_max)}</div>
-                          </div>
-                        )}
-                        {suggestedBed && (
-                          <div style={{flex:1,padding:"10px 12px",background:"var(--card-bg-alt)",borderRadius:14,borderLeft:`3px solid ${C.sky}`}}>
-                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Bedtime</div>
-                            <div style={{fontSize:15,fontWeight:700,color:C.sky}}>{fmt12(suggestedBed)}</div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Bridge nap suggestion */}
-                  {(()=>{
-                    const ebr = earlyBedtimeRisk();
-                    if (!ebr || !ebr.suggestBridge) return null;
-                    return (
-                      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"rgba(212,168,85,0.08)",border:`1px solid rgba(212,168,85,0.25)`,borderRadius:14,marginBottom:14}}>
-                        <span style={{fontSize:16}}>🌉</span>
-                        <div style={{flex:1}}>
-                          <div style={{fontSize:13,fontWeight:700,color:C.gold}}>Bridge nap suggested</div>
-                          <div style={{fontSize:12,color:C.mid}}>A short nap (~20min) now can prevent overtiredness at bedtime</div>
-                        </div>
-                        {!bridgeNapScheduled && <button onClick={()=>setBridgeNap(true)} style={{padding:"6px 12px",borderRadius:99,border:`1px solid ${C.gold}`,background:"var(--card-bg)",fontSize:11,fontWeight:700,color:C.gold,cursor:_cP}}>Add</button>}
-                      </div>
-                    );
-                  })()}
+                  {/* Predictions + Bridge nap live on Day tab hero — not duplicated here */}
 
                   {/* ═══ SLEEP STORY — collapsible narrative ═══ */}
                   {(()=>{
@@ -15591,30 +15555,31 @@ function App(){
                     );
                   })()}
 
-                  {/* Safe Sleep Guidance */}
-                  <div style={{marginTop:12}}>
-                    <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:8}}>🛏️ Safe Sleep — NHS & AAP Guidelines</div>
-                    <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:14,padding:"14px"}}>
-                      {[
-                        ["🔙","Always on their back","Place baby on their back for every sleep — naps and night. The single most important step to reduce SIDS risk."],
-                        ["🛏️","Firm, flat surface","Use a firm, flat mattress in a cot or moses basket meeting safety standards. No inclined sleepers or car seats for routine sleep."],
-                        ["🌡️","Room temperature 16–20°C","Overheating increases SIDS risk. Feel baby's tummy or back of neck — if clammy, remove a layer. No hats indoors."],
-                        ["🏠","Same room for 6 months","NHS and AAP recommend baby sleeps in your room (not your bed) for at least the first 6 months — naps and night."],
-                        ["🧸","Clear sleep space","No pillows, duvets, bumpers, toys, or loose bedding. Use an appropriate sleeping bag instead of blankets."],
-                        ["🤱","Breastfeeding helps","Breastfeeding for at least 2 months significantly reduces SIDS risk, even if partially breastfed."],
-                        ["🚭","Smoke-free environment","Never smoke around baby or in rooms where baby sleeps. Applies to all caregivers."],
-                        ["🧷","Feet to foot position","Place baby with feet touching the foot of the cot so they can't wriggle under bedding."],
-                      ].map((item,i)=>(
-                        <div key={i} style={{display:"flex",gap:10,padding:"8px 0",borderBottom:i<7?`1px solid ${C.blush}`:"none"}}>
-                          <span style={{fontSize:18,flexShrink:0,marginTop:2}}>{item[0]}</span>
-                          <div>
-                            <div style={{fontSize:13,fontWeight:700,color:C.deep}}>{item[1]}</div>
-                            <div style={{fontSize:12,color:C.mid,lineHeight:1.5,marginTop:2}}>{item[2]}</div>
+                  {/* Safe Sleep — moved to bottom of page, accessible via scroll */}
+                  <div id="safe-sleep-section" style={{marginTop:16,paddingTop:12,borderTop:`1px solid ${C.blush}`}}>
+                    <button onClick={()=>{const el=document.getElementById("safe-sleep-full");if(el)el.style.display=el.style.display==="none"?"block":"block";}} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"10px",borderRadius:12,border:`1px solid ${C.blush}`,background:"var(--card-bg-alt)",cursor:_cP}}>
+                      <span style={{fontSize:14}}>🛏️</span>
+                      <span style={{fontSize:12,fontWeight:600,color:C.mid}}>Safe Sleep Guidance — NHS & Lullaby Trust</span>
+                    </button>
+                    <div id="safe-sleep-full" style={{marginTop:10}}>
+                      <div style={{background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`,borderRadius:14,padding:"14px"}}>
+                        {[
+                          ["🔙","Always on their back","Place baby on their back for every sleep — naps and night."],
+                          ["🛏️","Firm, flat surface","Use a firm, flat mattress. No inclined sleepers or car seats for routine sleep."],
+                          ["🌡️","Room 16–20°C","Feel baby's tummy — if clammy, remove a layer. No hats indoors."],
+                          ["🏠","Same room 6 months","Baby sleeps in your room (not your bed) for at least 6 months."],
+                          ["🧸","Clear sleep space","No pillows, duvets, bumpers, toys, or loose bedding."],
+                          ["🚭","Smoke-free","Never smoke around baby or in rooms where baby sleeps."],
+                        ].map((item,i)=>(
+                          <div key={i} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:i<5?`1px solid ${C.blush}`:"none"}}>
+                            <span style={{fontSize:15,flexShrink:0}}>{item[0]}</span>
+                            <div>
+                              <span style={{fontSize:12,fontWeight:700,color:C.deep}}>{item[1]}</span>
+                              <span style={{fontSize:11,color:C.mid}}> — {item[2]}</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                      <div style={{fontSize:11,color:C.lt,marginTop:10,lineHeight:1.5}}>
-                        Sources: NHS Safe Sleep Guidelines, AAP Safe Sleep Policy (2022), Lullaby Trust
+                        ))}
+                        <div style={{fontSize:10,color:C.lt,marginTop:8}}>NHS Safe Sleep · Lullaby Trust · AAP 2022</div>
                       </div>
                     </div>
                   </div>
@@ -18807,6 +18772,40 @@ function App(){
       )}
 
       {/* ═══ Sound Machine ═══ */}
+      {/* ═══ SAFE SLEEP POPUP — first timer for babies 0-8 months ═══ */}
+      {showSafeSleepPopup && (
+        <div onClick={()=>setShowSafeSleepPopup(false)} style={{position:"fixed",inset:0,background:"rgba(20,15,30,0.6)",backdropFilter:"blur(6px)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--card-bg-solid)",borderRadius:24,padding:"24px 20px",maxWidth:360,width:"100%",boxShadow:"0 8px 40px rgba(0,0,0,0.2)"}}>
+            <div style={{textAlign:"center",marginBottom:14}}>
+              <span style={{fontSize:32}}>🛏️</span>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:C.deep,marginTop:8}}>Safe Sleep Reminder</div>
+              <div style={{fontSize:13,color:C.mid,marginTop:4}}>A quick check before {babyName||"baby"} sleeps</div>
+            </div>
+            <div style={{marginBottom:16}}>
+              {[
+                ["🔙","Always on their back"],
+                ["🛏️","Firm, flat mattress — no inclines"],
+                ["🌡️","Room 16–20°C — feel tummy, not hands"],
+                ["🧸","Clear cot — no pillows, toys, bumpers"],
+                ["🏠","Same room as you for 6 months"],
+              ].map(([icon,text],i) => (
+                <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:i<4?`1px solid ${C.blush}`:"none"}}>
+                  <span style={{fontSize:16}}>{icon}</span>
+                  <span style={{fontSize:13,color:C.deep,fontWeight:600}}>{text}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{fontSize:11,color:C.lt,textAlign:"center",marginBottom:14,lineHeight:1.5}}>
+              Source: NHS & Lullaby Trust{"\n"}
+              You can always find this in Insights → Sleep tab
+            </div>
+            <button onClick={()=>setShowSafeSleepPopup(false)} style={{width:"100%",padding:"13px",borderRadius:99,border:"none",background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:15,fontWeight:700,cursor:_cP,fontFamily:_fI}}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       {showSoundMachine&&(
         <div onClick={()=>setShowSoundMachine(false)} style={{position:"fixed",inset:0,background:"rgba(20,15,30,0.7)",backdropFilter:"blur(8px)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 0"}}>
           <div onClick={e=>e.stopPropagation()} style={{background:"var(--bg-solid)",borderRadius:"24px 24px 0 0",padding:"20px 18px 32px",maxWidth:420,width:"100%",boxShadow:"0 -10px 40px rgba(0,0,0,0.3)",position:"relative"}}>
