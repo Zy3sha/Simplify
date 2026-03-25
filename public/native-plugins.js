@@ -862,6 +862,10 @@ if (isNative()) {
         { id: 'log_nappy', title: 'Log Nappy', description: 'Log a nappy change' },
         { id: 'start_timer', title: 'Start Timer', description: 'Start feed or sleep timer' },
       ]);
+      // Listen for shortcut taps and dispatch as nativeAction events
+      await OBAppShortcuts.onShortcutUsed((shortcutId) => {
+        window.dispatchEvent(new CustomEvent('nativeAction', { detail: { action: shortcutId } }));
+      });
       // Donate Siri shortcuts
       if (getPlatform() === 'ios') {
         await OBSiri.donateAllShortcuts();
