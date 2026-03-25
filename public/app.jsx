@@ -4151,7 +4151,7 @@ function App(){
     const _naps = _todayEntries.filter(e => e.type === "nap" && !e.night);
     const _napsDone = _naps.length;
     const _totalNapMin = _naps.reduce((s,n) => s + minDiff(n.start, n.end), 0);
-    const _adjustedExpected = _profile.naps;
+    const _adjustedExpected = _profile.expectedNaps;
     const _napsComplete = _napsDone >= _adjustedExpected;
     const _dailySleepMax = _profile.idealNapDurMax * _adjustedExpected;
 
