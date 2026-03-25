@@ -24,6 +24,7 @@
 		OB000007000000000000001A /* OBubbaTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000007000000000000001F /* OBubbaTimerAttributes.swift */; };
 		OB000011000000000000001A /* OBubba.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = OB000011000000000000001F /* OBubba.entitlements */; };
 		OB000020000000000000001A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = OB000020000000000000001F /* GoogleService-Info.plist */; };
+		OB000030000000000000001A /* OBubbaBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000030000000000000001F /* OBubbaBridgeViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +52,7 @@
 		OB000012000000000000001F /* IntentHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentHandler.swift; sourceTree = "<group>"; };
 		OB000013000000000000001F /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		OB000020000000000000001F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		OB000030000000000000001F /* OBubbaBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBubbaBridgeViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +98,7 @@
 			children = (
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
+				OB000030000000000000001F /* OBubbaBridgeViewController.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -304,6 +307,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				OB000030000000000000001A /* OBubbaBridgeViewController.swift in Sources */,
 				OB000001000000000000001A /* CareCardPlugin.swift in Sources */,
 				OB000002000000000000001A /* DisableBouncePlugin.swift in Sources */,
 				OB000003000000000000001A /* HealthKitPlugin.swift in Sources */,

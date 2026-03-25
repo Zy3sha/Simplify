@@ -7,33 +7,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Plugin registration is handled in OBubbaBridgeViewController.capacitorDidLoad()
+
         // Register for push notifications
         UNUserNotificationCenter.current().delegate = self
         application.registerForRemoteNotifications()
 
-        // Defer plugin registration until the bridge is ready
-        DispatchQueue.main.async { [weak self] in
-            self?.registerPlugins()
-        }
-
         return true
-    }
-
-    private func registerPlugins() {
-        guard let bridge = (window?.rootViewController as? CAPBridgeViewController)?.bridge else {
-            // Bridge not ready yet — retry after a short delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                self?.registerPlugins()
-            }
-            return
-        }
-
-        bridge.registerPluginInstance(CareCardPlugin())
-        bridge.registerPluginInstance(DisableBouncePlugin())
-        bridge.registerPluginInstance(HealthKitPlugin())
-        bridge.registerPluginInstance(LiveActivityPlugin())
-        bridge.registerPluginInstance(SiriShortcutsPlugin())
-        bridge.registerPluginInstance(WidgetBridgePlugin())
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
