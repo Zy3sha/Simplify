@@ -4559,6 +4559,17 @@ function App(){
       _whyLines.push("🔒 " + _name + "'s personal rhythm is forming — unlock Bubba Rhythm to see it.");
     }
     _whyLines.push("Sleep timing based on NHS Start4Life, AASM (American Academy of Sleep Medicine), and WHO Infant Health guidelines for " + fmtAge(age) + ". Always follow your baby's individual cues.");
+    // Three-drive explanation
+    try {
+      const _tdWhy = threeDriveSleepModel();
+      if (_tdWhy) {
+        let _driveExplain = "OBubba tracks three forces:\n";
+        _driveExplain += "⏱ Awake pressure — " + (_tdWhy.acute.pressure === "low" ? "Low. " + _name + " is well-rested." : _tdWhy.acute.pressure === "building" ? "Building. Awake " + hm(_tdWhy.acute.awakeMin) + " of " + hm(_tdWhy.acute.wwMax) + " max." : _tdWhy.acute.pressure === "ready" ? "Ready for sleep. Near the wake window limit." : _tdWhy.acute.pressure === "high" ? "High. Past the usual wake window." : "Overtired. " + _name + " needs sleep now.") + "\n";
+        _driveExplain += "📊 Sleep debt — " + (_tdWhy.chronic.pressure === "none" ? "No accumulated debt." : _tdWhy.chronic.pressure === "building" ? "Slightly below target recently." : "Accumulated over " + _tdWhy.chronic.debt + " days. An early bedtime helps.") + "\n";
+        _driveExplain += "🕐 Body clock — " + (_tdWhy.circadian.state === "aligned" ? "Well-aligned. Consistent routine is helping." : _tdWhy.circadian.state === "slightly_drifted" ? "Slightly drifted (" + Math.abs(_tdWhy.circadian.driftMin) + "min). Anchor the morning wake." : "Drifted. Consistent morning wake time resets this fastest.");
+        _whyLines.push(_driveExplain);
+      }
+    } catch {}
     if (_latestWeight) {
       const _dailyMl = Math.round(_latestWeight * 150);
       _whyLines.push("🍼 Feed prediction: NHS recommends ~150ml per kg per day. At " + _latestWeight + "kg that's ~" + _dailyMl + "ml/day or ~" + Math.round(_dailyMl/_feedsPerDay) + "ml per feed across " + _feedsPerDay + " feeds. Predictions adjust based on " + _name + "'s last feed size and usual rhythm at this time of day.");
@@ -4897,7 +4908,7 @@ function App(){
 
     // Bug 3: blend personal average (last 5 days) with age guidance
     let wakeWindowMin, wakeWindowMax, sourceLabel;
-    const _recentResolved = getResolvedRecentDays(days, selDay, 7);
+    const _recentResolved = getResolvedRecentDays(days, selDay, 14);
     const _recentWithNaps = _recentResolved.filter(rd => rd.entries.some(e => e.type==="nap" && !e.night && e.start && e.end));
 
     // ── Per-nap-position wake window (smarter) ──
@@ -4926,20 +4937,24 @@ function App(){
     // Blend: personal position data (60%) + NHS progressive (40%)
     if (positionWWs.length >= 2) {
       const sorted2 = [...positionWWs].sort((a,b)=>a.gap-b.gap);
-      const trim = Math.max(1, Math.floor(sorted2.length * 0.15));
-      const trimmed = sorted2.slice(trim, sorted2.length - trim);
+      // Only trim outliers if we have enough data (5+). Otherwise use all entries.
+      const trimmed = sorted2.length >= 5
+        ? sorted2.slice(1, sorted2.length - 1)
+        : sorted2;
       const totalWeight = trimmed.reduce((s,p)=>s+p.weight,0);
-      const posAvg = Math.round(trimmed.reduce((s,p)=>s+p.gap*p.weight,0) / totalWeight);
-      const blended = usePersonalRecs === true
+      if (totalWeight === 0) { /* fallback handled below */ }
+      const posAvg = totalWeight > 0 ? Math.round(trimmed.reduce((s,p)=>s+p.gap*p.weight,0) / totalWeight) : null;
+      if (posAvg === null) { /* fall through to NHS fallback below */ }
+      const blended = posAvg !== null ? (usePersonalRecs === true
         ? Math.round(posAvg * 0.65 + nhsProgressive * 0.35)
-        : nhsProgressive;
+        : nhsProgressive) : nhsProgressive;
       // Personal mode: allow baby's rhythm below NHS min (but cap at NHS max for safety)
       // NHS mode: strict NHS range
       const floor = usePersonalRecs === true ? Math.max(15, Math.round(ww.min * 0.6)) : ww.min;
       const clamped = Math.max(floor, Math.min(ww.max, blended));
       wakeWindowMin = Math.max(floor, Math.round(clamped * 0.9));
       wakeWindowMax = Math.min(ww.max, Math.round(clamped * 1.1));
-      sourceLabel = usePersonalRecs === true
+      sourceLabel = usePersonalRecs === true && posAvg !== null
         ? `${possessive(babyName||"Baby")} nap ${napsDoneToday2+1} pattern (${posAvg}min avg)`
         : `NHS wake windows for ${fmtAge(age)}`;
     } else {
