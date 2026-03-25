@@ -10490,10 +10490,9 @@ function App(){
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name}'s Care Guide</title><style>*{box-sizing:border-box;margin:0}body{font-family:-apple-system,system-ui,sans-serif;max-width:100%;margin:0;padding:60px 12px 40px;padding-top:max(60px,env(safe-area-inset-top,60px));background:#FFFCF9;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;overflow-x:hidden}h2{font-family:Georgia,serif;font-size:16px}table{border-collapse:collapse;width:100%;table-layout:fixed}td,th{padding:3px 6px;font-size:12px;word-break:break-word;overflow-wrap:break-word}img{max-width:100%;height:auto}@media(max-width:430px){body{font-size:13px;padding:60px 10px 32px;padding-top:max(60px,env(safe-area-inset-top,60px))}h2{font-size:15px}td,th{padding:2px 4px;font-size:11px}}</style></head><body>${sections.join("")}</body></html>`;
   }
 
-  async function shareCarerCard() {
+  // Prepare care card HTML with embedded QR (shared by share + print + preview)
+  async function prepareCareCardHTML() {
     const html = generateCarerCardHTML();
-    const name = babyName || "Baby";
-    // Try to embed QR as base64 for offline sharing
     let finalHtml = html;
     try {
       const qrImg = html.match(/src="(https:\/\/api\.qrserver[^"]+)"/);
@@ -10504,11 +10503,18 @@ function App(){
         finalHtml = html.replace(qrImg[1], b64);
       }
     } catch(e) { /* fallback to URL */ }
+    return finalHtml;
+  }
+
+  async function shareCarerCard() {
+    const name = babyName || "Baby";
+    const finalHtml = await prepareCareCardHTML();
 
     // Native iOS: generate PDF via CareCardPlugin, then share via system sheet
-    if(window.Capacitor?.Plugins?.OBCareCard) {
+    const careCard = window.Capacitor?.Plugins?.OBCareCard;
+    if(careCard) {
       try {
-        const result = await window.Capacitor.Plugins.OBCareCard.generatePDF({
+        const result = await careCard.generatePDF({
           html: finalHtml,
           fileName: `${name}-Care-Guide.pdf`
         });
@@ -10516,10 +10522,19 @@ function App(){
           await navigator.share({ title: `${name}'s Care Guide`, url: "file://" + result.filePath });
           return;
         }
-      } catch(e) { console.warn("Native PDF share failed, falling back", e); }
+        if(result?.filePath) {
+          showToast("PDF saved — check Files app", 2000, 0);
+          return;
+        }
+      } catch(e) {
+        if (e.name === "AbortError") return;
+        console.warn("Native PDF share failed:", e);
+        showToast("Could not generate PDF — try again", 2000, 0);
+        return;
+      }
     }
 
-    // Try Web Share API with HTML file
+    // Web fallback: share HTML file (non-native platforms only)
     try {
       const blob = new Blob([finalHtml], { type: "text/html" });
       const file = new File([blob], `${name}-Care-Guide.html`, { type: "text/html" });
@@ -10529,23 +10544,36 @@ function App(){
       }
     } catch(e) { if (e.name === "AbortError") return; }
 
-    // Define share/print helpers on window so the close bar buttons work
-    window._obShare = async () => {
-      try {
-        const blob = new Blob([finalHtml], { type: "text/html" });
-        const file = new File([blob], `${name}-Care-Guide.html`, { type: "text/html" });
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ title: `${name}'s Care Guide`, files: [file] });
-        } else if (navigator.share) {
-          await navigator.share({ title: `${name}'s Care Guide`, text: `${name}'s Care Guide from OBubba` });
-        } else {
-          showToast("Sharing not supported on this device", 2000, 0);
-        }
-      } catch(e) { if (e.name !== "AbortError") showToast("Could not share", 1500, 0); }
-    };
-    window._obPrint = () => { try { window.print(); } catch(e) {} };
+    // Last resort: open preview with action bar
+    openCareCardPreview(finalHtml, name);
+  }
 
-    // Web / fallback: open preview with print/share bar
+  async function printCareCard() {
+    const name = babyName || "Baby";
+    const finalHtml = await prepareCareCardHTML();
+
+    // Native iOS: use CareCardPlugin.printHTML for native print dialog
+    const careCard = window.Capacitor?.Plugins?.OBCareCard;
+    if(careCard) {
+      try {
+        await careCard.printHTML({ html: finalHtml, jobName: `${name}'s Care Guide` });
+        return;
+      } catch(e) {
+        console.warn("Native print failed:", e);
+        showToast("Could not open print dialog", 2000, 0);
+        return;
+      }
+    }
+
+    // Web fallback: window.print() on non-native platforms
+    try { window.print(); } catch(e) { showToast("Printing not supported on this device", 2000, 0); }
+  }
+
+  function openCareCardPreview(finalHtml, name) {
+    // Define share/print helpers on window so close bar buttons work
+    window._obShare = () => shareCarerCard();
+    window._obPrint = () => printCareCard();
+
     const _closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;padding-top:calc(env(safe-area-inset-top,12px) + 8px);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back</button><div style="display:flex;gap:8px"><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button><button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div></div>`;
     const w = (()=>{
       if(window._isNative){
@@ -18970,19 +18998,10 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
             <button onClick={e=>{e.stopPropagation();e.preventDefault();haptic();shareCarerCard();}} style={{width:"100%",padding:"15px",borderRadius:99,border:_bN,background:`linear-gradient(135deg,${C.ter},#a85a44)`,color:"white",fontSize:16,fontWeight:700,cursor:_cP,fontFamily:_fI,marginBottom:8,touchAction:"manipulation"}}>
               📤 Share Care Guide
             </button>
-            <button onClick={e=>{e.stopPropagation();e.preventDefault();
+            <button onClick={async e=>{e.stopPropagation();e.preventDefault();
               haptic();
-              const html = generateCarerCardHTML();
-              const closeBar = `<div class="no-print" style="position:sticky;top:0;z-index:99;background:#FFFCF9;padding:12px 16px;padding-top:calc(env(safe-area-inset-top,12px) + 8px);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8e0"><button onclick="document.getElementById('print-overlay').remove()" style="padding:8px 20px;border-radius:99px;border:none;background:#C07088;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:-apple-system,sans-serif">← Back</button><div style="display:flex;gap:8px"><button onclick="window._obShare()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">📤 Share</button><button onclick="window._obPrint()" style="padding:8px 20px;border-radius:99px;border:1.5px solid #f0e8e0;background:white;color:#5B4F5F;font-size:14px;font-weight:600;cursor:pointer;font-family:-apple-system,sans-serif">🖨️ Print</button></div></div>`;
-              const w = (()=>{
-              if(window._isNative){
-                const d=document.createElement("div");d.id="print-overlay";d.style.cssText="position:fixed;inset:0;z-index:99999;background:white;overflow:auto;-webkit-overflow-scrolling:touch;max-width:100vw;box-sizing:border-box;font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%;";
-                document.body.appendChild(d);
-                return {document:{open:()=>{},write:(h)=>{d.innerHTML=h;},close:()=>{}}};
-              }
-              try{return window.open("","_blank");}catch{return null;}
-            })();
-              if(w){ w.document.write(html.replace("<body>","<body>"+closeBar)); w.document.close(); }
+              const html = await prepareCareCardHTML();
+              openCareCardPreview(html, babyName||"Baby");
             }} style={{width:"100%",padding:"13px",borderRadius:99,border:`1.5px solid ${C.blush}`,background:"var(--card-bg-solid)",color:C.mid,fontSize:14,fontWeight:600,cursor:_cP,fontFamily:_fI,marginBottom:8,touchAction:"manipulation"}}>
               📋 Preview
             </button>

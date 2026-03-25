@@ -60,8 +60,12 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             let elapsed = call.getInt("elapsed") ?? 0
             let side = call.getString("side")
 
+            // Reconstruct the original start time from elapsed seconds.
+            // Previously this used Date() which reset the timer display
+            // on every update — the widget would show 0s elapsed instead
+            // of the actual running time.
             let state = OBubbaTimerAttributes.ContentState(
-                startTime: Date(),
+                startTime: Date(timeIntervalSinceNow: -Double(elapsed)),
                 elapsed: elapsed,
                 side: side
             )
