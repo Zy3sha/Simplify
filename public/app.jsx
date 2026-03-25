@@ -12954,8 +12954,15 @@ function App(){
                 const bedM = bedEntry ? timeVal(bedEntry) : 19*60;
                 const nightWakes = (days[selDay]||[]).filter(e=>{
                   if(!e.night) return false;
-                  // Filter out entries that are clearly daytime (5am-8pm) — they got misclassified
-                  if(e.time) { const h = parseInt(e.time.split(":")[0]); if(h >= 5 && h < 20) return false; }
+                  // Only count entries that happened AFTER bedtime was logged.
+                  // This prevents bridge nap wakes (e.g. 5:43pm) from showing as night wakes
+                  // while still correctly showing legitimate early morning wakes (5:30am)
+                  // and late evening wakes (after 7pm bedtime).
+                  if(e.time) {
+                    const eM = timeVal(e);
+                    // If entry is before bedtime AND on the same side of midnight, it's not a night wake
+                    if(eM < bedM && eM >= 5*60) return false;
+                  }
                   return true;
                 }).sort((a,b)=>{
                   const ta = timeVal(a), tb = timeVal(b);
