@@ -43,6 +43,10 @@
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <true/>
 
+    <!-- Main Storyboard (required for Capacitor webview) -->
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+
     <!-- Launch Storyboard -->
     <key>UILaunchStoryboardName</key>
     <string>LaunchScreen</string>
