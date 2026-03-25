@@ -13874,22 +13874,7 @@ function App(){
 
               </div>{/* end Today's Plan collapsible */}
 
-              {/* ═══ ACTIVITY OF THE DAY — Let's Play ═══ */}
-              {age && selDay===todayStr() && (()=>{
-                const _w = age.totalWeeks;
-                const _suitable = DEV_ACTIVITIES.filter(a => _w >= a.weeks[0] && _w <= a.weeks[1]);
-                if (!_suitable.length) return null;
-                const _doy = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000);
-                const _act = _suitable[_doy % _suitable.length];
-                return (
-                  <div className="glass-card" style={{padding:"14px 16px",marginBottom:10,cursor:_cP}} onClick={()=>{haptic();setTab("develop");}}>
-                    <div style={{fontSize:11,fontWeight:600,color:C.ter,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6}}>Let's Play ✨</div>
-                    <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:4}}>{_act.title}</div>
-                    <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{_act.how.length > 100 ? _act.how.slice(0,100)+"…" : _act.how}</div>
-                    <div style={{fontSize:11,color:C.ter,marginTop:8,fontWeight:600}}>Tap for full details →</div>
-                  </div>
-                );
-              })()}
+              {/* Let's Play removed — already exists in Development > Activities */}
 
               {/* ═══ PARTNER INVITE — moved to Account tab per UX strategy ═══ */}
               {false && selDay===todayStr() && !childSyncCodes[resolvedActiveId] && Object.keys(days).length >= 3 && (
