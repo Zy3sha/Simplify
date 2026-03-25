@@ -3589,7 +3589,7 @@ function App(){
     setChildSyncCodes(prev => {const n={...prev};delete n[childId];return n;});
     setChildren(prev => {const n={...prev};delete n[childId];return n;});
   }
-  // Restore sync codes from cloud whenever we have children but no local codes.
+  // Restore sync codes from cloud for any child missing a local code.
   // This fixes the issue where app updates / reinstalls wipe localStorage
   // but the codes are safely stored in Firestore child_code_map.
   // Watches both fbReady AND children so it triggers after login restores children too.
@@ -3597,11 +3597,12 @@ function App(){
   useEffect(() => {
     if(!fbReady) return;
     const childIds = Object.keys(children);
-    const localCodesCount = Object.keys(childSyncCodes).length;
-    // If we have children but no local sync codes, restore from cloud
-    if (childIds.length > 0 && localCodesCount === 0 && !restoreDoneRef.current) {
+    if(!childIds.length) return;
+    // Find children that have no local sync code
+    const missingIds = childIds.filter(id => !childSyncCodes[id]);
+    if (missingIds.length > 0 && !restoreDoneRef.current) {
       restoreDoneRef.current = true;
-      restoreChildSyncCodesFromCloud(childIds);
+      restoreChildSyncCodesFromCloud(missingIds);
     }
   }, [fbReady, children]);
 
@@ -3697,6 +3698,16 @@ function App(){
   }
   function deleteChild(cid) {
     setChildren(prev => {
+      const next = {...prev};
+      delete next[cid];
+      // Immediately push to cloud so deleted child doesn't reappear after reinstall
+      if(backupCodeRef.current && window._fbUid) {
+        pushToCloud(backupCodeRef.current, next);
+      }
+      return next;
+    });
+    // Also remove from sync codes
+    setChildSyncCodes(prev => {
       const next = {...prev};
       delete next[cid];
       return next;
