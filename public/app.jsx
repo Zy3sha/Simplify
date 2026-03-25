@@ -14333,6 +14333,89 @@ function App(){
                 </div>
               )}
 
+              {/* ── 📊 INSIGHTS HERO CARD ── */}
+              {(()=>{
+                const _tName = babyName || "Baby";
+                const _dk = Object.keys(days).sort().slice(-7);
+                if (_dk.length < 2) return (
+                  <div className="glass-card" style={{padding:"16px 18px",marginBottom:12}}>
+                    <div style={{fontSize:15,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif",marginBottom:6}}>📊 Your rhythm check</div>
+                    <div style={{fontSize:13,color:C.mid,lineHeight:1.6}}>You're doing well 💛</div>
+                    <div style={{fontSize:12,color:C.lt,marginTop:6}}>Log a few more days and we'll show your rhythm insights here.</div>
+                  </div>
+                );
+
+                // Gather data for positives and actions
+                const _positives = [];
+                const _actions = [];
+
+                // Nap trend
+                const _recentNaps = _dk.slice(-3).map(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night));
+                const _olderNaps = _dk.slice(0,3).map(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night));
+                const _recentAvgDur = _recentNaps.flat().length ? Math.round(_recentNaps.flat().reduce((s,n)=>s+minDiff(n.start,n.end),0)/_recentNaps.flat().length) : 0;
+                const _olderAvgDur = _olderNaps.flat().length ? Math.round(_olderNaps.flat().reduce((s,n)=>s+minDiff(n.start,n.end),0)/_olderNaps.flat().length) : 0;
+                if (_recentAvgDur > _olderAvgDur + 5 && _recentAvgDur > 0) _positives.push("Naps are getting longer");
+                else if (_recentAvgDur >= 30) _positives.push("Nap lengths are steady");
+
+                // Night wakes trend
+                const _recentNights = _dk.slice(-3).map(d=>(days[d]||[]).filter(e=>e.night).length);
+                const _olderNights = _dk.slice(0,3).map(d=>(days[d]||[]).filter(e=>e.night).length);
+                const _recentAvgNW = _recentNights.length ? Math.round(_recentNights.reduce((a,b)=>a+b,0)/_recentNights.length) : 0;
+                const _olderAvgNW = _olderNights.length ? Math.round(_olderNights.reduce((a,b)=>a+b,0)/_olderNights.length) : 0;
+                if (_recentAvgNW < _olderAvgNW && _olderAvgNW > 0) _positives.push("Night wakes are improving");
+                else if (_recentAvgNW <= 2) _positives.push("Nights are looking good");
+
+                // Rhythm building
+                const _wakeTimes = _dk.map(d=>{const w=(days[d]||[]).find(e=>e.type==="wake"&&!e.night);return w?timeVal(w):null;}).filter(Boolean);
+                if (_wakeTimes.length >= 3) {
+                  const _wakeSpread = Math.max(..._wakeTimes) - Math.min(..._wakeTimes);
+                  if (_wakeSpread <= 45) _positives.push("Wake time is consistent");
+                }
+
+                // Fallback positive
+                if (!_positives.length) _positives.push("Rhythm is building");
+
+                // Actions
+                const _bedP = bedtimePrediction ? bedtimePrediction() : null;
+                if (_bedP) _actions.push("Aim bedtime around " + fmt12(_bedP));
+
+                // Late nap check
+                const _lastDayNaps = (days[todayStr()]||[]).filter(e=>e.type==="nap"&&!e.night);
+                if (_lastDayNaps.length > 0) {
+                  const _lastNapEnd = _lastDayNaps[_lastDayNaps.length-1].end;
+                  if (_lastNapEnd) {
+                    const [_lh,_lm] = _lastNapEnd.split(":").map(Number);
+                    if (_lh >= 17) _actions.push("Try to cap last nap before 5:30pm");
+                  }
+                }
+
+                // Wake window consistency
+                if (!_actions.length) _actions.push("Keep wake windows consistent");
+
+                // Reassurance line
+                const _intro = _positives.length >= 2 ? "You're doing really well 💛" : "You're doing well 💛";
+
+                return (
+                  <div className="glass-card" style={{padding:"16px 18px",marginBottom:12}}>
+                    <div style={{fontSize:15,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif",marginBottom:8}}>📊 Your rhythm check</div>
+                    <div style={{fontSize:13,color:C.mid,marginBottom:10}}>{_intro}</div>
+                    <div style={{marginBottom:10}}>
+                      {_positives.slice(0,2).map((p,i)=>(
+                        <div key={i} style={{fontSize:13,color:C.mint,fontWeight:600,marginBottom:3}}>✔ {p}</div>
+                      ))}
+                    </div>
+                    {_actions.length > 0 && (
+                      <div>
+                        <div style={{fontSize:12,color:C.lt,fontWeight:600,marginBottom:4}}>→ Try this next:</div>
+                        {_actions.slice(0,2).map((a,i)=>(
+                          <div key={i} style={{fontSize:12,color:C.mid,marginBottom:2,paddingLeft:14}}>{a}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* ── Today with Baby — emotional summary ── */}
               {(()=>{
                 const _tName = babyName || "Baby";
@@ -15808,6 +15891,69 @@ function App(){
 
           return (
             <div>
+              {/* ── 🧠 DEVELOPMENT HERO CARD ── */}
+              {ageWeeks && (()=>{
+                const _dName = name;
+                const _months = Math.round(ageWeeks / 4.33);
+                // Phase description based on age
+                let _phase = "";
+                let _behaviours = [];
+                let _tip = "";
+                if (ageWeeks < 6) {
+                  _phase = _dName + " is in the early adjustment period";
+                  _behaviours = ["Frequent feeding and sleeping", "Lots of reflexive movements"];
+                  _tip = "Skin-to-skin and responding to cues is everything right now";
+                } else if (ageWeeks < 13) {
+                  _phase = _dName + " is becoming more socially aware";
+                  _behaviours = ["More eye contact and first smiles", "Starting to track objects and faces"];
+                  _tip = "Talk, sing, and mirror expressions back — it builds connection";
+                } else if (ageWeeks < 26) {
+                  _phase = _dName + " is exploring the world with hands and eyes";
+                  _behaviours = ["Reaching and grabbing at things", "More vocal — cooing, squealing, laughing"];
+                  _tip = "Offer different textures and sounds during wake time";
+                } else if (ageWeeks < 40) {
+                  _phase = _dName + " is building independence";
+                  _behaviours = ["Object permanence developing", "May start babbling consonants (ba-ba, da-da)"];
+                  _tip = "Play peek-a-boo and babble back — it's building language";
+                } else if (ageWeeks < 54) {
+                  _phase = _dName + " is on the move";
+                  _behaviours = ["Crawling, cruising, or pulling to stand", "Understanding simple words and gestures"];
+                  _tip = "Create safe spaces to explore and name everything you see";
+                } else if (ageWeeks < 78) {
+                  _phase = _dName + " is becoming a little communicator";
+                  _behaviours = ["First words emerging", "Pretend play starting"];
+                  _tip = "Expand on what they say — if they say 'ball', say 'yes, big ball!'";
+                } else {
+                  _phase = _dName + " is growing and learning fast";
+                  _behaviours = ["More independent play", "Language expanding quickly"];
+                  _tip = "Follow their interests and let them lead play";
+                }
+
+                // Check if any regression/leap is likely
+                const _leapWeeks = [5,8,12,19,26,37,46,55,64,75];
+                const _nearLeap = _leapWeeks.some(w => Math.abs(ageWeeks - w) <= 2);
+                if (_nearLeap) {
+                  _behaviours.push("May be fussier — a developmental leap is close");
+                }
+
+                return (
+                  <div className="glass-card" style={{padding:"16px 18px",marginBottom:14}}>
+                    <div style={{fontSize:15,fontWeight:700,color:C.deep,fontFamily:"'Playfair Display',serif",marginBottom:8}}>🧠 This week's development</div>
+                    <div style={{fontSize:13,color:C.mid,marginBottom:10}}>{_phase} 🌱</div>
+                    <div style={{marginBottom:10}}>
+                      <div style={{fontSize:12,color:C.lt,fontWeight:600,marginBottom:4}}>You may notice:</div>
+                      {_behaviours.slice(0,2).map((b,i)=>(
+                        <div key={i} style={{fontSize:12,color:C.mid,marginBottom:2,paddingLeft:12}}>• {b}</div>
+                      ))}
+                    </div>
+                    <div>
+                      <div style={{fontSize:12,color:C.lt,fontWeight:600,marginBottom:2}}>Try:</div>
+                      <div style={{fontSize:12,color:C.mid,paddingLeft:12}}>→ {_tip}</div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Development category filter bar */}
               <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:2}}>
                 {[
