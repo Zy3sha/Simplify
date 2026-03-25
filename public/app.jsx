@@ -12837,7 +12837,7 @@ function App(){
               const _napsDone3 = (days[selDay]||[]).filter(e => e.type==="nap" && !e.night && e.id !== napEntryId && minDiff(e.start,e.end) >= 5).length;
               const _napsComplete3 = _napsDone3 >= _napProfile3.expectedNaps;
               const _h3 = new Date().getHours();
-              const _isLikelyBedtime = _napsComplete3 && _h3 >= 19 && !_isBridgeTimer;
+              const _isLikelyBedtime = _napsComplete3 && _h3 >= 17 && !_isBridgeTimer;
 
               if (_isLikelyBedtime) {
                 // Bedtime mode — calm purple pill, no warnings, no expected wake
