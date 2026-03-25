@@ -2612,6 +2612,13 @@ function App(){
         }
       }
       try{localStorage.setItem("child_sync_codes_v1",JSON.stringify(childSyncCodes));}catch{}
+      // Also save sync codes to the username document so they survive reinstalls
+      if(Object.keys(childSyncCodes).length && familyUsername && window._fb) {
+        try {
+          const key = familyUsername.trim().toLowerCase();
+          fsSet("usernames", key, {childSyncCodes: JSON.stringify(childSyncCodes)}, true);
+        } catch(e) { /* non-critical — localStorage + cloud family backup are primary */ }
+      }
       if(resolvedActiveId)try{localStorage.setItem("active_child",resolvedActiveId);}catch{}
       if(onboarded)try{localStorage.setItem("onboarded_v2","1");}catch{}
       clearTimeout(cloudPushRef.current);
@@ -3098,7 +3105,16 @@ function App(){
                   setActiveChildId(cloudIds[0]);
                   try{ localStorage.setItem("active_child", cloudIds[0]); }catch{}
                 }
-                // Restore child sync codes from cloud (child_code_map is source of truth)
+                // Restore child sync codes from username document (most reliable — comes with login)
+                if(data.childSyncCodes) {
+                  try {
+                    const codes = typeof data.childSyncCodes === "string" ? JSON.parse(data.childSyncCodes) : data.childSyncCodes;
+                    if(codes && typeof codes === "object" && Object.keys(codes).length) {
+                      setChildSyncCodes(prev => ({...prev, ...codes}));
+                    }
+                  } catch(e) { console.warn("childSyncCodes restore error", e); }
+                }
+                // Also try child_code_map as fallback
                 restoreChildSyncCodesFromCloud(cloudIds);
               }
             }
