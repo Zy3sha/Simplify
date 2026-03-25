@@ -2190,7 +2190,7 @@ function App(){
   const[showSoundMachine,setShowSoundMachine]=useState(false);
   const[showSafeSleepPopup,setShowSafeSleepPopup]=useState(false);
   const[showRecModeChoice,setShowRecModeChoice]=useState(false);
-  /* Rec mode popup deferred — will trigger from hero card instead */
+  const[sleepStoryExpanded,setSleepStoryExpanded]=useState(false);
   const[soundPlaying,setSoundPlaying]=useState(null); // "white"|"brown"|"pink"|"rain"|"heartbeat"|"shush"
   const[soundVolume,setSoundVolume]=useState(0.5);
   const[soundTimer,setSoundTimer]=useState(0); // minutes, 0=no timer
@@ -12832,12 +12832,13 @@ function App(){
             {napOn && (()=>{
               // Check if this is a bridge nap
               const _isBridgeTimer = napEntryId && (days[selDay]||[]).some(e => e.id === napEntryId && e.isBridge);
-              // Check if this is actually bedtime — all naps done + evening + not bridge
+              // Check if bedtime has been logged — if so, always show bedtime mode
+              const _hasBedLogged = (days[selDay]||[]).some(e => e.type==="sleep" && !e.night);
               const _napProfile3 = getAgeNapProfile(age ? age.totalWeeks : 20);
               const _napsDone3 = (days[selDay]||[]).filter(e => e.type==="nap" && !e.night && e.id !== napEntryId && minDiff(e.start,e.end) >= 5).length;
               const _napsComplete3 = _napsDone3 >= _napProfile3.expectedNaps;
               const _h3 = new Date().getHours();
-              const _isLikelyBedtime = _napsComplete3 && _h3 >= 17 && !_isBridgeTimer;
+              const _isLikelyBedtime = _hasBedLogged || (_napsComplete3 && _h3 >= 17 && !_isBridgeTimer);
 
               if (_isLikelyBedtime) {
                 // Bedtime mode — calm purple pill, no warnings, no expected wake
@@ -15083,8 +15084,7 @@ function App(){
                     if (!story || !story.length) return null;
                     // Only show first 3 sections by default (Big Picture, Night Sleep, Nap Patterns)
                     // The rest (Sleep Budget, Patterns, Three Drives, Science, Tips, Rhythm) are behind "Read more"
-                    const [_storyExpanded, _setStoryExpanded] = React.useState(false);
-                    const visibleSections = _storyExpanded ? story : story.slice(0, 3);
+                    const visibleSections = sleepStoryExpanded ? story : story.slice(0, 3);
                     return (
                       <div style={{marginBottom:14}}>
                         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
@@ -15108,9 +15108,9 @@ function App(){
                           </div>
                         ))}
                         {story.length > 3 && (
-                          <button onClick={()=>_setStoryExpanded(!_storyExpanded)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,width:"100%",padding:"8px",marginTop:10,borderRadius:10,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.ter,fontSize:12,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
-                            {_storyExpanded ? "Show less" : `Read full story (${story.length - 3} more sections)`}
-                            <span style={{fontSize:9,transform:_storyExpanded?"rotate(180deg)":"none",transition:"transform 0.2s"}}>▼</span>
+                          <button onClick={()=>setSleepStoryExpanded(!sleepStoryExpanded)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,width:"100%",padding:"8px",marginTop:10,borderRadius:10,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.ter,fontSize:12,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                            {sleepStoryExpanded ? "Show less" : `Read full story (${story.length - 3} more sections)`}
+                            <span style={{fontSize:9,transform:sleepStoryExpanded?"rotate(180deg)":"none",transition:"transform 0.2s"}}>▼</span>
                           </button>
                         )}
                       </div>
