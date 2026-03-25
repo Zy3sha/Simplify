@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^8.0.0",
+    "@babel/standalone": "^7.29.2",
     "@capacitor-community/apple-sign-in": "^6.0.0",
     "@capacitor-community/firebase-analytics": "^6.0.0",
     "@capacitor-community/speech-recognition": "^6.0.0",
