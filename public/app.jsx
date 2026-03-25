@@ -3589,20 +3589,21 @@ function App(){
     setChildSyncCodes(prev => {const n={...prev};delete n[childId];return n;});
     setChildren(prev => {const n={...prev};delete n[childId];return n;});
   }
-  // Restore sync codes from cloud on startup if localStorage is empty.
+  // Restore sync codes from cloud whenever we have children but no local codes.
   // This fixes the issue where app updates / reinstalls wipe localStorage
   // but the codes are safely stored in Firestore child_code_map.
+  // Watches both fbReady AND children so it triggers after login restores children too.
   const restoreDoneRef = React.useRef(false);
   useEffect(() => {
-    if(!fbReady || restoreDoneRef.current) return;
-    restoreDoneRef.current = true;
-    const localCodes = childSyncCodes;
+    if(!fbReady) return;
     const childIds = Object.keys(children);
-    // If we have children but no local sync codes, try restoring from cloud
-    if (childIds.length > 0 && Object.keys(localCodes).length === 0) {
+    const localCodesCount = Object.keys(childSyncCodes).length;
+    // If we have children but no local sync codes, restore from cloud
+    if (childIds.length > 0 && localCodesCount === 0 && !restoreDoneRef.current) {
+      restoreDoneRef.current = true;
       restoreChildSyncCodesFromCloud(childIds);
     }
-  }, [fbReady]);
+  }, [fbReady, children]);
 
   // Backfill: migrate existing localStorage child sync codes to child_code_map.
   // Runs once when Firebase is ready. Only writes if no cloud mapping exists yet.
@@ -12951,7 +12952,12 @@ function App(){
                 if(nightElapsed === null) return null;
                 const bedEntry = (days[selDay]||[]).find(e=>e.type==="sleep"&&!e.night);
                 const bedM = bedEntry ? timeVal(bedEntry) : 19*60;
-                const nightWakes = (days[selDay]||[]).filter(e=>e.night).sort((a,b)=>{
+                const nightWakes = (days[selDay]||[]).filter(e=>{
+                  if(!e.night) return false;
+                  // Filter out entries that are clearly daytime (5am-8pm) — they got misclassified
+                  if(e.time) { const h = parseInt(e.time.split(":")[0]); if(h >= 5 && h < 20) return false; }
+                  return true;
+                }).sort((a,b)=>{
                   const ta = timeVal(a), tb = timeVal(b);
                   const ka = ta >= bedM ? ta : (ta < 12*60 ? ta + 1440 : ta);
                   const kb = tb >= bedM ? tb : (tb < 12*60 ? tb + 1440 : tb);
