@@ -13874,7 +13874,22 @@ function App(){
 
               </div>{/* end Today's Plan collapsible */}
 
-              {/* Let's Play removed — already exists in Development > Activities */}
+              {/* ═══ ACTIVITY OF THE DAY — Let's Play ═══ */}
+              {age && selDay===todayStr() && (()=>{
+                const _w = age.totalWeeks;
+                const _suitable = DEV_ACTIVITIES.filter(a => _w >= a.weeks[0] && _w <= a.weeks[1]);
+                if (!_suitable.length) return null;
+                const _doy = Math.floor((new Date() - new Date(new Date().getFullYear(),0,0)) / 86400000);
+                const _act = _suitable[_doy % _suitable.length];
+                return (
+                  <div className="glass-card" style={{padding:"14px 16px",marginBottom:10,cursor:_cP}} onClick={()=>{haptic();setTab("develop");setDevFilter("activities");}}>
+                    <div style={{fontSize:11,fontWeight:600,color:C.ter,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6}}>Let's Play ✨</div>
+                    <div style={{fontSize:14,fontWeight:700,color:C.deep,marginBottom:4}}>{_act.title}</div>
+                    <div style={{fontSize:12,color:C.mid,lineHeight:1.5}}>{_act.how.length > 100 ? _act.how.slice(0,100)+"…" : _act.how}</div>
+                    <div style={{fontSize:11,color:C.ter,marginTop:8,fontWeight:600}}>Tap for full details →</div>
+                  </div>
+                );
+              })()}
 
               {/* ═══ PARTNER INVITE — moved to Account tab per UX strategy ═══ */}
               {false && selDay===todayStr() && !childSyncCodes[resolvedActiveId] && Object.keys(days).length >= 3 && (
@@ -16868,51 +16883,7 @@ function App(){
                 </div>
                 </>
               )}
-              <div className="glass-card" style={{...card, marginBottom:14}}>
-                <div style={{display:"flex",alignItems:"center",gap:4,fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:12}}>🎮 Let's Play <HelpBtn title="Activities" body="Age-appropriate play and learning activities based on NHS and WHO developmental guidance. Filter by category. These update automatically as your baby grows."/></div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}}>
-                  {[...ACT_CATS].map(c=>(
-                    <button key={c.key} onClick={()=>setDevActFilter(c.key)}
-                      style={{padding:"7px 14px",borderRadius:999,border:"1px solid var(--card-border)",background:devActFilter===c.key?"var(--chip-bg-active)":"var(--chip-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",fontSize:12,fontWeight:600,color:devActFilter===c.key?C.ter:C.mid,cursor:_cP,fontFamily:_fI,transition:"all 0.2s",boxShadow:devActFilter===c.key?"var(--chip-shadow-active)":"var(--chip-shadow)"}}>
-                      {c.icon} {c.label}
-                    </button>
-                  ))}
-                </div>
-
-                {!ageWeeks ? (
-                  <div style={{textAlign:"center",padding:"20px",color:C.lt,fontSize:13}}>Set a date of birth in Growth to see personalised activities.</div>
-                ) : filteredActs.length === 0 ? (
-                  <div style={{textAlign:"center",padding:"20px",color:C.lt,fontSize:13}}>No activities in this category for current age.</div>
-                ) : (
-                  filteredActs.map(a => {
-                    const catInfo = ACT_CATS.find(c=>c.key===a.cat);
-                    return (
-                      <div key={a.id} style={{padding:"14px",marginBottom:10,borderRadius:16,background:"var(--card-bg-alt)",border:`1px solid ${C.blush}`}}>
-                        <div style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:8}}>
-                          <div style={{width:34,height:34,borderRadius:12,background:`linear-gradient(135deg,${C.ter}22,${C.ter}11)`,border:`1px solid ${C.rose}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:15}}>
-                            {catInfo?.icon||"✦"}
-                          </div>
-                          <div style={{flex:1}}>
-                            <div style={{fontSize:15,fontWeight:700,color:C.deep,lineHeight:1.2}}>{a.title}</div>
-                            <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}>
-                              <span style={{fontSize:11,background:"var(--chip-bg)",borderRadius:99,padding:"2px 8px",color:C.mid}}>{catInfo?.icon} {catInfo?.label}</span>
-                              <span style={{fontSize:11,fontFamily:_fM,background:"var(--card-bg-alt)",borderRadius:99,padding:"2px 8px",color:C.mint}}>wk {a.weeks[0]}–{a.weeks[1]}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div style={{paddingLeft:44}}>
-                          <div style={{fontSize:13,color:C.deep,lineHeight:1.6,marginBottom:6}}>
-                            <span style={{fontWeight:700,color:C.ter}}>How: </span>{a.how}
-                          </div>
-                          <div style={{fontSize:12,color:C.mid,lineHeight:1.55,background:"var(--card-bg-solid)",borderRadius:10,padding:"8px 11px",border:`1px solid ${C.blush}`}}>
-                            <span style={{fontWeight:600,color:C.mint}}>Why it helps: </span>{a.why}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+              {/* Let's Play removed from milestones — lives in Activities tab */}
               <div className="glass-card" style={{...card, marginBottom:14}}>
                 <div style={{fontSize:12,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls1,marginBottom:12}}>🏥 NHS & WHO Guidance for this age</div>
                 {!ageWeeks ? (
