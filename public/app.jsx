@@ -4672,6 +4672,8 @@ function App(){
           <span style={{marginLeft:"auto",fontSize:9,padding:"2px 8px",borderRadius:99,background:usePersonalRecs===true?C.mint+"20":"#4a5a8020",color:usePersonalRecs===true?C.mint:"#4a5a80",fontWeight:700,fontFamily:_fM}}>{usePersonalRecs===true?"Personal":"NHS"}</span>
         </div>
         <div style={{fontSize:13,color:C.mid,marginBottom:_secondary||_rightNow?4:8,paddingLeft:20}}>{_timing}</div>
+        {/* DEBUG: remove after testing */}
+        {_pred && <div style={{fontSize:9,color:"#999",paddingLeft:20,marginBottom:4}}>WW: {_pred.wakeWindowMin}-{_pred.wakeWindowMax}min · src: {_pred.sourceLabel} · mode: {usePersonalRecs===true?"personal":usePersonalRecs===false?"nhs":"null"}</div>}
         {_wakeMissing && (
           <button onClick={()=>{haptic();handleSmartWake();}} style={{display:"flex",alignItems:"center",gap:8,width:"calc(100% - 20px)",marginLeft:20,background:"rgba(212,168,85,0.1)",border:"1.5px solid rgba(212,168,85,0.3)",borderRadius:12,padding:"10px 14px",marginBottom:8,cursor:_cP,textAlign:"left"}}>
             <span style={{fontSize:18}}>☀️</span>
