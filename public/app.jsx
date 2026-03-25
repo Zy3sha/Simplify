@@ -15107,22 +15107,71 @@ function App(){
               {insightSection.sleep && (
                 <div style={{background:"var(--card-bg-solid)",border:`1.5px solid ${C.blush}`,borderTop:"none",borderRadius:"0 0 16px 16px",padding:"14px 14px 16px",marginBottom:12}}>
 
-                  {/* ═══ SLEEP STORY — narrative analysis ═══ */}
+                  {/* ═══ KEY PREDICTIONS — compact ═══ */}
+                  {(()=>{
+                    const pred = predictNextNap();
+                    const suggestedBed = bedtimePrediction();
+                    const hasBedtime = (days[selDay]||[]).some(e=>e.type==="sleep"&&!e.night);
+                    const ebr = earlyBedtimeRisk();
+                    if (hasBedtime) return (
+                      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--card-bg-alt)",borderRadius:14,marginBottom:14}}>
+                        <span style={{fontSize:20}}>🌙</span>
+                        <div><div style={{fontSize:13,fontWeight:700,color:C.sky}}>Bedtime Logged</div><div style={{fontSize:12,color:C.lt}}>Sleep tight!</div></div>
+                      </div>
+                    );
+                    return (
+                      <div style={{display:"flex",gap:8,marginBottom:14}}>
+                        {pred && (
+                          <div style={{flex:1,padding:"10px 12px",background:"var(--card-bg-alt)",borderRadius:14,borderLeft:`3px solid ${C.mint}`}}>
+                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Next Nap</div>
+                            <div style={{fontSize:15,fontWeight:700,color:C.mint}}>{fmt12(pred.napStart_min)} – {fmt12(pred.napStart_max)}</div>
+                          </div>
+                        )}
+                        {suggestedBed && (
+                          <div style={{flex:1,padding:"10px 12px",background:"var(--card-bg-alt)",borderRadius:14,borderLeft:`3px solid ${C.sky}`}}>
+                            <div style={{fontSize:10,fontFamily:_fM,color:C.lt,textTransform:"uppercase",letterSpacing:_ls08}}>Bedtime</div>
+                            <div style={{fontSize:15,fontWeight:700,color:C.sky}}>{fmt12(suggestedBed)}</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Bridge nap suggestion */}
+                  {(()=>{
+                    const ebr = earlyBedtimeRisk();
+                    if (!ebr || !ebr.suggestBridge) return null;
+                    return (
+                      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"rgba(212,168,85,0.08)",border:`1px solid rgba(212,168,85,0.25)`,borderRadius:14,marginBottom:14}}>
+                        <span style={{fontSize:16}}>🌉</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13,fontWeight:700,color:C.gold}}>Bridge nap suggested</div>
+                          <div style={{fontSize:12,color:C.mid}}>A short nap (~20min) now can prevent overtiredness at bedtime</div>
+                        </div>
+                        {!bridgeNapScheduled && <button onClick={()=>setBridgeNap(true)} style={{padding:"6px 12px",borderRadius:99,border:`1px solid ${C.gold}`,background:"var(--card-bg)",fontSize:11,fontWeight:700,color:C.gold,cursor:_cP}}>Add</button>}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ═══ SLEEP STORY — collapsible narrative ═══ */}
                   {(()=>{
                     const story = generateSleepStory();
                     if (!story || !story.length) return null;
+                    // Only show first 3 sections by default (Big Picture, Night Sleep, Nap Patterns)
+                    // The rest (Sleep Budget, Patterns, Three Drives, Science, Tips, Rhythm) are behind "Read more"
+                    const [_storyExpanded, _setStoryExpanded] = React.useState(false);
+                    const visibleSections = _storyExpanded ? story : story.slice(0, 3);
                     return (
-                      <div style={{marginBottom:16}}>
-                        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14}}>
+                      <div style={{marginBottom:14}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
                           <span style={{fontSize:15}}>📖</span>
-                          <span style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700,color:C.deep}}>{possessive(babyName||"Baby")} Sleep Story</span>
-                          <HelpBtn title="Sleep Story" body={"OBubba analyses " + (babyName||"your baby") + "'s sleep data from the last 7 days and explains what's happening in plain English. It covers night sleep, naps, rhythm patterns, and gives you specific actions. The science section explains the three models OBubba uses to predict your baby's schedule: sleep pressure (adenosine), circadian rhythm (body clock), and personal pattern learning."}/>
+                          <span style={{fontFamily:"'Playfair Display',serif",fontSize:16,fontWeight:700,color:C.deep}}>{possessive(babyName||"Baby")} Sleep Story</span>
                         </div>
-                        {story.map((section,i)=>(
-                          <div key={i} style={{marginBottom:i<story.length-1?14:0}}>
-                            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
-                              <span style={{fontSize:13}}>{section.icon}</span>
-                              <span style={{fontSize:13,fontWeight:700,color:C.deep}}>{section.title}</span>
+                        {visibleSections.map((section,i)=>(
+                          <div key={i} style={{marginBottom:i<visibleSections.length-1?12:0}}>
+                            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                              <span style={{fontSize:12}}>{section.icon}</span>
+                              <span style={{fontSize:12,fontWeight:700,color:C.deep}}>{section.title}</span>
                               {section.score!==undefined&&(
                                 <span style={{marginLeft:"auto",fontSize:12,fontFamily:_fM,fontWeight:700,color:section.score>=70?C.mint:section.score>=45?"#D4A855":C.ter,background:(section.score>=70?C.mint:section.score>=45?"#D4A855":C.ter)+"12",padding:"2px 8px",borderRadius:99}}>
                                   {section.score}%{section.trend!==null&&section.trend>=5?" ↑":section.trend!==null&&section.trend<=-5?" ↓":""}
@@ -15131,14 +15180,20 @@ function App(){
                             </div>
                             {section.label&&<div style={{fontSize:12,fontWeight:600,color:section.score>=70?C.mint:section.score>=45?"#D4A855":C.ter,marginBottom:4,paddingLeft:19}}>{section.label}</div>}
                             <div style={{fontSize:13,color:C.mid,lineHeight:1.65,paddingLeft:19,whiteSpace:"pre-line"}}>{section.text}</div>
-                            {i<story.length-1&&<div style={{borderBottom:"1px solid var(--card-border)",margin:"14px 0 0",opacity:0.5}}/>}
+                            {i<visibleSections.length-1&&<div style={{borderBottom:"1px solid var(--card-border)",margin:"12px 0 0",opacity:0.4}}/>}
                           </div>
                         ))}
+                        {story.length > 3 && (
+                          <button onClick={()=>_setStoryExpanded(!_storyExpanded)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,width:"100%",padding:"8px",marginTop:10,borderRadius:10,border:`1px solid ${C.blush}`,background:"var(--card-bg)",color:C.ter,fontSize:12,fontWeight:600,cursor:_cP,fontFamily:_fI}}>
+                            {_storyExpanded ? "Show less" : `Read full story (${story.length - 3} more sections)`}
+                            <span style={{fontSize:9,transform:_storyExpanded?"rotate(180deg)":"none",transition:"transform 0.2s"}}>▼</span>
+                          </button>
+                        )}
                       </div>
                     );
                   })()}
 
-                  {/* ═══ NAP TRANSITION GUIDE ═══ */}
+                  {/* ═══ NAP TRANSITION — kept as compact card ═══ */}
                   {(()=>{
                     const _trans = napTransitionGuide();
                     if (!_trans || !_trans.active) return null;
@@ -15176,8 +15231,10 @@ function App(){
                     );
                   })()}
 
-                  {/* Sleep Stability Score & Analytics */}
-                  {(()=>{
+                  {/* Sleep Analytics moved to Sleep Story "Read more" + Weekly Report */}
+
+                  {/* Safe Sleep Guidance — keeping visible */}
+                  {false && (()=>{
                     const score = sleepScore();
                     const advice = sleepAdvice();
                     const suggestedBed = bedtimePrediction();
