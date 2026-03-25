@@ -20005,10 +20005,8 @@ Severe (anaphylaxis): breathing difficulty, swelling of face/throat, pale/floppy
                         {/* ═══ Schedule Maker Modal ═══ */}
       {showScheduleMaker && (
         <div style={{position:"fixed",inset:0,zIndex:9990,background:"var(--sheet-overlay)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>{setShowScheduleMaker(false);setSmResult(null);}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px calc(80px + var(--keyboard-height, 0px))",width:"100%",maxWidth:520,maxHeight:"85vh",overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
-            <div style={{position:"sticky",top:0,zIndex:2,display:"flex",justifyContent:"flex-end",marginBottom:-16}}>
-              <button onTouchEnd={e=>e.stopPropagation()} onClick={()=>{setShowScheduleMaker(false);setSmResult(null);}} style={{width:36,height:36,borderRadius:"50%",border:_bN,background:"var(--card-bg-solid)",color:C.deep,fontSize:18,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.15)"}}>✕</button>
-            </div>
+          <div onClick={e=>e.stopPropagation()} style={{background:"var(--sheet-bg)",backdropFilter:"blur(var(--glass-blur))",WebkitBackdropFilter:"blur(var(--glass-blur))",borderRadius:"24px 24px 0 0",padding:"18px 18px calc(40px + var(--keyboard-height, 0px))",width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto",WebkitOverflowScrolling:"touch",position:"relative"}}>
+            <button onClick={()=>{setShowScheduleMaker(false);setSmResult(null);}} style={{position:"absolute",top:12,right:12,width:36,height:36,borderRadius:"50%",border:_bN,background:"var(--card-bg-solid)",color:C.deep,fontSize:18,cursor:_cP,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.15)",zIndex:10,touchAction:"manipulation"}}>✕</button>
             <div style={{width:48,height:4,background:C.blush,borderRadius:99,margin:"0 auto 16px"}}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,marginBottom:4}}>🧩 Schedule Maker</div>
             <div style={{fontSize:13,color:C.lt,marginBottom:16,lineHeight:1.5}}>
