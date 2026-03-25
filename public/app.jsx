@@ -4623,6 +4623,37 @@ function App(){
             <span style={{fontSize:10,color:C.lt,flexShrink:0}}>✓ Done</span>
           </button>
         )}
+        {/* Three-Drive Indicator — compact bar */}
+        {(()=>{ try {
+          const _td = threeDriveSleepModel();
+          if (!_td) return null;
+          const barW = (score) => Math.max(5, Math.min(100, score)) + "%";
+          const barCol = (score) => score < 30 ? C.mint : score < 60 ? C.gold : C.ter;
+          return (
+            <div style={{paddingLeft:20,marginTop:6,marginBottom:4}}>
+              <div style={{display:"flex",gap:8,alignItems:"center",fontSize:10,color:C.lt,marginBottom:4}}>
+                <span>Sleep pressure</span>
+                <span style={{marginLeft:"auto",fontWeight:600,color:barCol(_td.combined.score)}}>{_td.combined.state}</span>
+              </div>
+              <div style={{display:"flex",gap:4,height:4}}>
+                <div title="Acute" style={{flex:1,borderRadius:99,background:C.blush,overflow:"hidden"}}>
+                  <div style={{width:barW(_td.acute.score),height:"100%",borderRadius:99,background:barCol(_td.acute.score),transition:"width 0.5s"}}/>
+                </div>
+                <div title="Debt" style={{flex:1,borderRadius:99,background:C.blush,overflow:"hidden"}}>
+                  <div style={{width:barW(_td.chronic.score),height:"100%",borderRadius:99,background:barCol(_td.chronic.score),transition:"width 0.5s"}}/>
+                </div>
+                <div title="Clock" style={{flex:1,borderRadius:99,background:C.blush,overflow:"hidden"}}>
+                  <div style={{width:barW(100-_td.circadian.score),height:"100%",borderRadius:99,background:barCol(100-_td.circadian.score),transition:"width 0.5s"}}/>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:4,fontSize:9,color:C.lt,marginTop:2}}>
+                <span style={{flex:1,textAlign:"center"}}>Awake</span>
+                <span style={{flex:1,textAlign:"center"}}>Debt</span>
+                <span style={{flex:1,textAlign:"center"}}>Clock</span>
+              </div>
+            </div>
+          );
+        } catch { return null; } })()}
         <div style={{paddingLeft:20,marginTop:8}}>
           <button onClick={()=>{haptic();setHeroWhyOpen(!heroWhyOpen);if(STORE_READY&&!heroWhyOpen&&!isPremium&&Object.keys(days).length>=3)setTimeout(()=>triggerPaywall("why"),800);}} style={{background:"none",border:"none",padding:0,fontSize:12,fontWeight:600,color:C.ter,cursor:_cP,display:"flex",alignItems:"center",gap:4}}>
             {heroWhyOpen?"Hide":"Why?"} <span style={{fontSize:9,transform:heroWhyOpen?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▼</span>
@@ -9048,6 +9079,53 @@ function App(){
       tips.push("You're doing well. Keep logging consistently — " + _n + "'s rhythm becomes clearer with each day of data. The more OBubba learns, the more personalised the predictions become.");
     }
     sections.push({ title: "What You Can Do", icon: "💡", text: tips.join("\n\n") });
+
+    // ── Sleep Budget Summary (from Sleep Consultant Engine) ──
+    try {
+      const _budgetStory = sleepBudgetDashboard();
+      if (_budgetStory) {
+        let budgetText = _n + "'s 24-hour sleep averages " + _budgetStory.avgTotal + "h over the last " + _budgetStory.dailyData.length + " days.";
+        budgetText += " The AASM recommends " + _budgetStory.aasm.label + " for this age.";
+        if (_budgetStory.withinRange) budgetText += " " + _n + " is right within the healthy range.";
+        else if (_budgetStory.belowRange) budgetText += " That's slightly below range — an earlier bedtime or longer naps could help close the gap.";
+        else budgetText += " That's above range, which is usually fine, but watch that naps aren't stealing from night sleep.";
+        budgetText += "\n\nDay/night split: " + hm(_budgetStory.avgDay) + " in naps (" + _budgetStory.dayPercent + "%) and " + hm(_budgetStory.avgNight) + " overnight (" + _budgetStory.nightPercent + "%).";
+        if (_budgetStory.hasChronicDebt) budgetText += "\n\n⚠️ " + _n + " has been below range for " + _budgetStory.debtDays + " consecutive days. Sleep debt accumulates — an extra-early bedtime tonight can help reset.";
+        if (_budgetStory.trend === "improving") budgetText += "\n\n📈 Total sleep is trending upward this week — great progress.";
+        else if (_budgetStory.trend === "declining") budgetText += "\n\n📉 Total sleep has dipped this week. This is often temporary, but worth watching.";
+        sections.push({ title: "Sleep Budget", icon: "⚖️", text: budgetText });
+      }
+    } catch {}
+
+    // ── Pattern Alerts (from Sleep Consultant Engine) ──
+    try {
+      const _patternsStory = advancedSleepPatterns();
+      if (_patternsStory && _patternsStory.patterns && _patternsStory.patterns.length) {
+        const patternTexts = _patternsStory.patterns
+          .sort((a, b) => (a.priority || 3) - (b.priority || 3))
+          .slice(0, 2)
+          .map(p => p.icon + " " + p.title + "\n" + p.detail + "\n\n→ " + p.action);
+        sections.push({ title: "What We're Noticing", icon: "🔍", text: patternTexts.join("\n\n") });
+      }
+
+      // Celebrations
+      if (_patternsStory && _patternsStory.celebrations && _patternsStory.celebrations.length) {
+        const celebText = _patternsStory.celebrations.map(c => c.icon + " " + c.text).join("\n");
+        sections.push({ title: "Wins This Week", icon: "🎉", text: celebText });
+      }
+    } catch {}
+
+    // ── Three-Drive Model explanation ──
+    try {
+      const _drives = threeDriveSleepModel();
+      if (_drives) {
+        let driveText = "OBubba tracks three forces that drive " + _n + "'s sleep:\n\n";
+        driveText += "1. Sleep pressure (adenosine): " + (_drives.acute.pressure === "low" ? "Low right now — " + _n + " is well-rested." : _drives.acute.pressure === "building" ? "Building normally — awake " + hm(_drives.acute.awakeMin) + "." : _drives.acute.pressure === "ready" ? "Ready for sleep — approaching the wake window limit." : _drives.acute.pressure === "high" ? "High — " + _n + " has been awake longer than usual." : "Currently " + _drives.acute.pressure + ".") + "\n\n";
+        driveText += "2. Sleep debt: " + (_drives.chronic.pressure === "none" ? "No accumulated debt — well-rested overall." : _drives.chronic.pressure === "building" ? "Slightly below target recently — watch for signs of overtiredness." : "Accumulated over " + _drives.chronic.debt + " days — extra sleep opportunities will help.") + "\n\n";
+        driveText += "3. Body clock: " + (_drives.circadian.state === "aligned" ? "Well-aligned — consistent wake and bed times are helping." : _drives.circadian.state === "slightly_drifted" ? "Slightly drifted — try anchoring the morning wake within a 30-minute window." : "Drifted — the internal clock has shifted. Consistent morning wake time is the fastest way to reset.");
+        sections.push({ title: "Three Sleep Drives", icon: "🧠", text: driveText });
+      }
+    } catch {}
 
     // ── Rhythm confidence ──
     const _rc = rhythmConfidence();
@@ -14688,7 +14766,7 @@ function App(){
                 </div>
               )}
 
-              {/* ── 📊 INSIGHTS HERO CARD ── */}
+              {/* ── 📊 INSIGHTS HERO CARD — powered by Sleep Consultant Engine ── */}
               {(()=>{ try {
                 const _tName = babyName || "Baby";
                 const _dk = Object.keys(days).sort().slice(-7);
@@ -14700,54 +14778,68 @@ function App(){
                   </div>
                 );
 
-                // Gather data for positives and actions
+                // Use Sleep Consultant Engine for data
+                const _budget = sleepBudgetDashboard();
+                const _patterns = advancedSleepPatterns();
+                const _celebrations = _patterns?.celebrations || [];
+                const _detected = _patterns?.patterns || [];
+
+                // Gather positives
                 const _positives = [];
-                const _actions = [];
 
-                // Nap trend
-                const _recentNaps = _dk.slice(-3).map(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night));
-                const _olderNaps = _dk.slice(0,3).map(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night));
-                const _recentAvgDur = _recentNaps.flat().length ? Math.round(_recentNaps.flat().reduce((s,n)=>s+minDiff(n.start,n.end),0)/_recentNaps.flat().length) : 0;
-                const _olderAvgDur = _olderNaps.flat().length ? Math.round(_olderNaps.flat().reduce((s,n)=>s+minDiff(n.start,n.end),0)/_olderNaps.flat().length) : 0;
-                if (_recentAvgDur > _olderAvgDur + 5 && _recentAvgDur > 0) _positives.push("Naps are getting longer");
-                else if (_recentAvgDur >= 30) _positives.push("Nap lengths are steady");
+                // From sleep budget
+                if (_budget && _budget.withinRange) _positives.push("Total sleep is within the healthy range (" + _budget.avgTotal + "h)");
+                if (_budget && _budget.trend === "improving") _positives.push("Sleep is trending upward this week");
+                if (_budget && _budget.dayWithinRange) _positives.push("Day sleep is on track");
 
-                // Night wakes trend
-                const _recentNights = _dk.slice(-3).map(d=>(days[d]||[]).filter(e=>e.night).length);
-                const _olderNights = _dk.slice(0,3).map(d=>(days[d]||[]).filter(e=>e.night).length);
-                const _recentAvgNW = _recentNights.length ? Math.round(_recentNights.reduce((a,b)=>a+b,0)/_recentNights.length) : 0;
-                const _olderAvgNW = _olderNights.length ? Math.round(_olderNights.reduce((a,b)=>a+b,0)/_olderNights.length) : 0;
-                if (_recentAvgNW < _olderAvgNW && _olderAvgNW > 0) _positives.push("Night wakes are improving");
-                else if (_recentAvgNW <= 2) _positives.push("Nights are looking good");
+                // From celebrations
+                _celebrations.forEach(c => _positives.push(c.text));
 
-                // Rhythm building
-                const _wakeTimes = _dk.map(d=>{const w=(days[d]||[]).find(e=>e.type==="wake"&&!e.night&&e.time);if(!w||!w.time)return null;try{const[h,m]=w.time.split(":").map(Number);return h*60+m;}catch{return null;}}).filter(Boolean);
-                if (_wakeTimes.length >= 3) {
-                  const _wakeSpread = Math.max(..._wakeTimes) - Math.min(..._wakeTimes);
-                  if (_wakeSpread <= 45) _positives.push("Wake time is consistent");
+                // Nap trend fallback
+                if (!_positives.length) {
+                  const _recentNaps = _dk.slice(-3).map(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night));
+                  const _olderNaps = _dk.slice(0,3).map(d=>(days[d]||[]).filter(e=>e.type==="nap"&&!e.night));
+                  const _recentAvgDur = _recentNaps.flat().length ? Math.round(_recentNaps.flat().reduce((s,n)=>s+minDiff(n.start,n.end),0)/_recentNaps.flat().length) : 0;
+                  const _olderAvgDur = _olderNaps.flat().length ? Math.round(_olderNaps.flat().reduce((s,n)=>s+minDiff(n.start,n.end),0)/_olderNaps.flat().length) : 0;
+                  if (_recentAvgDur > _olderAvgDur + 5) _positives.push("Naps are getting longer");
+                  else if (_recentAvgDur >= 30) _positives.push("Nap lengths are steady");
                 }
 
-                // Fallback positive
+                // Night wakes
+                if (!_positives.some(p => p.includes("Night"))) {
+                  const _recentNW = _dk.slice(-3).map(d=>(days[d]||[]).filter(e=>e.night).length);
+                  const _olderNW = _dk.slice(0,3).map(d=>(days[d]||[]).filter(e=>e.night).length);
+                  const _rAvg = _recentNW.length ? _recentNW.reduce((a,b)=>a+b,0)/_recentNW.length : 0;
+                  const _oAvg = _olderNW.length ? _olderNW.reduce((a,b)=>a+b,0)/_olderNW.length : 0;
+                  if (_rAvg < _oAvg && _oAvg > 0) _positives.push("Night wakes are improving");
+                  else if (_rAvg <= 2) _positives.push("Nights are looking good");
+                }
+
                 if (!_positives.length) _positives.push("Rhythm is building");
 
-                // Actions
-                const _bedP = bedtimePrediction ? bedtimePrediction() : null;
-                if (_bedP) _actions.push("Aim bedtime around " + fmt12(_bedP));
-
-                // Late nap check
-                const _lastDayNaps = (days[todayStr()]||[]).filter(e=>e.type==="nap"&&!e.night);
-                if (_lastDayNaps.length > 0) {
-                  const _lastNapEnd = _lastDayNaps[_lastDayNaps.length-1].end;
-                  if (_lastNapEnd) {
-                    const [_lh,_lm] = _lastNapEnd.split(":").map(Number);
-                    if (_lh >= 17) _actions.push("Try to cap last nap before 5:30pm");
-                  }
+                // Gather actions — from patterns and budget
+                const _actions = [];
+                if (_detected.length > 0) {
+                  // Top priority pattern action
+                  const top = _detected.sort((a,b) => (a.priority||3) - (b.priority||3))[0];
+                  if (top.action) _actions.push(top.action.length > 80 ? top.action.slice(0, 80) + "…" : top.action);
                 }
 
-                // Wake window consistency
+                if (_budget && _budget.belowRange) {
+                  _actions.push("Consider an earlier bedtime tonight — even 15min helps");
+                }
+                if (_budget && _budget.dayTooMuch) {
+                  _actions.push("Try capping the longest nap by 10–15min");
+                }
+
+                // Bedtime prediction
+                if (!_actions.length) {
+                  const _bedP = bedtimePrediction ? bedtimePrediction() : null;
+                  if (_bedP) _actions.push("Aim bedtime around " + fmt12(_bedP));
+                }
                 if (!_actions.length) _actions.push("Keep wake windows consistent");
 
-                // Reassurance line
+                // Reassurance
                 const _intro = _positives.length >= 2 ? "You're doing really well 💛" : "You're doing well 💛";
 
                 return (
@@ -14765,6 +14857,13 @@ function App(){
                         {_actions.slice(0,2).map((a,i)=>(
                           <div key={i} style={{fontSize:12,color:C.mid,marginBottom:2,paddingLeft:14}}>{a}</div>
                         ))}
+                      </div>
+                    )}
+                    {_budget && (
+                      <div style={{marginTop:10,paddingTop:8,borderTop:`1px solid ${C.blush}`,display:"flex",gap:12,fontSize:11,color:C.lt}}>
+                        <span>Day {hm(_budget.avgDay)} ({_budget.dayPercent}%)</span>
+                        <span>Night {hm(_budget.avgNight)} ({_budget.nightPercent}%)</span>
+                        <span style={{color:_budget.withinRange?C.mint:C.ter}}>{_budget.avgTotal}h / {_budget.aasm.label}</span>
                       </div>
                     )}
                   </div>
