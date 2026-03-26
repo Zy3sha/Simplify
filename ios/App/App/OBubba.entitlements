@@ -8,9 +8,9 @@
         <string>group.com.obubba.app</string>
     </array>
 
-    <!-- Push Notifications -->
+    <!-- Push Notifications (Xcode overrides to 'development' for debug builds) -->
     <key>aps-environment</key>
-    <string>development</string>
+    <string>production</string>
 
     <!-- Sign in with Apple -->
     <key>com.apple.developer.applesignin</key>

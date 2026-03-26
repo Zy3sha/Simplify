@@ -2,7 +2,6 @@ import Foundation
 import Capacitor
 import Intents
 import CoreSpotlight
-import MobileCoreServices
 
 /// Capacitor plugin that bridges Siri Shortcuts to the web layer.
 /// Donates NSUserActivity items so iOS can suggest them in Siri, Spotlight, and the Shortcuts app.
@@ -13,7 +12,10 @@ public class SiriShortcutsPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "donate", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "donateAll", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "checkPendingEntry", returnType: CAPPluginReturnPromise),
     ]
+
+    private let appGroupId = "group.com.obubba.app"
 
     @objc func donate(_ call: CAPPluginCall) {
         guard let activityType = call.getString("activityType"),
@@ -33,11 +35,13 @@ public class SiriShortcutsPlugin: CAPPlugin, CAPBridgedPlugin {
         activity.isEligibleForPrediction = isPrediction
         activity.persistentIdentifier = activityType
 
-        // Add to Spotlight
-        let attributes = CSSearchableItemAttributeSet(contentType: .item)
-        attributes.title = title
-        attributes.contentDescription = "OBubba: \(title)"
-        activity.contentAttributeSet = attributes
+        // Add to Spotlight (CSSearchableItemAttributeSet(contentType:) requires iOS 14+)
+        if #available(iOS 14.0, *) {
+            let attrs = CSSearchableItemAttributeSet(contentType: .item)
+            attrs.title = title
+            attrs.contentDescription = "OBubba: \(title)"
+            activity.contentAttributeSet = attrs
+        }
 
         DispatchQueue.main.async {
             self.bridge?.viewController?.userActivity = activity
@@ -71,5 +75,25 @@ public class SiriShortcutsPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         call.resolve(["count": shortcuts.count])
+    }
+
+    /// Reads pendingSiriEntry from App Group UserDefaults (written by IntentHandler)
+    /// and returns it to the web layer. Clears the entry after reading.
+    @objc func checkPendingEntry(_ call: CAPPluginCall) {
+        guard let defaults = UserDefaults(suiteName: appGroupId) else {
+            call.resolve(["entry": NSNull()])
+            return
+        }
+
+        guard let json = defaults.string(forKey: "pendingSiriEntry") else {
+            call.resolve(["entry": NSNull()])
+            return
+        }
+
+        // Clear after reading so it's not processed twice
+        defaults.removeObject(forKey: "pendingSiriEntry")
+        defaults.synchronize()
+
+        call.resolve(["entry": json])
     }
 }

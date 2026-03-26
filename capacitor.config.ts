@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     iosScheme: 'https',
-    hostname: 'obubba.com',
+    hostname: 'localhost',
   },
 
   plugins: {
@@ -28,23 +28,16 @@ const config: CapacitorConfig = {
 
     // ── Splash Screen ──
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 0,
       launchAutoHide: true,
-      backgroundColor: '#F0DDD6',
-      androidSplashResourceName: 'splash',
-      androidScaleType: 'CENTER_CROP',
+      launchFadeOutDuration: 300,
+      backgroundColor: '#FFFEFD',
       showSpinner: false,
-      iosSpinnerStyle: 'small',
-      spinnerColor: '#C07088',
-      splashFullScreen: true,
-      splashImmersive: true,
-      layoutName: 'launch_screen',
-      useDialog: true,
     },
 
     // ── Keyboard ──
     Keyboard: {
-      resize: 'body',
+      resize: 'native',
       resizeOnFullScreen: true,
     },
 
@@ -107,12 +100,12 @@ const config: CapacitorConfig = {
 
   // ── iOS-specific ──
   ios: {
-    scheme: 'OBubba',
-    contentInset: 'automatic',
+    contentInset: 'never',
     allowsLinkPreview: true,
-    backgroundColor: '#F0DDD6',
+    backgroundColor: '#FFFCF9',
     preferredContentMode: 'mobile',
-    limitsNavigationsToAppBoundDomains: true,
+    limitsNavigationsToAppBoundDomains: false,
+    webContentsDebuggingEnabled: true,
     // Enable associated domains for Universal Links & Siri
     // Configured in Xcode: applinks:obubba.com, activitycontinuation:obubba.com
   },
