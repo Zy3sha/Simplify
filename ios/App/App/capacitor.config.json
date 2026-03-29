@@ -1,0 +1,124 @@
+{
+	"appId": "com.obubba.app",
+	"appName": "OBubba",
+	"webDir": "dist",
+	"bundledWebRuntime": false,
+	"server": {
+		"androidScheme": "https",
+		"iosScheme": "https",
+		"hostname": "obubba.com"
+	},
+	"plugins": {
+		"PushNotifications": {
+			"presentationOptions": [
+				"badge",
+				"sound",
+				"alert"
+			]
+		},
+		"LocalNotifications": {
+			"smallIcon": "ic_notification",
+			"iconColor": "#C07088",
+			"sound": "notification.wav"
+		},
+		"SplashScreen": {
+			"launchShowDuration": 2000,
+			"launchAutoHide": true,
+			"backgroundColor": "#F0DDD6",
+			"androidSplashResourceName": "splash",
+			"androidScaleType": "CENTER_CROP",
+			"showSpinner": false,
+			"iosSpinnerStyle": "small",
+			"spinnerColor": "#C07088",
+			"splashFullScreen": true,
+			"splashImmersive": true,
+			"layoutName": "launch_screen",
+			"useDialog": true
+		},
+		"Keyboard": {
+			"resize": "body",
+			"resizeOnFullScreen": true
+		},
+		"StatusBar": {
+			"overlaysWebView": true,
+			"style": "LIGHT",
+			"backgroundColor": "#F0DDD6"
+		},
+		"AppShortcuts": {
+			"shortcuts": [
+				{
+					"id": "log_feed",
+					"title": "Log Feed",
+					"icon": "feed_icon"
+				},
+				{
+					"id": "log_sleep",
+					"title": "Log Sleep",
+					"icon": "sleep_icon"
+				},
+				{
+					"id": "log_nappy",
+					"title": "Log Nappy",
+					"icon": "nappy_icon"
+				},
+				{
+					"id": "start_timer",
+					"title": "Start Timer",
+					"icon": "timer_icon"
+				}
+			]
+		},
+		"BiometricAuth": {
+			"allowDeviceCredential": true
+		},
+		"CapacitorSQLite": {
+			"iosDatabaseLocation": "Library/CapacitorDatabase",
+			"iosIsEncryption": false,
+			"androidIsEncryption": false
+		},
+		"Camera": {
+			"presentationStyle": "popover"
+		},
+		"Network": {},
+		"Badge": {}
+	},
+	"ios": {
+		"scheme": "OBubba",
+		"contentInset": "automatic",
+		"allowsLinkPreview": true,
+		"backgroundColor": "#F0DDD6",
+		"preferredContentMode": "mobile",
+		"limitsNavigationsToAppBoundDomains": true
+	},
+	"android": {
+		"backgroundColor": "#F0DDD6",
+		"allowMixedContent": false,
+		"captureInput": true,
+		"webContentsDebuggingEnabled": false
+	},
+	"packageClassList": [
+		"AppPlugin",
+		"CAPBrowserPlugin",
+		"CAPCameraPlugin",
+		"ClipboardPlugin",
+		"HapticsPlugin",
+		"KeyboardPlugin",
+		"LocalNotificationsPlugin",
+		"PushNotificationsPlugin",
+		"SharePlugin",
+		"SplashScreenPlugin",
+		"StatusBarPlugin",
+		"PreferencesPlugin",
+		"CAPNetworkPlugin",
+		"DevicePlugin",
+		"ScreenOrientationPlugin",
+		"CapacitorSQLitePlugin",
+		"SignInWithApple",
+		"SpeechRecognition",
+		"FirebaseAnalytics",
+		"AppShortcutsPlugin",
+		"BadgePlugin",
+		"LiveUpdatePlugin",
+		"CDVPlugin"
+	]
+}

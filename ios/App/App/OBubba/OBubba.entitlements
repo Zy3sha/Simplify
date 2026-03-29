@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- App Groups (shared data between app, widgets, extensions) -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.obubba.app</string>
+    </array>
+
+    <!-- Push Notifications (Xcode overrides to 'development' for debug builds) -->
+    <key>aps-environment</key>
+    <string>production</string>
+
+    <!-- Sign in with Apple -->
+    <key>com.apple.developer.applesignin</key>
+    <array>
+        <string>Default</string>
+    </array>
+
+    <!-- Associated Domains (Universal Links + Handoff) -->
+    <key>com.apple.developer.associated-domains</key>
+    <array>
+        <string>applinks:obubba.com</string>
+        <string>activitycontinuation:obubba.com</string>
+    </array>
+
+    <!-- HealthKit -->
+    <key>com.apple.developer.healthkit</key>
+    <true/>
+    <key>com.apple.developer.healthkit.access</key>
+    <array/>
+
+    <!-- Siri -->
+    <key>com.apple.developer.siri</key>
+    <true/>
+</dict>
+</plist>

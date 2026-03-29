@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>OBubba</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.1.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.obubba.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>obubba</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>6</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>OBubba needs camera access to take photos for your baby's photo diary.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>OBubba uses Face ID to securely unlock your baby's data.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>OBubba can read baby growth data from Health to keep your records in sync.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>OBubba can save baby weight and height measurements to Health.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>OBubba uses the microphone for voice logging.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>OBubba needs permission to save milestone cards and share images.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>OBubba needs photo library access to add photos to your baby's diary.</string>
+	<key>NSSiriUsageDescription</key>
+	<string>OBubba uses Siri for hands-free baby logging.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>OBubba uses speech recognition for hands-free baby logging.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>processing</string>
+	</array>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+</dict>
+</plist>
