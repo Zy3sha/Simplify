@@ -1,9 +1,12 @@
 // ── Global error handler — styled sleeping baby page ──
 window.onerror = function(msg, src, line, col, err) {
-  // Ignore cross-origin script errors (line 0 = external script, not our code)
-  if (line === 0 || msg === 'Script error.' || msg === 'Script error') return true;
-  // Ignore non-fatal Capacitor/plugin errors
-  if (typeof msg === 'string' && (msg.indexOf('capacitor') !== -1 || msg.indexOf('gapi') !== -1)) return true;
+  // Ignore cross-origin "Script error" at line 0 — these are non-fatal noise
+  // from Firebase/Google Analytics modules loaded from CDN
+  if (line === 0 || msg === 'Script error.' || msg === 'Script error') {
+    console.warn('[OBubba] Ignored cross-origin script error:', msg);
+    return true; // Suppress the error
+  }
+
   // Try to get real error message if cross-origin obscured it
   var detail = msg;
   if (err && err.message) detail = err.message;
@@ -32,6 +35,10 @@ window.onerror = function(msg, src, line, col, err) {
 };
 
 // ── Load and compile JSX from external file ──
+// Guard: prevent double-execution (Capacitor + service worker can cause re-runs)
+if (window.__obAppLoaded) { console.warn('[OBubba] loader.js skipped — app already loaded'); }
+else {
+window.__obAppLoaded = true;
 (function() {
   var errorPage = function(title, detail) {
     document.getElementById('root').innerHTML = '<div style="min-height:100vh;background:linear-gradient(135deg,#FFFEFD 0%,#FDFAF9 40%,#FBF9F8 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;font-family:DM Sans,sans-serif;text-align:center">'
@@ -63,7 +70,7 @@ window.onerror = function(msg, src, line, col, err) {
     }
   }
 
-  fetch('app.jsx')
+  fetch('app.jsx?v=' + Date.now())
     .then(function(r) {
       if (!r.ok) throw new Error('Failed to load app.jsx: ' + r.status);
       return r.text();
@@ -78,6 +85,7 @@ window.onerror = function(msg, src, line, col, err) {
       }
     });
 })();
+} // end guard: window.__obAppLoaded
 
 // ══════════════════════════════════════════════════════════
 // AUTO-GLASS — Optimized: tracks processed elements,
@@ -189,10 +197,19 @@ window.onerror = function(msg, src, line, col, err) {
   }catch(e){}
 })();
 
-// ── Register Service Worker for offline support ──
-if ('serviceWorker' in navigator) {
+// ── Register Service Worker for offline support (web/PWA only, not native) ──
+// On native (Capacitor), unregister any existing SW to prevent stale caches
+if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(r) { r.unregister(); });
+    });
+    // Also clear all caches
+    if ('caches' in window) { caches.keys().then(function(names) { names.forEach(function(n) { caches.delete(n); }); }); }
+  }
+} else if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+    try { navigator.serviceWorker.register('/sw.js').then(function(reg) {
       // Check for updates every 30 minutes
       setInterval(function() { reg.update(); }, 30 * 60 * 1000);
       // Listen for sync requests from service worker
@@ -209,14 +226,8 @@ if ('serviceWorker' in navigator) {
       });
     }).catch(function(err) {
       console.warn('[OBubba] SW registration failed:', err);
-    });
+    }); } catch(e) { console.warn('[OBubba] SW not supported here'); }
   });
 }
 
-// ── Load native plugin bridge ──
-(function() {
-  var s = document.createElement('script');
-  s.src = 'native-plugins.js';
-  s.async = true;
-  document.head.appendChild(s);
-})();
+// native-plugins.js is loaded via index.html <script defer> — no duplicate load needed

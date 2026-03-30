@@ -46,18 +46,29 @@ class OBubbaSummaryWidget : AppWidgetProvider() {
 
                 // Quick action intents
                 val feedIntent = Intent(context, MainActivity::class.java).apply {
-                    putExtra("action", "log_feed")
+                    putExtra("action", "quick_feed")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
                 views.setOnClickPendingIntent(R.id.btn_log_feed, PendingIntent.getActivity(
                     context, 1, feedIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 ))
 
+                val nappyIntent = Intent(context, MainActivity::class.java).apply {
+                    putExtra("action", "quick_nappy")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                views.setOnClickPendingIntent(R.id.btn_log_nappy, PendingIntent.getActivity(
+                    context, 2, nappyIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                ))
+
                 val sleepIntent = Intent(context, MainActivity::class.java).apply {
-                    putExtra("action", "log_sleep")
+                    putExtra("action", "toggle_nap")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
                 views.setOnClickPendingIntent(R.id.btn_log_sleep, PendingIntent.getActivity(
-                    context, 2, sleepIntent,
+                    context, 3, sleepIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 ))
 

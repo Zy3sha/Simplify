@@ -2,486 +2,526 @@
 // OBubba Native Plugin Bridge
 // Unified API for all Capacitor native features
 // Falls back gracefully to web APIs when not running natively
+// Uses window.Capacitor.Plugins.* (NOT dynamic import()) for WKWebView
 // ══════════════════════════════════════════════════════════════════
 
-const isNative = () =>
-  typeof window !== 'undefined' &&
-  window.Capacitor &&
-  window.Capacitor.isNativePlatform();
+var isNative = function() {
+  return typeof window !== 'undefined' &&
+    window.Capacitor &&
+    window.Capacitor.isNativePlatform();
+};
 
-const getPlatform = () =>
-  isNative() ? window.Capacitor.getPlatform() : 'web';
+var getPlatform = function() {
+  return isNative() ? window.Capacitor.getPlatform() : 'web';
+};
+
+// Helper to get a Capacitor plugin safely
+var _plug = function(name) {
+  try { return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]; }
+  catch(e) { return null; }
+};
 
 // ── 1. HAPTICS ──────────────────────────────────────────────────
-const OBHaptics = {
-  async impact(style = 'Medium') {
+var OBHaptics = {
+  impact: function(style) {
+    style = style || 'Medium';
     if (!isNative()) {
       if (navigator.vibrate) navigator.vibrate(style === 'Heavy' ? 30 : style === 'Light' ? 5 : 15);
-      return;
+      return Promise.resolve();
     }
-    const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
-    await Haptics.impact({ style: ImpactStyle[style] });
+    var Haptics = _plug('Haptics');
+    if (!Haptics) return Promise.resolve();
+    return Haptics.impact({ style: style });
   },
-  async notification(type = 'Success') {
-    if (!isNative()) return;
-    const { Haptics, NotificationType } = await import('@capacitor/haptics');
-    await Haptics.notification({ type: NotificationType[type] });
+  notification: function(type) {
+    type = type || 'Success';
+    if (!isNative()) return Promise.resolve();
+    var Haptics = _plug('Haptics');
+    if (!Haptics) return Promise.resolve();
+    return Haptics.notification({ type: type });
   },
-  async selectionStart() {
-    if (!isNative()) return;
-    const { Haptics } = await import('@capacitor/haptics');
-    await Haptics.selectionStart();
+  selectionStart: function() {
+    if (!isNative()) return Promise.resolve();
+    var Haptics = _plug('Haptics');
+    if (!Haptics) return Promise.resolve();
+    return Haptics.selectionStart();
   },
-  async selectionChanged() {
-    if (!isNative()) return;
-    const { Haptics } = await import('@capacitor/haptics');
-    await Haptics.selectionChanged();
+  selectionChanged: function() {
+    if (!isNative()) return Promise.resolve();
+    var Haptics = _plug('Haptics');
+    if (!Haptics) return Promise.resolve();
+    return Haptics.selectionChanged();
   },
-  async selectionEnd() {
-    if (!isNative()) return;
-    const { Haptics } = await import('@capacitor/haptics');
-    await Haptics.selectionEnd();
-  },
+  selectionEnd: function() {
+    if (!isNative()) return Promise.resolve();
+    var Haptics = _plug('Haptics');
+    if (!Haptics) return Promise.resolve();
+    return Haptics.selectionEnd();
+  }
 };
 
 // ── 2. BIOMETRIC AUTH (Face ID / Touch ID / Fingerprint) ────────
-const OBBiometric = {
-  async isAvailable() {
-    if (!isNative()) return { available: false, type: 'none' };
+var OBBiometric = {
+  isAvailable: function() {
+    if (!isNative()) return Promise.resolve({ available: false, type: 'none' });
+    var Bio = _plug('BiometricAuth');
+    if (!Bio) return Promise.resolve({ available: false, type: 'none' });
     try {
-      const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
-      const result = await BiometricAuth.checkBiometry();
-      return {
-        available: result.isAvailable,
-        type: result.biometryType, // 'faceId', 'touchId', 'fingerprintAuthentication', 'faceAuthentication'
-        reason: result.reason,
-      };
-    } catch { return { available: false, type: 'none' }; }
+      return Bio.checkBiometry().then(function(result) {
+        return { available: result.isAvailable, type: result.biometryType, reason: result.reason };
+      }).catch(function() { return { available: false, type: 'none' }; });
+    } catch(e) { return Promise.resolve({ available: false, type: 'none' }); }
   },
-  async authenticate(reason = 'Verify your identity') {
-    if (!isNative()) return { success: false, error: 'not_native' };
+  authenticate: function(reason) {
+    reason = reason || 'Verify your identity';
+    if (!isNative()) return Promise.resolve({ success: false, error: 'not_native' });
+    var Bio = _plug('BiometricAuth');
+    if (!Bio) return Promise.resolve({ success: false, error: 'no_plugin' });
     try {
-      const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
-      await BiometricAuth.authenticate({ reason, allowDeviceCredential: true });
-      return { success: true };
-    } catch (e) {
-      return { success: false, error: e.message || 'auth_failed' };
-    }
-  },
+      return Bio.authenticate({ reason: reason, allowDeviceCredential: true }).then(function() {
+        return { success: true };
+      }).catch(function(e) {
+        return { success: false, error: (e && e.message) || 'auth_failed' };
+      });
+    } catch(e) { return Promise.resolve({ success: false, error: 'error' }); }
+  }
 };
 
 // ── 3. SIGN IN WITH APPLE ───────────────────────────────────────
-const OBAppleSignIn = {
-  async isAvailable() {
-    return getPlatform() === 'ios';
+var OBAppleSignIn = {
+  isAvailable: function() {
+    return Promise.resolve(getPlatform() === 'ios');
   },
-  async signIn() {
-    if (getPlatform() !== 'ios') return { success: false, error: 'not_ios' };
+  signIn: function() {
+    if (getPlatform() !== 'ios') return Promise.resolve({ success: false, error: 'not_ios' });
+    var SIWA = _plug('SignInWithApple');
+    if (!SIWA) return Promise.resolve({ success: false, error: 'no_plugin' });
     try {
-      const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
-      const result = await SignInWithApple.authorize({
+      return SIWA.authorize({
         clientId: 'com.obubba.app',
         redirectURI: 'https://obubba.com/auth/apple/callback',
         scopes: 'email name',
         state: crypto.randomUUID(),
-        nonce: crypto.randomUUID(),
+        nonce: crypto.randomUUID()
+      }).then(function(result) {
+        return {
+          success: true,
+          user: result.response.user,
+          email: result.response.email,
+          givenName: result.response.givenName,
+          familyName: result.response.familyName,
+          identityToken: result.response.identityToken,
+          authorizationCode: result.response.authorizationCode
+        };
+      }).catch(function(e) {
+        return { success: false, error: (e && e.message) || 'apple_signin_failed' };
       });
-      return {
-        success: true,
-        user: result.response.user,
-        email: result.response.email,
-        givenName: result.response.givenName,
-        familyName: result.response.familyName,
-        identityToken: result.response.identityToken,
-        authorizationCode: result.response.authorizationCode,
-      };
-    } catch (e) {
-      return { success: false, error: e.message || 'apple_signin_failed' };
-    }
-  },
+    } catch(e) { return Promise.resolve({ success: false, error: 'error' }); }
+  }
 };
 
 // ── 4. GOOGLE SIGN-IN ───────────────────────────────────────────
-const OBGoogleSignIn = {
-  async signIn() {
+var OBGoogleSignIn = {
+  signIn: function() {
+    var GA = _plug('GoogleAuth');
+    if (!GA) return Promise.resolve({ success: false, error: 'no_plugin' });
     try {
-      const { GoogleAuth } = await import('@capacitor-community/google-auth');
-      await GoogleAuth.initialize({
+      return GA.initialize({
         clientId: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
-        scopes: ['profile', 'email'],
+        scopes: ['profile', 'email']
+      }).then(function() {
+        return GA.signIn();
+      }).then(function(result) {
+        return {
+          success: true,
+          user: result.id,
+          email: result.email,
+          name: result.name,
+          imageUrl: result.imageUrl,
+          idToken: result.authentication.idToken
+        };
+      }).catch(function(e) {
+        return { success: false, error: (e && e.message) || 'google_signin_failed' };
       });
-      const result = await GoogleAuth.signIn();
-      return {
-        success: true,
-        user: result.id,
-        email: result.email,
-        name: result.name,
-        imageUrl: result.imageUrl,
-        idToken: result.authentication.idToken,
-      };
-    } catch (e) {
-      return { success: false, error: e.message || 'google_signin_failed' };
-    }
+    } catch(e) { return Promise.resolve({ success: false, error: 'error' }); }
   },
-  async signOut() {
-    try {
-      const { GoogleAuth } = await import('@capacitor-community/google-auth');
-      await GoogleAuth.signOut();
-    } catch {}
-  },
+  signOut: function() {
+    var GA = _plug('GoogleAuth');
+    if (!GA) return Promise.resolve();
+    try { return GA.signOut().catch(function(){}); }
+    catch(e) { return Promise.resolve(); }
+  }
 };
 
 // ── 5. PUSH NOTIFICATIONS (APNs + FCM) ─────────────────────────
-const OBPushNotifications = {
+var OBPushNotifications = {
   _listeners: [],
 
-  async requestPermission() {
+  requestPermission: function() {
     if (!isNative()) {
       if ('Notification' in window) {
-        const result = await Notification.requestPermission();
-        return { granted: result === 'granted' };
+        return Notification.requestPermission().then(function(result) {
+          return { granted: result === 'granted' };
+        });
       }
-      return { granted: false };
+      return Promise.resolve({ granted: false });
     }
-    const { PushNotifications } = await import('@capacitor/push-notifications');
-    const perm = await PushNotifications.requestPermissions();
-    return { granted: perm.receive === 'granted' };
+    var PN = _plug('PushNotifications');
+    if (!PN) return Promise.resolve({ granted: false });
+    return PN.requestPermissions().then(function(perm) {
+      return { granted: perm.receive === 'granted' };
+    });
   },
 
-  async register() {
-    if (!isNative()) return { token: null };
-    const { PushNotifications } = await import('@capacitor/push-notifications');
-    await PushNotifications.register();
-    return new Promise((resolve) => {
-      PushNotifications.addListener('registration', (token) => {
+  register: function() {
+    if (!isNative()) return Promise.resolve({ token: null });
+    var PN = _plug('PushNotifications');
+    if (!PN) return Promise.resolve({ token: null });
+    PN.register();
+    return new Promise(function(resolve) {
+      PN.addListener('registration', function(token) {
         resolve({ token: token.value });
       });
-      PushNotifications.addListener('registrationError', (err) => {
+      PN.addListener('registrationError', function(err) {
         resolve({ token: null, error: err.error });
       });
     });
   },
 
-  async onNotificationReceived(callback) {
-    if (!isNative()) return;
-    const { PushNotifications } = await import('@capacitor/push-notifications');
-    const listener = await PushNotifications.addListener('pushNotificationReceived', callback);
-    this._listeners.push(listener);
-  },
-
-  async onNotificationTapped(callback) {
-    if (!isNative()) return;
-    const { PushNotifications } = await import('@capacitor/push-notifications');
-    const listener = await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-      callback(action.notification, action.actionId);
-    });
-    this._listeners.push(listener);
-  },
-
-  async setBadgeCount(count) {
+  onNotificationReceived: function(callback) {
+    if (!isNative()) return Promise.resolve();
+    var PN = _plug('PushNotifications');
+    if (!PN) return Promise.resolve();
     try {
-      const { Badge } = await import('@capawesome/capacitor-badge');
-      await Badge.set({ count });
-    } catch {}
+      var listener = PN.addListener('pushNotificationReceived', callback);
+      this._listeners.push(listener);
+    } catch(e) {}
+    return Promise.resolve();
   },
 
-  async clearBadge() {
+  onNotificationTapped: function(callback) {
+    if (!isNative()) return Promise.resolve();
+    var PN = _plug('PushNotifications');
+    if (!PN) return Promise.resolve();
     try {
-      const { Badge } = await import('@capawesome/capacitor-badge');
-      await Badge.clear();
-    } catch {}
+      var listener = PN.addListener('pushNotificationActionPerformed', function(action) {
+        callback(action.notification, action.actionId);
+      });
+      this._listeners.push(listener);
+    } catch(e) {}
+    return Promise.resolve();
   },
+
+  setBadgeCount: function(count) {
+    var Badge = _plug('Badge');
+    if (!Badge) return Promise.resolve();
+    try { return Badge.set({ count: count }).catch(function(){}); }
+    catch(e) { return Promise.resolve(); }
+  },
+
+  clearBadge: function() {
+    var Badge = _plug('Badge');
+    if (!Badge) return Promise.resolve();
+    try { return Badge.clear().catch(function(){}); }
+    catch(e) { return Promise.resolve(); }
+  }
 };
 
 // ── 6. LOCAL NOTIFICATIONS ──────────────────────────────────────
-const OBLocalNotifications = {
-  async schedule({ id, title, body, scheduleAt, extra, channelId }) {
+var OBLocalNotifications = {
+  schedule: function(opts) {
+    var id = opts.id, title = opts.title, body = opts.body;
+    var scheduleAt = opts.scheduleAt, extra = opts.extra, channelId = opts.channelId;
     if (!isNative()) {
-      // Web fallback: schedule with setTimeout if within reasonable time
       if ('Notification' in window && Notification.permission === 'granted') {
-        const delay = new Date(scheduleAt).getTime() - Date.now();
+        var delay = new Date(scheduleAt).getTime() - Date.now();
         if (delay > 0 && delay < 86400000) {
-          setTimeout(() => new Notification(title, { body, icon: '/icons/icon-192.png', data: extra }), delay);
+          setTimeout(function() { new Notification(title, { body: body, icon: '/icons/icon-192.png', data: extra }); }, delay);
         }
       }
-      return;
+      return Promise.resolve();
     }
-    const { LocalNotifications } = await import('@capacitor/local-notifications');
-    await LocalNotifications.schedule({
+    var LN = _plug('LocalNotifications');
+    if (!LN) return Promise.resolve();
+    return LN.schedule({
       notifications: [{
         id: id || Math.floor(Math.random() * 100000),
-        title,
-        body,
+        title: title,
+        body: body,
         schedule: { at: new Date(scheduleAt) },
         sound: 'notification.wav',
         extra: extra || {},
-        channelId: channelId || 'obubba_reminders',
-      }],
+        channelId: channelId || 'obubba_reminders'
+      }]
     });
   },
 
-  async cancelAll() {
-    if (!isNative()) return;
-    const { LocalNotifications } = await import('@capacitor/local-notifications');
-    const pending = await LocalNotifications.getPending();
-    if (pending.notifications.length > 0) {
-      await LocalNotifications.cancel(pending);
-    }
+  cancelAll: function() {
+    if (!isNative()) return Promise.resolve();
+    var LN = _plug('LocalNotifications');
+    if (!LN) return Promise.resolve();
+    return LN.getPending().then(function(pending) {
+      if (pending.notifications.length > 0) {
+        return LN.cancel(pending);
+      }
+    });
   },
 
-  async createChannels() {
-    if (getPlatform() !== 'android') return;
-    const { LocalNotifications } = await import('@capacitor/local-notifications');
-    await LocalNotifications.createChannel({
+  createChannels: function() {
+    if (getPlatform() !== 'android') return Promise.resolve();
+    var LN = _plug('LocalNotifications');
+    if (!LN) return Promise.resolve();
+    return LN.createChannel({
       id: 'obubba_reminders',
       name: 'Reminders',
       description: 'Feed, sleep, and medicine reminders',
       importance: 4,
       sound: 'notification.wav',
-      vibration: true,
+      vibration: true
+    }).then(function() {
+      return LN.createChannel({
+        id: 'obubba_timers',
+        name: 'Active Timers',
+        description: 'Running feed and sleep timers',
+        importance: 3,
+        sound: null,
+        vibration: false
+      });
+    }).then(function() {
+      return LN.createChannel({
+        id: 'obubba_milestones',
+        name: 'Milestones',
+        description: 'Developmental milestone reminders',
+        importance: 3,
+        sound: 'notification.wav',
+        vibration: true
+      });
     });
-    await LocalNotifications.createChannel({
-      id: 'obubba_timers',
-      name: 'Active Timers',
-      description: 'Running feed and sleep timers',
-      importance: 3,
-      sound: null,
-      vibration: false,
-    });
-    await LocalNotifications.createChannel({
-      id: 'obubba_milestones',
-      name: 'Milestones',
-      description: 'Developmental milestone reminders',
-      importance: 3,
-      sound: 'notification.wav',
-      vibration: true,
-    });
-  },
+  }
 };
 
 // ── 7. APP SHORTCUTS (3D Touch / Long Press Home Icon) ──────────
-const OBAppShortcuts = {
-  async set(shortcuts) {
-    if (!isNative()) return;
+var OBAppShortcuts = {
+  set: function(shortcuts) {
+    if (!isNative()) return Promise.resolve();
+    var AS = _plug('AppShortcuts');
+    if (!AS) return Promise.resolve();
     try {
-      const { AppShortcuts } = await import('@capawesome/capacitor-app-shortcuts');
-      await AppShortcuts.set({
-        shortcuts: shortcuts.map((s) => ({
-          id: s.id,
-          title: s.title,
-          description: s.description || '',
-          iconName: s.icon || undefined,
-        })),
-      });
-    } catch {}
+      return AS.set({
+        shortcuts: shortcuts.map(function(s) {
+          return {
+            id: s.id,
+            title: s.title,
+            description: s.description || '',
+            iconName: s.icon || undefined
+          };
+        })
+      }).catch(function(){});
+    } catch(e) { return Promise.resolve(); }
   },
 
-  async onShortcutUsed(callback) {
-    if (!isNative()) return;
+  onShortcutUsed: function(callback) {
+    if (!isNative()) return Promise.resolve();
+    var AS = _plug('AppShortcuts');
+    if (!AS) return Promise.resolve();
     try {
-      const { AppShortcuts } = await import('@capawesome/capacitor-app-shortcuts');
-      AppShortcuts.addListener('shortcut', (event) => {
+      AS.addListener('shortcut', function(event) {
         callback(event.shortcutId);
       });
-    } catch {}
-  },
+    } catch(e) {}
+    return Promise.resolve();
+  }
 };
 
 // ── 8. CAMERA ───────────────────────────────────────────────────
-const OBCamera = {
-  async takePhoto() {
+var OBCamera = {
+  takePhoto: function() {
     if (!isNative()) {
-      // Web fallback: file input
-      return new Promise((resolve) => {
-        const input = document.createElement('input');
+      return new Promise(function(resolve) {
+        var input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
         input.capture = 'environment';
-        input.onchange = (e) => {
-          const file = e.target.files[0];
+        input.onchange = function(e) {
+          var file = e.target.files[0];
           if (!file) return resolve(null);
-          const reader = new FileReader();
-          reader.onload = () => resolve({ dataUrl: reader.result, format: 'jpeg' });
+          var reader = new FileReader();
+          reader.onload = function() { resolve({ dataUrl: reader.result, format: 'jpeg' }); };
           reader.readAsDataURL(file);
         };
         input.click();
       });
     }
-    const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
-    const photo = await Camera.getPhoto({
+    var Cam = _plug('Camera');
+    if (!Cam) return Promise.resolve(null);
+    return Cam.getPhoto({
       quality: 85,
       allowEditing: false,
-      resultType: CameraResultType.DataUrl,
-      source: CameraSource.Prompt, // Let user choose camera or gallery
+      resultType: 'dataUrl',
+      source: 'PROMPT',
       width: 1200,
-      correctOrientation: true,
+      correctOrientation: true
+    }).then(function(photo) {
+      return { dataUrl: photo.dataUrl, format: photo.format };
     });
-    return { dataUrl: photo.dataUrl, format: photo.format };
   },
 
-  async pickFromGallery() {
-    if (!isNative()) return this.takePhoto(); // Same web fallback
-    const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
-    const photo = await Camera.getPhoto({
+  pickFromGallery: function() {
+    if (!isNative()) return this.takePhoto();
+    var Cam = _plug('Camera');
+    if (!Cam) return Promise.resolve(null);
+    return Cam.getPhoto({
       quality: 85,
       allowEditing: false,
-      resultType: CameraResultType.DataUrl,
-      source: CameraSource.Photos,
+      resultType: 'dataUrl',
+      source: 'PHOTOS',
       width: 1200,
-      correctOrientation: true,
+      correctOrientation: true
+    }).then(function(photo) {
+      return { dataUrl: photo.dataUrl, format: photo.format };
     });
-    return { dataUrl: photo.dataUrl, format: photo.format };
-  },
+  }
 };
 
 // ── 9. SHARE ────────────────────────────────────────────────────
-const OBShare = {
-  async share({ title, text, url, files }) {
+var OBShare = {
+  share: function(opts) {
+    var title = opts.title, text = opts.text, url = opts.url, files = opts.files;
     if (!isNative()) {
       if (navigator.share) {
-        await navigator.share({ title, text, url });
-        return { shared: true };
+        return navigator.share({ title: title, text: text, url: url }).then(function() {
+          return { shared: true };
+        });
       }
-      // Fallback: copy to clipboard
-      await navigator.clipboard.writeText(url || text || '');
-      return { shared: false, copied: true };
+      return navigator.clipboard.writeText(url || text || '').then(function() {
+        return { shared: false, copied: true };
+      });
     }
-    const { Share } = await import('@capacitor/share');
-    const result = await Share.share({ title, text, url, files });
-    return { shared: true, activityType: result.activityType };
-  },
+    var Share = _plug('Share');
+    if (!Share) return Promise.resolve({ shared: false });
+    return Share.share({ title: title, text: text, url: url, files: files }).then(function(result) {
+      return { shared: true, activityType: result.activityType };
+    });
+  }
 };
 
 // ── 10. NETWORK STATUS ──────────────────────────────────────────
-const OBNetwork = {
-  async getStatus() {
+var OBNetwork = {
+  getStatus: function() {
     if (!isNative()) {
-      return { connected: navigator.onLine, connectionType: navigator.onLine ? 'wifi' : 'none' };
+      return Promise.resolve({ connected: navigator.onLine, connectionType: navigator.onLine ? 'wifi' : 'none' });
     }
-    const { Network } = await import('@capacitor/network');
-    const status = await Network.getStatus();
-    return { connected: status.connected, connectionType: status.connectionType };
+    var Net = _plug('Network');
+    if (!Net) return Promise.resolve({ connected: navigator.onLine, connectionType: 'unknown' });
+    return Net.getStatus().then(function(status) {
+      return { connected: status.connected, connectionType: status.connectionType };
+    });
   },
 
-  async onStatusChange(callback) {
+  onStatusChange: function(callback) {
     if (!isNative()) {
-      window.addEventListener('online', () => callback({ connected: true, connectionType: 'wifi' }));
-      window.addEventListener('offline', () => callback({ connected: false, connectionType: 'none' }));
-      return;
+      window.addEventListener('online', function() { callback({ connected: true, connectionType: 'wifi' }); });
+      window.addEventListener('offline', function() { callback({ connected: false, connectionType: 'none' }); });
+      return Promise.resolve();
     }
-    const { Network } = await import('@capacitor/network');
-    Network.addListener('networkStatusChange', callback);
-  },
+    var Net = _plug('Network');
+    if (!Net) return Promise.resolve();
+    Net.addListener('networkStatusChange', callback);
+    return Promise.resolve();
+  }
 };
 
 // ── 11. SQLITE (Offline-first persistence) ──────────────────────
-const OBDatabase = {
+var OBDatabase = {
   _db: null,
 
-  async init() {
-    if (!isNative()) return false;
+  init: function() {
+    if (!isNative()) return Promise.resolve(false);
+    // Guard: prevent double SQLite init (causes "Connection already exists" error)
+    if (this._db || this._initInProgress) return Promise.resolve(this._db || false);
+    this._initInProgress = true;
+    var SQL = _plug('CapacitorSQLite');
+    if (!SQL) { this._initInProgress = false; return Promise.resolve(false); }
+    var self = this;
     try {
-      const { CapacitorSQLite } = await import('@capacitor-community/sqlite');
-      await CapacitorSQLite.createConnection({ database: 'obubba', version: 1, encrypted: false, mode: 'no-encryption' });
-      await CapacitorSQLite.open({ database: 'obubba' });
+      return SQL.createConnection({ database: 'obubba', version: 1, encrypted: false, mode: 'no-encryption' })
+        .then(function() { return SQL.open({ database: 'obubba' }); })
+        .then(function() {
+          return SQL.execute({
+            database: 'obubba',
+            statements: 'CREATE TABLE IF NOT EXISTS entries (id TEXT PRIMARY KEY, date TEXT NOT NULL, type TEXT NOT NULL, data TEXT NOT NULL, synced INTEGER DEFAULT 0, updated_at INTEGER DEFAULT 0); CREATE TABLE IF NOT EXISTS children (id TEXT PRIMARY KEY, data TEXT NOT NULL, synced INTEGER DEFAULT 0); CREATE TABLE IF NOT EXISTS milestones (id TEXT PRIMARY KEY, child_id TEXT, data TEXT NOT NULL, synced INTEGER DEFAULT 0); CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL); CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(date); CREATE INDEX IF NOT EXISTS idx_entries_type ON entries(type); CREATE INDEX IF NOT EXISTS idx_entries_synced ON entries(synced);'
+          });
+        })
+        .then(function() { self._db = true; self._initInProgress = false; return true; })
+        .catch(function(e) { console.warn('SQLite init failed:', e); self._initInProgress = false; return false; });
+    } catch(e) { console.warn('SQLite init error:', e); self._initInProgress = false; return Promise.resolve(false); }
+  },
 
-      // Create tables
-      await CapacitorSQLite.execute({
-        database: 'obubba',
-        statements: `
-          CREATE TABLE IF NOT EXISTS entries (
-            id TEXT PRIMARY KEY,
-            date TEXT NOT NULL,
-            type TEXT NOT NULL,
-            data TEXT NOT NULL,
-            synced INTEGER DEFAULT 0,
-            updated_at INTEGER DEFAULT 0
-          );
-          CREATE TABLE IF NOT EXISTS children (
-            id TEXT PRIMARY KEY,
-            data TEXT NOT NULL,
-            synced INTEGER DEFAULT 0
-          );
-          CREATE TABLE IF NOT EXISTS milestones (
-            id TEXT PRIMARY KEY,
-            child_id TEXT,
-            data TEXT NOT NULL,
-            synced INTEGER DEFAULT 0
-          );
-          CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-          );
-          CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(date);
-          CREATE INDEX IF NOT EXISTS idx_entries_type ON entries(type);
-          CREATE INDEX IF NOT EXISTS idx_entries_synced ON entries(synced);
-        `,
+  put: function(table, id, data) {
+    if (!this._db) return Promise.resolve();
+    var SQL = _plug('CapacitorSQLite');
+    if (!SQL) return Promise.resolve();
+    var json = JSON.stringify(data);
+    return SQL.run({
+      database: 'obubba',
+      statement: 'INSERT OR REPLACE INTO ' + table + ' (id, data, synced) VALUES (?, ?, 0)',
+      values: [id, json]
+    });
+  },
+
+  get: function(table, id) {
+    if (!this._db) return Promise.resolve(null);
+    var SQL = _plug('CapacitorSQLite');
+    if (!SQL) return Promise.resolve(null);
+    return SQL.query({
+      database: 'obubba',
+      statement: 'SELECT data FROM ' + table + ' WHERE id = ?',
+      values: [id]
+    }).then(function(result) {
+      if (result.values && result.values.length > 0) {
+        return JSON.parse(result.values[0].data);
+      }
+      return null;
+    });
+  },
+
+  getAll: function(table) {
+    if (!this._db) return Promise.resolve([]);
+    var SQL = _plug('CapacitorSQLite');
+    if (!SQL) return Promise.resolve([]);
+    return SQL.query({
+      database: 'obubba',
+      statement: 'SELECT id, data FROM ' + table,
+      values: []
+    }).then(function(result) {
+      return (result.values || []).map(function(r) {
+        var parsed = JSON.parse(r.data);
+        parsed.id = r.id;
+        return parsed;
       });
-      this._db = true;
-      return true;
-    } catch (e) {
-      console.warn('SQLite init failed:', e);
-      return false;
-    }
-  },
-
-  async put(table, id, data) {
-    if (!this._db) return;
-    const { CapacitorSQLite } = await import('@capacitor-community/sqlite');
-    const json = JSON.stringify(data);
-    await CapacitorSQLite.run({
-      database: 'obubba',
-      statement: `INSERT OR REPLACE INTO ${table} (id, data, synced) VALUES (?, ?, 0)`,
-      values: [id, json],
     });
-  },
-
-  async get(table, id) {
-    if (!this._db) return null;
-    const { CapacitorSQLite } = await import('@capacitor-community/sqlite');
-    const result = await CapacitorSQLite.query({
-      database: 'obubba',
-      statement: `SELECT data FROM ${table} WHERE id = ?`,
-      values: [id],
-    });
-    if (result.values && result.values.length > 0) {
-      return JSON.parse(result.values[0].data);
-    }
-    return null;
-  },
-
-  async getAll(table) {
-    if (!this._db) return [];
-    const { CapacitorSQLite } = await import('@capacitor-community/sqlite');
-    const result = await CapacitorSQLite.query({
-      database: 'obubba',
-      statement: `SELECT id, data FROM ${table}`,
-      values: [],
-    });
-    return (result.values || []).map((r) => ({ id: r.id, ...JSON.parse(r.data) }));
-  },
+  }
 };
 
 // ── 12. SIRI SHORTCUTS (iOS) ────────────────────────────────────
-// Siri integration uses native Swift code (see ios/App/SiriIntents/)
-// This bridge communicates with the native Siri handler
-const OBSiri = {
-  async donateShortcut({ id, title, phrase }) {
-    if (getPlatform() !== 'ios') return;
-    // Call native Swift bridge via Capacitor plugin message
+var OBSiri = {
+  donateShortcut: function(opts) {
+    if (getPlatform() !== 'ios') return Promise.resolve();
+    var Siri = _plug('OBSiriShortcuts');
+    if (!Siri) return Promise.resolve();
     try {
-      await window.Capacitor.Plugins.OBSiriShortcuts.donate({
-        activityType: `com.obubba.app.${id}`,
-        title,
-        suggestedPhrase: phrase,
+      return Siri.donate({
+        activityType: 'com.obubba.app.' + opts.id,
+        title: opts.title,
+        suggestedPhrase: opts.phrase,
         isEligibleForSearch: true,
-        isEligibleForPrediction: true,
-      });
-    } catch {}
+        isEligibleForPrediction: true
+      }).catch(function(){});
+    } catch(e) { return Promise.resolve(); }
   },
 
-  async donateAllShortcuts() {
-    const shortcuts = [
+  donateAllShortcuts: function() {
+    var shortcuts = [
       { id: 'log_feed', title: 'Log a Feed', phrase: 'Log a feed in OBubba' },
       { id: 'log_sleep', title: 'Log Sleep', phrase: 'Log sleep in OBubba' },
       { id: 'log_nappy', title: 'Log a Nappy', phrase: 'Log a nappy in OBubba' },
@@ -490,281 +530,270 @@ const OBSiri = {
       { id: 'baby_summary', title: 'Baby Summary', phrase: "How's baby doing?" },
       { id: 'last_feed', title: 'Last Feed', phrase: 'When was the last feed?' },
       { id: 'log_temperature', title: 'Log Temperature', phrase: 'Log baby temperature' },
-      { id: 'log_medicine', title: 'Log Medicine', phrase: 'Log baby medicine' },
+      { id: 'log_medicine', title: 'Log Medicine', phrase: 'Log baby medicine' }
     ];
-    for (const s of shortcuts) {
-      await this.donateShortcut(s);
-    }
-  },
+    var self = this;
+    var chain = Promise.resolve();
+    shortcuts.forEach(function(s) {
+      chain = chain.then(function() { return self.donateShortcut(s); });
+    });
+    return chain;
+  }
 };
 
 // ── 13. WIDGETS (iOS WidgetKit + Android Glance) ────────────────
-// Widgets use native code but we provide data through shared storage
-const OBWidgets = {
-  async updateWidgetData() {
-    if (!isNative()) return;
-    // Collect current baby data for widget display
-    try {
-      const activeChild = localStorage.getItem('active_child');
-      const childrenRaw = localStorage.getItem('children_v1');
-      const entriesRaw = localStorage.getItem('babyTracker_v6');
-      if (!childrenRaw) return;
-
-      const children = JSON.parse(childrenRaw);
-      const child = activeChild ? children[activeChild] : Object.values(children)[0];
-      if (!child) return;
-
-      const today = new Date().toISOString().slice(0, 10);
-      const entries = entriesRaw ? JSON.parse(entriesRaw) : {};
-      const todayEntries = entries[today] || [];
-
-      // Calculate summary for widget
-      const feeds = todayEntries.filter((e) => e.type === 'feed');
-      const sleeps = todayEntries.filter((e) => e.type === 'sleep' || e.type === 'nap');
-      const nappies = todayEntries.filter((e) => e.type === 'nappy');
-      const lastFeed = feeds.length > 0 ? feeds[feeds.length - 1] : null;
-      const lastSleep = sleeps.length > 0 ? sleeps[sleeps.length - 1] : null;
-
-      const widgetData = {
-        babyName: child.name || 'Baby',
-        feedCount: feeds.length,
-        sleepCount: sleeps.length,
-        nappyCount: nappies.length,
-        lastFeedTime: lastFeed ? lastFeed.time : null,
-        lastFeedType: lastFeed ? lastFeed.subtype : null,
-        lastSleepTime: lastSleep ? lastSleep.time : null,
-        nextFeedEstimate: null, // App calculates predictions
-        theme: localStorage.getItem('theme_v1') || 'light',
-        updatedAt: Date.now(),
-      };
-
-      // Write to shared UserDefaults (iOS) / SharedPreferences (Android)
-      if (getPlatform() === 'ios') {
-        await window.Capacitor.Plugins.OBWidgetBridge.setData({ json: JSON.stringify(widgetData) });
-      } else if (getPlatform() === 'android') {
-        await window.Capacitor.Plugins.OBWidgetBridge.setData({ json: JSON.stringify(widgetData) });
-      }
-    } catch (e) {
-      console.warn('Widget update failed:', e);
-    }
+var OBWidgets = {
+  updateWidgetData: function() {
+    // Widget data is now managed by the main app (app-v2.jsx) with full data shape.
+    // This legacy sender creates incomplete data that overwrites the good data. Skip.
+    return Promise.resolve();
   },
 
-  async reloadWidgets() {
-    if (!isNative()) return;
-    try {
-      await window.Capacitor.Plugins.OBWidgetBridge.reloadAll();
-    } catch {}
-  },
+  reloadWidgets: function() {
+    if (!isNative()) return Promise.resolve();
+    var WB = _plug('OBWidgetBridge');
+    if (!WB) return Promise.resolve();
+    try { return WB.reloadAll().catch(function(){}); }
+    catch(e) { return Promise.resolve(); }
+  }
 };
 
 // ── 14. LIVE ACTIVITIES (iOS) ───────────────────────────────────
-const OBLiveActivity = {
-  async startTimer({ type, startTime, babyName, side }) {
-    if (getPlatform() !== 'ios') return;
+var OBLiveActivity = {
+  startTimer: function(opts) {
+    if (getPlatform() !== 'ios') return Promise.resolve();
+    var LA = _plug('OBLiveActivity');
+    if (!LA) return Promise.resolve();
     try {
-      await window.Capacitor.Plugins.OBLiveActivity.start({
-        type, // 'feed' or 'sleep'
-        startTime: startTime || Date.now(),
-        babyName: babyName || 'Baby',
-        side: side || null, // 'left' or 'right' for breastfeeding
-      });
-    } catch {}
+      return LA.start({
+        type: opts.type,
+        startTime: opts.startTime || Date.now(),
+        babyName: opts.babyName || 'Baby',
+        side: opts.side || null
+      }).catch(function(){});
+    } catch(e) { return Promise.resolve(); }
   },
 
-  async updateTimer({ elapsed, side }) {
-    if (getPlatform() !== 'ios') return;
-    try {
-      await window.Capacitor.Plugins.OBLiveActivity.update({ elapsed, side });
-    } catch {}
+  updateTimer: function(opts) {
+    if (getPlatform() !== 'ios') return Promise.resolve();
+    var LA = _plug('OBLiveActivity');
+    if (!LA) return Promise.resolve();
+    try { return LA.update({ elapsed: opts.elapsed, side: opts.side }).catch(function(){}); }
+    catch(e) { return Promise.resolve(); }
   },
 
-  async stopTimer() {
-    if (getPlatform() !== 'ios') return;
-    try {
-      await window.Capacitor.Plugins.OBLiveActivity.stop();
-    } catch {}
-  },
+  stopTimer: function() {
+    if (getPlatform() !== 'ios') return Promise.resolve();
+    var LA = _plug('OBLiveActivity');
+    if (!LA) return Promise.resolve();
+    try { return LA.stop().catch(function(){}); }
+    catch(e) { return Promise.resolve(); }
+  }
 };
 
 // ── 15. HEALTHKIT (iOS) / GOOGLE FIT (Android) ──────────────────
-const OBHealth = {
-  async isAvailable() {
-    if (!isNative()) return false;
-    try {
-      if (getPlatform() === 'ios') {
-        return await window.Capacitor.Plugins.OBHealthKit.isAvailable();
-      }
-      return false; // Google Fit requires separate setup
-    } catch { return false; }
+var OBHealth = {
+  isAvailable: function() {
+    if (!isNative()) return Promise.resolve(false);
+    if (getPlatform() === 'ios') {
+      var HK = _plug('OBHealthKit');
+      if (!HK) return Promise.resolve(false);
+      try { return HK.isAvailable().catch(function() { return false; }); }
+      catch(e) { return Promise.resolve(false); }
+    }
+    return Promise.resolve(false);
   },
 
-  async requestPermission() {
-    if (!isNative()) return false;
+  requestPermission: function() {
+    if (!isNative()) return Promise.resolve(false);
+    var HK = _plug('OBHealthKit');
+    if (!HK) return Promise.resolve(false);
     try {
-      await window.Capacitor.Plugins.OBHealthKit.requestAuthorization({
-        read: ['weight', 'height'],
-        write: ['weight', 'height'],
-      });
-      return true;
-    } catch { return false; }
+      return HK.requestAuthorization({ read: ['weight', 'height'], write: ['weight', 'height'] })
+        .then(function() { return true; })
+        .catch(function() { return false; });
+    } catch(e) { return Promise.resolve(false); }
   },
 
-  async saveWeight({ kg, date }) {
-    if (!isNative()) return;
-    try {
-      await window.Capacitor.Plugins.OBHealthKit.saveWeight({ kg, date });
-    } catch {}
+  saveWeight: function(opts) {
+    if (!isNative()) return Promise.resolve();
+    var HK = _plug('OBHealthKit');
+    if (!HK) return Promise.resolve();
+    try { return HK.saveWeight({ kg: opts.kg, date: opts.date }).catch(function(){}); }
+    catch(e) { return Promise.resolve(); }
   },
 
-  async saveHeight({ cm, date }) {
-    if (!isNative()) return;
-    try {
-      await window.Capacitor.Plugins.OBHealthKit.saveHeight({ cm, date });
-    } catch {}
-  },
+  saveHeight: function(opts) {
+    if (!isNative()) return Promise.resolve();
+    var HK = _plug('OBHealthKit');
+    if (!HK) return Promise.resolve();
+    try { return HK.saveHeight({ cm: opts.cm, date: opts.date }).catch(function(){}); }
+    catch(e) { return Promise.resolve(); }
+  }
 };
 
 // ── 16. SPEECH RECOGNITION (Voice Logging) ──────────────────────
-const OBSpeech = {
-  async isAvailable() {
+var OBSpeech = {
+  isAvailable: function() {
     if (!isNative()) {
-      return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+      return Promise.resolve('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
     }
+    var SR = _plug('SpeechRecognition');
+    if (!SR) return Promise.resolve(false);
     try {
-      const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-      const result = await SpeechRecognition.available();
-      return result.available;
-    } catch { return false; }
+      return SR.available().then(function(result) { return result.available; })
+        .catch(function() { return false; });
+    } catch(e) { return Promise.resolve(false); }
   },
 
-  async listen(language = 'en-GB') {
+  listen: function(language) {
+    language = language || 'en-GB';
     if (!isNative()) {
-      // Web Speech API fallback
-      return new Promise((resolve, reject) => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return reject(new Error('Not supported'));
-        const recognition = new SpeechRecognition();
+      return new Promise(function(resolve, reject) {
+        var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) return reject(new Error('Not supported'));
+        var recognition = new SpeechRec();
         recognition.lang = language;
         recognition.continuous = false;
         recognition.interimResults = false;
-        recognition.onresult = (e) => resolve(e.results[0][0].transcript);
-        recognition.onerror = (e) => reject(e.error);
+        recognition.onresult = function(e) { resolve(e.results[0][0].transcript); };
+        recognition.onerror = function(e) { reject(e.error); };
         recognition.start();
       });
     }
-    const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-    await SpeechRecognition.requestPermission();
-    const result = await SpeechRecognition.start({ language, popup: false });
-    return result.matches?.[0] || '';
+    var SR = _plug('SpeechRecognition');
+    if (!SR) return Promise.reject(new Error('Not available'));
+    return SR.requestPermission().then(function() {
+      return SR.start({ language: language, popup: false });
+    }).then(function(result) {
+      return (result.matches && result.matches[0]) || '';
+    });
   },
 
-  async stop() {
-    if (!isNative()) return;
-    const { SpeechRecognition } = await import('@capacitor-community/speech-recognition');
-    await SpeechRecognition.stop();
-  },
+  stop: function() {
+    if (!isNative()) return Promise.resolve();
+    var SR = _plug('SpeechRecognition');
+    if (!SR) return Promise.resolve();
+    return SR.stop();
+  }
 };
 
 // ── 17. APP LIFECYCLE ───────────────────────────────────────────
-const OBAppLifecycle = {
-  async onResume(callback) {
+var OBAppLifecycle = {
+  onResume: function(callback) {
     if (!isNative()) {
-      document.addEventListener('visibilitychange', () => {
+      document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') callback();
       });
-      return;
+      return Promise.resolve();
     }
-    const { App } = await import('@capacitor/app');
-    App.addListener('appStateChange', (state) => {
+    var AppPlug = _plug('App');
+    if (!AppPlug) return Promise.resolve();
+    AppPlug.addListener('appStateChange', function(state) {
       if (state.isActive) callback();
     });
+    return Promise.resolve();
   },
 
-  async onPause(callback) {
+  onPause: function(callback) {
     if (!isNative()) {
-      document.addEventListener('visibilitychange', () => {
+      document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'hidden') callback();
       });
-      return;
+      return Promise.resolve();
     }
-    const { App } = await import('@capacitor/app');
-    App.addListener('appStateChange', (state) => {
+    var AppPlug = _plug('App');
+    if (!AppPlug) return Promise.resolve();
+    AppPlug.addListener('appStateChange', function(state) {
       if (!state.isActive) callback();
     });
+    return Promise.resolve();
   },
 
-  async onBackButton(callback) {
-    if (!isNative()) return;
-    const { App } = await import('@capacitor/app');
-    App.addListener('backButton', callback);
+  onBackButton: function(callback) {
+    if (!isNative()) return Promise.resolve();
+    var AppPlug = _plug('App');
+    if (!AppPlug) return Promise.resolve();
+    AppPlug.addListener('backButton', callback);
+    return Promise.resolve();
   },
 
-  async onUrlOpen(callback) {
-    if (!isNative()) return;
-    const { App } = await import('@capacitor/app');
-    App.addListener('appUrlOpen', (data) => {
+  onUrlOpen: function(callback) {
+    if (!isNative()) return Promise.resolve();
+    var AppPlug = _plug('App');
+    if (!AppPlug) return Promise.resolve();
+    AppPlug.addListener('appUrlOpen', function(data) {
       callback(data.url);
     });
-  },
+    return Promise.resolve();
+  }
 };
 
 // ── 18. SCREEN ORIENTATION ──────────────────────────────────────
-const OBScreen = {
-  async lockPortrait() {
-    if (!isNative()) return;
-    try {
-      const { ScreenOrientation } = await import('@capacitor/screen-orientation');
-      await ScreenOrientation.lock({ orientation: 'portrait' });
-    } catch {}
-  },
+var OBScreen = {
+  lockPortrait: function() {
+    if (!isNative()) return Promise.resolve();
+    var SO = _plug('ScreenOrientation');
+    if (!SO) return Promise.resolve();
+    try { return SO.lock({ orientation: 'portrait' }).catch(function(){}); }
+    catch(e) { return Promise.resolve(); }
+  }
 };
 
 // ── 19. STATUS BAR ──────────────────────────────────────────────
-const OBStatusBar = {
-  async setStyle(isDark) {
-    if (!isNative()) return;
-    const { StatusBar, Style } = await import('@capacitor/status-bar');
-    await StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light });
+var OBStatusBar = {
+  setStyle: function(isDark) {
+    if (!isNative()) return Promise.resolve();
+    var SB = _plug('StatusBar');
+    if (!SB) return Promise.resolve();
+    var chain = SB.setStyle({ style: isDark ? 'DARK' : 'LIGHT' });
     if (getPlatform() === 'android') {
-      await StatusBar.setBackgroundColor({ color: isDark ? '#080e1c' : '#F0DDD6' });
+      chain = chain.then(function() {
+        return SB.setBackgroundColor({ color: isDark ? '#080e1c' : '#F0DDD6' });
+      });
     }
+    return chain;
   },
-  async hide() {
-    if (!isNative()) return;
-    const { StatusBar } = await import('@capacitor/status-bar');
-    await StatusBar.hide();
+  hide: function() {
+    if (!isNative()) return Promise.resolve();
+    var SB = _plug('StatusBar');
+    if (!SB) return Promise.resolve();
+    return SB.hide();
   },
-  async show() {
-    if (!isNative()) return;
-    const { StatusBar } = await import('@capacitor/status-bar');
-    await StatusBar.show();
-  },
+  show: function() {
+    if (!isNative()) return Promise.resolve();
+    var SB = _plug('StatusBar');
+    if (!SB) return Promise.resolve();
+    return SB.show();
+  }
 };
 
 // ── 20. PREFERENCES (Key-Value, replaces localStorage on native) ─
-const OBPreferences = {
-  async get(key) {
-    if (!isNative()) return localStorage.getItem(key);
-    const { Preferences } = await import('@capacitor/preferences');
-    const result = await Preferences.get({ key });
-    return result.value;
+var OBPreferences = {
+  get: function(key) {
+    if (!isNative()) return Promise.resolve(localStorage.getItem(key));
+    var Pref = _plug('Preferences');
+    if (!Pref) return Promise.resolve(localStorage.getItem(key));
+    return Pref.get({ key: key }).then(function(result) { return result.value; });
   },
-  async set(key, value) {
-    if (!isNative()) { localStorage.setItem(key, value); return; }
-    const { Preferences } = await import('@capacitor/preferences');
-    await Preferences.set({ key, value });
+  set: function(key, value) {
+    if (!isNative()) { localStorage.setItem(key, value); return Promise.resolve(); }
+    var Pref = _plug('Preferences');
+    if (!Pref) { localStorage.setItem(key, value); return Promise.resolve(); }
+    return Pref.set({ key: key, value: value });
   },
-  async remove(key) {
-    if (!isNative()) { localStorage.removeItem(key); return; }
-    const { Preferences } = await import('@capacitor/preferences');
-    await Preferences.remove({ key });
-  },
+  remove: function(key) {
+    if (!isNative()) { localStorage.removeItem(key); return Promise.resolve(); }
+    var Pref = _plug('Preferences');
+    if (!Pref) { localStorage.removeItem(key); return Promise.resolve(); }
+    return Pref.remove({ key: key });
+  }
 };
 
 // ── EXPORT ALL ──────────────────────────────────────────────────
 window.OBNative = {
-  isNative,
-  getPlatform,
+  isNative: isNative,
+  getPlatform: getPlatform,
   haptics: OBHaptics,
   biometric: OBBiometric,
   appleSignIn: OBAppleSignIn,
@@ -784,33 +813,35 @@ window.OBNative = {
   lifecycle: OBAppLifecycle,
   screen: OBScreen,
   statusBar: OBStatusBar,
-  preferences: OBPreferences,
+  preferences: OBPreferences
 };
 
 // ── AUTO-INIT on native ─────────────────────────────────────────
-if (isNative()) {
-  (async () => {
+// Guard: only run once per page load to prevent double-init
+// (Capacitor WKWebView + service worker can cause scripts to re-execute)
+if (isNative() && !window.__obNativeInitDone) {
+  window.__obNativeInitDone = true;
+  (function() {
     try {
       // Lock to portrait
-      await OBScreen.lockPortrait();
+      OBScreen.lockPortrait();
       // Init SQLite
-      await OBDatabase.init();
+      OBDatabase.init();
       // Create Android notification channels
-      await OBLocalNotifications.createChannels();
+      OBLocalNotifications.createChannels();
       // Set up app shortcuts
-      await OBAppShortcuts.set([
+      OBAppShortcuts.set([
         { id: 'log_feed', title: 'Log Feed', description: 'Quickly log a feed' },
         { id: 'log_sleep', title: 'Log Sleep', description: 'Log sleep or nap' },
         { id: 'log_nappy', title: 'Log Nappy', description: 'Log a nappy change' },
-        { id: 'start_timer', title: 'Start Timer', description: 'Start feed or sleep timer' },
+        { id: 'start_timer', title: 'Start Timer', description: 'Start feed or sleep timer' }
       ]);
       // Donate Siri shortcuts
       if (getPlatform() === 'ios') {
-        await OBSiri.donateAllShortcuts();
+        OBSiri.donateAllShortcuts();
       }
-      // Update widget data
-      await OBWidgets.updateWidgetData();
-    } catch (e) {
+      // Widget data managed by main app — skip legacy sender
+    } catch(e) {
       console.warn('Native init error:', e);
     }
   })();
