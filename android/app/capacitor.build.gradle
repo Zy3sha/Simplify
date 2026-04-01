@@ -32,9 +32,8 @@ dependencies {
     implementation project(':capawesome-capacitor-app-shortcuts')
     implementation project(':capawesome-capacitor-badge')
     implementation project(':capawesome-capacitor-live-update')
-    implementation "androidx.health.connect:connect-client:1.1.0-alpha10"
 }
-apply from: "../../node_modules/cordova-plugin-health/src/android/build-extras.gradle"
+
 
 if (hasProperty('postBuildExtras')) {
   postBuildExtras()

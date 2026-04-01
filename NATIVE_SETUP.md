@@ -54,7 +54,7 @@ npx cap open ios
    - **Push Notifications**
    - **Sign in with Apple**
    - **App Groups** → `group.com.obubba.app`
-   - **HealthKit**
+
    - **Siri**
    - **Associated Domains** → `applinks:obubba.com`, `activitycontinuation:obubba.com`
    - **Background Modes** → Remote notifications, Background fetch, Audio
@@ -204,16 +204,7 @@ await admin.messaging().send({
 
 ---
 
-## 7. HealthKit (iOS only)
-
-1. Capability is already configured in entitlements
-2. Usage descriptions are in Info.plist
-3. Submit a **HealthKit compliance report** during App Store review
-4. HealthKit data types used: `bodyMass` (weight), `height`
-
----
-
-## 8. Siri Shortcuts
+## 7. Siri Shortcuts
 
 ### Automatic Donation
 The app automatically donates shortcuts when launched natively. Users can then:
@@ -283,7 +274,7 @@ npm run cap:build:android
 - [ ] Screenshots for iPhone 6.7", 6.5", 5.5" and iPad
 - [ ] Privacy policy URL
 - [ ] App privacy details (data types collected)
-- [ ] HealthKit usage justification
+
 - [ ] Camera/microphone usage justification
 - [ ] Age rating: 4+ (Health & Fitness)
 - [ ] Category: Health & Fitness
@@ -319,7 +310,7 @@ iOS Native (Capacitor)
     │   ├── SiriShortcutsPlugin.swift    → Siri integration
     │   ├── WidgetBridgePlugin.swift     → Widget data bridge
     │   ├── LiveActivityPlugin.swift     → Dynamic Island + Lock Screen
-    │   └── HealthKitPlugin.swift        → Growth data sync
+
     ├── Widgets/
     │   └── OBubbaWidgets.swift          → Home + Lock Screen widgets
     ├── LiveActivity/
@@ -363,7 +354,7 @@ All 20 native modules accessible via `window.OBNative`:
 | `siri` | Siri Shortcuts donation |
 | `widgets` | Widget data updates |
 | `liveActivity` | Live Activity timer (iOS) |
-| `health` | HealthKit / Google Fit |
+
 | `speech` | Voice recognition for logging |
 | `lifecycle` | App resume/pause/back/URL handlers |
 | `screen` | Screen orientation lock |

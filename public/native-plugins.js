@@ -591,48 +591,7 @@ var OBLiveActivity = {
   }
 };
 
-// ── 15. HEALTHKIT (iOS) / GOOGLE FIT (Android) ──────────────────
-var OBHealth = {
-  isAvailable: function() {
-    if (!isNative()) return Promise.resolve(false);
-    if (getPlatform() === 'ios') {
-      var HK = _plug('OBHealthKit');
-      if (!HK) return Promise.resolve(false);
-      try { return HK.isAvailable().catch(function() { return false; }); }
-      catch(e) { return Promise.resolve(false); }
-    }
-    return Promise.resolve(false);
-  },
-
-  requestPermission: function() {
-    if (!isNative()) return Promise.resolve(false);
-    var HK = _plug('OBHealthKit');
-    if (!HK) return Promise.resolve(false);
-    try {
-      return HK.requestAuthorization({ read: ['weight', 'height'], write: ['weight', 'height'] })
-        .then(function() { return true; })
-        .catch(function() { return false; });
-    } catch(e) { return Promise.resolve(false); }
-  },
-
-  saveWeight: function(opts) {
-    if (!isNative()) return Promise.resolve();
-    var HK = _plug('OBHealthKit');
-    if (!HK) return Promise.resolve();
-    try { return HK.saveWeight({ kg: opts.kg, date: opts.date }).catch(function(){}); }
-    catch(e) { return Promise.resolve(); }
-  },
-
-  saveHeight: function(opts) {
-    if (!isNative()) return Promise.resolve();
-    var HK = _plug('OBHealthKit');
-    if (!HK) return Promise.resolve();
-    try { return HK.saveHeight({ cm: opts.cm, date: opts.date }).catch(function(){}); }
-    catch(e) { return Promise.resolve(); }
-  }
-};
-
-// ── 16. SPEECH RECOGNITION (Voice Logging) ──────────────────────
+// ── 15. SPEECH RECOGNITION (Voice Logging) ──────────────────────
 var OBSpeech = {
   isAvailable: function() {
     if (!isNative()) {
@@ -808,7 +767,6 @@ window.OBNative = {
   siri: OBSiri,
   widgets: OBWidgets,
   liveActivity: OBLiveActivity,
-  health: OBHealth,
   speech: OBSpeech,
   lifecycle: OBAppLifecycle,
   screen: OBScreen,

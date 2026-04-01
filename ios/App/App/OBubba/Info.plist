@@ -69,12 +69,6 @@
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>OBubba uses speech recognition for hands-free baby logging.</string>
 
-    <!-- HealthKit -->
-    <key>NSHealthShareUsageDescription</key>
-    <string>OBubba can read baby growth data from Health to keep your records in sync.</string>
-    <key>NSHealthUpdateUsageDescription</key>
-    <string>OBubba can save baby weight and height measurements to Health.</string>
-
     <!-- Notifications -->
     <key>UIBackgroundModes</key>
     <array>
@@ -136,7 +130,6 @@
 
     <!-- Entitlements reference -->
     <!-- App Groups: group.com.obubba.app -->
-    <!-- HealthKit -->
     <!-- Push Notifications -->
     <!-- Siri -->
     <!-- Sign in with Apple -->

@@ -137,7 +137,7 @@ A baby's day is simple: wake → wake window → nap → wake window → nap →
 ## Native Plugins (all registered but need Xcode config)
 - `OBLiveActivity` — Dynamic Island (needs widget extension embedded)
 - `OBSiriShortcuts` — needs `.intentdefinition` file
-- `OBHealthKit` — Apple Health sync
+
 - `OBWidgetBridge` — needs app group match
 - `DisableBounce` — working
 - Push notifications — working (APNs cert needed)

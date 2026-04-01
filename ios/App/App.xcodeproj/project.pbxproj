@@ -20,7 +20,7 @@
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
 		OB000001000000000000001A /* CareCardPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000001000000000000001F /* CareCardPlugin.swift */; };
 		OB000002000000000000001A /* DisableBouncePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000002000000000000001F /* DisableBouncePlugin.swift */; };
-		OB000003000000000000001A /* HealthKitPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000003000000000000001F /* HealthKitPlugin.swift */; };
+
 		OB000004000000000000001A /* LiveActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000004000000000000001F /* LiveActivityPlugin.swift */; };
 		OB000005000000000000001A /* SiriShortcutsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000005000000000000001F /* SiriShortcutsPlugin.swift */; };
 		OB000006000000000000001A /* WidgetBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OB000006000000000000001F /* WidgetBridgePlugin.swift */; };
@@ -74,7 +74,7 @@
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 		OB000001000000000000001F /* CareCardPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareCardPlugin.swift; sourceTree = "<group>"; };
 		OB000002000000000000001F /* DisableBouncePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisableBouncePlugin.swift; sourceTree = "<group>"; };
-		OB000003000000000000001F /* HealthKitPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitPlugin.swift; sourceTree = "<group>"; };
+
 		OB000004000000000000001F /* LiveActivityPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityPlugin.swift; sourceTree = "<group>"; };
 		OB000005000000000000001F /* SiriShortcutsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriShortcutsPlugin.swift; sourceTree = "<group>"; };
 		OB000006000000000000001F /* WidgetBridgePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBridgePlugin.swift; sourceTree = "<group>"; };
@@ -191,7 +191,7 @@
 			children = (
 				OB000001000000000000001F /* CareCardPlugin.swift */,
 				OB000002000000000000001F /* DisableBouncePlugin.swift */,
-				OB000003000000000000001F /* HealthKitPlugin.swift */,
+
 				OB000004000000000000001F /* LiveActivityPlugin.swift */,
 				OB000005000000000000001F /* SiriShortcutsPlugin.swift */,
 				OB000006000000000000001F /* WidgetBridgePlugin.swift */,
@@ -295,9 +295,7 @@
 							com.apple.ApplicationGroups.iOS = {
 								enabled = 1;
 							};
-							com.apple.HealthKit = {
-								enabled = 1;
-							};
+
 							com.apple.InAppPurchase = {
 								enabled = 1;
 							};
@@ -408,7 +406,7 @@
 				OB000030000000000000001A /* OBubbaBridgeViewController.swift in Sources */,
 				OB000001000000000000001A /* CareCardPlugin.swift in Sources */,
 				OB000002000000000000001A /* DisableBouncePlugin.swift in Sources */,
-				OB000003000000000000001A /* HealthKitPlugin.swift in Sources */,
+
 				OB000004000000000000001A /* LiveActivityPlugin.swift in Sources */,
 				OB000005000000000000001A /* SiriShortcutsPlugin.swift in Sources */,
 				OB000006000000000000001A /* WidgetBridgePlugin.swift in Sources */,

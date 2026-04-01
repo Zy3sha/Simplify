@@ -25,12 +25,6 @@
         <string>activitycontinuation:obubba.com</string>
     </array>
 
-    <!-- HealthKit -->
-    <key>com.apple.developer.healthkit</key>
-    <true/>
-    <key>com.apple.developer.healthkit.access</key>
-    <array/>
-
     <!-- Siri -->
     <key>com.apple.developer.siri</key>
     <true/>

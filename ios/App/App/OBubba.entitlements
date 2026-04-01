@@ -13,10 +13,6 @@
 		<string>applinks:obubba.com</string>
 		<string>activitycontinuation:obubba.com</string>
 	</array>
-	<key>com.apple.developer.healthkit</key>
-	<true/>
-	<key>com.apple.developer.healthkit.access</key>
-	<array/>
 	<key>com.apple.developer.siri</key>
 	<true/>
 	<key>com.apple.security.application-groups</key>
